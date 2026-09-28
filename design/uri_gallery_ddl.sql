@@ -74,8 +74,12 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   email_norm           VARCHAR(254) GENERATED ALWAYS AS (LOWER(email)) STORED,
   -- BR-ACC-07: 비밀번호는 해시로만 저장한다
   password_hash        VARCHAR(255) NOT NULL,
+  -- 인증 시각 규칙(D18): email_verified_at · password_changed_at · auth_email_token의 시각은 모두
+  --   DATETIME에 UTC로 저장하고, 만료 비교도 UTC_TIMESTAMP()로 한다(서버 시간대와 무관)
   -- UC13 BF5: 확인 메일 링크를 누르기 전에는 NULL
-  email_verified_at    TIMESTAMP NULL DEFAULT NULL,
+  email_verified_at    DATETIME  NULL DEFAULT NULL,
+  -- 이제민 결정 ⑥: 비밀번호 재설정 시각. 이보다 먼저 만든 세션은 현재 세션 포함 모두 무효
+  password_changed_at  DATETIME  NULL DEFAULT NULL,
   legal_rep_confirmed  BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_guardian_account PRIMARY KEY (account_id),
@@ -98,7 +102,7 @@ CREATE TABLE IF NOT EXISTS auth_email_token (
   expires_at     DATETIME     NOT NULL,
   used_at        DATETIME     NULL DEFAULT NULL,
   revoked_at     DATETIME     NULL DEFAULT NULL,
-  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at     DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
   CONSTRAINT pk_auth_email_token PRIMARY KEY (token_id),
   CONSTRAINT fk_token_account FOREIGN KEY (account_id) REFERENCES guardian_account (account_id) ON DELETE CASCADE,
   CONSTRAINT uq_token_hash UNIQUE (token_hash),
@@ -106,6 +110,8 @@ CREATE TABLE IF NOT EXISTS auth_email_token (
   -- 쓴 토큰과 무효로 만든 토큰을 겹치지 않게 한다
   CONSTRAINT chk_token_used_or_revoked CHECK (used_at IS NULL OR revoked_at IS NULL)
 );
+-- 보완 2: 재발급 때 같은 계정·같은 목적의 이전 토큰을 찾아 무효로 만든다
+CREATE INDEX IF NOT EXISTS ix_token_account_purpose ON auth_email_token (account_id, purpose);
 
 CREATE TABLE IF NOT EXISTS child (
   child_id       BIGINT       NOT NULL AUTO_INCREMENT,

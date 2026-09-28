@@ -83,7 +83,7 @@
 | F17 | 모델 재현·평가·승격 | 모델 7종 버전 고정·매니페스트·어댑터, 평가 묶음 재평가 후 승격, 롤백 | spec FR-16, FR-17, FR-24 · Intent [핵심 활동] 2·7 | UC9 |
 | F18 | 모델 API 서버 · API활용 메뉴 | Python 가상환경 + uvicorn API 서버, 엔드포인트·가이드라인·매뉴얼 메뉴(팀원 전용) | spec FR-30 · 추가 요구 R3·R4 | UC11 |
 | F19 | 외부 모델 기능 엔드포인트 (P0 · caption은 P0.5) | `segment`·`classify`·`relief`(외부 키) · `pose`(팀 내부 키 전용) · `caption`(P0.5). API 키 인증·요청 한도·크기 제한·입력 비보존 | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 | UC12 |
-| F20 | 보호자 이메일 가입 | 이메일(로그인 아이디, 서비스 전체 유일)·비밀번호만으로 가입하고 확인 메일로 완료. 가족 공간 생성. 이용자 중복은 이메일로 막는다 | D18 · spec FR-31 | UC13 |
+| F20 | 보호자 이메일 가입 | 이메일(로그인 아이디, 서비스 전체 유일)·비밀번호만으로 가입하고 확인 메일로 완료. 가입 여부는 화면에 드러내지 않는다(이미 가입된 주소엔 안내 메일). 가족 공간 생성. 이용자 중복은 이메일로 막는다 | D18 · spec FR-31 | UC13 |
 | F21 | 로그인 정보 찾기 | 가입한 이메일로 로그인 아이디와 비밀번호 재설정 링크를 보낸다. 가입 여부는 드러내지 않는다 | D18 · spec FR-32 | UC14 |
 | F20 | 사용 관찰 기록 | 보호자 역할 사용자의 막힌 지점 관찰 | spec FR-18 · Intent [미션] P0 경험 검증 | 미전환(§9.3) |
 | F21 | 추적성 | FR → UC → T → 검증 증거 연결 | spec FR-19 · Intent [핵심 활동] 8 | 미전환(§9.3) |
@@ -186,7 +186,7 @@ API 서버는 접수·상태·권한만 맡고 모델을 직접 import하지 않
 
 | 메서드 · 경로 | 용도 | UC |
 |---|---|:--:|
-| `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/login` · `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset` | 이메일 가입 · 확인 메일 검증 · 로그인 · 로그인 정보 찾기 메일 · 비밀번호 재설정([추론], U8) | UC13 · UC14 |
+| `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/email/verify/resend` · `POST /v1/auth/login` · `POST /v1/auth/logout` · `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset` | 이메일 가입(항상 202) · 확인(204 / 400 token_invalid) · 확인 메일 재발송(항상 202) · 로그인(204 / 401 / 403 email_unverified) · 로그아웃 · 찾기 메일(항상 202) · 재설정(204 / 400 token_invalid) — 이제민 결정 ③ | UC13 · UC14 |
 | `POST /v1/children` · `GET /v1/children` | 아이 별칭 등록·조회 | UC1 |
 | `PATCH /v1/children/{id}` | 아이 별칭 수정 [통합 D13] | UC1 |
 | `POST /v1/artworks` | 사진 접수(202). 원본·작품 기록·작업 기록 저장 후 판정 단계 작업 등록 | UC2 |
@@ -3421,7 +3421,7 @@ end
 
 #### 범위·개요
 
-보호자는 서비스를 처음 쓸 때 **이메일과 비밀번호로 가입한다.** 따로 아이디를 만들지 않는다. **이메일이 곧 로그인 아이디**이며, 이용자끼리 겹치지 않게 하는 기준도 아이 별칭이 아니라 이 이메일이다. 이메일은 서비스 전체에서 하나뿐이어야 하며 대소문자를 구분하지 않고 비교한다.
+보호자는 서비스를 처음 쓸 때 **이메일과 비밀번호로 가입한다.** 가입 화면은 그 이메일이 이미 가입돼 있는지 알려 주지 않는다. 응답은 항상 "메일함을 확인해 주세요"이고, 이미 가입된 주소면 그 주소로 "이미 가입돼 있어요" 안내 메일만 간다(UC14와 같은 가입 여부 비노출). 따로 아이디를 만들지 않는다. **이메일이 곧 로그인 아이디**이며, 이용자끼리 겹치지 않게 하는 기준도 아이 별칭이 아니라 이 이메일이다. 이메일은 서비스 전체에서 하나뿐이어야 하며 대소문자를 구분하지 않고 비교한다.
 
 가입하면 시스템이 그 주소로 **확인 메일**을 보낸다. 보호자가 메일의 링크를 눌러 주소가 본인 것임을 확인하면 가입이 끝나고, 가족 공간이 열리며, 아이 별칭 등록(UC1)으로 넘어간다 [추론]. 이 확인을 거쳐야 나중에 로그인 정보를 잊었을 때 같은 주소로 찾을 수 있다(UC14).
 
@@ -3497,7 +3497,7 @@ end note
 | 구분 | 액터 | 이 UC에서의 역할 | 원천 근거 |
 |:--:|---|---|---|
 | Primary | 보호자(가입 전) | 이메일과 비밀번호를 정해 가입하고, 확인 메일의 링크로 주소를 확인한다 | D18 · spec FR-31 |
-| Secondary | 메일 발송 서비스 | 확인 메일을 보낸다. 실제 제품(SMTP 서비스)은 미정 | D18 · [추론] · U19 |
+| Secondary | 메일 발송 서비스 | 확인 메일과 "이미 가입돼 있어요" 안내 메일을 보낸다. P0는 로컬 Mailpit + nodemailer, 실제 발송 제품은 미정 | D18 · 이제민 결정 ⑤ · U19 |
 | 이해관계자 | 아이 | 가입과 관계없다. 아이 정보는 가입 때 받지 않는다 | BR-CHD-01 |
 
 #### 관련 UseCase
@@ -3509,7 +3509,7 @@ end note
 | UC1 | 아이를 별칭으로 등록한다 | 후행(가입으로 열린 가족 공간에 아이를 등록) | D18 · spec FR-1 |
 | INC1 | 로그인·가족 접근 확인 | UC13이 포함하지 않음(로그인 전). 가입 완료 세션을 UC1부터 확인 | spec FR-9 |
 
-> **쉽게 말하면** — 처음 오신 보호자가 이메일 주소와 비밀번호만 적어 가입합니다. 따로 아이디를 만들 필요는 없습니다. 이미 가입된 이메일이면 로그인하라고 알려 줍니다. 메일함에 온 확인 링크를 누르면 가입이 끝나고, 바로 아이 별명을 등록하는 화면으로 넘어갑니다.
+> **쉽게 말하면** — 처음 오신 보호자가 이메일 주소와 비밀번호만 적어 가입합니다. 따로 아이디를 만들 필요는 없습니다. 가입 버튼을 누르면 늘 "메일함을 확인해 주세요"가 나옵니다. 이미 가입한 주소라면 그 메일함에 "이미 가입돼 있어요" 안내가 갑니다. 메일함에 온 확인 링크를 누르면 가입이 끝나고, 바로 아이 별명을 등록하는 화면으로 넘어갑니다.
 
 #### 유스케이스 기술
 
@@ -3519,15 +3519,15 @@ end note
 | **유스케이스명** | 보호자 이메일로 가입한다 |
 | **액터** | 주: 보호자(가입 전) · 보조: 메일 발송 서비스 |
 | **사전조건** | (1) 로그인하지 않은 상태다. (2) 보호자가 메일을 받을 수 있는 이메일 주소를 갖고 있다. (3) 가입을 누구에게나 열지, 초대 등으로 제한할지는 `자료 없음 — 확인 필요` (U19) |
-| **사후조건** | (1) 보호자 계정이 이메일과 비밀번호 해시로 저장된다. 이메일은 서비스 전체에서 유일하다(대소문자 무시). (2) 그 계정의 가족 공간 1개가 함께 저장된다. 계정과 가족 공간은 둘 다 있거나 둘 다 없다. (3) 확인 링크를 누르면 계정이 "이메일 확인됨"이 되고 로그인 세션이 발급된다. (4) 실명·전화번호·아이 정보는 어디에도 저장되지 않는다. (5) 법정대리인 확인은 완료로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 이메일·비밀번호·토큰 원문이 남지 않고 요청 번호와 분류 코드만 남는다 |
+| **사후조건** | (1) 보호자 계정이 이메일과 비밀번호 해시로 저장된다. 이메일은 서비스 전체에서 유일하다(대소문자 무시). (2) 그 계정의 가족 공간 1개가 함께 저장된다. 계정과 가족 공간은 둘 다 있거나 둘 다 없다. (3) 확인 링크를 누르면 계정이 "이메일 확인됨"이 되고 로그인 세션이 발급된다. (4) 실명·전화번호·아이 정보는 어디에도 저장되지 않는다. (5) 법정대리인 확인은 완료로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 이메일·비밀번호·토큰 원문이 남지 않고 요청 번호와 분류 코드만 남는다. (7) 이미 가입된 이메일로 가입을 시도하면 계정을 새로 만들지 않고, 화면 응답은 새 가입과 같으며, 그 주소로 안내 메일만 간다 |
 | **기본흐름** | ↓ 별도 기본흐름표 |
 | **대체흐름** | A1. 확인 메일을 다시 받기 · A2. 이미 계정이 있음 · A3. 로그인한 상태에서 가입 화면 진입 — ↓ 별도 대체흐름표 |
-| **예외흐름** | E1. 이미 가입된 이메일 · E2. 이메일 형식 위반 · E3. 비밀번호 규칙 위반·확인 불일치 · E4. 동시 가입 경쟁 · E5. 작업 DB 저장 실패 · E6. 확인 메일 발송 실패 · E7. 확인 링크 만료·재사용 · E8. 가입 요청 과다 — ↓ 별도 예외흐름표 |
+| **예외흐름** | E1. 이미 가입된 이메일(화면 비노출, 안내 메일) · E2. 이메일 형식 위반 · E3. 비밀번호 규칙 위반·확인 불일치 · E4. 동시 가입 경쟁 · E5. 작업 DB 저장 실패 · E6. 확인 메일 발송 실패 · E7. 확인 링크 만료·재사용 · E8. 가입 요청 과다 — ↓ 별도 예외흐름표 |
 | **포함/확장** | 없음. 로그인 전 행위라 INC1을 포함하지 않는다 |
 | **우선순위** | High — 모든 보호자 흐름(UC1~UC7, UC10)의 선행 조건이고, 이용자 중복을 막는 유일한 지점이다(D18) |
 | **사용빈도** | 보호자당 1회(확인 메일 재요청 포함). 정량값은 `자료 없음 — 확인 필요` |
 | **업무규칙** | BR-ACC-06, BR-ACC-07, BR-ACC-08, BR-ACC-02, BR-CHD-01, BR-PRV-01, BR-PRV-03 |
-| **특별 요구사항** | 최소 수집: 가입 양식에는 이메일·비밀번호·비밀번호 확인 칸만 둔다. 이메일은 로그인과 로그인 정보 찾기에만 쓰고 홍보·외부 전달에 쓰지 않는다(BR-ACC-07). 보안: 비밀번호는 해시로만 저장한다 [추론]. 확인 링크의 토큰은 1회용이고 유효 시간이 있으며, DB에는 토큰 원문이 아니라 해시만 둔다 [추론 — 예시 24시간, U19]. 이메일 중복의 최종 판정은 DB 유일 제약(대소문자 무시)이다. 가입 요청에는 요청 한도를 둔다 [추론]. 비밀번호 규칙 예시: 8자 이상 [추론 — 확정 아님, U19]. 메일 발송 서비스(SMTP)는 미정이다 — 개발 환경에서는 메일을 실제로 보내지 않는 테스트용 수신함을 쓴다 [추론, U19]. 엔드포인트 `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/email/verify/resend`의 이름·형식·응답 코드는 [추론]이며 `/speckit.plan`에서 확정한다(U8) |
+| **특별 요구사항** | 최소 수집: 가입 양식에는 이메일·비밀번호·비밀번호 확인 칸만 둔다. 이메일은 로그인과 로그인 정보 찾기에만 쓰고 홍보·외부 전달에 쓰지 않는다(BR-ACC-07). 보안: 비밀번호는 해시로만 저장한다 [추론]. 확인 링크의 토큰은 1회용이고 유효 시간이 있으며, DB에는 토큰 원문이 아니라 해시만 둔다 [추론 — 예시 24시간, U19]. 이메일 중복의 최종 판정은 DB 유일 제약(대소문자 무시)이다. 가입·확인 메일 재발송에는 이메일별·IP별 요청 한도를 둔다(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론 — 확정 아님, U19]). 비밀번호 규칙 예시: 8자 이상 [추론 — 확정 아님, U19]. 메일 발송: P0는 로컬 Mailpit(Homebrew, Docker 없음)과 nodemailer로 보내고, 실제 발송 제품은 U19로 남긴다(이제민 결정 ⑤). 엔드포인트와 응답 코드(이제민 결정 ③): `POST /v1/auth/signup` 항상 202 · `POST /v1/auth/email/verify` 성공 204, 토큰이 이미 쓰였거나 만료·무효면 구분 없이 400 `token_invalid` · `POST /v1/auth/email/verify/resend` 항상 202. 형식 검사는 화면에서 먼저 하고, 서버의 형식 위반 응답 코드는 U8에서 정한다 [추론] |
 | **비고** | 원천 추적: D18(2026-09-28 신지현 결정, 이메일 로그인·이메일로 찾기로 개정) · spec FR-31(신설) · FR-32(UC14) · FR-9(가족 단위 접근. 계정 모델 U1은 공동 보호자·감상 전용 여부만 남음) · FR-14(로그 제한) · Intent [부정적 영향] 과잉 수집·동의 오판 · 공통 기준 §8(BR-ACC-06~08 신설) · §10(U8, U13, U19). 이메일은 연락처라서 D18 이전의 "연락처 받지 않음" 원칙을 "로그인·찾기 용도의 이메일만 받음"으로 좁혀 바꿨다. 탈퇴한 이메일로 다시 가입할 수 있는지는 U19 |
 
 #### 기본흐름 (Basic Flow)
@@ -3536,9 +3536,9 @@ end note
 |:--:|---|---|
 | 1 | 보호자가 "시작하기"를 누른다 | 이메일·비밀번호·비밀번호 확인 칸만 있는 가입 양식을 보여 준다(실명·전화번호·아이 정보 입력란 없음) |
 | 2 | 보호자가 이메일과 비밀번호를 입력하고 "가입"을 누른다 | 웹 화면이 형식과 비밀번호 확인 일치를 먼저 검사한 뒤 `POST /v1/auth/signup`을 보낸다 |
-| 3 | 보호자가 결과를 기다린다 | API 서버가 형식을 다시 검사하고, 대소문자를 무시해 같은 이메일이 있는지 확인한다. 없으면 보호자 계정(이메일·비밀번호 해시·"확인 전")과 가족 공간 1개를 한 번에 저장하고, 1회용 확인 토큰(해시)을 만든다 |
-| 4 | 보호자가 "메일함을 확인해 주세요" 안내를 본다 | 메일 발송 서비스로 확인 링크가 담긴 메일을 보낸다 |
-| 5 | 보호자가 메일의 확인 링크를 누른다 | `POST /v1/auth/email/verify`로 토큰을 검사해(유효 시간·1회용) 계정을 "이메일 확인됨"으로 바꾸고, 토큰을 쓴 것으로 표시하고, 로그인 세션을 발급한다 |
+| 3 | 보호자가 결과를 기다린다 | API 서버가 요청 한도와 형식을 확인하고, 대소문자를 무시해 같은 이메일이 있는지 본다. 없으면 보호자 계정(이메일·비밀번호 해시·"확인 전")과 가족 공간 1개를 한 번에 저장하고, 1회용 확인 토큰(해시)을 만든다. 있으면 아무것도 만들지 않는다(E1). 어느 쪽이든 202를 돌려준다 |
+| 4 | 보호자가 "메일함을 확인해 주세요" 안내를 본다 | 새 계정이면 확인 링크 메일을, 이미 가입된 주소면 "이미 가입돼 있어요. 로그인하거나 로그인 정보 찾기를 이용해 주세요" 안내 메일을 보낸다. 화면 문구는 같다 |
+| 5 | 보호자가 메일의 확인 링크를 누른다 | `POST /v1/auth/email/verify`로 토큰을 검사해(유효 시간·1회용) 계정을 "이메일 확인됨"으로 바꾸고, 토큰을 쓴 것으로 표시하고, 로그인 세션을 발급한다(204) |
 | 6 | 보호자가 가입 완료를 확인한다 | "이제 아이를 등록해 주세요"와 함께 아이 등록(UC1) 화면으로 보낸다 |
 
 #### 대체흐름 (Alternative Flow)
@@ -3546,21 +3546,21 @@ end note
 | ID | 분기 조건 | 흐름 |
 |:--:|---|---|
 | A1 | 확인 메일을 받지 못했다 | 보호자가 "확인 메일 다시 받기"를 누른다. `POST /v1/auth/email/verify/resend`로 새 토큰을 만들고 이전 토큰은 무효로 한다. 재요청 간격 제한을 둔다 [추론] |
-| A2 | 이미 계정이 있는 보호자가 가입 화면에 왔다 | "이미 가입하셨나요? 로그인" 링크로 로그인 화면으로 보낸다. 비밀번호를 잊었으면 UC14로 간다 |
+| A2 | 이미 계정이 있는 보호자가 가입 화면에 왔다 | 화면에 늘 있는 "이미 가입하셨나요? 로그인" 링크로 로그인 화면으로 간다. 비밀번호를 잊었으면 UC14로 간다. 이 링크는 가입 여부와 관계없이 항상 보인다 |
 | A3 | 로그인한 상태에서 가입 화면을 연다 | 가입 양식을 보이지 않고 아이 관리 화면(UC1)으로 보낸다 [추론] |
 
 #### 예외흐름 (Exception Flow)
 
 | ID | 발생 조건 | 처리 | 근거 |
 |:--:|---|---|---|
-| E1 | 같은 이메일이 이미 있다(대소문자 무시) | 가입을 거절하고 "이미 가입된 이메일이에요. 로그인하거나 로그인 정보 찾기를 이용해 주세요"라고 안내한다. 비밀번호 칸은 비운다 | BR-ACC-06 · D18 |
+| E1 | 같은 이메일이 이미 있다(대소문자 무시) | 계정을 새로 만들지 않는다. 화면 응답은 새 가입과 같게 202와 "메일함을 확인해 주세요"를 보인다. 그 주소로 "이미 가입돼 있어요. 로그인하거나 로그인 정보 찾기를 이용해 주세요" 안내 메일을 보낸다. 안내 메일도 요청 한도를 따른다 | BR-ACC-06 · BR-ACC-08 · 이제민 결정 ④ |
 | E2 | 이메일이 비어 있거나 형식에 맞지 않는다 | 웹 화면은 가입 버튼을 막고, API 서버도 같은 검사를 거쳐 거절한다 | BR-ACC-06 · [추론] |
 | E3 | 비밀번호가 규칙에 맞지 않거나 확인 값과 다르다 | 가입 버튼을 막고 어떤 규칙이 맞지 않는지 문장으로 안내한다 | BR-ACC-07 · [추론] |
-| E4 | 거의 동시에 같은 이메일로 두 번 가입한다 | DB 유일 제약이 두 번째 가입을 막는다. E1과 같이 안내한다 | BR-ACC-06 · [추론] |
+| E4 | 거의 동시에 같은 이메일로 두 번 가입한다 | DB 유일 제약이 두 번째 가입을 막는다. 두 번째 요청은 E1과 같이 처리한다(화면은 같은 응답, 안내 메일) | BR-ACC-06 · [추론] |
 | E5 | 작업 DB 장애로 저장하지 못한다 | "가입되지 않았어요, 다시 시도해 주세요"라고 안내한다. 계정만 있고 가족 공간이 없는 상태를 남기지 않는다. 로그에는 요청 번호와 분류 코드(DB)만 남긴다 | BR-ACC-07 · BR-PRV-01 |
 | E6 | 메일 발송 서비스가 실패한다 | 계정은 "확인 전"으로 남기고 "메일을 보내지 못했어요. 잠시 뒤 다시 받기를 눌러 주세요"라고 안내한다(A1). 로그에는 분류 코드(메일)만 남긴다 [추론] | [추론] · U19 |
-| E7 | 확인 링크가 만료됐거나 이미 쓴 링크다 | 계정을 바꾸지 않고 "링크가 만료됐어요. 확인 메일을 다시 받아 주세요"라고 안내한다(A1) | BR-ACC-08 · [추론] |
-| E8 | 짧은 시간에 가입·재발송을 너무 많이 요청한다 | 요청 한도 초과로 잠시 뒤 다시 시도하라고 안내한다. 한도 수치는 `자료 없음 — 확인 필요` (U19) | [추론] |
+| E7 | 확인 링크가 만료됐거나, 이미 썼거나, 재발급으로 무효가 됐다 | 세 경우를 구분하지 않고 400 `token_invalid`로 답한다. 계정을 바꾸지 않고 "링크를 쓸 수 없어요. 확인 메일을 다시 받아 주세요"라고 안내한다(A1) | BR-ACC-08 · 이제민 결정 ③ |
+| E8 | 짧은 시간에 가입·재발송을 너무 많이 요청한다 | 이메일별·IP별 한도(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론])를 넘으면 메일을 보내지 않는다. 가입 응답은 가입 여부를 드러내지 않게 202를 유지하고, 재발송 화면에는 "잠시 뒤 다시 시도해 주세요"를 보인다 [추론] | BR-ACC-08 · U19 |
 
 #### Sequence Diagram
 
@@ -3587,9 +3587,7 @@ alt 형식 위반 · 비밀번호 규칙 위반 · 불일치
   UI --> Visitor : 가입 버튼 비활성, 이유 안내 (E2 · E3)
 end
 UI -> API : POST /v1/auth/signup (이메일, 비밀번호)
-alt 요청 한도 초과
-  API --> UI : 잠시 뒤 다시 시도 (E8)
-end
+API -> API : 이메일별 · IP별 요청 한도 확인
 API -> DB : 3. 계정(이메일·비밀번호 해시·확인 전) + 가족 공간 + 확인 토큰 해시를 한 번에 저장
 note right of API
   이메일 유일 제약(대소문자 무시)이 최종 판정 (E4)
@@ -3598,32 +3596,34 @@ note right of API
 end note
 alt 이미 가입된 이메일 (동시 가입 포함)
   DB --> API : 유일 제약 위반
-  API --> UI : "이미 가입된 이메일이에요" · 로그인 / 로그인 정보 찾기 안내 (E1 · E4)
+  API -> Mail : 4. "이미 가입돼 있어요" 안내 메일 (E1 · E4)
 else 저장 실패
   DB --> API : 오류
   API --> UI : "가입되지 않았어요" · 일부 저장 없음 (E5)
+else 새 계정
+  DB --> API : 저장 완료
+  API -> Mail : 4. 확인 링크 메일
 end
-DB --> API : 저장 완료
-API -> Mail : 4. 확인 링크 메일 발송
-alt 발송 실패
-  Mail --> API : 오류
-  API --> UI : "메일을 보내지 못했어요" · 다시 받기 안내 (E6 · A1)
-end
-API --> UI : "메일함을 확인해 주세요"
+note right of Mail
+  요청 한도를 넘으면 보내지 않음 (E8)
+  발송 실패는 로그에 분류 코드만 (E6)
+  P0: 로컬 Mailpit + nodemailer
+end note
+API --> UI : 202 "메일함을 확인해 주세요" (모든 경우 같은 응답)
 
 Visitor -> UI : 5. 메일의 확인 링크 누르기
 UI -> API : POST /v1/auth/email/verify (토큰)
 API -> DB : 토큰 해시 조회 · 유효 시간 · 1회용 확인
-alt 만료 · 이미 쓴 링크
-  API --> UI : "링크가 만료됐어요" · 다시 받기 안내 (E7)
+alt 만료 · 이미 씀 · 무효
+  API --> UI : 400 token_invalid · 다시 받기 안내 (E7)
 end
 API -> DB : 계정 "이메일 확인됨" · 토큰 사용 표시
-API --> UI : 6. 로그인 세션 발급
+API --> UI : 6. 204 · 로그인 세션 발급
 UI --> Visitor : "이제 아이를 등록해 주세요" · 아이 등록(UC1)으로 이동
 @enduml
 ```
 
-**[「UC13 보호자 이메일 가입 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFVkFPG1cQvu-vGLkXWw1GjpO04oACCZFyqBoppVe0gQVWMTax16lys5MFuWAJU7ywhrVlGihQuaoBB9sq6YGf0qPfvP_QeW93nV3cNAeE12_me998882sH-YMNWvkV1KQ017NZfLZufllPbUwt6SmUlr2zVwiqeRe6ulVNauuwAt1_uVSNpNPLzzKpDJZ-OpJ8kliZjoQkVtWFzI_6eklWFRTOU0xdCOlweyjRBLYZYfbPWxUAOsddlbF-jU7dGDQLmBjjVsO2zyCfwpVeK69ymvpeU1R1HmDLokME6NuLGDTjEVAzcGPek6nEIXuNvR5fVVNGxDBgz7wWpWddWTM7NPw8dSzp4Cmwy5MeUyPyoJqqC_UnEa5jW3cW4PH0zddXqzIgMfT4XyXObC2g-uHEqlv4saRjP1O1VOK4rGCsUm6HCYgESfgTYewuWUPeu0IsJLJjjv0UVFThpTjzx6QGINuD-s90gLwXZG_cxQQCGME5GNOAFomJcCgU2C_tbxC0ZFSCqCtGkSnkjFFSy8oo7m-8HDTBeLN2gV2USJxR555zSImgP0eOykDNkpsowq4u42b9dEC78b_B5kaxprHwA9MiLj9i8iquW0RGKBDsfZI1qDrYL8WPL0qETr27f_SxPMF9ZRvXAsgXnPQPL8jaKHTJM1K7G0HojN3BdRMQJ5JYQBCePb98x9g_HViXM0by-M5fSmdX4XosKo7IXYxt237Vbz4A4Rzt0zATmlweU3kBN6Yrww2mtR5YL8cAdlbfKQ_ER6d-dYlIcMnyWUUnYzD4NLEpvXp4ptuuC1WhwDInF57aBDga1n-4Tnlfhi0TXr2Tvl6kxfbXg47vhZUSaMS7tEINkmxYyWdMTTI6kvLBmQW5SxAoJUknfzXdND6GGXlAq6XWUuOMGsJ0JhwIn5w8Nc14OUKMafC7sUIhF1Y9EQpZFLJxSNcM9n7svAq267gSYE6s4H1MkRnE0mZJmdgwtc2YM4rmhgb8GOV7ThkSaEdCPbBCXJtwCpOoIYoTYTQ3bMI32px61RcRYqPDdsfqtRz3e1eRj5_i7DZXoVIRyRXf5BhPPBZyHFJarX_prn_5MiEdCRpptG69NpCJjni5dMRkvYRaTBCy-dj-3paNu52fDJiy14VhsB761Lumfuu-8L4XozskW9MsdLo7F7cbyE7KfJiC0JrUDbB34g-d5n5Rfa-gKZ4P5Akogj2-198txQowpsd1j4IafdAnE0lAoN0C5ZaLZBd5jQHgO-v0ewJ2NEtdj8OPhn7drHDff35naGtUL3jr7WsvvgGou7sxULjHZpHwMM23y_LFjlNvn8qNoMYX_oiQQe4f-aRcMU9KVNT3IZKF-JOx2M3Kqn8mmzhZbFK5ctafjO6jtxd5Pre7bZLiFVOJZJXD75tSbLbDuGG2_AgHhwAEn7NFjYZ9H4efTeJa2j-vPebWFds55wd1sNtkwq4b0D3OEq_LWKh95_ykAqhHzT_Amhfd0c=)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC13 보호자 이메일 가입 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9Vt9PIlcUfp-_4oS-QLr-QNxt48Nm15VNfGhqsrWvZlZGnYiDC4PNvuE6GiokQmTWQQeDXa3a0BQVFVN98U_pI_fM_9Bz78wAI9s-weWen9_3nXN5ldHltJ5dSUJG-TCXyqbn5pfUZGJuUU4mlfTHuWhMyiyr2qqcllfgvTy_vJhOZbXEm1QylYZv3sbeRuOTfRaZJTmR-kXVFmFBTmYUSVf1pAKzb6IxYFctx2rjYQmw1mLnFazdsyMbOs0cHm46ps0Kx_BPrgLvlA9ZRZtXJEme1ylJqOsYdm0B60YkBHIGflYzKplIlFtX59VVWdMhhAd34FQr7LwlbGang9evZ6YBDZtdGuKajlJC1uX3ckYh38My7m3C1OTjrbNeEgZTk0F_t3JgTRu3jkSkOwO3j4XtD7KalCSvKhh6SclhAqLDFLhgU2zHtDrtZghY3mAnLfoqyUldwPFXGwiMzm0ba23CAnBj3dmwJeARhiiQH3MC0DTIATqtHPu94TWKtoCSB9qpQvh1LCIpWkIa9PWBh8dboLpZM8cu8wTuwNmpmlQJ4F2bnRYBD_NsuwL4uYyF2mCDY8P_E5kIY_UTcA4MCLn8hUTXjmVSMECbbK0Br86tjXfV_tubPEXHO-trmHi6IE6d7XseyKnaaFw842WhXSfM8uxTC8LxMR4q3gfPSy4AijDz47ufYGQtOiJn9aWRjLqoZVch3O3qWaC6iMSdur49OV8ZPP70DP-C-xW8_BO4sHcMD0_fb2qS3GLD0LkysG720jzeBkkwW6QbkqJHBskevhXNHl2Q73WnadDZu3W26s560_NhJ_c8MyGSxz0auDrhcyJpKV2BtLq4pENqQSgf-ogjoMRH3UbzIcyKOdwqsoYYWNbgQSNcd3ht42-b4BRLVDkhOh6hIOzSpBO5kCRFLV7BVYN9KXJlsnIJT3PEwzbWihCejcaEm1D8hA9VnxRvaD4swIcK27VJgJwu4NX3z4tLOivZfT2ESf9UqS8IZ6fhmGc8FSE-1COsv1NPY2TjkcOHmIzG-dQGMu3c80HAzy2qN-Rryk8cjwppERwK7T0PccDCsVM8G8hvHVN7fkZ_ikJ-Q5YPlWn5ySg019dNrht4b0sgGX_uJ9zIe3IayOZ5CDK-1qbHFjtdd9YbXkNiQIJ6EcsNgrrmOmOGxffPeYtveIKkn-j494Jnb1cKMPgi8VYdKfMp0-TygrvMjE5wK_y7IfKuqjopXUsllBU6KemeIAIQjo2O-QuaeMeaP3c0FIBf7tFoCzTD7I8ztluHzuUD7jeJ3irWqOZamRWuI4Pr7fmwBwrWrKdgdRf5fy8TUfLImpJWFz5C2B3TSGATBEYX8Kjp7BcF5Xbd2T8j3Gw-6fRDlC5w_9zfJnwYCDOi1RWIECtWcmKEGi3yfaqx8dFR0FPLijanamtyUk0I08Ixz8uaB9RIb1d-527J_kJdgblz4ererYSVzoRGvUbwU0NUWbYpbpChF8NE0rjI6j93wGnZtLhKOu1fBx8tno1G1Xv4hOJ2L9hR7QmpHAH3aXSvw_SnIxJ4GKVX1A_90_kX4PR7SA==)** — 클릭 시 브라우저로 연결됩니다.
 
 기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다.
 
@@ -3710,7 +3710,7 @@ end note
 | 구분 | 액터 | 이 UC에서의 역할 | 원천 근거 |
 |:--:|---|---|---|
 | Primary | 보호자(로그인 전) | 가입한 이메일을 입력하고, 메일의 링크로 비밀번호를 새로 정한다 | D18 · spec FR-32 |
-| Secondary | 메일 발송 서비스 | 로그인 아이디와 재설정 링크가 담긴 메일을 보낸다 | D18 · [추론] · U19 |
+| Secondary | 메일 발송 서비스 | 로그인 아이디와 재설정 링크가 담긴 메일을 보낸다. P0는 로컬 Mailpit + nodemailer | D18 · 이제민 결정 ⑤ · U19 |
 
 #### 관련 UseCase
 
@@ -3729,7 +3729,7 @@ end note
 | **유스케이스명** | 이메일로 로그인 정보를 찾는다 |
 | **액터** | 주: 보호자(로그인 전) · 보조: 메일 발송 서비스 |
 | **사전조건** | (1) 로그인하지 않은 상태다. (2) 보호자가 UC13에서 가입해 이메일을 확인했다(확인 전 계정의 처리는 A2) |
-| **사후조건** | (1) 가입된 이메일이면 그 주소로 로그인 아이디(이메일)와 1회용 재설정 링크가 담긴 메일이 간다. (2) 화면 응답은 가입 여부와 관계없이 같다. (3) 링크로 새 비밀번호를 정하면 비밀번호 해시가 바뀌고, 그 링크와 이전에 발급된 재설정 링크는 모두 쓸 수 없게 된다. (4) 비밀번호가 바뀌면 그 계정의 다른 로그인 세션은 끊긴다 [추론]. (5) 가족 데이터(아이·작품·이야기)는 바뀌지 않는다. (6) 운영 로그에는 이메일·토큰·비밀번호 원문이 남지 않는다 |
+| **사후조건** | (1) 가입된 이메일이면 그 주소로 로그인 아이디(이메일)와 1회용 재설정 링크가 담긴 메일이 간다. (2) 화면 응답은 가입 여부와 관계없이 같다. (3) 링크로 새 비밀번호를 정하면 비밀번호 해시가 바뀌고, 그 링크와 이전에 발급된 재설정 링크는 모두 쓸 수 없게 된다. (4) 비밀번호가 바뀌면 현재 세션을 포함해 그 계정의 모든 로그인 세션이 끊긴다. `password_changed_at`보다 먼저 만든 세션은 무효다(이제민 결정 ⑥). (5) 가족 데이터(아이·작품·이야기)는 바뀌지 않는다. (6) 운영 로그에는 이메일·토큰·비밀번호 원문이 남지 않는다 |
 | **기본흐름** | ↓ 별도 기본흐름표 |
 | **대체흐름** | A1. 가입되지 않은 이메일 · A2. 이메일 확인 전 계정 · A3. 어느 이메일로 가입했는지 모름 · A4. 메일을 다시 받기 — ↓ 별도 대체흐름표 |
 | **예외흐름** | E1. 이메일 형식 위반 · E2. 링크 만료·재사용 · E3. 새 비밀번호 규칙 위반·불일치 · E4. 메일 발송 실패 · E5. 작업 DB 저장 실패 · E6. 찾기 요청 과다 — ↓ 별도 예외흐름표 |
@@ -3737,7 +3737,7 @@ end note
 | **우선순위** | High — 연락처를 받지 않던 D18 이전 설계의 "계정을 되찾을 수 없음"(옛 U19)을 해결하는 유일한 수단이다 |
 | **사용빈도** | `자료 없음 — 확인 필요` |
 | **업무규칙** | BR-ACC-06, BR-ACC-08, BR-ACC-02, BR-PRV-01 |
-| **특별 요구사항** | 존재 비노출: 가입된 이메일이든 아니든 같은 문구·같은 응답 코드로 답한다. 응답 시간도 비슷하게 맞춘다 [추론]. 토큰: 1회용, 유효 시간 예시 30분 [추론 — 확정 아님, U19], DB에는 해시만 저장. 새 재설정 링크를 발급하면 이전 링크는 무효다 [추론]. 요청 한도: 같은 이메일·같은 접속지에서의 반복 요청을 제한한다 [추론, U19]. 메일 내용에는 로그인 아이디(이메일)와 링크만 담고, 아이 별칭·작품 등 가족 정보는 넣지 않는다 [추론]. 엔드포인트 `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset`의 이름·형식은 [추론]이며 `/speckit.plan`에서 확정한다(U8) |
+| **특별 요구사항** | 존재 비노출: 가입된 이메일이든 아니든 같은 문구·같은 응답 코드로 답한다. 응답 시간도 비슷하게 맞춘다 [추론]. 토큰: 1회용, 유효 시간 예시 30분 [추론 — 확정 아님, U19], DB에는 해시만 저장. 새 재설정 링크를 발급하면 이전 링크는 무효다 [추론]. 요청 한도: 이메일별·IP별 요청 한도를 둔다(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론 — 확정 아님, U19]). 메일 내용에는 로그인 아이디(이메일)와 링크만 담고, 아이 별칭·작품 등 가족 정보는 넣지 않는다 [추론]. 엔드포인트와 응답 코드(이제민 결정 ③): `POST /v1/auth/recovery` 항상 202 · `POST /v1/auth/recovery/reset` 성공 204, 토큰이 이미 쓰였거나 만료·무효면 구분 없이 400 `token_invalid` · 로그인 `POST /v1/auth/login` 성공 204·실패 401, 비밀번호가 맞았는데 이메일 확인 전이면 403 `email_unverified` · `POST /v1/auth/logout` |
 | **비고** | 원천 추적: D18(2026-09-28 신지현 결정 "아이디를 잊었을 때 이메일로 메일을 발송해서 찾는다") · spec FR-32(신설) · FR-31 · FR-14 · 공통 기준 §8(BR-ACC-08) · §10(U8, U19). 로그인 아이디가 이메일이므로 "아이디 찾기"와 "비밀번호 재설정"을 한 흐름으로 합쳤다 [추론]. 어느 이메일로 가입했는지 전혀 모를 때는 시스템이 찾아 줄 수 없다(A3) — 다른 식별 정보를 받지 않기 때문이다 |
 
 #### 기본흐름 (Basic Flow)
@@ -3748,7 +3748,7 @@ end note
 | 2 | 보호자가 가입한 이메일을 입력하고 "메일 받기"를 누른다 | 웹 화면이 형식을 검사한 뒤 `POST /v1/auth/recovery`를 보낸다. API 서버는 대소문자를 무시해 확인된 계정을 찾고, 있으면 1회용 재설정 토큰(해시)을 만들고 이전 토큰은 무효로 한다 |
 | 3 | 보호자가 "가입된 이메일이면 메일을 보냈어요" 안내를 본다 | 계정이 있을 때만 메일 발송 서비스로 로그인 아이디(이메일)와 재설정 링크가 담긴 메일을 보낸다. 화면 응답은 계정이 있든 없든 같다 |
 | 4 | 보호자가 메일의 링크를 누르고 새 비밀번호와 확인을 입력한다 | `POST /v1/auth/recovery/reset`로 토큰(유효 시간·1회용)과 새 비밀번호 규칙을 검사한다 |
-| 5 | — | 비밀번호 해시를 바꾸고, 토큰을 쓴 것으로 표시하고, 그 계정의 다른 세션을 끊는다 [추론] |
+| 5 | — | 비밀번호 해시와 `password_changed_at`을 바꾸고, 토큰을 쓴 것으로 표시한다. `password_changed_at`보다 먼저 만든 세션은 모두 무효가 된다(현재 세션 포함) |
 | 6 | 보호자가 새 비밀번호로 로그인한다 | "비밀번호를 바꿨어요. 이메일과 새 비밀번호로 로그인해 주세요"를 보이고 로그인 화면으로 보낸다 |
 
 #### 대체흐름 (Alternative Flow)
@@ -3765,11 +3765,11 @@ end note
 | ID | 발생 조건 | 처리 | 근거 |
 |:--:|---|---|---|
 | E1 | 이메일이 비어 있거나 형식에 맞지 않는다 | 웹 화면이 "메일 받기" 버튼을 막고 형식을 안내한다 | [추론] |
-| E2 | 링크가 만료됐거나 이미 쓴 링크다 | 비밀번호를 바꾸지 않고 "링크가 만료됐어요. 다시 요청해 주세요"라고 안내한다 | BR-ACC-08 |
+| E2 | 링크가 만료됐거나, 이미 썼거나, 재발급으로 무효가 됐다 | 세 경우를 구분하지 않고 400 `token_invalid`로 답한다. 비밀번호를 바꾸지 않고 "링크를 쓸 수 없어요. 다시 요청해 주세요"라고 안내한다 | BR-ACC-08 · 이제민 결정 ③ |
 | E3 | 새 비밀번호가 규칙에 맞지 않거나 확인 값과 다르다 | 저장 버튼을 막고 이유를 문장으로 안내한다. 토큰은 아직 쓴 것으로 보지 않는다 [추론] | BR-ACC-07 · [추론] |
 | E4 | 메일 발송 서비스가 실패한다 | 화면 문구는 기본흐름 3단계와 같게 두고(존재 비노출), 운영 로그에 분류 코드(메일)만 남긴다. 보호자는 A4로 다시 요청한다 [추론] | BR-ACC-08 · BR-PRV-01 |
 | E5 | 작업 DB 장애로 새 비밀번호를 저장하지 못한다 | "바꾸지 못했어요, 다시 시도해 주세요"라고 안내한다. 이전 비밀번호와 토큰 상태를 그대로 둔다 | BR-PRV-01 · [추론] |
-| E6 | 짧은 시간에 찾기를 너무 많이 요청한다 | 요청 한도 초과로 잠시 뒤 다시 시도하라고 안내한다. 이 안내도 가입 여부와 관계없이 같다 | BR-ACC-08 · [추론] |
+| E6 | 짧은 시간에 찾기를 너무 많이 요청한다 | 이메일별·IP별 한도(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론])를 넘으면 메일을 보내지 않는다. 응답은 202 그대로다(가입 여부 비노출) | BR-ACC-08 · U19 |
 
 #### Sequence Diagram
 
@@ -3793,9 +3793,7 @@ alt 형식 위반
   UI --> Guardian : 버튼 비활성, 형식 안내 (E1)
 end
 UI -> API : POST /v1/auth/recovery (이메일)
-alt 요청 한도 초과
-  API --> UI : 잠시 뒤 다시 시도 (E6)
-end
+API -> API : 이메일별 · IP별 요청 한도 확인 (넘으면 메일 없음, E6)
 API -> DB : 확인된 계정 조회(대소문자 무시)
 alt 계정 없음
   DB --> API : 없음
@@ -3809,7 +3807,7 @@ else 확인된 계정
     Mail --> API : 오류 · 로그엔 분류 코드만 (E4)
   end
 end
-API --> UI : "가입된 이메일이면 메일을 보냈어요" (모든 경우 같은 문구)
+API --> UI : 202 "가입된 이메일이면 메일을 보냈어요" (모든 경우 같은 응답)
 
 Guardian -> UI : 4. 메일 링크 누르고 새 비밀번호 · 확인 입력
 alt 규칙 위반 · 불일치
@@ -3817,20 +3815,24 @@ alt 규칙 위반 · 불일치
 end
 UI -> API : POST /v1/auth/recovery/reset (토큰, 새 비밀번호)
 API -> DB : 토큰 해시 조회 · 유효 시간 · 1회용 확인
-alt 만료 · 이미 쓴 링크
-  API --> UI : "링크가 만료됐어요" · 다시 요청 안내 (E2)
+alt 만료 · 이미 씀 · 무효
+  API --> UI : 400 token_invalid · 다시 요청 안내 (E2)
 end
-API -> DB : 5. 비밀번호 해시 변경 · 토큰 사용 표시 · 다른 세션 끊기
+API -> DB : 5. 비밀번호 해시 · password_changed_at 변경 · 토큰 사용 표시
+note right of API
+  password_changed_at보다 먼저 만든
+  세션은 모두 무효 (현재 세션 포함)
+end note
 alt 저장 실패
   DB --> API : 오류
   API --> UI : "바꾸지 못했어요" · 이전 상태 유지 (E5)
 end
-API --> UI : 6. 변경 완료
+API --> UI : 6. 204 변경 완료
 UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · 로그인 화면
 @enduml
 ```
 
-**[「UC14 로그인 정보 찾기 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVU1vGlcU3c-vuKKbQbWxsJ0ssrBiJ6TKomqkNGtrAlMbhUACQ6ruwB5bCCOV1EMMeEBYATmOqDo10xhUJ4v8lC7n3fkPve_NB1BYdIE0vLkf55x7z5v7BU3Ja8WXGSior3dzxfxucj-dSe3uKZmMmv9lN74pFV6ks6-UvPISnivJF3v5XDGbepDL5PLwzaONR_HEzkxEYV9J5X5OZ_fgJyVTUCUtrWVUePYgvgnYsdmVgZ1bdmEC_ZybMXbGgL0GG9lscAtofWFVg5304Z-SAU_V10U1m1QlSUlq1CtCUW5zjN26PJusRyOgFOC7opJPpZWsRDC0dDL9SslqEMHzCbgtg13ZIujZ4_nX208eA-omu9bFa_orpRRNea4UVMrtvsWzI3i48_XGLddFwMOd-XyPDjDLxOMLUWmiY7UvYr9X0hlJCmDB6hZ1h3sQj1HaMu7dKp5V8J2NbSMiUegqZYTZ96biUeQR6w1YtwRuo8kOmuyyRmcVUs6nuqTregwcq0SZbsNcKAXuuT7D5dwZWxFJyWjgNht40gE0dWY1JYBFVKScW6Wkie62TNT_XAlzGhV2YIOciEclNZsShLa4wJT05IenP8Lam_iaUtT21_JqMveGFg3kEFdUdCch8Pp3ImmyX3VAu-KMbgkEr7Ea8MJuD09omX7rA60Nf6QfD5cTd73GInyLJkfRbqtBorO6Cc5IJ-kBLyy3XZNZrYTHNTbkuwVsaFMND0IQdnaMnRr1piqrIY3w1G_hnQYy0lQPbLwskRJVCgN5mytBjvBR8M31609L8J2hGt6ogsCgosfP3zV5e32u3JTUtJrgjN0h6n3Owj3uuWWL9LSFTj3qMYCvN3wdOBb_NdF32x8WIG3EZh3b0PmsDGNmZPDtTCt2WXbLQx851eJaBiY56bs1Xh-80jN6Nvts0OSI_E5nBrBPOj_DzwY7Nfmiy4nNKCXzyYbTDZYh4unGpQhxiQcbgj-6GMxh4DOQ2ccP7LQHzvVnbFskfAs7JdJg7Pw1jC7x0WYsHIdPsUIAbWfUAzyscB8wq8SuK3RPcSLBqIXNvI26MXHS8i0luH6qcGST5f7yp0RBxG1FjMrsTc218X_NRQ8FVQPZG_LKAtjovE_mN0WYRGyK2aPd4BZzLJ0fxOkFtq98noIgDYm9r_l7xf4g8qe2L9Z_zRvxjomZn8Xq9WAwXBnf0N41EHJeX_T1ndi88j5wNirRXMUcPEJ4MBRo35r8tdeCDQiiPsajJrByla4-7-7xdA-Xdd74YlEX2ViG82XMLc8-_u2-q8xQ8S2Gh2X30OQy8ig5cSe6uMR3YwFubOmkyZJPQSTcbroRF0Y593ElJQDf33KCgaqhi_2PxX2CQF__fwEqcfk-)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC14 로그인 정보 찾기 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVk9v2kgUv_tTPLEX0CYkJLSHHqomDV3lsNpI3Z7RFFxihZoUTKq9kcSJECA1UUwDxCCiEiWpqOoNbANa2kM_yh6Z8XfYN4NtoHDoAcmx33vz-_fsPMloJK1lXychI7-JprLpaGxbScajCZJMyum_oqGwlNlR1F2SJq_hJYntJNKprBp_mkqm0vDLs9Vnocj6REVmm8RTbxU1Aa9IMiNLmqIlZXjxNBQGVu_SW4PVB_TSBPwN73us3gPWLNNOl14NgFnfaMGgxRb8lzPgufwmK6sxWZJITMOzfFhlV3qsceKfbNYDPiAZ-C1L0nGFqBLC0JSYsktUDXzsog921aC3XVH0YnP68drWJjDdpHe6eIx_SnGikZckI2Nv45SdH8HG-vd7e_9EFGysT_eP6AC1THZ8KSb1dVZoidrfiZKUJBcWLD7G0-ERhILYNo97o8DO8-x9l9UMn4Sli9jhdT8ai4eVR7R5RRs5sMsVelCh1yW8l0flHKpzTl0JwtDKYaddNmdGgX2hT3C5GPYsn0SSGtiVMivWgZk6tSoSwCwqVM4uYFNft6sm0_9e8HrKeXrQBX8kFJBkNS4IPeYCY9PWH8__hKW90BLJattLaTmW2sOggd_DFZB4oVc_zk1Hh-_3sLnFL1AndvcJNTDpOx2Zl7mefqpXmDlAEcCleH7M6qUFiDz0pm6s49BRAz0xYdjR0QZgl5ZdK_lpKceOS7TNcwa03WVFMyDEcMvEPBQDpyyOIbp3p4C7kqLDB112nUNVClgG_jWuCm6HCxtT7Mwfj-D5wRkj29xCd2Kxhbjc3PnXVqbGjUmNpwnOrNFmeouzsI-b9r6F4nF-eDyeccWlRak5Fucx0rdrNzOQVoOT21vWuT-GMWEf_DpxFL3et_fbDnKcxbV0F6bYskt8PoxGT-hZadGrCkfknHRuAP2i83vsq0HPTB56fyQcwGYeL_4TIL3AL6-Ab6Qdl8PDJi7ccLC6Lsw5dPcO8_Pxhp41YXj3ldUsFL_K6mhb_ZQW_wnM2atw0LPEoZlHkN1hpwnsMM_3glo5epfH9xYn49ot1m6UqnuT9avOigm-X_IcWX_-vjlOYRFyWxB2mc3xsq3-7LLhRUbWwD8yemEG7A-7Mp0WsSgiLWYT84E2mkNLbGYIH7DarcNTEESj6IeSky36GckbOcFzKluensvLoKV2ZDWqqHskqcRF6SjtzsJ7ZFcCY9sdoA-C05I7iHHGLslk3qbScfy4ETUhx6MEoXVy6LPwZUSQHbQF-lMTuyQ1pcmQVhLbGqReiW8DzBvDA4RfLHozQHME3bMmVjK9x44qPD08UqcnDmGUvKLjcjjPwX7Xtss3ggnwA4Vmjsveeky_asRq_Cicj1rG8FuPv2Tox3_t916ix0vNDvftQ5Obxqv8kQeB2bV5GMTNCbvKsKqO3s35GPm8fRp2BjPhmfq8owXAPgw4XQfO-N3hfK6eIAz8_-N_rB8yDg==)** — 클릭 시 브라우저로 연결됩니다.
 
 기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다.
 
@@ -3910,7 +3912,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | BR-ACC-05 | 팀원 역할(운영자·평가 담당·연동 개발) 분리 | UC8, UC9, UC11 | 공통 기준 §6 INC2 |
 | BR-ACC-06 | 보호자 로그인 아이디는 이메일이며 서비스 전체에서 유일(대소문자 무시). 이용자 중복은 이메일로 막고 별칭으로 막지 않는다. 따로 아이디를 만들지 않는다 | UC13, UC14 | D18 |
 | BR-ACC-07 | 가입 때는 이메일·비밀번호만 받는다(실명·전화번호·아이 정보 금지). 이메일은 로그인과 로그인 정보 찾기에만 쓴다. 가입과 함께 가족 공간 1개를 만들고 계정과 함께 저장한다. 비밀번호는 해시로만 저장한다 | UC13 | D18 · Intent [부정적 영향] 과잉 수집 |
-| BR-ACC-08 | 확인·재설정 메일 링크 토큰은 1회용·유효 시간 있음, DB에는 해시만. 로그인 정보 찾기 응답은 가입 여부를 드러내지 않는다 | UC13, UC14 | D18 · [추론] |
+| BR-ACC-08 | 확인·재설정 메일 링크 토큰은 1회용·유효 시간 있음·재발급 시 이전 무효, DB에는 해시만. 가입과 로그인 정보 찾기 응답은 가입 여부를 드러내지 않는다(가입된 주소엔 안내 메일만). 가입·재발송·찾기 메일에 이메일별·IP별 요청 한도(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론]) | UC13, UC14 | D18 · 이제민 결정 ③④ |
 | BR-OPS-01 | 생존(`/live`)과 준비(`/ready`) 분리, 준비는 모델별로 표시 | UC8, UC11, UC12 | Intent [핵심 활동] 3 · [핵심 자원] 외부 사용 · FR-12 |
 | BR-OPS-02 | 지표 정의: 첫 결과 승인율(= 좋아요 / 결과가 도달한 작품의 첫 결정) · 판정 수정률(제안 전 직접 확정 건은 분모 제외) · 모델별 낮춤률 · 설명 규칙 검사 실패율(P0.5) · 모델별 처리 시간 p95 · 재시도율 · 큐 적체 · 결과 미도달 수(목표 0). 정의·검증 계획이며 실적 아님 [통합 D14] | UC2, UC4, UC7, UC8, UC10 | Intent [미션] 서빙 지표 · spec FR-26 |
 | BR-OPS-03 | 원인별 분리 집계(BR-FBK-04) | UC3, UC4, UC8 | Intent [미션] 서빙 지표 |
@@ -3983,7 +3985,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정. 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 | §7.2 A3 · §7.4 §1 · §7.8 지표 표 · §8 BR-OPS-02 |
 | D15 | 신규 미해결 U16(승인된 설명을 내리거나 교체하는 절차), U17('API활용' 메뉴 위치·관리 엔드포인트 조회 권한), U18(`invalid_input` 등 연동 오류 분류) | UC10, UC11, UC3 | §7.3 대응표 아래 · §7.5 A7 · §7.10 E3 · §7.11 §1.2·비고 · §7.12 E4 · §9.4 |
 | D17 | (2026-09-28 추가, 신지현 결정 · 이제민 조건부 승인 — 절충안) 외부 모델 기능 엔드포인트를 나눈다. P0: `segment`·`classify`·`relief`(외부 키)와 `pose`(팀 내부 키 전용), API 키, 요청 한도(U12 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건), 크기 제한, 입력 비보존, 승격된 활성 버전만, 낮은 우선순위 대기열. P0.5: `caption`과 외부 API 약관. 호출자는 팀 밖 외부 클라이언트까지. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다. Intent-Specify(DDBM)는 반영 대기. `classify`는 OpenCLIP 가중치 라이선스 확정 기록(A2) 전까지 비활성(BR-MDL-07). | UC11, UC12 | §2.4 · §7.11 · §7.12 · §8 BR-API-03~05 |
-| D18 | (2026-09-28 추가, 신지현 결정) 이용자 중복은 별칭이 아니라 보호자 이메일 계정으로 막는다. 따로 아이디를 만들지 않고 이메일이 로그인 아이디다(서비스 전체 유일, 대소문자 무시). UC13 "보호자 이메일로 가입한다"(P0): 이메일·비밀번호만 받고, 확인 메일 링크로 가입을 끝내며, 가족 공간 1개를 함께 만든다. UC14 "이메일로 로그인 정보를 찾는다"(P0): 가입한 이메일로 로그인 아이디와 1회용 재설정 링크를 보내고, 응답은 가입 여부를 드러내지 않는다. 별칭은 중복 검사를 하지 않는 표시용 이름이다(같은 가족 안 같은 별칭은 저장 뒤 안내만, UC1 A5). BR-CHD-02 개정, BR-ACC-06·07·08 · FR-31 · FR-32 · U19 신설, SD_01 G26·G27 신설, 메일 발송 서비스 의존 추가. 비밀번호 규칙·링크 유효 시간·SMTP 제품은 예시값·미정 [추론] | UC1, UC13, UC14 | §7.1 · §7.13 · §7.14 · §8 BR-ACC-06~08 · BR-CHD-02 |
+| D18 | (2026-09-28 추가, 신지현 결정) 이용자 중복은 별칭이 아니라 보호자 이메일 계정으로 막는다. 따로 아이디를 만들지 않고 이메일이 로그인 아이디다(서비스 전체 유일, 대소문자 무시). UC13 "보호자 이메일로 가입한다"(P0): 이메일·비밀번호만 받고, 확인 메일 링크로 가입을 끝내며, 가족 공간 1개를 함께 만든다. UC14 "이메일로 로그인 정보를 찾는다"(P0): 가입한 이메일로 로그인 아이디와 1회용 재설정 링크를 보내고, 응답은 가입 여부를 드러내지 않는다. 별칭은 중복 검사를 하지 않는 표시용 이름이다(같은 가족 안 같은 별칭은 저장 뒤 안내만, UC1 A5). BR-CHD-02 개정, BR-ACC-06·07·08 · FR-31 · FR-32 · U19 신설, SD_01 G26·G27 신설, 메일 발송 서비스 의존 추가. 비밀번호 규칙·링크 유효 시간·SMTP 제품은 예시값·미정 [추론]. 이제민 조건부 승인(2026-09-28): 가입 응답도 가입 여부 비노출(이미 가입된 주소엔 안내 메일만), 인증 엔드포인트 7개와 응답 코드 확정, P0 메일은 로컬 Mailpit + nodemailer, 비밀번호 재설정 시 password_changed_at 기준으로 현재 세션 포함 모든 세션 무효, 이메일별·IP별 요청 한도 | UC1, UC13, UC14 | §7.1 · §7.13 · §7.14 · §8 BR-ACC-06~08 · BR-CHD-02 |
 
 ### 9.2 도출 결과
 

@@ -398,7 +398,7 @@ salt
 ```plantuml
 @startuml
 skinparam backgroundColor #F3F1EB
-title S0 가입 - 이미 가입된 이메일 차단 상태
+title S0 가입 - 메일함 확인 안내 상태
 salt
 {+
 { 우리 아이 미술관 | [로그인] }
@@ -412,16 +412,16 @@ salt
   비밀번호 확인 | "********       "
   이름 - 전화번호 - 아이 정보는 받지 않아요
 }
-{^"막힘  G26 - 이미 가입된 이메일  E1"
-  사유: 이미 가입된 이메일이에요
-  해제 주체: 보호자 - 로그인하거나 로그인 정보 찾기
-  다음 행동: [로그인] | [로그인 정보를 잊었어요] | [다른 이메일로 가입]
+{^"안내  메일함을 확인해 주세요 - 모든 가입 요청에 같은 화면"
+  확인 링크를 보냈어요. 이미 가입한 주소라면 안내 메일이 가요
+  메일이 없으면 스팸함을 보거나 잠시 뒤 다시 받아 주세요
+  다음 행동: [확인 메일 다시 받기] | [이미 가입하셨나요? 로그인]
 }
 }
 @enduml
 ```
 
-**[「S0 가입 - 이미 가입된 이메일 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9U19r01AUf8-nONS3yopT8KEPUpTND-DjqBC34sb6R9oMhK1QtwhZW7C6ZEtnEjLslgkFsy5ghOIHyjn5Dp6bpCOVsfuUe-7vnt-fe1LpKHJb2WvUpc7uTvOD3JYb8E7e3H3fbu01t1616q02PFp_tr669lJSdpR6Dd48gcjvkfMZVoDsAH-F2R5HVlL4qZM9B_KvcXANdPQpPrKkjlxXpP3H0j7QuY9XUyBDZSzwbdLcKOjBAWzghRX9DskOq9CVSiUB9tT49LgMGylDFV5A1j4eGwzk_aLRyQ1e2GLvfI2_aUDmlGmi0OeSwLoGf0QzP7rN37UDMuYpiFyVBlZG_LZwZ4RFLftNqqIN_lHR7-FMi80QvSGg_12IOdcLEuSCOIDCtlys1D4WS5utBvBaOk_EL4xnblDXydS4E1Oi7gsJdwd4yczeEE8m5PW43E85uWVej2AtZgvSVfgfksVwP1KQXanCsqvGYz27srKIm_PE2wD7euJ6SUhXxIfeceyYAK-fPn94TGBtNaE7nJLllh9Airc6G6VOYyMgl89-zGkWlIGVsDhyRiKuRZSxYUY3Ph6a-XQT1Tyaf_nNRRyDCdlD4BHDL-Py0gDmx3HhlpMnp09nGp0GLCQFDSZ4GcI941LlJLpSpdbc4r_rH-Nw3yA=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S0 가입 - 메일함 확인 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptU11r01AYvs-veKl3lRXFOy9mmbg_4OWoELeiY_2QtgNhFto1G7ErqFuytbMZGda1lcqyLmCE_qK87_kPvic5abbhuTp5v57nfc6TfL2h1xq75ZJW39mufNBrehne6ps772rV3crWy2qpWoNH68_Wn75a0xrbjVIRXj-B0GvRxQGsAE4tchbCnoAY2OQEQLaJ-z5Qpy06Q62ulxra3mNtD-jcw6sZpw1yfMDrgEw39FvwCTbwchj-Cbi5AE0tl5PFY0Ocfn4OGzFOAVYVUIKyuhx0coOXjvy--CaOTaD-jGHCwOOQrHVtvoRzL7y92-v4ZC_iInINOhoq4DcZTsVITCrdchmVY_CvgV4L56boBzjuAXrfJZlzK6NBWsmLZd7r2XzxYza3WS0Dn3v5iHyyuNoGLYv6Jk-SwlqepLBM4E9GHvfwZETjFoe7MSaPvMtHombVgfhkHpYoGf5fKcGuDLmya4iBpVpWErlZT7z1sWtFW98j0ozki18_tQU5hgIUNrf_WJARqAV_TfDETTTmGM1_09lXDgzIaYEEn_qSkuKL47ZozyIZmEHHpFOfm3IR4-tAzRH2MAI57CE_4dRP7JhqLuti2ZYhOjukYVzdHYleoGgzTHjj4X6fveVKj-DxCPBoFF2jN0_3kfM44_SAfYtfBmzdhHbshrSPbVeQrn_Au08HE8biWS9SXxRY1aaWL1a2-P_8Bz7cDK8=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -429,15 +429,15 @@ salt
 | 여정 레일 | "가입 → 메일 확인"이 첫 단계 | — | UX7 (C1 여정 변형). 메일 확인까지 해야 끝난다는 것을 보인다 |
 | 가입 양식 | 이메일 · 비밀번호 · 비밀번호 확인. "이메일이 로그인 아이디" 안내, 받지 않는 항목 명시 | 1.0 Input 이메일·비밀번호 | 최소 수집(BR-ACC-07). 아이디 칸을 두지 않는다 |
 | 메일 확인 대기 | "메일함을 확인해 주세요" · [확인 메일 다시 받기] | 1.0 Output 발송 결과 | UC13 BF4 · A1 · E6 |
-| 차단 블록 | G26 이메일 검사(E1 이미 가입 · E2 형식 · E3 비밀번호 · E4 동시 가입) · G27 링크 만료(E7) · G3 저장 실패(E5) · E8 요청 한도 | 1.0 Output 거절 사유 코드 | UX6 (C2 · C3) |
+| 안내·차단 블록 | 메일함 확인 안내(새 가입·이미 가입 모두 같은 화면, E1·E4 비노출) · G26 형식(E2)·비밀번호(E3) · G27 링크 무효(E7, 400 `token_invalid`) · G3 저장 실패(E5) · E8 요청 한도 | 1.0 Output | UX6 (C2 · C3). 가입 여부를 화면에 드러내지 않는다(이제민 결정 ④) |
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 가입 | 형식·일치를 먼저 검사하고 `POST /v1/auth/signup`. 이미 가입된 이메일이면 G26 블록에서 로그인·찾기로 안내하고 비밀번호 칸은 비운다 | UC13 BF2~3 · E1 · E4 |
+| 가입 | 형식·일치를 먼저 검사하고 `POST /v1/auth/signup`(항상 202). 늘 "메일함을 확인해 주세요" 화면으로 간다. 이미 가입된 주소면 안내 메일만 간다 | UC13 BF2~4 · E1 · E4 |
 | 확인 메일 다시 받기 | `POST /v1/auth/email/verify/resend`. 이전 링크는 무효. 재요청 간격 제한 | UC13 A1 · E8 |
-| 메일 링크 | `POST /v1/auth/email/verify`. 유효하면 세션을 받고 S1로 이동해 "이제 아이를 등록해 주세요"를 보인다. 만료면 G27 블록 | UC13 BF5~6 · E7 |
+| 메일 링크 | `POST /v1/auth/email/verify`. 유효하면(204) 세션을 받고 S1로 이동해 "이제 아이를 등록해 주세요"를 보인다. 만료·사용·무효면(400 `token_invalid`) G27 블록 | UC13 BF5~6 · E7 |
 
-상태 전이: `입력 중` → (가입) → `저장 중` → `메일 확인 대기` → (링크) → `S1(가입 완료)` · `저장 중` → (이미 가입·동시 가입) → `차단(G26)` → (로그인 / 찾기 / 다른 이메일) · `메일 확인 대기` → (링크 만료) → `차단(G27)` → (다시 받기) → `메일 확인 대기`.
+상태 전이: `입력 중` → (가입) → `저장 중` → `메일 확인 대기` → (링크) → `S1(가입 완료)` · `저장 중` → (이미 가입·동시 가입) → `메일 확인 대기`(같은 화면, 안내 메일) · `메일 확인 대기` → (링크 만료) → `차단(G27)` → (다시 받기) → `메일 확인 대기`.
 
 **S0b 로그인 정보 찾기** — 로그인 화면의 "로그인 정보를 잊었어요"에서 들어온다(UC14).
 
@@ -473,8 +473,8 @@ salt
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 메일 받기 | `POST /v1/auth/recovery`. 응답 문구는 항상 같다. 한도 초과면 "잠시 뒤 다시"(이것도 같은 문구 규칙) | UC14 BF2~3 · A1 · A2 · E6 |
-| 메일 링크 → 저장 | `POST /v1/auth/recovery/reset`. 성공하면 "이메일과 새 비밀번호로 로그인해 주세요"와 함께 로그인 화면으로 | UC14 BF4~6 · E2 · E3 · E5 |
+| 메일 받기 | `POST /v1/auth/recovery`(항상 202). 응답 문구는 항상 같다. 이메일별·IP별 한도를 넘으면 메일만 보내지 않는다 | UC14 BF2~3 · A1 · A2 · E6 |
+| 메일 링크 → 저장 | `POST /v1/auth/recovery/reset`. 링크 무효면 400 `token_invalid`. 성공(204)하면 현재 세션을 포함해 모든 세션이 끊기고, "이메일과 새 비밀번호로 로그인해 주세요"와 함께 로그인 화면으로 | UC14 BF4~6 · E2 · E3 · E5 |
 
 상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
 
