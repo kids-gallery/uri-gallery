@@ -13,6 +13,10 @@ info:
     - 승격된 활성 버전만 쓴다. 활성 버전이 없으면 503 `model_not_ready`, 작업을 만들지 않는다.
     - 보호자 단계 작업과 다른 대기열(`external_job`), 낮은 우선순위, 서빙군별 외부 동시 처리 1건 [예시값 U12].
     - 입력·결과는 워커 임시 영역(`ext/`)에만 두고, 로그·원본·결과 저장소에 남기지 않는다(BR-API-05, D8).
+      파일 약속(2026-09-28, B·A T122): model-api가 입력을 `ext/{ext_job_id}/input.{jpg|png|heic}`로 쓰고 작업을 등록한다. 워커는 결과를 `ext/{ext_job_id}/result.json`(ExtResult의 기능별 필드)으로 쓰고
+      `external_job.result_temp_ref`에 그 키를 적는다. 결과 수령(`/result`) 때 model-api가 본문을 돌려준 뒤 `ext/{ext_job_id}/`를 지우고 `delivered_at`을 적으며 `result_temp_ref`를 비운다(chk_ej_delivered).
+      만료(결과 보관 1시간)는 sweeper가 같은 방식으로 지운다.
+    - DB·저장소 오류는 503(`chk_ecl_status`에 500이 없다).
     - 한도 [예시값 U12]: 키당 분당 30건 · 하루 1,000건 · 동시 진행 2건 · 요청당 이미지 1장 · 20MB · 결과 보관 1시간.
     - 가족 데이터 경로(`/v1/artworks…`, `/v1/gallery`)는 이 서버에 없고, app-api는 API 키를 받지 않는다(BR-API-06).
     - `caption`은 P0.5 — P0에서는 404. 3D(`sculpture`)는 항상 404(D9).
@@ -101,7 +105,7 @@ paths:
     get:
       summary: 외부 작업 상태 (D13)
       parameters:
-        - { name: jobId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
       responses:
         '200':
           description: 상태
@@ -115,7 +119,7 @@ paths:
     get:
       summary: 결과 1회 수령 — 전달 즉시 삭제, 재조회 404 (SD_01 10.7, D8)
       parameters:
-        - { name: jobId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
       responses:
         '200':
           description: 결과. 기능별 형식
@@ -124,11 +128,7 @@ paths:
               schema: { $ref: '#/components/schemas/ExtResult' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
-        '409':
-          description: 아직 done이 아님
-          content:
-            application/problem+json:
-              schema: { $ref: '#/components/schemas/Problem' }
+        # 아직 done이 아니면 404 result_not_ready — SD_03 chk_ecl_status에 409가 없고 모든 호출을 기록하므로(2026-09-28, B)
 
   /v1/models/openapi.json:
     get:
@@ -330,7 +330,7 @@ components:
       type: object
       required: [jobId, function, status]
       properties:
-        jobId: { type: string, format: uuid }
+        jobId: { type: string, pattern: '^[0-9]+$', description: 'SD_03 external_job.ext_job_id. 발급한 키로만 조회된다(다른 키는 404)' }
         function: { type: string, enum: [segment, classify, pose, relief] }
         status: { type: string, enum: [queued, running, done, failed] }
         outcome:
@@ -344,7 +344,7 @@ components:
       type: object
       required: [jobId, function, outcome, model]
       properties:
-        jobId: { type: string, format: uuid }
+        jobId: { type: string, pattern: '^[0-9]+$', description: 'SD_03 external_job.ext_job_id. 발급한 키로만 조회된다(다른 키는 404)' }
         function: { type: string }
         outcome: { type: string, enum: [ok, quality_below] }
         model: { $ref: '#/components/schemas/ModelRef' }

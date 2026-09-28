@@ -1067,7 +1067,7 @@ paths:
       summary: 시험 호출 상태·결과(H16) — 결과 분류·모델 ID·버전·처리 시간·오류 분류
       security: [{ staffSession: [operator, integrator] }]
       parameters:
-        - { name: jobId, in: path, required: true, schema: { type: string } }
+        - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
       responses:
         '200':
           description: 외부 작업 상태
