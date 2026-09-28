@@ -53,13 +53,13 @@
 
 | ID | 역할 | 채택 / 예비 | 라이선스 | 서빙군 | 구간 |
 |:--:|---|---|---|:--:|:--:|
-| M1 | 배경·작품 분리 → 작품 마스크·컷아웃 (2.5D 마스크의 기본 출처) | rembg 또는 BiRefNet | MIT 계열 | CPU 비전 | P0 |
+| M1 | 배경·작품 분리 → 작품 마스크·컷아웃 (2.5D 마스크의 기본 출처) | BiRefNet | MIT 계열 | CPU 비전 | P0 |
 | M2 | 종류 판정·태그 — 제로샷 "사람 그림 / 동물 / 집 / 사물" → 움직임 제안, 설명 키워드 후보 | OpenCLIP | 가중치 라이선스 확인 필요 | CPU 비전 | P0 |
 | M3 | 관절·리깅·렌더 → 움직이는 그림 | Meta Animated Drawings(내부 TorchServe, Docker 고정 이미지) / 예비: 그림 전용 YOLOv8 자세 모델(ONNX, 가중치 AGPL-3.0 → 서비스 소스 공개 전제) | MIT (2025-09-03 보관 처리, TorchServe 2025-08-07 보관 처리) | CPU 비전 | P0 |
 | M4 | 판정 보조 규칙 — 관절 기하(팔다리 길이·좌우 대칭·몸통 비율). **모델 아님** | 규칙 | — | CPU 비전 | P0 |
 | M5 | 2.5D 부조 — 마스크 + 깊이 → 시차 효과 | Depth Anything V2 **Small** (Base·Large는 비상업이라 제외) | Apache-2.0 | GPU(없으면 CPU) | P0 |
-| M6 | 작품 설명 생성 + 규칙 검사 + 템플릿 기준선 | Qwen3 4B~8B 자체 호스팅(Ollama/vLLM). 과정 제공 LLM 엔드포인트가 있으면 대체 | 조건 확인 필요 | LLM | P0.5 |
-| M7 | 3D 조각 → GLB, 화면 회전 보기 | TripoSR / 대안 TRELLIS(의존성 라이선스 확인 필요) | MIT | GPU | P1 |
+| M6 | 작품 설명 생성 + 규칙 검사 + 템플릿 기준선 | Qwen3-4B 자체 호스팅(Ollama/vLLM). 과정 제공 LLM 엔드포인트가 있으면 대체 | 조건 확인 필요 | LLM | P0.5 |
+| M7 | 3D 조각 → GLB, 화면 회전 보기 | TripoSR(채택 5종 밖, P1 후보) / 대안 TRELLIS(의존성 라이선스 확인 필요) | MIT | GPU | P1 |
 
 제외: Hunyuan3D(한국이 라이선스 적용 대상 밖). 후순위: Stable Fast 3D(자체 라이선스). 평면 그림에는 image-to-3D를 쓰지 않는다(보이지 않는 뒷면을 지어내므로 재창작 금지 원칙 위반).
 
@@ -320,5 +320,7 @@
 | D13 | 엔드포인트 추가([추론], U8): `PATCH /v1/children/{id}`(별칭 수정), `GET /v1/artworks`(목록), `GET /v1/models/jobs/{job_id}`·`…/result`(외부 비동기 결과). 옛 `/v1/jobs…`는 쓰지 않는다 | UC1, UC3, UC12 |
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정(Intent 정의). 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 |
 | D15 | 신규 미해결 U16: 승인된 설명을 내리거나 교체하는 절차. U17: 'API활용' 메뉴 위치·연동 개발 팀원의 관리 엔드포인트 조회 권한. U18: `invalid_input` 등 연동 오류 분류(Intent 오류 5종에 없음) | UC10, UC11, UC3 |
+
+| D16 | (2026-09-28 추가) 채택 모델은 5종으로 확정한다: BiRefNet(M1) · OpenCLIP(M2) · Animated Drawings(M3) · Depth Anything V2 Small(M5) · Qwen3-4B(M6). rembg와 Qwen3 8B는 후보에서 뺀다. M4는 규칙이라 모델 수에 넣지 않는다. M7(TripoSR, 3D)은 5종 밖의 P1 후보로 남기고, 노출 설정은 계속 꺼 둔다(D10). 실제 실행 확인은 M3뿐이다 | 전체 |
 
 신규 BR은 BR-EXH-07, BR-DEL-05, BR-CAP-07, BR-APR-06 네 개다(전체 84개). 개별 UC 파일에는 넣지 않았고, UC_00 §7.1과 UC_ALL §8에 "통합 시 추가"로 적는다.

@@ -72,13 +72,13 @@
 
 | ID | 역할 | 채택 | 서빙군 | 구간 | 메뉴 표시 |
 |:--:|---|---|:--:|:--:|---|
-| M1 | 배경·작품 분리 | rembg 또는 BiRefNet | CPU 비전 | P0 | 활성 버전 · 롤백 후보 · 준비 상태 |
+| M1 | 배경·작품 분리 | BiRefNet | CPU 비전 | P0 | 활성 버전 · 롤백 후보 · 준비 상태 |
 | M2 | 종류 판정·태그 | OpenCLIP | CPU 비전 | P0 | 가중치 라이선스 확인 전에는 "비활성(라이선스 확인 전)"(BR-MDL-07, U4) |
 | M3 | 관절·리깅·렌더 | Animated Drawings (내부 TorchServe) / 예비 YOLOv8 자세 모델 | CPU 비전 | P0 | 보관 처리 엔진 표시(BR-MDL-06). 예비 모델은 AGPL이라 소스 공개 결정 전 비활성 |
 | M4 | 판정 보조 규칙(모델 아님) | 관절 기하 규칙 | CPU 비전 | P0 | 규칙 설정 해시 |
 | M5 | 2.5D 부조 깊이 | Depth Anything V2 Small | GPU (없으면 CPU) | P0 | 실행 장치(GPU/CPU) 표시(BR-SRV-02) |
-| M6 | 작품 설명 생성 | Qwen3 4B~8B (Ollama/vLLM) | LLM | P0.5 | P0에서는 "P0.5 예정". 조건 확인 전 비활성(U3, U4) |
-| M7 | 3D 조각 | TripoSR / 대안 TRELLIS | GPU | P1 | GPU 확인 전 "비노출"(U2) |
+| M6 | 작품 설명 생성 | Qwen3-4B (Ollama/vLLM) | LLM | P0.5 | P0에서는 "P0.5 예정". 조건 확인 전 비활성(U3, U4) |
+| M7 | 3D 조각 | TripoSR(채택 5종 밖, P1 후보) / 대안 TRELLIS | GPU | P1 | GPU 확인 전 "비노출"(U2) |
 
 ### 1.4 매뉴얼 탭 기동 예시 [추론]
 
