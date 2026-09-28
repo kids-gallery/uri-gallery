@@ -12,6 +12,7 @@ import { GUARDIAN_COOKIE, IDLE_MINUTES, STAFF_COOKIE, createSession, destroyAllF
 import type { Mailer, MailMessage } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from './rateLimit.js';
 import { issueToken, lockValidToken, useToken } from './tokens.js';
+import { lockInvite } from '../family/invites.js';
 
 const email = z.string().trim().max(254).email();
 const password = z.string().min(8).max(200); // 규칙 예시 8자 이상 [U19]
@@ -46,8 +47,9 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 가입(G26) ---
   r.post('/v1/auth/signup', async (req, res, next) => {
     try {
-      const b = parse(withConfirm({ email }), req.body);
+      const b = parse(withConfirm({ email, inviteToken: z.string().min(10).max(200).optional() }), req.body);
       const em = normEmail(b.email);
+      if (b.inviteToken) return void (await inviteSignup(b.email, b.password, b.inviteToken, res));
       if (!(await rl.take('signup', { email: em, ip: ip(req) }))) return void res.status(202).end();
       const hash = await argon2.hash(b.password, { type: argon2.argon2id });
       let mail: MailMessage;
@@ -72,6 +74,34 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
       res.status(202).end();
     } catch (e) { next(e); }
   });
+
+  /** UC13 A4: 초대 링크 가입 — 새 가족 없이 공동 보호자로 합류, 초대 메일 수신이 주소 확인을 겸한다(확인 메일 없음). */
+  async function inviteSignup(rawEmail: string, pw: string, token: string, res: Response) {
+    const em = normEmail(rawEmail);
+    const hash = await argon2.hash(pw, { type: argon2.argon2id });
+    let mail: MailMessage | null = null;
+    try {
+      await withTx(db, async (conn) => {
+        const inv = await lockInvite(conn, token);
+        if (!inv) throw new Problem('token_invalid', 'token_invalid', 'G28');
+        if (inv.email_norm !== em) throw new Problem('forbidden_role', 'invite_email_mismatch', 'G28');
+        const [ex] = await conn.query(`SELECT account_id FROM guardian_account WHERE email_norm = ?`, [em]);
+        if ((ex as unknown[]).length) { mail = { kind: 'already_registered', to: em }; return; } // E1과 같게, 초대는 쓰지 않음
+        const [g] = await conn.query(
+          `INSERT INTO guardian_account (family_id, email, password_hash, role, email_verified_at) VALUES (?, ?, ?, 'co', UTC_TIMESTAMP())`,
+          [inv.family_id, rawEmail.trim(), hash]);
+        await conn.query(`UPDATE family_invite SET accepted_at = UTC_TIMESTAMP(), accepted_account = ? WHERE invite_id = ?`,
+          [(g as { insertId: number }).insertId, inv.invite_id]);
+      });
+    } catch (e) {
+      if (e instanceof Problem) throw e;
+      if (isDup(e, 'uq_guardian_co_family')) throw new Problem('conflict', 'co_guardian_full', 'G28');
+      if (isDup(e, 'uq_guardian_email')) mail = { kind: 'already_registered', to: em };
+      else throw new Problem('not_saved', 'signup_failed');
+    }
+    if (mail) mailer.send(mail);
+    res.status(202).end();
+  }
 
   // --- 이메일 확인(G27) — 성공하면 세션 발급(UC13 BF5) ---
   r.post('/v1/auth/email/verify', async (req, res, next) => {
