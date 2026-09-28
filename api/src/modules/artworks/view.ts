@@ -12,7 +12,11 @@ const STAGE_STATUS: Record<string, string> = {
 const CONFIRM_STATES = new Set(['received', 'judging', 'awaiting_confirm']);
 const RESULT_STAGES = new Set(['animate_render', 'depth_relief', 'sculpture', 'frame_compose']);
 
-export interface ViewHooks { decisionChoices?: (db: Q, artworkId: number) => Promise<{ choices: string[]; unavailable: { choice: string; reason: string }[] }> }
+export interface ViewHooks {
+  decisionChoices?: (db: Q, artworkId: number) => Promise<{ choices: string[]; unavailable: { choice: string; reason: string }[] }>;
+  modelLoads?: () => Promise<{ modelId: string; hint: string | null; load: { remainingSeconds?: number | null } | null }[] | null>;
+}
+const STAGE_MODEL: Record<string, string> = { split: 'M1', judge: 'M2', animate_render: 'M3', depth_relief: 'M5', sculpture: 'M7' };
 
 const one = async <T>(db: Q, sql: string, p: unknown[]) => ((await db.query(sql, p))[0] as T[])[0];
 const all = async <T>(db: Q, sql: string, p: unknown[]) => (await db.query(sql, p))[0] as T[];
@@ -34,6 +38,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
   const st = await one<{ title: string | null; made_on: Date | null; age_at_creation: number | null; utterance: string | null; updated_at: Date }>(db,
     `SELECT title, made_on, age_at_creation, utterance, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
 
+  const loads = hooks.modelLoads && jobs.some((x) => x.status === 'queued') ? await hooks.modelLoads().catch(() => null) : null;
   let choices: string[] = [];
   let unavailable: { choice: string; reason: string }[] = [];
   if (CONFIRM_STATES.has(a.status) && !oc?.confirmed_path) {
@@ -72,7 +77,12 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     confirmedKind: oc?.confirmed_path ?? null,
     choices,
     unavailableChoices: unavailable,
-    stages: jobs.map((x) => ({ stage: x.stage_kind, status: STAGE_STATUS[x.status] ?? x.status, attempt: Number(x.attempt_count), downgraded: x.status === 'done_downgraded', waitingForModel: false, etaSeconds: null })),
+    stages: jobs.map((x) => {
+      const load = x.status === 'queued' && loads ? loads.find((m) => m.modelId === STAGE_MODEL[x.stage_kind]) : undefined;
+      const waiting = load?.hint === 'model_loading'; // 적재 중은 오류가 아니다 — 모델 이름·상태 원문은 싣지 않는다(T143)
+      return { stage: x.stage_kind, status: STAGE_STATUS[x.status] ?? x.status, attempt: Number(x.attempt_count), downgraded: x.status === 'done_downgraded',
+        waitingForModel: waiting, etaSeconds: waiting ? load?.load?.remainingSeconds ?? null : null };
+    }),
     result,
     downgrade: result ? downgrade : null,
     notDelivered: a.status === 'failed' ? { frameAvailable: Boolean(orig) } : undefined,

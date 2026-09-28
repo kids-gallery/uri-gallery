@@ -10,6 +10,7 @@
 --   S4 external_job 점유 컬럼 · S5 team_member.password_hash·disabled_at
 --   S6 app_session · S7 auth_rate_event(이메일·IP는 HMAC만) · S9 release_event.kind 'deactivate'
 --   (S8 장치 표기는 스키마 변경 없음: MPS는 exec_device='gpu' + runtime에 mps)
+-- 개정 (2026-09-28, B 구현 중 발견): artwork_outcome.confirmed_at·first_decided_at — FR-13 기간별 지표(작품 삭제 뒤에도 남는 집계 시각)
 -- 개정 (2026-09-28, B 구현 중 발견): 결정 frame(액자로 걸기)이면 v_gallery가 원본 액자로 보인다(결과 행을 만들지 않음, UC4 A2·A5)
 -- 개정 (2026-09-28, 1c460b0 사용자 결정 후속 — B): 가족당 공동 보호자 1명(uq_guardian_co_family), 대기 초대 1건
 --   (uq_invite_one_pending), 초대는 만든 보호자만·자리 차면 거부(trg_family_invite_bi), G29 이름 "보호자 관리 권한"
@@ -554,6 +555,9 @@ CREATE TABLE IF NOT EXISTS artwork_outcome (
   result_cause         VARCHAR(16) NULL,
   first_decision       VARCHAR(10) NULL,
   in_approval_base     BOOLEAN     NULL,   -- D2 · D14: 첫 결과 승인율 분모 포함 여부(판정 시점 고정)
+  -- FR-13 기간별 지표(2026-09-28 B 구현 중 추가): 작품이 지워져도 남는 집계 시각. 앱이 확정·첫 결정 때 적는다(UTC)
+  confirmed_at         DATETIME    NULL,
+  first_decided_at     DATETIME    NULL,
   CONSTRAINT pk_artwork_outcome PRIMARY KEY (outcome_id),
   CONSTRAINT fk_oc_artwork FOREIGN KEY (artwork_id) REFERENCES artwork (artwork_id) ON DELETE SET NULL,
   CONSTRAINT uq_oc_artwork UNIQUE (artwork_id),

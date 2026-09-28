@@ -10,9 +10,12 @@ import { artworksRouter } from './modules/artworks/routes.js';
 import { galleryRouter } from './modules/gallery/routes.js';
 import { deletionRouter } from './modules/deletion/routes.js';
 import { familyRouter } from './modules/family/routes.js';
+import { opsRouter } from './modules/ops/routes.js';
+import { ModelApi } from './modules/ops/modelApi.js';
 
-export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer }
+export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer; modelApi?: ModelApi }
 
 export function buildRouters(d: Deps): Router[] {
-  return [authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer)];
+  const modelApi = d.modelApi ?? new ModelApi(d.cfg.modelApiUrl);
+  return [opsRouter(d.db, d.cfg, modelApi), authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage, undefined, modelApi), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer)];
 }

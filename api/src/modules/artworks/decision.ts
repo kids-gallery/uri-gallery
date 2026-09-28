@@ -66,7 +66,7 @@ export async function decide(db: Pool, cfg: Config, storage: StoragePort, conn: 
   const failed = s.status === 'failed';
   const sets: string[] = [];
   const vals: unknown[] = [];
-  if (round === 1) { sets.push('first_decision = ?', 'in_approval_base = ?'); vals.push(code, !failed); } // D2·D14
+  if (round === 1) { sets.push('first_decision = ?', 'in_approval_base = ?', 'first_decided_at = UTC_TIMESTAMP()'); vals.push(code, !failed); } // D2·D14, FR-13
   if (code === 'use_lower' || (code === 'frame' && !failed && s.kind !== 'frame')) { sets.push(`result_cause = 'guardian_switch'`); } // BR-APR-04
   if (code === 'frame') sets.push(`result_kind = 'frame'`); // SD_03 §19 #17
   if (sets.length) await conn.query(`UPDATE artwork_outcome SET ${sets.join(', ')} WHERE artwork_id = ?`, [...vals, artworkId]);

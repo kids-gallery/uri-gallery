@@ -65,3 +65,13 @@ export async function simulateResult(db: Pool, artworkId: string | number, kind:
     [id, kind, opts.cause ?? null]);
   await db.query(`UPDATE artwork SET status = 'awaiting_review' WHERE artwork_id = ?`, [id]);
 }
+
+/** 팀원 계정(역할) + 로그인한 agent */
+export async function staff(t: { app: import('node:http').Server; db: Pool }, email: string, roles: string[]) {
+  const argon2 = (await import('argon2')).default;
+  const [ins] = await t.db.query(`INSERT INTO team_member (email, password_hash) VALUES (?, ?)`, [email, await argon2.hash(PW, { type: argon2.argon2id })]);
+  for (const r of roles) await t.db.query(`INSERT INTO team_member_role (member_id, role) VALUES (?, ?)`, [(ins as { insertId: number }).insertId, r]);
+  const a = request.agent(t.app);
+  const res = await a.post('/v1/ops/auth/login').send({ email, password: PW }).expect(200);
+  return { a, roles: res.body.roles as string[] };
+}

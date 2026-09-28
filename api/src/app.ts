@@ -24,7 +24,6 @@ export function createApp({ db, cfg, storage, routers = [] }: AppDeps) {
   app.use(cookieParser());
   app.use(express.json({ limit: '64kb' }));
 
-  app.get('/live', (_req, res) => res.json({ status: 'live' }));
   app.use(filesRouter(db, cfg, storage));
   for (const r of routers) app.use(r);
 

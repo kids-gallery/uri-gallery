@@ -742,8 +742,8 @@ paths:
       summary: 서비스·모델별 지표 (UC8, S10, FR-13·26, BR-OPS-02~04)
       security: [{ staffSession: [operator] }]
       parameters:
-        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
-        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date-time }, description: '없으면 전체 기간(SD_03 v_metrics_* 뷰). 서비스 지표는 artwork_outcome.confirmed_at·first_decided_at, 모델 지표는 stage_job.finished_at 기준(SD_03 §19 #18)' }
+        - { name: to, in: query, required: false, schema: { type: string, format: date-time } }
       responses:
         '200':
           description: 지표. 분모 0이면 값 null("해당 없음")

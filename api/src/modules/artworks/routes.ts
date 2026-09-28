@@ -18,7 +18,8 @@ import { saveStory } from './story.js';
 
 const LOCKED = `UTC_TIMESTAMP() + INTERVAL 5 YEAR`; // 판정 전 확정·split 전 judge 잠금(stage-job §2). TIMESTAMP는 2038년까지라 100년은 넘친다
 
-export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hooks: ViewHooks = { decisionChoices: (q, id) => decisionOptions(q, storage, id) }): Router {
+export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hooksIn?: ViewHooks, modelApi?: import('../ops/modelApi.js').ModelApi): Router {
+  const hooks: ViewHooks = hooksIn ?? { decisionChoices: (q, id) => decisionOptions(q, storage, id), modelLoads: modelApi ? () => modelApi.models() : undefined };
   const r = Router();
   const auth = guardianAuth(db, { requireFamily: true });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1, fields: 5 } });
@@ -191,8 +192,8 @@ async function confirmTx(conn: PoolConnection, cfg: Config, artworkId: number, k
   const j = (jr as { split_ok: number | null; suggestion: string | null; suggestion_state: string }[])[0];
   const suggestionAtConfirm = !j || j.suggestion_state === 'pending' ? 'before' : j.suggestion_state === 'exhausted' ? 'none' : j.suggestion;
   await conn.query(
-    `INSERT INTO artwork_outcome (artwork_id, suggestion_at_confirm, confirmed_path) VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE suggestion_at_confirm = VALUES(suggestion_at_confirm), confirmed_path = VALUES(confirmed_path)`,
+    `INSERT INTO artwork_outcome (artwork_id, suggestion_at_confirm, confirmed_path, confirmed_at) VALUES (?, ?, ?, UTC_TIMESTAMP())
+     ON DUPLICATE KEY UPDATE suggestion_at_confirm = VALUES(suggestion_at_confirm), confirmed_path = VALUES(confirmed_path), confirmed_at = VALUES(confirmed_at)`,
     [artworkId, suggestionAtConfirm, kind],
   );
   const [pj] = await conn.query(
