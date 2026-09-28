@@ -1030,16 +1030,19 @@ paths:
                       type: object
                       properties:
                         modelId: { type: string }
-                        specVersion: { type: string }
+                        specVersion: { type: [string, 'null'], description: 'model-api 명세 info.x-model-versions 값' }
                         activeVersion: { type: [string, 'null'] }
                         match: { type: boolean }
-                  fetchedAt: { type: string, format: date-time }
-                  stale: { type: boolean }
+                  fetchedAt: { type: [string, 'null'], format: date-time, description: '모델 기능 명세를 마지막으로 읽은 시각' }
+                  stale: { type: boolean, description: '이번에 model-api를 읽지 못해 마지막 확인 명세를 보여 줌' }
   /v1/admin/api-guide/test-call:
     post:
       tags: [운영]
       summary: 시험 호출 — 평가 묶음 작품만 (EXT3, BR-API-09, G23, D12·D17)
-      description: 내부 시험 키로 model-api `/v1/models/{function}`을 대신 호출한다. 가족 작품 ID는 받지 않는다.
+      description: |
+        내부 시험 키(`api_key.key_kind='test'`, `npm run ops:key -- issue --kind test`로 발급해 app-api 환경 변수 `API_GUIDE_TEST_KEY`에 둔다)로
+        model-api `/v1/models/{function}`을 대신 호출한다. 가족 작품 ID는 받지 않는다. `evalItemId`는 사진이 있는 평가 묶음 항목이어야 한다 —
+        없거나 설명 입력 항목이면 422 `not_eval_item`(G23). 시험 키가 설정되지 않았으면 503 `not_saved`/`test_key_missing`. model-api 거절(401·403·413·422·429·503)은 같은 상태와 코드로 전달한다.
       security: [{ staffSession: [operator, integrator] }]
       requestBody:
         required: true

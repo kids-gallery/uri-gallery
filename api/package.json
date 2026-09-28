@@ -16,8 +16,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "ops:staff": "tsx scripts/ops/staff.ts",
     "ops:key": "tsx scripts/ops/key.ts",
-    "ops:purge-retry": "tsx scripts/ops/purge-retry.ts",
-    "ops:manifest-sync": "tsx scripts/ops/manifest-sync.ts"
+    "ops:purge-retry": "tsx scripts/ops/purge-retry.ts"
   },
   "dependencies": {
     "argon2": "^0.41.1",
