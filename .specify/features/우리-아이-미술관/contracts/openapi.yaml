@@ -611,6 +611,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /v1/captions/model-status:
+    get:
+      tags: [보호자 앱]
+      summary: (P0.5) 설명 모델 대기 요약 — S7 안내 문구용 (SD_02 e6c464c, A 모델적재 §3.1)
+      description: |
+        llm-server `/v1/ready`의 `model.state`·`maxObservedLoadSeconds`·`queue.waiting`을 요약만 한다. 모델 이름·버전·원래 상태값은 싣지 않는다(BR-SUG-02, D3).
+        `warming` = state가 cold 또는 loading(짐작 포함) → "처음 만들 때는 조금 더 걸릴 수 있어요(최대 약 N초)".
+        `busy` = queue.waiting > 0 → "다른 설명을 먼저 만들고 있어요". P0(`CAPTION_ENABLED=false`)에서는 404.
+      security: [{ guardianSession: [] }]
+      responses:
+        '200':
+          description: 대기 요약
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [warming, busy]
+                properties:
+                  warming: { type: boolean }
+                  maxWaitSeconds: { type: [number, 'null'], description: 'maxObservedLoadSeconds(없으면 null — "최대 약 N초"를 빼고 보인다)' }
+                  busy: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /v1/gallery:
     get:
       tags: [보호자 앱]

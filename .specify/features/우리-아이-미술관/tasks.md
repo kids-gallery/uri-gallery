@@ -299,7 +299,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [x] T126 (A 완료 — `a/model-serving`, main 병합 전) [P] [US10] M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`)를 재현해 블롭 다이제스트를 매니페스트 `weights_sha256`에 기록하고, `llm-server`(127.0.0.1:8200, 큐 없는 동기 HTTP, `POST /v1/caption`·`GET /v1/ready`, 동시 1)를 만든다. Ollama는 실행기일 뿐이며 `llm-server`만 호출한다 — `serving/llm_server/` · `docs/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
 - [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 C · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
-- [ ] T128 [US10] 설명 API를 만든다(`/captions`, 승인 고정, G13~G16): 호출 전 `stage_job(stage_kind='caption', origin='caption', status='running')`를 만들고 응답으로 닫는다(`done` / `done_downgraded`+`llm_to_template` / 인프라), 걸린 초안은 `caption_check_failure`만, 인프라 재시도 1초·3초 뒤 소진 시 template·later·direct 선택지(stage-job §11) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
+- [ ] T128 [US10] 설명 API를 만든다(`/captions`, `GET /v1/captions/model-status`(S7 대기 요약 warming·maxWaitSeconds·busy, 모델 이름·원래 상태 없음), 승인 고정, G13~G16): 호출 전 `stage_job(stage_kind='caption', origin='caption', status='running')`를 만들고 응답으로 닫는다(`done` / `done_downgraded`+`llm_to_template` / 인프라), 걸린 초안은 `caption_check_failure`만, 인프라 재시도 1초·3초 뒤 소진 시 template·later·direct 선택지(stage-job §11) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
 - [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7
 - [ ] T130 [US10] 외부 `caption` 엔드포인트와 약관을 연다(model-api가 키·한도 확인 뒤 `llm-server`로 동기 프록시, `external_job` 없음, 이미지·이름 필드 422) — `serving/model_api/caption.py` · 담당 B · 스킬 API · 근거 FR-28, D17
 
