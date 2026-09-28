@@ -12,6 +12,7 @@
 > **와이어프레임 예시 값**: 별칭은 `하*`, 가족명은 `하*네`, 팀원 계정은 `jo*@su*.kr`처럼 가렸다. 날짜의 일은 `**`로 가렸다.
 > **개정 (2026-09-28, 통합 결정 D18)**: 이용자 중복을 별칭이 아니라 보호자 이메일 계정으로 막게 되어 **S0 가입(이메일)**과 **S0b 로그인 정보 찾기** 화면을 추가하고(SD_01 1.0 · 1.R1~1.R3 · G26 · G27), S1의 별칭 중복 차단을 "같은 별칭 안내(저장은 유지)"로 바꿨다.
 > **개정 (2026-09-28, main `1c460b0` 후속)**: 보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1)이고 초대는 만든 보호자만 한다. 그에 맞춰 **S1b 와이어프레임을 "두 명 찬 상태"로 다시 그렸고**, T107이 만들 **S1c 초대 수락**과 **S1d 가족 없음** 화면을 추가했다(UC15 BF4~6 · A4 · A6 · E1~E3 · E9 · G28 · G29 · U20).
+> **개정 (2026-09-28, 모델 적재 상태 — A 서빙 구현 `763e90a` · B 계약 `fa57e57` · T109 · T143)**: 모델을 올리는 동안은 **오류가 아니다**. C10에 "불러오는 중"·"적재 실패"·"내려감 짐작(M6)"을 더하고, S3·S4에 "그림을 볼 준비를 하고 있어요", S7에 첫 생성 지연 안내, S11에 **모델 상태 표와 "지금 불러오기"**를 넣었다(근거 `docs/A_모델적재_화면요구.md` §3).
 
 ---
 
@@ -176,6 +177,7 @@ S10 ..> S12 : 매뉴얼 장애 대응
 S12 ..> S11 : 모델 교체 절차
 S12 ..> S10 : 상태 보기
 S11 ..> S10 : 롤백 판단 지표
+S10 ..> S11 : 모델 상태 - 지금 불러오기
 
 note bottom of S12
   시험 호출 패널이 P10 계약(H15 - H16)을 보인다.
@@ -188,7 +190,7 @@ end note
 @enduml
 ```
 
-**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1Vs9PG1cQvu9fMaIXOBh5bTA2hyo0akyktEVCvfViA6EoYEfgqIeqkh0WZH5EmBRjk3qRkZxiIlotYIhRTf-gfbP_Q2fee961l-ZgybvzvZlvZr6Zt082Cpn1wpu1VWPj1UrudWY9swbZzMKr5fX8m9zi0_xqfh2-ehZ_Zn77zQBi4-fMYv6XldwyvMysbiwZhZXC6hJ4J0fiogN4XhQHFp4UAe2OODgB9_pBnDUMY31poZDJLRNyhJ7dz120uz_lRsVNx6t38bQCEfD2i_hHZWwEMhvw4of08-8HD2GnLPaLIC6O0O6BOC95pUuJ_G7m-QvjNbHOLBPMvbGwWSVnrlPEs6sR-NUAGHAzH5WW061R5iedqYDz0TAwCz5RIJ_EFND51-06Gp8NHTAXQJPEcl3YDwpmLoRhi5obYG0b7X0NWzR-C7IIqoLV_8lhAvD00HtfBvHpQpzZETy3vOMdqib9odSoF2Wd1EQ4ODm0KHNwO0Xx56WOHQZl-wwDHkP4cOaxPh-sXxLKL1EshItTiyvcHmw2sFomnlV6Uth4CDtJynHcm54E2V0FmgyBEqwyrPYoIuDvjh84EcJNAVot8WmLG0SBqVJz0fFJYtMWlhbc_FToTNJvU9PCvYYCJUOgFODbvygbzTLoBMmAJgI3S1Q8HSA12GH80MF6qT81o0r6MtSHi7HHHTejQL68zQZFKHqHDe611RD3Fu62QPkKAplhKZsmKaUt3nXBO9ihrCK4e-9eX5AT9QxiryP27vvHH-khBjNzz72TBnHjARQ7HY7fj0rDhjVHzrrTEE6j7yZG-RpyjiES-Zq0CNOQjgZVPXQ_97R9fJzsUbKr2Rx6m6XXXxhEg85I1ya7jiWISTo21d8RqiUGe2BPyuc0SfWSxMAqFO9blHmLmhsEGCRMkzo9PKsGLxttXBjiFdHU2anBxiDlWFIvBIM9-nxxs9x37t7cuo5lEFymbGaDuP4EGvx6MA_xtk4YVj7V3-riVl1rcSgFLmraDCQyZDSVcUgEQ4BY6HS41Uw5aECUOKpHPqcXjSnHjqZ0s-Sjv2SOKXOcnU1yMxPgbd_yEohALBozyBKUNanXB3O6rtPaAWwd-iEmCaIEADSKukoS5lXrNEM0EP941TakUwZh5ZEEe43z2pHicOo8oHRq9568iErb981A9VYObK1CNx7Jaks0PxpklJikrJzJSVAV1QoZIphkqGz3lKZ6-hGbFXkgTr8JgwzSPhhObbFZmnBiLa1cSy1idN5xorNTvnFC6uRvvKvrbUqCBfeqK2GJR5WTZ-KajlzTVn-z__g0DjMpH5RiTkpt_Vipx0SSLIgArzreP5YKKKbNpMw7pUZSXmoGa1eNg0zxvEVrB497wHWqNrmraBNrsioUS1BvOfe2gtcUqVlGpz0Aicqx4zXKcyUXiGkO2MRZSzhXfEmJvTaoTWsYuXxhCbL5QiG_BvmXcrEBUJperQ48m3cNfZFwdnPkiL9Bqg-jsyZreNZMjKFtcUCW0V5rnE-fdMVdEbxSR9g9Vv9x19vtit0jqs6lON3X94IsV21bHlrKLQIzeUSHr_i5KJW-TXG5XVjbQpuWgbyK0C6Snb8Y6CqiLUEGhRQMVpBaZZCdH-gJ_aNvw_8ANcZ-aA==)** — 클릭 시 브라우저로 연결됩니다.
+**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1Vs9PG1cQvu9fMaIXOBh5bTA2hyo0agxSmiKh3nqxgVAUsCNw1ENVyQ4LMj8iTIrxknqpkZxiIrdawJBFNf2D9r39Hzrz3vPuemkOlrw735v5Zuabeftks5TbKL1ZX9M2X60WXuc2cuuQzy2-WtkoviksPS2uFTfgq2fJZ_q334QQmz_lloo_rxZW4GVubXNZK62W1pbBOz1mlz3gF2V2aPDTMnCrxw5Pwb1-YOdNTdtYXizlCiuIHMFn97PDLefHwii76Xmmw89qEAPvoMx_r42NQG4Tnn-fnXsRPsR7VXZQBnZ5zK0-sIuKV-kK5Hczc8-118g6t4Iw98bgrTo6c-0yP78agV80gJCbhbiwnG2PEj_hTAZciEeBefCJAvpEpsDtf13HVvh85IC-CIokr5rMepAwfTEKW1LcgDd2uHWgYEvar0EWQVV4_X9ymAB-duS9rwL7dMnOrRi_MLyTXawm_sHUsBdVldRENDg6NDBzcHtl9mdXxY6C8gOGAY8hfDTzxIAPN7uI8kuUiOCS2OIatYe3mrxeRZ51fJLYZAQ7icqx3Zu-AFmOBE1GQClSGa_3MSLw32w_cCqCmwJutNmnbWoQBsZKzcfHJ5FNhxlKcAtTkTNpv00tg-83JSgdAWWAv_0Ls1Esg06gDHAi-FYFi6cCZMId5h963KwMpmZUSl-E-nA59rjjehzQl7fVxAhl76hJvTaa7N7ge22QvoJAelTKuo5K6bB3DniHu5hVjO_du9eX6EQ-A9vvsf37wfFHekjAzPycd9pEbjSAbLdH8QdRcdh4wxazbjeZ3Ry4SWC-mphjiMW-Ri3CNGTjQVWP3M99ZR8fR3sc7XI2h97m8fUXBlHDM8K1Tq4TKWSSTUwNdoRsiUYeyJP0OY1S7aIYSIXsfRszb2NzgwBhwjip08OzqtGyUcbFIV4xRZ2camQMUk6k1ULQyKPPl29VB87dm1vXNjSEi5T1fBDXn0CNXofzYG9NxJDysf6Gw7dNpcWhFKioWT2QyJBRl8YhEQwBEpHT0VYT5aABceQoH-mcWjS6GDuc0q2Kj_6SOSHNSXI2Sc1MgbdzS0sgBol4QkNLUNa0Wh_E6drEtQO8feSHmESIFADgKKoqCZhXN3GGcCD-8eodyGY0xIojKfKapLUjxGGbNKB4au8evbBax_dNQPlWDGyjhjceymqbtT5qaBSYtKicTklgFeUKGSKYJqho95SievaRt2riQBJ_ExoahD0cTm6xWZxwZC2sVEslYm6_o0Rnp3zjhNDJ3_zOVNsUBQvulSNgqUeVE2eSio5Y08Zgs__wNAkzGR-UIU5SbYNYmcdE0iSIAC87PjiWCShm9bTIOyNHUlxqGmlXjoNI8aKNa4ef9IHqVG9RV7mFrNEqUSRBteXc2xq_xkitKrc7IUhcjB2tUZorsUB0PWRj521mX9ElxfY7IDdtiEcogvISI5Dr4EV8V2V_dLnZJqdaoVhahnyxVCquQ_GlWIUAWBivYQJN811TXT1Uj3n0T18t9YfRWZ1UP6unxrhlEEUS3n57nE6fOuyuDF6lx6w-zcuJ4-05bO8Y69llZwfqJhEFbuyIQ8uFJSAmj-jQR8F8HJvVwbjUYN7Y5hauD3F5cauMdvrGwMsL9woaJJIRWEIatTA7P9AT_Idfk_8BPqqXWw==)** — 클릭 시 브라우저로 연결됩니다.
 
 **읽는 법**
 
@@ -256,7 +258,7 @@ ANY --> 삭제중 : S9 삭제 - G18
 | C7 | 이야기 카드 | 제목·그린 날·나이·한마디(원문)와 AI 작성 칸을 분리 표시 | S6 · S7 · S8 | UC5 BF6 · UC10 BF6 · UC6 BF3 | UX5 |
 | C8 | 전시 조건 체크 | G12의 두 조건(결과 확인 · 필수 이야기) 충족 여부 | S6 · S8(직접 주소) · C1 | UC4 BF5 · UC5 BF5 · UC6 E3 | UX1 |
 | C9 | 셸 헤더 | 보호자 앱(가족 표시) / 운영 화면(역할·계정 표시) 구분 | S1~S12 | INC1 · INC2 (UC1 BF1 · UC8 BF1 · UC9 BF1 · UC11 BF1) | UX8 |
-| C10 | 모델 상태 칩 | 모델별 준비됨 · 미준비 · 비활성(라이선스 확인 전) · CPU 실행 · 비노출 · 확인 불가 | S10 · S11 · S12 | UC8 BF3 · A1~A4 · E5 · UC9 BF2 · UC11 BF4 | UX8 · UX6 |
+| C10 | 모델 상태 칩 | 모델별 준비됨 · 미준비 · 불러오는 중 · 적재 실패 · 내려감 짐작(M6) · 비활성(라이선스 확인 전) · CPU 실행 · 비노출 · 확인 불가 | S10 · S11 · S12 | UC8 BF3 · A1~A4 · E5 · UC9 BF2 · UC11 BF4 | UX8 · UX6 |
 
 ### 3-2 C1 진행 레일
 
@@ -349,7 +351,7 @@ salt
 | C7 이야기 카드 | 입력(S6) · 표시(S8) | 한마디 칸(원문, 표시 없음) · AI 작성 칸(출처 LLM·템플릿이면 "AI 작성", 직접이면 표시 없음, D6) · 승인 전 초안(S7에서만) | 한마디 칸과 AI 칸은 입력·저장·표시가 모두 따로다. 한 칸의 편집이 다른 칸을 바꾸지 않는다 |
 | C8 전시 조건 체크 | 둘 다 충족 · 결과 확인 빠짐 · 이야기 빠짐 · 둘 다 빠짐 | 체크 두 줄 | 빠진 줄을 누르면 해당 화면(S5 또는 S6 필수 칸)으로 간다 |
 | C9 셸 헤더 | 보호자(가족명 가림) · 팀원(역할 · 계정 가림) | 보호자 앱 헤더 · 운영 화면 헤더 | 운영 화면 헤더에는 보호자 앱으로 가는 링크가 없다. 역할에 없는 메뉴는 그리지 않는다(403 링크를 두지 않음) |
-| C10 모델 상태 칩 | 준비됨 · 미준비 · 비활성(라이선스 확인 전) · 비활성(P0.5) · CPU 실행 · 비노출(P1) · 확인 불가 | 표 행(S10 · S11) · 인라인(S12) | "미준비"와 "비활성"과 "CPU 실행"은 모양과 문구를 모두 다르게 한다(§17) |
+| C10 모델 상태 칩 | 준비됨 · 미준비(`not_loaded`, 기동 순서 대기) · **불러오는 중**(`loading`: 경과 초, 예상 시간이 있으면 남은 시간, 예상의 1.5배를 넘으면 "예상보다 오래 걸려요") · **적재 실패**(`failed`: "60초마다 다시 시도해요") · **내려감 짐작**(`cold`, M6만: "첫 요청 때 올라가요", 짐작임을 표시) · 비활성(라이선스 확인 전) · 비활성(P0.5) · CPU 실행 · 비노출(P1) · 확인 불가 | 표 행(S10 · S11) · 인라인(S12) | "미준비"와 "비활성"과 "CPU 실행"은 모양과 문구를 모두 다르게 한다(§17). "불러오는 중"은 오류 색을 쓰지 않는다(적재 중은 오류가 아니다). 값은 `GET /v1/ops/models`의 `load.state` · `elapsedSeconds` · `remainingSeconds` · `expectedSeconds` · `lastLoadSeconds` · `expiresAt`(T109 · T143) |
 
 ---
 
@@ -745,7 +747,7 @@ salt
 |---|---|---|---|
 | 진행 레일 | 판정 중 → 확정 대기 | 0.5 Output 상태 | UX7 |
 | 잘라 낸 작품 | 컷아웃 미리보기, 분리 실패면 원본과 "액자 권장" | H3 마스크·컷아웃 참조 (0.3 · 0.5 Output) | UX4 |
-| 제안 | 제안 문구만. 점수 칸 없음. 판정 중이면 "살펴보는 중" | H3 제안 문구 코드 (0.5 Output) | UX2 |
+| 제안 | 제안 문구만. 점수 칸 없음. 판정 중이면 "살펴보는 중". 분리·판정 모델을 올리는 중이면 "그림을 볼 준비를 하고 있어요. 조금만 기다려 주세요"(남은 시간이 있으면 "약 N초") — 오류 블록·빨간 표시 없음, 직접 고르기는 그대로 가능 | H3 제안 문구 코드 (0.5 Output) · `GET /v1/artworks/{id}` 단계 `waitingForModel` · `etaSeconds` | UX2 · UX7 (모델 적재, T143) |
 | 차단 블록 | G7(판정 소진) · G8(확정할 수 없는 상태) | 0.5 Output 오류 분류 · 2.6 거절 | UX6 |
 | 선택지 | 움직임 · 2.5D 입체 부조 · 원본 액자 — 같은 크기, 기본 선택 없음. 3D는 노출 설정 뒤(G17) | 2.6 Input 확정값 | UX2 · BR-SUG-03 |
 | 행동 | 확정하기(선택 전 비활성) · 나중에 고르기 | 2.6 · 2.7 Output 처리 단계 작업(H4) | UX7 — 나중에 S4에서 이어 확정 |
@@ -762,7 +764,7 @@ salt
 
 ### 6-4 상태 전이
 
-`살펴보는 중`(판정 중) → (H3 도착) → `제안 있음` 또는 (G7) → `차단(G7) · 제안 없음` · 두 상태 모두 (선택) → `선택됨` → (확정) → `확정 중` → `처리 시작`(→ S4) 또는 `차단(G8)`. `살펴보는 중`에서도 (선택)이 가능하다(A3).
+`살펴보는 중`(판정 중, 모델 적재 대기면 `준비 중` 문구) → (H3 도착) → `제안 있음` 또는 (G7) → `차단(G7) · 제안 없음` · 두 상태 모두 (선택) → `선택됨` → (확정) → `확정 중` → `처리 시작`(→ S4) 또는 `차단(G8)`. `살펴보는 중`에서도 (선택)이 가능하다(A3).
 
 ---
 
@@ -810,6 +812,7 @@ salt
 | 헤더 | 가족명 · 아이 관리 · 작품 올리기 · 가족 전시 | 3.1 세션 | UX8 |
 | 작품 목록 | 작품 · 아이 · 상태 배지 · 현재 단계 | 3.1 Output 작품별 상태 목록 | UX7 (C4) |
 | 단계별 진행 | 분리 · 판정 · 움직임 렌더 · 깊이 부조 · (P1) 3D의 상태와 안내 | **P0** 0.1 · 0.5 · 0.6 · 0.9 · 0.10 Output 단계 작업 기록(상태 · 시도 횟수 · 낮춤 원인 · 오류 분류) → 3.2 | UX7 · UX3 (C6) |
+| 모델 준비 대기 | 단계가 `대기`이고 그 단계 모델을 올리는 중이면 "그림을 볼 준비를 하고 있어요. 조금만 기다려 주세요"(`etaSeconds`가 있으면 "약 N초"). 진행 막대는 "대기"에 머물고 갱신은 계속한다. 오류 블록·빨간 표시 금지. 모델 이름·상태 원문·버전·장치는 보이지 않는다. 적재 실패는 보호자에게 말하지 않고 기존 "다시 시도 중"으로 보인다 | `GET /v1/artworks/{id}` 단계 `waitingForModel` · `etaSeconds`(T143) | UX7 · BR-SUG-02 · D3 |
 | 차단 블록 | G9 처리하지 못함 — 낮춘 결과가 아님을 명시 | 0.9 Output 상태 "처리하지 못함" · 마지막 오류 분류 | UX3 · UX6 |
 
 ### 7-3 상호작용
@@ -823,7 +826,7 @@ salt
 
 ### 7-4 상태 전이
 
-`목록` → (작품 선택) → `진행 상세` · `진행 상세`의 표시 상태: `대기` / `진행 중` / `다시 시도 중`(재시도 중) / `낮춤 안내`(모델 낮춤) / `차단(G9)`(소진) / `확인 대기`(→ S5 버튼 활성). 목록에서 삭제된 작품은 즉시 사라진다(BR-DEL-01).
+`목록` → (작품 선택) → `진행 상세` · `진행 상세`의 표시 상태: `대기` / `대기 · 모델 준비 중`(오류 아님) / `진행 중` / `다시 시도 중`(재시도 중) / `낮춤 안내`(모델 낮춤) / `차단(G9)`(소진) / `확인 대기`(→ S5 버튼 활성). 목록에서 삭제된 작품은 즉시 사라진다(BR-DEL-01).
 
 ---
 
@@ -1005,6 +1008,7 @@ salt
 | 레일 | "설명은 전시 조건이 아니에요" | — | UX1 |
 | 키워드 · 태그 후보 | 키워드 입력, M2 태그 후보 칩(고른 것만 입력) | 4.1 Output 태그 후보(H3) · 4.2 Input | BR-CAP-06 |
 | 보낼 입력 미리보기 | 키워드 · 고른 태그 · 한마디 · 나이 · 그린 날. 사진·이름 제외 안내 | 4.3 Output LLM 입력 | UX5 · BR-CAP-01 |
+| 첫 생성 지연 안내 | 설명 모델(M6)이 내려갔다고 짐작되거나(`cold`) 올리는 중이면 버튼 아래 "처음 만들 때는 조금 더 걸릴 수 있어요"(최대 관측값이 있으면 "최대 약 N초", 실측 13초). 앞선 요청이 있으면 "다른 설명을 먼저 만들고 있어요". 안내일 뿐 버튼은 막지 않는다 | llm-server `model.state` · `maxObservedLoadSeconds` · `queue.waiting` — 보호자 경로로 전달하는 필드는 B 계약에 아직 없음(확인 요청) [추론] | UX7 · UX6 |
 | 차단 블록 | G13(사용 조건) · G14(입력 없음) · G15(LLM 장애) · 승인 설명 있음(종결, E3) | 4.1 · 4.2 · 4.4 Output | UX6 |
 | 초안 | AI 작성 표시, 한마디와 다른 칸. 템플릿으로 낮췄으면 C6 문구 | 4.6 Output 초안 · 출처 · 검사 결과 · 생성 횟수 | UX5 · UX3 |
 | 행동 | 초안 만들기 · 다시 만들기 · 버리고 직접 쓰기 · 승인 | 4.7 · 4.8 | UX6 |
@@ -1013,7 +1017,7 @@ salt
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 초안 만들기 | 입력이 없으면 비활성(G14). 누르면 "쓰는 중" 진행 표시만(문장은 검사 뒤 한 번에) | UC10 BF3~5 · BR-CAP-07 |
+| 초안 만들기 | 입력이 없으면 비활성(G14). 누르면 "쓰는 중" 진행 표시와 경과 초만(문장은 검사 뒤 한 번에). 30초(호출자 상한)를 넘기면 G15 선택지 | UC10 BF3~5 · BR-CAP-07 · A §3.1 |
 | 규칙 검사 반복 실패 | "AI 초안이 입력에 없는 내용을 넣어 기본 문장으로 바꿨어요" + 템플릿 초안 | UC10 E2 · G16 |
 | LLM 장애 | G15 블록, 기본 문장 / 나중에 / 직접 쓰기 중 선택 | UC10 E1 |
 | 다시 만들기 | 승인 전만. 생성 횟수 증가 | UC10 A1 |
@@ -1244,6 +1248,15 @@ salt
   M3 Animated Drawings | v1 | 없음 | . | 확인 | 일치
 }
 ..
+{^"모델 상태 - 2초마다 갱신 - 예시 값"
+{# 모델 | 장치 | 적재 | 대기 | 동작
+  M1 BiRefNet | CPU | 준비됨 - 마지막 적재 **초 | 0 | .
+  M3 Animated Drawings | CPU | 불러오는 중 42초 - 남은 약 20초 | 2 | .
+  M5 Depth Anything | MPS | 적재 실패 - 60초마다 다시 시도 | 1 | [지금 불러오기]
+  M6 Qwen3-4B | Ollama | 내려감 짐작 - 첫 요청 때 올라가요 | 0 | .
+}
+}
+..
 {^"M1 후보 v2 평가"
   평가 묶음: 사람 - 비인물 - 촬영 조건 - 입체 | 팀원 제작 작품만
   진행: 42 / 44 완료 - 평가 미완료 2 - 인프라 소진
@@ -1263,7 +1276,7 @@ salt
 @enduml
 ```
 
-**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVF1PGlEQfd9fMakvrQ00oGkanqxWmyb9SvtobLKt1FARDKztg5pg3RqFbdSGtaC7BKMpajFdcFMh4RftzP6Hzt1dELBv987eOXPOmQMTWUXOKCtLSSm7mEgtyxl5Cd7LHxYXMumV1PxUOpnOwMjM2ExkelJSEkoyDm8jEcCLM_zeAnd3x7FyVM4B5dtO8xxCQQmwYGOhDXhtSVk5qUir96VVoEObShvglot4bsMa0M9LV6_GhnrW4FN6dCK7MhpezPBlljY33E0jRLWcu2_MwboUDkurI10KawxnkNrgAx6fotUA90jFKwHfO6DZIdMmtUr5U1HXbSoYEsCLCEwm3sQ_vowrXP4c8ShtkamJW9SD1skUM4gR2iXREoVXy_HU1PNnr_tf37RFbtqoqg60jsHjVGJJVuLz8CQjf0mkFrK3xob_M9VX_O4O0w0kMTnfszuM23Wv_pchYkBf61jReBPYVhkG6x0-k10XztOx5TRsca98o6bnkZajoz2malBln8v77o9trGkMSzXVPdiJwXgUHsD4OFBZxROtb8N_WkEpKgDNlltU2WigLY1bGWA2eEiHRWpezolVMnfnqkqqwYJtp2V5RVfbw8IZ8BWPzTlWy1KxtuNWSgBPox54VRVsqVK_NRumHwoPWDQZfUnqfXf1S7w4hyjL5ggwxDYd2N20Otcdp2F5DXslzheQniddZcLCVk5JlYmedHj2cEZDt0f02HEvFk7FOtk_3C3HWPfwY_GgYASgngsBpbu8NT_Q9waGCAFdb_yYhwYZdiME04_6DaHmb8CmKhw0bbEeVoq7Gv6ygyx5G-LWA9uXHVDnpHD0MF9k83UxqJbrGVTyH_v8-JvTtMS6A15DCgZ-kz5HoWNdmoin5vlv5x-LqmX5)** — 클릭 시 브라우저로 연결됩니다.
+**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VdFOG1cQffdXjMhLS2WKDUURTxRCqkpNQxv1KXKlbXETF2OQvTSqIJIh28jgjTCRTUxiu4vi1pAade2sEizRH9o7-w89s7u2MSQPK917fefMmTNnrudyupbVN1bTkdxKKrOuZbVV-kn7eeVBdm0js7ywll7L0o3bU7dji_MRPaWnk3QvFiP15kQ9Oydvf9e183yUJ97rud1TioZHpIqOKvZIvbcjOS2tRzY_i2wSv3S4uk3eUVmdOrRF_OLMq1izV2K26Ne18bncxvjEShab-_xk23tSi3Ir7x3UEvQ4MjER2bzRp7AFuBobHSzUcVPZHfJeGeqtwA8Wqn7BdYcNi_eacl5xuFiLEN2J0Xzq--Qv3yZ1HP8W8yk95bopu7gPXeG65GAg9KoSEqe768nMwjdfL12-PQyLDcPYMkZCp-jLTGpV05PLdCurPUplHuSupZ34QNag4h_HwooDPSB1nJ2CahVUsUmu3eGihTOuFlAb9s_HRkTixl-AkoW1zY22iGLm3XNbFvtH3Di4JsfC0g9yvZlXPUOVToCNXGiCau32QcbHwQCXJoX4xysMkNS7gvqzzdWm2isD9oCmhb_A7pxwHQ6q_EfxyQAw3gf8gm4l1_WHgP1dfwg4nN9Zujcsg4tNzxRuM5NDMfCJBvjUvnQg5ruohXILQxaoPSEZZui7R8nMVHR6HrfuptPaqiZkdxxlNV27RNwqQR1RtvsPDFzm7hmpigmh27CVuP9leSDB40GvoGVoPxgp8PcY0vWd3n6Hds8S77RVwxQNegZartoXkshpy5Twse12HNk3_uCu72czz6_AyKoJI3zec5RsApZbhne4OwtJ6XOaniY-MtRr89I0_nseHsUFsH7ulQ2wJ35qIhQA98OLQYEJEQzc3bcWGxDyhSNqyaFnllTxhLBVx_UEqhVbtna9RpXoq7gPbhnCFs25lpsWZ0QDFM21S1M_-N2rnKk3pxRH2RhXQBT40Om_LO77C7dj-wGlKpoJv-xxxQBhkRUTbYHo6wvkvvqeRK-nGLBDrLgFowf9MAizqPvq5dBOQYCvQkjpE3QteHw-HUkiBfS1CZ6k6CjD_rjT4s3LgojDVNcQBeuOtAeVqn1T_e2EXvI7hNBDJyg7pA6nYLb9sbIqkqiVHwhUDS4H_PCb27Wl3SGvKxWMvJ8Bx4Tv6blkZhl_Ef8De_0yNQ==)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 14-2 영역별 설계
 
@@ -1271,6 +1284,7 @@ salt
 |---|---|---|---|
 | 헤더 | 역할 평가 담당 | 8.1 Output | UX8 |
 | 매니페스트 표 | 모델 · 활성 · 롤백 후보 · 후보 · 라이선스 · 해시 일치 (D16 채택 5종 + M7 P1) | 8.2 Output 매니페스트 | UX8 (C10) |
+| 모델 상태 표 | 모델 · 활성 버전 · 장치(`execDevice`/`runtime`, MPS 표기) · 적재(C10 칩, 불러오는 중이면 경과/예상 막대, 마지막 적재 초, M6는 내려갈 시각) · 대기(M6 `queue`, 그 밖은 `queue_backlog`) · 동작. 2초 폴링, 화면이 안 보이면 멈춤 [추론]. **운영자 · 평가 담당 · 연동 개발이 읽고, 지금 불러오기는 운영자 · 평가 담당만** | `GET /v1/ops/models`(T143 · T109) | UX8 (C10) · UX6 |
 | 평가 진행 | 평가 묶음 구성(팀원 제작만) · 완료/전체 · 평가 미완료 수 | 8.3 · 8.4 Output | G20 · UX6 |
 | 차단 블록 | G20 항목 등록 · G21 착수(해시·격리) · G22 승격(미완료·라이선스·계약) | 8.3 · 8.7 Output | UX6 |
 | 롤백 | 직전 활성 후보로. 후보 없으면 비활성 + "해제 주체 없음" (벽, §18) | 8.8 Output | UX6 |
@@ -1279,6 +1293,7 @@ salt
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
+| 지금 불러오기 | M1 · M2 · M3 · M5 · M7이 `미준비`·`적재 실패`일 때만 보인다. `POST /v1/ops/models/{id}/warmup`(202) 뒤 결과는 폴링으로 본다. M6에는 버튼 없이 "첫 요청 때 올라가요"(공유 Ollama는 기동 때 1회만 미리 올림, 요청하면 409 `m6_preload_at_start_only`). 연동 개발 역할에는 버튼을 그리지 않는다(C9) | T143 · A §3.2 |
 | 평가 요청 | 해시·격리 확인 뒤 항목별 작업 등록(202) | UC9 BF3 |
 | 보고서 열기 | 불일치 · 오인 후보 · 시간 · 메모리를 활성 버전과 나란히 | UC9 BF5 |
 | 판단 기록 | 오인 분류 · 통과 판단 · 근거 | UC9 BF6 · A2(보류) |
@@ -1287,7 +1302,7 @@ salt
 
 ### 14-4 상태 전이
 
-`목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` 또는 `벽(E8)`.
+모델 상태: `미준비`/`적재 실패` → (지금 불러오기) → `불러오는 중` → `준비됨` 또는 `적재 실패`(60초마다 재시도) · M6 `준비됨` → (5분 요청 없음) → `내려감 짐작` → (첫 요청) → `불러오는 중`. 평가: `목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` 또는 `벽(E8)`.
 
 ---
 
