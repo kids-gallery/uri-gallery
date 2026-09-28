@@ -158,9 +158,12 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [role]
+                required: [roles]
                 properties:
-                  role: { $ref: '#/components/schemas/StaffRole' }
+                  roles:
+                    type: array
+                    description: 'SD_03 team_member_role — 한 팀원이 여러 역할을 가질 수 있다(BR-ACC-05)'
+                    items: { $ref: '#/components/schemas/StaffRole' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/me:
