@@ -25,10 +25,10 @@ describe('기준 마이그레이션', () => {
     expect(fs.readFileSync(path.join(MIGRATIONS_DIR, '0001_sd03_baseline.sql'), 'utf8'))
       .toBe(fs.readFileSync(path.join(repo, 'design/uri_gallery_ddl.sql'), 'utf8'));
   });
-  it('① 실행 결과: 테이블 35 · 뷰 16 · 트리거 14', async () => {
+  it('① 실행 결과: 테이블 35 · 뷰 16 · 트리거 15', async () => {
     expect(await count(`SELECT COUNT(*) n FROM information_schema.tables WHERE table_schema='uam_test' AND table_type='BASE TABLE' AND table_name <> 'schema_migration'`)).toBe(35);
     expect(await count(`SELECT COUNT(*) n FROM information_schema.views WHERE table_schema='uam_test'`)).toBe(16);
-    expect(await count(`SELECT COUNT(*) n FROM information_schema.triggers WHERE trigger_schema='uam_test'`)).toBe(14);
+    expect(await count(`SELECT COUNT(*) n FROM information_schema.triggers WHERE trigger_schema='uam_test'`)).toBe(15);
   });
   it('② 재실행(멱등): 전문을 다시 실행해도 오류 없음', async () => {
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, '0001_sd03_baseline.sql'), 'utf8');
@@ -49,6 +49,12 @@ describe('③ 위반 거부 — 보완 S1~S9와 공동 보호자(SD_03 §18-2)',
       (12,'M5','old',REPEAT('a',64),REPEAT('b',64),TRUE,'retired')`);
     await db.query(`INSERT INTO eval_item (item_id, category, expected_path, input_text, created_by, maker_attested) VALUES (1,'caption_input','caption','입력',1,TRUE)`);
     await db.query(`INSERT INTO evaluation (evaluation_id, version_id, requested_by, item_total) VALUES (1,10,1,1)`);
+  });
+  it('§19 #19 인프라 재시도 뒤 낮춤은 허용, 낮춘 작업 재개는 거부(BR-PRC-02)', async () => {
+    await accepts(`INSERT INTO stage_job (job_id, artwork_id, stage_kind, origin, serving_group, model_version_id, status, attempt_count, error_class) VALUES (900,1,'judge','intake','cpu_vision',11,'retry_wait',1,'timeout')`);
+    await accepts(`UPDATE stage_job SET status='done_downgraded', attempt_count=2, error_class=NULL, downgrade_cause='split_fail' WHERE job_id=900`);
+    await rejects(`UPDATE stage_job SET status='retry_wait' WHERE job_id=900`);
+    await rejects(`UPDATE stage_job SET attempt_count=3 WHERE job_id=900`);
   });
   it('S5 팀원 비밀번호 해시 없음 거부', () => rejects(`INSERT INTO team_member (email) VALUES ('x@test.local')`));
   it('S3 평가 작업인데 평가 연결 없음 거부', () => rejects(`INSERT INTO stage_job (stage_kind, origin, serving_group, model_version_id) VALUES ('split','eval','cpu_vision',10)`));
