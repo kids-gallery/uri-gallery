@@ -41,7 +41,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 ## Phase 1: Setup
 
 - [ ] T001 main이 계획 기준(`5a774f0`)인지 확인한다: `design/uri_gallery_ddl.sql`에 `guardian_account.email_norm`·`role`·`owner_family_id`, `auth_email_token`, `family_invite`, G26~G29, `gate_event.chk_ge_subject`의 `family_invite`·`guardian_account`가 있고 `uq_child_family_alias`·`uq_guardian_family`가 없는지 본다(D18·공동 보호자는 병합 완료, 확인만) — `design/` · `.specify/features/우리-아이-미술관/spec.md` · 담당 B · 스킬 — · 근거 D18, U1, data-model §1
-- [ ] T002 저장소 골격을 만든다: `web/`·`api/`·`db/migrations/`·`serving/`·`caption/`·`eval/`·`models/`·`contracts/`·`ops/`와 각 폴더 `README.md`(담당·경계 한 줄) — 루트 · 담당 B · 스킬 — · 근거 quickstart §1
+- [ ] T002 (**일부** 2026-09-28 — `api`·`db`·`ops`·`models`·`serving`·`contracts` README 있음. `web`·`caption`·`eval`은 담당 C·A가 폴더를 만들 때 README 함께) 저장소 골격을 만든다: `web/`·`api/`·`db/migrations/`·`serving/`·`caption/`·`eval/`·`models/`·`contracts/`·`ops/`와 각 폴더 `README.md`(담당·경계 한 줄) — 루트 · 담당 B · 스킬 — · 근거 quickstart §1
 - [x] T003 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 앱 API 프로젝트를 초기화한다: Node 20(`.nvmrc`), Express 4 · TypeScript 5 · mysql2 3 · pino · zod · Vitest · Supertest, ESLint·Prettier, `npm run build|test|lint|db:migrate` 스크립트 — `api/package.json` · `api/tsconfig.json` · 담당 B · 스킬 API · 근거 R-01
 - [ ] T004 [P] 웹 프로젝트를 초기화한다: Vite 5 · Vue 3.4 · TypeScript · Pinia · Vue Router 4 · Vitest · Vue Test Utils · Playwright(390px·1440px 프로젝트 2개) — `web/package.json` · `web/vite.config.ts` · `web/playwright.config.ts` · 담당 C · 스킬 FD · 근거 R-01, R-19
 - [x] T005 (A 완료 — `a/model-serving`, main 병합 전) [P] 서빙 Python 프로젝트를 초기화한다: Python 3.11 venv, FastAPI · uvicorn · PyMySQL · structlog · pillow · pillow-heif · pytest, 해시 잠금 파일 — `serving/pyproject.toml` · `serving/requirements.lock` · 담당 A · 스킬 API · 근거 R-01, R-03, FR-30
@@ -51,7 +51,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T009 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :8100, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :3000, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
 - [x] T010 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] GitLab CI를 lint·타입 검사·단위 시험·계약 lint만 돌게 만든다(배포 없음) — `.gitlab-ci.yml` · 담당 B · 스킬 — · 근거 R-02
 - [ ] T011 [P] 디자인 토큰과 글꼴을 옮긴다: **`design/style-guide/스타일가이드_우리아이미술관.html`**(기준 파일)의 `:root` 변수·클래스를 그대로 옮기고, `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20
-- [ ] T012 `Intent-Plan.md` 작업 사본의 평문 DB 비밀번호(커밋된 이력에는 없음)를 커밋 전에 지울지·`.env` 참조로 바꿀지 팀에 결정 요청하고 결과를 기록한다. 결정 전에는 이 파일을 커밋하지 않는다 — `docs/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
+- [x] T012 (B 완료 2026-09-28; `docs/결정_DB비밀정보.md`) `Intent-Plan.md` 작업 사본의 평문 DB 비밀번호(커밋된 이력에는 없음)를 커밋 전에 지울지·`.env` 참조로 바꿀지 팀에 결정 요청하고 결과를 기록한다. 결정 전에는 이 파일을 커밋하지 않는다 — `docs/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
 
 **Checkpoint**: 세 프로젝트가 빌드되고 CI가 녹색이다.
 
@@ -320,12 +320,12 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [ ] T134 계약 정본과 루트 사본의 일치를 CI로 점검한다: `.specify/features/우리-아이-미술관/contracts/*`와 `contracts/*` 차이 0, Redocly lint 오류 0, app-api `/openapi.json`·model-api `/v1/models/openapi.json`이 계약과 일치(BR-API-08) — `.gitlab-ci.yml` · `contracts/` · 담당 B · 스킬 API · 근거 plan Phase 1, BR-API-08
 - [x] T135 (2026-09-28 완료 — SD_03 §18-2, 검증 17/17) SD_03에 구현 보완 S1~S9(재시도 시각·우선순위·평가 작업·외부 점유·팀원 비밀번호·세션·요청 한도·장치 표기·비활성화 `release_event.kind='deactivate'`)와 `infra_failure` 결과 원인 정의를 역반영한다(DDL 검증 3종 재실행) — `design/uri_gallery_ddl.sql` · `design/SD_03_데이터베이스설계서_우리아이미술관.md` · 담당 B · 스킬 DB · 근거 data-model §6
-- [ ] T136 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
+- [x] T136 (B 완료 2026-09-28; `docs/B_통합시험.md` — 성능 1차·웹 흐름은 팀 서버·C 화면 뒤) 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
 - [ ] T137 [P] 평가 묶음 1차 측정과 임계값 제안(U5)·시간 상한 교체(U6) — `docs/A_평가묶음_1차측정.md` · `serving/config/thresholds.yaml` · `serving/config/limits.yaml` · 담당 A · 스킬 — · 근거 FR-17, U5, U6
 - [ ] T138 [P] 접근성·반응형 점검: 390px·1440px, 키보드만 조작, 비활성 버튼 사유 낭독, 대비 4.5:1, 움직임 줄이기, 점수·미리 선택·토스트 0 — `web/e2e/a11y.spec.ts` · 담당 C · 스킬 RL, FD · 근거 SD_02 §17
 - [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
-- [ ] T140 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
-- [ ] T141 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
+- [x] T140 (B 완료 2026-09-28; `ops/DEPLOY.md` 절차 — 첫 배포는 팀 서버 확인(U2·U14) 뒤) 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
+- [x] T141 (B 완료 2026-09-28; `docs/추적성.md`) 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
 
 ---
 
