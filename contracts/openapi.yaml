@@ -1234,6 +1234,15 @@ components:
           type: array
           description: 현재 상태에서 허용되는 행동(확정 선택지 또는 결정 선택지). 기본 선택 없음(UX2)
           items: { type: string }
+        unavailableChoices:
+          type: array
+          description: '보이되 막아야 하는 선택지와 이유(S3·S5 C3 비활성). 예: 활성 버전이 없는 모델이 필요한 확정 선택지(clarify 2026-09-28, stage-job §2). 노출 설정이 꺼진 3D는 여기에도 싣지 않는다(D10)'
+          items:
+            type: object
+            required: [choice, reason]
+            properties:
+              choice: { type: string }
+              reason: { type: string, enum: [model_disabled, needs_result, original_unreadable] }
         stages:
           type: array
           items:

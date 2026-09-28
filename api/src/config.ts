@@ -16,6 +16,7 @@ export interface Config {
   appBaseUrl: string;
   authHmacSecret: string;
   captionEnabled: boolean;
+  gpuEnabled: boolean;
   secureCookies: boolean;
 }
 
@@ -39,6 +40,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     appBaseUrl: env.APP_BASE_URL ?? 'http://127.0.0.1:5173',
     authHmacSecret: env.AUTH_HMAC_SECRET ?? '',
     captionEnabled: bool(env.CAPTION_ENABLED), // P0에서는 꺼짐(llm-contract.md)
+    gpuEnabled: bool(env.GPU_ENABLED), // U2 — 꺼져 있으면 M5는 cpu_vision(BR-SRV-02)
     secureCookies: bool(env.SECURE_COOKIES, true),
   };
 }
