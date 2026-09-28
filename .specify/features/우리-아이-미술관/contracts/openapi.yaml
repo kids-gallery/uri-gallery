@@ -269,6 +269,11 @@ paths:
       responses:
         '204': { description: 공동 보호자로 합류 }
         '400': { $ref: '#/components/responses/TokenInvalid' }
+        '403':
+          description: 로그인한 계정의 이메일이 초대받은 이메일과 다름 — code forbidden_role, reason invite_email_mismatch (G28, UC15 E2, SD_02 S1c). 초대받은 이메일로 로그인하라는 안내용
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
         '409':
           description: 이미 다른 가족에 소속 — code conflict, reason already_in_family
           content:
@@ -1068,7 +1073,7 @@ components:
           enum: [unauthorized, forbidden_role, not_found, conflict, invalid_input, payload_too_large, validation_failed, not_saved, llm_unavailable, token_invalid, email_unverified, rate_limited]
         reason:
           type: string
-          description: 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete)
+          description: 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete)
         gate: { type: string, description: 'SD_01 게이트 번호(예 G4). 화면 C2 차단 블록용', pattern: '^G[0-9]{1,2}$' }
         fields:
           type: array

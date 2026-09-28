@@ -255,7 +255,7 @@
 
 ## R-25. 공동 보호자 (U1 확정, UC15, G28·G29, BR-ACC-09)
 
-- **Decision**: 경로 7개 + 가족 없는 계정용 2개(`GET /v1/me`, `POST /v1/family` 새 가족 만들기 — U20 P0 기본값, `[추론]`) — `GET/POST /v1/family/invites`(POST 항상 202) · `DELETE /v1/family/invites/{id}`(204) · `POST /v1/family/invites/accept`(204 / 400 `token_invalid` / 409 `already_in_family`) · `GET /v1/family/members` · `DELETE /v1/family/members/{id}`(204 / 403 만든 보호자 아님) · `POST /v1/family/leave`(204 / 409 만든 보호자).
+- **Decision**: 경로 7개 + 가족 없는 계정용 2개(`GET /v1/me`, `POST /v1/family` 새 가족 만들기 — U20 P0 기본값, `[추론]`) — `GET/POST /v1/family/invites`(POST 항상 202) · `DELETE /v1/family/invites/{id}`(204) · `POST /v1/family/invites/accept`(204 / 400 `token_invalid` / 403 `invite_email_mismatch` / 409 `already_in_family`) · `GET /v1/family/members` · `DELETE /v1/family/members/{id}`(204 / 403 만든 보호자 아님) · `POST /v1/family/leave`(204 / 409 만든 보호자).
   - **보호자는 부모 두 명까지**(만든 보호자 1 + 공동 보호자 1), **초대는 만든 보호자만**(1c460b0 사용자 결정, 넷플릭스 계정 공유 기준). 공동 보호자의 초대는 403 `invite_owner_only`, 자리가 차면 409 `co_guardian_full`. DB가 강제한다(`uq_guardian_co_family`, `uq_invite_one_pending`, `trg_family_invite_bi`).
   - 초대는 계정이 아니라 이메일에 건다(`family_invite`, 토큰 해시, 7일 `[예시값]`, 대기 초대는 가족당 1건 — 새로 초대하면 이전 초대 무효). 초대 메일은 요청 한도 대상(`auth_rate_event.action='invite'`, 같은 가족 하루 20건·같은 이메일 하루 3건 `[추론 예시값]`).
   - 수락(G28): 토큰 유효 + 로그인 계정 이메일 = 초대 이메일 + 다른 가족 미소속. 초대 링크로 가입하면 새 가족 없이 합류하고 확인 메일을 생략한다(UC13 A4, 초대 메일 수신이 주소 확인을 겸함 `[추론]`).
