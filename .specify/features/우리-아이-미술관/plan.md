@@ -120,7 +120,7 @@
 | 워커·어댑터 | `serving/workers/`, `serving/adapters/m1…m7` | A | UC3(모델 단계), UC9 실행 | `stage_job` 실행 컬럼, `judgment`, `tag_candidate`, `result`, `stored_object`, `artwork_outcome`(결과 원인), `eval_item_result`, `external_job` 실행 |
 | llm-server (P0.5) | `serving/llm_server/` | A(M6 재현·Ollama)·C(규칙 검사 연결) | UC10, UC12 `caption` | — (쓰기 없음. 기록은 호출자 app-api가) |
 | caption 패키지 | `caption/` | C | UC10 | — (llm-server가 import하는 라이브러리) |
-| sweeper | `serving/workers/sweeper.py` | B | UC7(G19), FR-11 | `deletion_request` 진행, 삭제 트랜잭션, 만료 행 정리 |
+| sweeper | `api/src/sweeper/`(Node, 2026-09-28 변경 — B 스택·저장소 드라이버 공유) | B | UC7(G19), FR-11 | `deletion_request` 진행, 삭제 트랜잭션, 만료 행 정리 |
 | 메일 | `api/src/modules/mail` + Mailpit | B | UC13, UC14 | — |
 
 ### Data Flow

@@ -24,7 +24,7 @@
 ## R-02. Docker 없이 전개 — 프로세스·배포 방식
 
 - **Decision**: 모든 구성요소를 호스트 네이티브 프로세스로 띄운다.
-  - 프로세스 관리: **pm2** `ecosystem.config.cjs` 하나로 `app-api`(Node), `model-api`(uvicorn), `worker-cpu`, `worker-gpu`, `sweeper`(이어받기·임시 파일·삭제 재시도), (P0.5) `llm-server`(R-18, 큐 워커가 아닌 내부 동기 서버)를 관리한다. 부팅 자동 시작은 `pm2 startup`(macOS launchd).
+  - 프로세스 관리: **pm2** `ecosystem.config.cjs` 하나로 `app-api`(Node), `model-api`(uvicorn), `worker-cpu`, `worker-gpu`, `sweeper`(Node, api/src/sweeper — 이어받기·임시 파일·삭제 재시도), (P0.5) `llm-server`(R-18, 큐 워커가 아닌 내부 동기 서버)를 관리한다. 부팅 자동 시작은 `pm2 startup`(macOS launchd).
   - 리버스 프록시·HTTPS: Homebrew **nginx** 네이티브. 정적 웹(`web/dist`) 서빙 + `/v1/models/*` → model-api, 그 밖의 `/v1/*`·`/live`·`/ready`·`/metrics`·`/openapi.json` → app-api.
   - 모델 런타임: TorchServe(M3)·Ollama(M6)는 네이티브 설치, **127.0.0.1에만 바인딩**(BR-SRV-04).
   - CI: GitLab CI는 lint·타입 검사·단위 시험만 돌린다. 배포는 `ssh` + `git pull` + `npm ci && npm run build` + `pm2 reload`(컨테이너 빌드 없음).

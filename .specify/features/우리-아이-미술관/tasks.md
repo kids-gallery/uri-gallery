@@ -87,7 +87,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T030 (A 완료 — `a/model-serving`, main 병합 전) 워커 실행기를 만든다: `SELECT … FOR UPDATE SKIP LOCKED`(serving_group·status·available_at·priority), 점유 60초·heartbeat 20초, 활성 버전 기록(활성 버전이 없으면 `model_not_ready` — 새 작업은 app-api가 만들지 않으므로 이미 대기 중이던 작업만 해당), 취소 감지, **결과 쓰기 직전 `deleting` 재확인**, 임시 파일 정리 — `serving/workers/runner.py` · 담당 A · 스킬 — · 근거 stage-job §3, G19, BR-PRC-05·08, FR-4, FR-11, FR-25
 - [x] T031 (A 완료 — `a/model-serving`, main 병합 전) 응답 분류 기록을 만든다: outcome → `stage_job.status`·`error_class`·`downgrade_cause` 1:1, 인프라 재시도 10초·60초, 소진 D1(판정 → `exhausted`, 결과 단계 → `failed`+`not_delivered`) — `serving/workers/outcome.py` · 담당 A · 스킬 — · 근거 stage-job §4, BR-API-02, BR-PRC-03, G7, G9
 - [x] T032 (A 완료 — `a/model-serving`, main 병합 전) [P] 상한 설정 파일을 둔다: 시간 상한(움직임 렌더 600초만 원천, 나머지 `[추론]`)·동시 처리·GPU 유무, 품질 임계값은 U5 전 "명백한 실패"만 — `serving/config/limits.yaml` · `serving/config/thresholds.yaml` · 담당 A · 스킬 — · 근거 stage-job §8, U5, U6, FR-15, FR-25
-- [ ] T033 sweeper 골격을 만든다: 점유 만료 이어받기(`deleting` 작품은 `cancelled`), 비정상 종료 임시 파일 정리(0.12) — `serving/workers/sweeper.py` · 담당 B · 스킬 — · 근거 BR-PRC-05, BR-PRC-08, stage-job §3, FR-11
+- [ ] T033 sweeper 골격을 만든다(**Node, `api/src/sweeper/`** — B 스택·저장소 드라이버 공유, 2026-09-28 변경): 점유 만료 이어받기(`deleting` 작품은 `cancelled`, 3회 소진은 stage-job §4.3 소진 규칙 그대로), 비정상 종료 임시 파일 정리(0.12), 만료 세션·토큰 정리 — `api/src/sweeper/` · 담당 B · 스킬 — · 근거 BR-PRC-05, BR-PRC-08, stage-job §3·§4.3, FR-11
 - [x] T034 (A 완료 — `a/model-serving`, main 병합 전) 단계 작업 계약 시험을 가짜 어댑터로 만든다: 점유·이어받기·분류 8종·소진·취소·쓰기 직전 재확인 — `serving/tests/test_stage_job_contract.py` · 담당 A · 스킬 — · 근거 stage-job 전 항목
 
 ### 웹 공통 (C)
@@ -228,7 +228,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [ ] T097 [P] [US5] 삭제 완전성 시험: 서빙 3종 각각 처리 중 삭제, 남은 파일·설명·연결 0, 늦게 온 결과 폐기, 끝난 삭제에 연결 없음 — `api/tests/deletion.test.ts` · `serving/tests/test_cancel.py` · 담당 B · 스킬 API · 근거 FR-10, Scenario 11, G18, G19
 - [ ] T098 [US5] 삭제 요청 API를 만든다: `DELETE /v1/artworks/{id}`·`/v1/children/{id}`, `deleting`+취소 플래그+`deletion_request` → 202 — `api/src/modules/deletion/request.ts` · 담당 B · 스킬 API · 근거 data-model §4 삭제 요청, BR-ACC-04
-- [ ] T099 [US5] sweeper 삭제 완료를 만든다: `v_deletion_hold` 비면 파일 삭제 → `stored_object` → `artwork`(CASCADE·SET NULL) → `completed`, 실패 재시도 → `incomplete`, `gate_event` G19 해제 — `serving/workers/sweeper.py` · 담당 B · 스킬 DB · 근거 data-model §4 삭제 완료, BR-DEL-01~03
+- [ ] T099 [US5] sweeper 삭제 완료를 만든다: `v_deletion_hold`가 비면(또는 점유 만료 + 30초) 파일 삭제 → `stored_object` → `artwork`(CASCADE·SET NULL) → `completed`, 아이 삭제는 작품이 모두 지워진 뒤 `child` 삭제, 실패는 1·5·30분 재시도 뒤 `incomplete`, `gate_event` G19 해제·삭제된 작품 이벤트의 `subject_id` NULL — `api/src/sweeper/deletion.ts` · 담당 B · 스킬 DB · 근거 data-model §4 삭제 완료, BR-DEL-01~03, SD_03 §16-3
 - [ ] T100 [US5] 삭제 미완료 처리 운영 도구를 만든다(건 번호만, 이미지 없음, 원인 해결 뒤 다시 삭제) — `api/scripts/ops/purge-retry.ts` · 담당 B · 스킬 — · 근거 spec clarify 2026-09-28(삭제 미완료), BR-ACC-03
 - [ ] T101 [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9
 
