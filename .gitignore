@@ -15,3 +15,6 @@ serving/.run/
 *.tmp
 *.swp
 models/hf/
+node_modules/
+api/dist/
+.data/
