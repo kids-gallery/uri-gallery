@@ -5,6 +5,7 @@ info:
   description: |
     외부 클라이언트용 모델 기능 엔드포인트(UC12, FR-28, D17). Python 3.11 가상환경 + FastAPI + uvicorn (R3, research R-10).
     FastAPI가 이 문서와 같은 스키마로 `/v1/models/openapi.json`을 내보내고, 'API활용' 메뉴가 이를 읽는다(BR-API-08).
+    내보낼 때 `info.x-model-versions`에 이 프로세스가 기동 시 읽은 모델별 버전 라벨(`{"M1": "<version_label>", …}`, 활성 버전 없으면 null)을 싣는다 — app-api가 DB 활성 버전과 대조해 어긋나면 경고한다(2026-09-28 추가, B T124).
     - 인증: `X-API-Key` 필수(BR-API-03). 키 종류는 SD_03 `api_key.key_kind` — `team_internal`(팀) · `course_internal`(과정) · `external`(팀 밖) · `test`('API활용' 시험 호출). U12 확정 전에는 `external` 키를 발급하지 않는다(D17).
     - `pose`는 `team_internal`·`test` 키만 — 그 밖의 키는 403 `forbidden_scope`(D17, 트리거 trg_external_job_bi).
     - 한도 판정은 `external_call_log`(ix_ecl_key_time)와 진행 중 `external_job` 수로 한다. 모든 호출(거절 포함)을 `external_call_log`에 남긴다(입력·키 원문 없음).
