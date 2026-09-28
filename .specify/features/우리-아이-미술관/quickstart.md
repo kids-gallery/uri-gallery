@@ -16,10 +16,10 @@
 | Java | 17 | `brew install openjdk@17` | TorchServe(M3) |
 | MariaDB 클라이언트 | 12.x | `brew install mariadb` | 로컬 시험 DB `uam_test`도 여기서 |
 | nginx | 1.2x | `brew install nginx` | 리버스 프록시 |
-| ffmpeg | 최신 | `brew install ffmpeg` | GIF → MP4(research R-07) |
+| ffmpeg | (설치 불필요) | 서빙은 `imageio-ffmpeg` 고정 바이너리 사용 | GIF → MP4(research R-07). Homebrew ffmpeg는 Studio-B에서 깨져 있음(`libx265` 없음) — 다른 용도로 필요하면 `brew reinstall ffmpeg` |
 | pm2 | 최신 | `npm i -g pm2` | 프로세스 관리 |
 | Mailpit | 최신 | `brew install mailpit` | P0 메일 수신함(SMTP :1025, 웹 :8025) — 실제 발송 없음(R-23) |
-| Ollama (P0.5) | 최신 | `brew install ollama` | M6 **Qwen3-4B** 실행기 — `ollama pull qwen3:4b`(GGUF Q4_K_M, 매니페스트 다이제스트 확인, R-22) |
+| Ollama (P0.5) | 최신 | `brew install ollama` | M6 **Qwen3-4B** 실행기 — 공유 Ollama(127.0.0.1:11434 — IPv6 `localhost`가 아닌 IPv4로)에 `qwen3:4b-instruct-2507-q4_K_M` 1회 pull(사람이, 런타임 코드에는 없음). 매니페스트 다이제스트 확인(R-22) |
 
 ## 1. 저장소 배치
 
@@ -106,8 +106,12 @@ curl -s http://127.0.0.1:8080/ping              # {"status": "Healthy"}
 
 ```bash
 cd ops && pm2 start ecosystem.config.cjs        # app-api · model-api · worker-cpu · worker-gpu · sweeper
-# (P0.5) llm-server: 큐 워커가 아닌 내부 동기 서버 — 127.0.0.1:8200 → Ollama(qwen3:4b)
-#   ollama serve &  &&  ollama pull qwen3:4b
+# 서빙 진입점(A, serving/): model-api = `.venv/bin/python -m model_api.main`,
+#   worker-cpu = `-m workers.main --group cpu_vision`, worker-gpu = `-m workers.main --group gpu`(kill_timeout 10000),
+#   llm-server = `-m llm_server.main`(P0.5). 워커는 프로세스당 작업 1건 — 단계별 동시 처리는 pm2 인스턴스 수로 맞춘다.
+#   M1 CPU 추론 중 RSS 8.5GB(A 실측)라 팀 서버 RAM 확인(T068) 전에는 worker-cpu 인스턴스 1개
+# (P0.5) llm-server: 큐 워커가 아닌 내부 동기 서버 — 127.0.0.1:8200 → Ollama(qwen3:4b-instruct-2507-q4_K_M)
+#   공유 Ollama는 http://127.0.0.1:11434 로만 부른다(localhost는 ::1의 다른 인스턴스로 붙을 수 있음)
 #   pm2 start ecosystem.config.cjs --only llm-server
 #   curl -s http://127.0.0.1:8200/v1/ready
 pm2 status && pm2 logs --lines 50

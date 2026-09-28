@@ -161,11 +161,11 @@
 | 실체 | Python 3.11 venv + FastAPI + uvicorn 프로세스(`serving/llm_server/`), pm2 이름 `llm-server` |
 | 주소 | `127.0.0.1:8200` — 내부 전용. nginx가 외부로 내보내지 않음(BR-SRV-04) |
 | 하는 일 | ① 허용 입력 검사(BR-CAP-01) ② 프롬프트 조립 ③ M6 호출 ④ 규칙 검사·재생성(최대 2회)·템플릿 낮춤 — `caption/` 패키지(C) ⑤ 통과 문장만 응답(BR-CAP-07) |
-| 모델 | **M6 = Qwen3-4B** (Alibaba Qwen, 원본 체크포인트 `Qwen/Qwen3-4B`, 매개변수 약 4.0B, 텍스트 전용). 서빙 형식은 **GGUF 4비트 양자화 Q4_K_M**(Ollama 태그 `qwen3:4b`). **thinking 모드 끔**(`think: false`) — 짧은 설명에 추론 과정 문장이 섞이지 않게 함. 세부는 R-22 |
+| 모델 | **M6 = Qwen3-4B-Instruct-2507** (Alibaba Qwen, 원본 체크포인트 `Qwen/Qwen3-4B-Instruct-2507`, 매개변수 약 4.0B, 텍스트 전용, 생각 모드 없음). 서빙 형식은 **GGUF 4비트 양자화 Q4_K_M**(Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`), `num_ctx 8192` 고정. A 실측으로 `qwen3:4b`에서 교체(2026-09-28). 세부는 R-22 |
 | 모델 실행기 | Ollama(네이티브, `127.0.0.1:11434`)는 **실행기일 뿐 모델이 아니다**. `llm-server`는 Ollama의 유일한 호출자이고, 모델은 매니페스트에 적힌 태그·다이제스트로만 부른다(태그 `latest` 금지). 과정 제공 LLM(U3)이 확인되면 `LlmPort` 구현만 바꿈 |
 | 경로 | `POST /v1/caption`(설명 생성), `GET /v1/ready`(Ollama·모델 활성 버전·라이선스). 외부 API가 아님 |
 | 호출자 | ① app-api — 보호자 설명 초안(UC10, `/v1/artworks/{id}/captions`) ② model-api — 외부 `caption` 기능(UC12, P0.5)을 **동기 프록시** ③ 평가 실행기 — M6 평가(UC9) |
-| 동시 처리 | 1건(세마포어), 대기는 요청 쪽 시간 상한 안에서만. 시간 상한 30초 `[추론 U6]` |
+| 동시 처리·시간 | 1건(세마포어). app-api → llm-server 30초 `[추론 U6]`, llm-server → Ollama 300초 이상(공유 Ollama 규칙). 30초에 끊기면 G15 선택지로 가는 것이 정상 동작. 수동 웜업 없음(기동 때 1회), `/v1/ready`는 상주를 짐작으로 보고 |
 | 왜 따로 두나 | FR-25 "한 서빙의 적체·장애가 다른 서빙을 막지 않는다". model-api(외부 트래픽)·워커(비전)와 프로세스를 나눠 LLM 지연이 번지지 않게 함 |
 | 구간 | **P0에서는 띄우지 않는다**. `/ready`에서 M6는 `inactive_tier`(비활성 P0.5). P0.5 착수 시 pm2에 추가 |
 
@@ -207,10 +207,10 @@
 | M3 | **Meta Animated Drawings** — `facebookresearch/AnimatedDrawings` (2025-09-03 보관 처리) | 저장소 커밋 고정, TorchServe 모델 2종 `drawn_humanoid_detector.mar`·`drawn_humanoid_pose_estimator.mar`, 모션은 저장소 기본 모션 1종 `[추론]` | 원본 → 관절(판정용) / 리깅·렌더 GIF → 워커가 MP4 변환 | TorchServe(네이티브, 보관 처리) + Java 17, CPU | MIT — 보관 처리 엔진은 내부망 격리(BR-MDL-06) |
 | M4 | **규칙**(모델 아님) — 관절 기하 규칙 | `serving/config/m4_rules.yaml` 파일 해시를 버전으로 | M3 관절 → 통과/불통과(팔다리 길이·좌우 대칭·몸통 비율) | Python, CPU | 해당 없음 |
 | M5 | **Depth Anything V2 Small** — `depth-anything/Depth-Anything-V2-Small-hf` (약 24.8M 매개변수) | FP32 PyTorch(transformers). Base·Large는 비상업이라 **쓰지 않음** | 컷아웃 → 상대 깊이맵 16bit PNG | PyTorch, GPU(없으면 CPU, Apple Silicon은 MPS 시도) | Apache-2.0 |
-| M6 (P0.5) | **Qwen3-4B** — `Qwen/Qwen3-4B` (약 4.0B 매개변수, 텍스트 전용) | **GGUF Q4_K_M**(Ollama `qwen3:4b`, 파일 2.5GB), `think: false`, `temperature 0.3`, `num_predict 160`, `num_ctx 2048` `[추론]` | 허용 입력 JSON → 2~3문장 한국어 설명(llm-contract.md) | Ollama(네이티브) via `llm-server`, Apple Silicon은 Metal / 팀 서버는 U2 | 모델 카드 기준 Apache-2.0이나 **팀 확정 기록 전 비활성**(U4) |
+| M6 (P0.5) | **Qwen3-4B-Instruct-2507** — `Qwen/Qwen3-4B-Instruct-2507` (약 4.0B 매개변수, 텍스트 전용, 생각 모드 없음) | **GGUF Q4_K_M**(Ollama `qwen3:4b-instruct-2507-q4_K_M`, 파일 2.5GB), `temperature 0.3`, `num_predict 160`, **`num_ctx 8192` 고정**(공유 Ollama 규칙) | 허용 입력 JSON → 2~3문장 한국어 설명(llm-contract.md) | Ollama(네이티브) via `llm-server`, Apple Silicon은 Metal / 팀 서버는 U2 | 모델 카드 기준 Apache-2.0이나 **팀 확정 기록 전 비활성**(U4) |
 | M7 (P1) | **TripoSR** — `stabilityai/TripoSR` | FP16/FP32 PyTorch, 출력 메시를 GLB로 내보내기 | 컷아웃 → GLB | PyTorch, **GPU 필수**(없으면 비노출, D10) | MIT. 대안 TRELLIS는 의존성 라이선스 확인 전 비활성 |
 
-- **고정 방법(BR-MDL-01)**: Hugging Face 체크포인트는 리비전(커밋 해시)과 가중치 파일 SHA-256, Ollama 모델은 `ollama show qwen3:4b --modelfile`의 `FROM` 블롭 다이제스트(sha256)를 `weights_sha256`으로 기록한다. 실행 설정(해상도·프롬프트·생성 매개변수·규칙 파일)은 `config_hash`에 넣는다. 매니페스트에 없는 태그·리비전으로는 실행하지 않는다.
+- **고정 방법(BR-MDL-01)**: Hugging Face 체크포인트는 리비전(커밋 해시)과 가중치 파일 SHA-256, Ollama 모델은 `ollama show qwen3:4b-instruct-2507-q4_K_M --modelfile`의 `FROM` 블롭 다이제스트(sha256)를 `weights_sha256`으로 기록한다. 실행 설정(해상도·프롬프트·생성 매개변수·규칙 파일)은 `config_hash`에 넣는다. 매니페스트에 없는 태그·리비전으로는 실행하지 않는다.
 - **가중치 크기(2026-09-28 확인, Hugging Face 파일 목록·Ollama 태그 페이지·GitHub 릴리스)**: 서버 적재 시 메모리는 최소 이 크기만큼 잡히고, 실행 중에는 더 잡힌다. 실행 중 메모리는 M3 말고는 아직 재지 않았다. 팀 서버에서 하나씩 올려 재고 `models/manifest.yaml`에 기록한다.
 
   | ID | 파일 | 크기 | 실행기 | 실행 중 메모리 |
@@ -219,7 +219,7 @@
   | M2 | `laion/CLIP-ViT-B-32-laion2B-s34B-b79K` `open_clip_model.safetensors` | 605MB | open_clip(`worker-cpu`) | 미측정 |
   | M3 | `drawn_humanoid_detector.mar` + `drawn_humanoid_pose_estimator.mar` | 327MB + 375MB = 702MB | TorchServe(네이티브) | RAM 약 3.1GB(1차 실측) |
   | M5 | `depth-anything/Depth-Anything-V2-Small-hf` `model.safetensors` | 99MB | PyTorch(`worker-gpu`) | 미측정 |
-  | M6 | Ollama `qwen3:4b`(Q4_K_M) | 2.5GB | Ollama | 2.9GB(`num_ctx 2048`, 적재 2.9초, Studio-B 실측) |
+  | M6 | Ollama `qwen3:4b-instruct-2507-q4_K_M` | 2.5GB | Ollama | 적재 1.07초(디스크 캐시)~13.47초(첫 읽기), `num_ctx 8192`(A 실측, `docs/A_모델재현기록.md`) |
   | M7 | `stabilityai/TripoSR` `model.ckpt` | 1,677MB | PyTorch(`worker-gpu`) | 미측정 |
 
   - 합계: P0(M1·M2·M3·M5) 약 1.85GB, P0.5까지 약 4.35GB, P1까지 약 6.0GB.

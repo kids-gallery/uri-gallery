@@ -135,8 +135,8 @@ retry:            { max_attempts: 3, backoff_s: [10, 60] }
 claim:            { seconds: 60, heartbeat_s: 20 }
 priority:         { guardian: 10, eval: 50 }
 stages:
-  split:          { timeout_s: 60,  concurrency: 2 }
-  judge:          { timeout_s: 120, concurrency: 2 }
+  split:          { timeout_s: 60,  concurrency: 1 }   # M1 CPU 추론 RSS 8.5GB(A 실측) — T068 전까지 1
+  judge:          { timeout_s: 120, concurrency: 1 }
   animate_render: { timeout_s: 600, concurrency: 1 }
   depth_relief:   { timeout_s: 180, timeout_s_cpu: 600, concurrency: 1 }
   frame_compose:  { timeout_s: 10,  concurrency: 4 }
@@ -145,7 +145,7 @@ stages:
 external:         { concurrency_per_group: 1 }         # [예시값 U12]
 ```
 
-상한에 닿으면 새 행을 점유하지 않는다(거절 없음). 대기는 큐 적체(`v_metrics_model.queue_backlog`)에 반영된다.
+워커는 프로세스당 작업 1건을 처리하므로 동시 처리 수는 pm2 인스턴스 수로 맞춘다(A 구현). 상한에 닿으면 새 행을 점유하지 않는다(거절 없음). 모델이 적재 중(`load.state='loading'`·`not_loaded`)이면 그 모델이 필요한 단계는 점유하지 않고 기다린다 — 오류가 아니다(`A_모델적재_화면요구` §2.1). 대기는 큐 적체(`v_metrics_model.queue_backlog`)에 반영된다.
 
 ## 9. 외부 작업(`external_job`)과의 관계
 

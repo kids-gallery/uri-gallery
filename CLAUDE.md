@@ -17,7 +17,7 @@
 
 | 항목 | 결정 | 근거 |
 |------|------|------|
-| 웹 프론트엔드 | Vue 3.4+ (Composition API) · TypeScript 5.x · Vite 5.x · Pinia 2.x · Vue Router 4 | Intent-Plan 웹스택, R-01 |
+| 웹 프론트엔드 | Vue 3.4+ (Composition API) · TypeScript 5.x · Vite 5.x · Pinia 2.x · Vue Router 4. 화면 구현 기준은 `design/style-guide/스타일가이드_우리아이미술관.html`(사용자 지시) | Intent-Plan 웹스택, R-01, R-20 |
 | 보호자 앱 API | Node.js 20 LTS · Express 4.x · TypeScript 5.x · mysql2 3.x (SQL 직접, ORM 없음) | Intent-Plan, U7 닫음(R-01) |
 | 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :8100, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
 | 서빙 3종 실체 | CPU 비전 = `worker-cpu`(큐 워커) · GPU = `worker-gpu`(큐 워커, 모델 상주) · LLM = `llm-server`(내부 동기 HTTP :8200, 큐 없음, P0.5) | BR-SRV-01, SD_01 P4 4.4, R-18 |
