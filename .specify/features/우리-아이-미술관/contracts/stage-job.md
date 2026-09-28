@@ -26,6 +26,10 @@
 | `sculpture` (P1) | M7 TripoSR | `gpu` | 컷아웃 | `stored_object(result_glb)` → `result(sculpture)` | **예** |
 | `caption` (P0.5) | M6 Qwen3-4B | `llm` | 허용 필드(llm-contract.md) | `caption` 행, `caption_check_failure` | 아님 — **큐로 전달하지 않음**(§11) |
 
+**모델 버전 기록**: app-api는 작업을 만들 때 그 단계 대표 모델(`split` M1 · `judge` M2 · `animate_render` M3 · `depth_relief` M5 · `sculpture` M7)의 활성 버전을 `model_version_id`에 적는다(`chk_sj_model_required`, `trg_stage_job_bi`). 활성 버전이 없으면 작업을 만들지 않는다: 판정 모델(M1·M2·M3) 중 하나라도 비활성이면 `split`·`judge`를 만들지 않고 `judgment(suggestion_state='exhausted')`를 기록해 `awaiting_confirm`으로 둔다(보호자 직접 확정, clarify 2026-09-28). 결과 모델이 비활성이면 그 확정 선택지를 막는다(openapi `unavailableChoices`).
+
+**판정 전 확정의 순서(2026-09-28 추가)**: 보호자는 판정 중에도 확정할 수 있다(BR-SUG-05). 이때 판정 결과(마스크·컷아웃·관절)가 필요한 결과 작업(`animate_render`·`depth_relief`·`sculpture`)은 `available_at`을 먼 미래로 등록해 잠가 둔다. **워커가 `judge`를 닫을 때(성공·품질 미달·소진 모두) 같은 작품의 잠긴 `origin='confirm'` 작업을 연다**(`available_at=UTC_TIMESTAMP()`). 열 때 `relief` 확정인데 `split_ok`가 TRUE가 아니면 `depth_relief`를 `done_downgraded`·`split_fail`로 닫고 `frame_compose`를 등록한다(§6 넷째 줄과 같은 결과). `frame_compose`는 판정 결과가 필요 없어 잠그지 않는다. 판정 모델이 비활성이라 판정 작업이 없으면 잠그지 않고 곧바로 연다.
+
 `split`과 `judge`는 접수 트랜잭션에서 함께 등록하되 `judge.available_at`(보완 S1)을 먼 미래로 두고, `split`이 끝나면(성공·낮춤·소진 모두) 워커가 `available_at=UTC_TIMESTAMP()`로 연다 `[추론]`. `frame_compose`는 모델이 없어 M3·M5가 멈춰도 동작한다(BR-PRC-01, FR-3).
 
 ## 3. 워커 생명주기
