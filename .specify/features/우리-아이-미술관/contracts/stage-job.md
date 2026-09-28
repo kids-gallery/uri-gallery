@@ -157,7 +157,7 @@ JSON 한 줄: `ts, level, worker, job_id, stage_kind, model_id, version_label, a
 
 ## 11. LLM 서빙군 — 동기 전달, 같은 기록 (P0.5)
 
-LLM 서빙군은 큐 워커가 없다. 실행 주체는 내부 동기 서버 **`llm-server`**(127.0.0.1:8200, research R-18)이고, 모델은 **Qwen3-4B**(`Qwen/Qwen3-4B`, GGUF Q4_K_M, 실행기 Ollama, research R-22)다.
+LLM 서빙군은 큐 워커가 없다. 실행 주체는 내부 동기 서버 **`llm-server`**(127.0.0.1:8200, research R-18)이고, 모델은 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, Ollama `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`, research R-22)다.
 
 | 항목 | CPU·GPU 서빙군 | LLM 서빙군 |
 |---|---|---|
