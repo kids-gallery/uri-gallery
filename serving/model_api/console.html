@@ -51,9 +51,10 @@ function card(m) {
   let bar = "", meta = [];
   if (st === "loading") {
     const exp = l.expectedSeconds || l.lastLoadSeconds;
-    const pct = exp ? Math.min(95, 100 * (l.elapsedSeconds || 0) / exp) : 30;
+    const pct = l.overdue ? 95 : exp ? Math.min(95, 100 * (l.elapsedSeconds || 0) / exp) : 30;
     bar = `<div class="bar"><i style="width:${pct}%"></i></div>`;
-    meta.push(`경과 ${l.elapsedSeconds ?? 0}초` + (l.remainingSeconds != null ? ` · 남은 시간 약 ${l.remainingSeconds}초` : " · 예상 시간 미측정"));
+    meta.push(`경과 ${l.elapsedSeconds ?? 0}초` + (l.overdue ? " · 예상보다 오래 걸리고 있어요" :
+              l.remainingSeconds != null ? ` · 남은 시간 약 ${l.remainingSeconds}초` : " · 예상 시간 미측정"));
   }
   if (l.lastLoadSeconds != null) meta.push(`마지막 적재 ${l.lastLoadSeconds}초`);
   if (l.expectedSeconds != null) meta.push(`예상 ${l.expectedSeconds}초`);

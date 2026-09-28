@@ -41,10 +41,41 @@
 | 웜업과 실제 호출의 `num_ctx`가 다를 때 | 첫 실제 호출에서 **다시 적재 2.9초** — 웜업도 `num_ctx 2048`로 맞췄다 |
 | instruct 콜드 적재 | `python -m ops.models measure M6 --write` 결과를 매니페스트 `load.expected_seconds`에 기록 |
 
+### 주의 — `localhost`가 아니라 `127.0.0.1`
+
+`curl localhost:11434`는 IPv6 `::1`로 붙어 **다른 Ollama 인스턴스**(LaunchAgent, 거의 비어 있음)를 본다(참조 문서 §4 P7). 적재 여부(`/api/ps`)가 다르게 나와 측정을 헷갈렸다. 코드·설정·수동 확인 모두 `http://127.0.0.1:11434`를 쓴다.
+측정 도구가 "이미 올라가 있음"을 보고하며 부른 짧은 요청도 keep_alive를 5분 늘린다 — 콜드 측정은 5분 동안 아무 요청 없이 기다린 뒤 한 번만 한다.
+
 ### 프롬프트(규칙 검사 정본은 C `caption/`, U11)
 
 예시 없이 쓰면 입력에 없는 물건("배")을 지어내고 반말로 끝났다. 예시 2개(few-shot)와 "words가 없으면 '말했어요'를 쓰지 않는다"를 넣은 뒤 3건 모두 해요체 2문장, 입력 낱말만 썼다. 한 건은 words 없이 아이 말을 지어내서 최소 검사(`말했`)를 넣었다 — 내용 규칙은 C 패키지가 대신한다.
 
-## M1·M2·M3·M5 — 미실시 (T070·T081·T082)
+## M1·M2·M5 — 재현 (T070·T082, 2026-09-28, Studio-B, torch 2.4.1)
 
-어댑터 틀과 가짜 어댑터로 흐름 시험만 끝났다. 실제 가중치 재현·SHA-256·적재 시간은 `ops.models measure <ID> --write`로 채운다.
+| | M1 BiRefNet | M2 OpenCLIP ViT-B-32 | M5 Depth Anything V2 Small |
+|---|---|---|---|
+| 출처 | `ZhengPeng7/BiRefNet` | `laion/CLIP-ViT-B-32-laion2B-s34B-b79K` | `depth-anything/Depth-Anything-V2-Small-hf` |
+| HF 리비전 | `e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4` | `1a25a446712ba5ee05982a381eed697ef9b435cf` | `5426e4f0f36572d16453bbda7a8389317b1bef99` |
+| 가중치 파일 | `model.safetensors` 444,473,596B | `open_clip_model.safetensors` | `model.safetensors` 99,173,660B |
+| SHA-256 | `9ab37426…a154` | `ac4f8c4b…56e6` | `3152477c…6b70` |
+| 장치 | **CPU만** — MPS에 `torchvision::deform_conv2d` 없음 | MPS | MPS(`exec_device='gpu'`, runtime `torch-2.4.1-mps`) |
+| 적재(캐시 있음) | 0.7~2.4초(첫 내려받기 포함 14.8초) | 1.9~3.9초(첫 내려받기 포함 20초) | 0.2~1.5초 |
+| 추론 | 9~10초/장(1024 입력, CPU) | 0.03초/장(MPS, 첫 장 0.1초) | MPS 0.16초 · CPU 0.52초/장(1024×1024) |
+| 최대 RSS | **8.5GB**(CPU 추론 중) | 1.0GB | 1.3GB |
+
+전체 SHA-256은 `models/manifest.yaml`. 가중치 캐시는 `models/hf/`(git 제외).
+
+확인한 것:
+- M1: 막대 사람 그림 → 전경 5.7%, 컷아웃 RGB가 원본과 픽셀 단위로 같음(FR-22). 빈 종이 → 전경 0% → `quality_below`(split_fail).
+- M2: 같은 그림 → `person` 0.952, 태그 `사람`·`해`(노란 얼굴을 해로 봄 — 후보일 뿐, 보호자가 고른다).
+- M5: 정사각형이 아닌 입력에서 DINOv2 위치 임베딩 보간(bicubic)이 MPS에 없어 실패 → `PYTORCH_ENABLE_MPS_FALLBACK=1`(`serving/adapters/__init__.py`)로 그 연산만 CPU.
+- M2는 open_clip 기본이 pickle(`open_clip_pytorch_model.bin`, `torch.load`)이라 safetensors를 직접 읽게 바꿨다. M1은 HF 원격 코드(`trust_remote_code`)라 리비전 고정 없이는 적재하지 않는다.
+- 실모델 연결 시험(임시 DB, M3만 가짜): 그림 → split(M1 10.7초) → judge(M2+M4, `animated` 제안) → relief 확정 → depth_relief(M5, 16bit 800×600) → `awaiting_review`, `result_cause=guardian_choice`.
+
+위험(T068로 넘김): **M1 CPU 추론 중 8.5GB**. worker-cpu 동시 2건(limits.yaml)이면 17GB 이상 — 팀 서버 RAM 확인 전에는 split 동시 처리를 1로 두는 것을 권한다.
+
+## M3 Animated Drawings — 미실시 (T081)
+
+TorchServe 네이티브 설치(약 33GB)와 AD venv가 없다. 어댑터(`serving/adapters/m3_render.py`)는 AD 저장소 `image_to_annotations.py` 형식(COCO 17점 → char_cfg skeleton)대로 만들고 가짜 TorchServe·가짜 AD 스크립트로만 시험했다.
+- 관절 skeleton에는 `head`가 없다(`neck`이 코 위치) — M4 규칙의 필수 관절에서 `head`를 뺐다.
+- GIF→MP4는 호스트 Homebrew ffmpeg가 깨져 있어(`libx265.215.dylib` 없음) `imageio-ffmpeg 0.6.0`의 고정 바이너리(ffmpeg 7.1 arm64)를 쓴다.

@@ -265,3 +265,29 @@ def test_load_failure_turns_into_model_not_ready(env):
     assert w.board.get("M1").state == "failed"
     assert w.run_once() == "retry_wait"
     assert env.job_row(jid)["error_class"] == "model_not_ready"
+
+
+def test_concurrent_flush_and_load_timeout(env):
+    w = make_worker(preload=False)
+    errs = []
+
+    def spam():
+        try:
+            for _ in range(200):
+                w.board.flush()
+        except Exception as e:      # pragma: no cover
+            errs.append(e)
+    ts = [threading.Thread(target=spam) for _ in range(4)]
+    [t.start() for t in ts]; [t.join() for t in ts]
+    assert errs == []
+    w.board.set("M1", state="loading", started_at=time.time() - 400)
+    w.check_load_timeouts()
+    assert w.board.get("M1").state == "failed" and w.board.get("M1").diagnostic == "load_timeout"
+
+
+def test_overdue_hides_remaining():
+    from common.model_state import describe
+    d = describe({"state": "loading", "started_at": 100.0, "expected_s": 2.0}, now=120.0)
+    assert d["overdue"] is True and d["remainingSeconds"] is None
+    d = describe({"state": "loading", "started_at": 100.0, "expected_s": 10.0}, now=103.0)
+    assert d["overdue"] is False and d["remainingSeconds"] == 7.0

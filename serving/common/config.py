@@ -28,6 +28,7 @@ class Settings:
     model_root: Path
     run_dir: Path
     fake_models: bool
+    fake_set: frozenset
     gpu_enabled: bool
     torchserve_url: str
     ollama_url: str
@@ -49,7 +50,9 @@ def load_settings() -> Settings:
         model_root=Path(os.environ.get("MODEL_ROOT", str(REPO_ROOT / "models"))),
         # 워커별 모델 적재 상태 파일(model_api가 모아서 보여 준다)
         run_dir=Path(os.environ.get("UAM_RUN_DIR", str(SERVING_ROOT / ".run"))),
+        # UAM_FAKE_MODELS=1 → 모두 가짜 / "M3,M7" → 그 모델만 가짜(재현 전 모델만 대신한다)
         fake_models=_bool("UAM_FAKE_MODELS"),
+        fake_set=frozenset(x.strip() for x in os.environ.get("UAM_FAKE_MODELS", "").split(",") if x.strip().startswith("M")),
         gpu_enabled=_bool("GPU_ENABLED"),
         torchserve_url=os.environ.get("TORCHSERVE_URL", "http://127.0.0.1:8080"),
         # OLLAMA 설정 참조 §7.1: URL·모델 이름은 환경 변수로

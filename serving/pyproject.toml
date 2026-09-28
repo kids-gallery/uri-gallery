@@ -24,6 +24,7 @@ models = [
   "timm==1.0.9",
   "kornia==0.7.3",
   "einops==0.8.0",
+  "imageio-ffmpeg==0.6.0",   # 고정된 정적 ffmpeg(M3 GIF→MP4). 호스트 Homebrew ffmpeg에 기대지 않는다
 ]
 
 [tool.pytest.ini_options]

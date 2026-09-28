@@ -79,7 +79,7 @@ class Worker:
     def adapter(self, model_id: str):
         a = self.adapters.get(model_id)
         if a is None:
-            a = self.adapters[model_id] = build_adapter(model_id, self.s.fake_models)
+            a = self.adapters[model_id] = build_adapter(model_id, self.s.fake_models or model_id in self.s.fake_set)
         return a
 
     def load_model(self, model_id: str) -> bool:
@@ -106,7 +106,20 @@ class Worker:
         for m in self.models:
             if self._stop.is_set():
                 return
-            self.load_model(m)
+            try:
+                self.load_model(m)
+            except Exception:
+                self.board.set(m, state="failed", finished_at=time.time(), diagnostic="load_crashed")
+
+    def check_load_timeouts(self) -> None:
+        """적재가 limits.load.timeout_s를 넘으면 failed — 멈춘 적재가 작업을 영원히 붙잡지 않게."""
+        limit = self.limits.get("load", {}).get("timeout_s", 300)
+        now = time.time()
+        for m in self.models:
+            st = self.board.get(m)
+            if st.state == "loading" and st.started_at and now - st.started_at > limit:
+                self.board.set(m, state="failed", finished_at=now, diagnostic="load_timeout")
+                self.log.warning("model_load", model_id=m, load_state="failed", diagnostic="load_timeout")
 
     def poll_warmup_requests(self) -> None:
         """운영 화면(S11)의 "지금 불러오기" — model-api가 `{run_dir}/warmup/{model}` 파일을 남긴다."""
@@ -329,6 +342,7 @@ class Worker:
                 self.refresh_enabled()
                 last_refresh = time.time()
             self.poll_warmup_requests()
+            self.check_load_timeouts()
             self.board.flush()           # 생존 신호(updated_at)
             try:
                 got = self.run_once()

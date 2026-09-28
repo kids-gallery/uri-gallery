@@ -51,6 +51,7 @@ class ModelStateBoard:
         self.file = self.dir / f"{worker}.json"
         self.ws = WorkerState(worker=worker, serving_group=serving_group)
         self._lock = threading.Lock()
+        self._io = threading.Lock()      # 적재 스레드와 메인 루프가 동시에 쓴다
 
     def get(self, model_id: str) -> ModelLoad:
         with self._lock:
@@ -67,9 +68,13 @@ class ModelStateBoard:
         with self._lock:
             self.ws.updated_at = time.time()
             data = asdict(self.ws)
-        tmp = self.file.with_suffix(".tmp")
-        tmp.write_text(json.dumps(data), encoding="utf-8")
-        os.replace(tmp, self.file)
+        with self._io:
+            tmp = self.file.with_name(f"{self.file.stem}.{threading.get_ident()}.tmp")
+            try:
+                tmp.write_text(json.dumps(data), encoding="utf-8")
+                os.replace(tmp, self.file)
+            except OSError:
+                tmp.unlink(missing_ok=True)   # 상태 게시 실패가 워커를 멈추게 하지 않는다
 
     def remove(self) -> None:
         self.file.unlink(missing_ok=True)
@@ -98,10 +103,14 @@ def describe(m: dict, now: float | None = None) -> dict:
     d = {"state": m.get("state"), "device": m.get("device"),
          "expectedSeconds": m.get("expected_s"), "lastLoadSeconds": m.get("last_load_s"),
          "elapsedSeconds": None, "remainingSeconds": None, "diagnostic": m.get("diagnostic")}
+    d["overdue"] = False
     if m.get("state") == "loading" and m.get("started_at"):
         el = max(0.0, now - m["started_at"])
         d["elapsedSeconds"] = round(el, 1)
         exp = m.get("expected_s") or m.get("last_load_s")
         if exp:
-            d["remainingSeconds"] = round(max(0.0, exp - el), 1)
+            if el > exp * 1.5 + 2:
+                d["overdue"] = True        # 예상보다 오래 걸림 — "~0초 남음"을 보이지 않는다
+            else:
+                d["remainingSeconds"] = round(max(0.0, exp - el), 1)
     return d

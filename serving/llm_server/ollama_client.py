@@ -22,6 +22,7 @@ import threading
 import time
 import urllib.parse
 
+# localhost 금지: IPv6 ::1은 공유 서버의 다른(설정만 있고 트래픽 없는) 인스턴스로 간다(참조 문서 §4 P7)
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 CHAT_MODEL = os.environ.get("OLLAMA_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M")
 TIMEOUT = 300
