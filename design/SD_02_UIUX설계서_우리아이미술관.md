@@ -5,11 +5,12 @@
 
 > **문서 식별**: `design/SD_02_UIUX설계서_우리아이미술관.md`
 > **작성일**: 2026-09-28
-> **입력**: `design/SD_01_프로세스설계서_우리아이미술관.md`(개정 2, D17 반영본 — IPO · 게이트 맵 G0~G25 · 인계 계약 H1~H16) · `design/SD_01_프로세스통합.md` · `design/UC_00_개요_우리아이미술관.md` · `UC_01`~`UC_12` 전건(액터 · 기본흐름 · 대체·예외흐름 · 업무규칙 · UseCase Diagram) · 공통 기준 §11 통합 결정 D1~D17
+> **입력**: `design/SD_01_프로세스설계서_우리아이미술관.md`(개정 2, D17 반영본 — IPO · 게이트 맵 G0~G27 · 인계 계약 H1~H16) · `design/SD_01_프로세스통합.md` · `design/UC_00_개요_우리아이미술관.md` · `UC_01`~`UC_12` 전건(액터 · 기본흐름 · 대체·예외흐름 · 업무규칙 · UseCase Diagram) · 공통 기준 §11 통합 결정 D1~D17
 > **원천**: `Intent-Specify.md` [가치제안] 경험 원칙 · [부정적 영향] · spec v2.1 성공 기준. 원칙 역산의 근거로만 썼다.
 > **생성 프롬프트**: `분석설계 프롬프트 - UI_UX.md`
 > **표기**: `S` = 화면 · `C` = 공통 컴포넌트 · `UX` = 설계 원칙(프롬프트의 `U1~UN`에 해당. 이 프로젝트에서 `U`는 공통 미해결 번호라 겹치지 않게 `UX`로 썼다) · `P`/`G`/`H` = SD_01의 프로세스/게이트/인계 · `BF n` = UC 기본흐름 n단계 · `A`/`E` = UC 대체/예외흐름 · `[추론]` = 원천에 직접 없는 설계 판단
 > **와이어프레임 예시 값**: 별칭은 `하*`, 가족명은 `하*네`, 팀원 계정은 `jo*@su*.kr`처럼 가렸다. 날짜의 일은 `**`로 가렸다.
+> **개정 (2026-09-28, 통합 결정 D18)**: 이용자 중복을 별칭이 아니라 보호자 이메일 계정으로 막게 되어 **S0 가입(이메일)**과 **S0b 로그인 정보 찾기** 화면을 추가하고(SD_01 1.0 · 1.R1~1.R3 · G26 · G27), S1의 별칭 중복 차단을 "같은 별칭 안내(저장은 유지)"로 바꿨다.
 
 ---
 
@@ -76,6 +77,8 @@
 
 | 화면 | 명칭 | 대응 프로세스 | 주 사용자 | 성격 |
 |:--:|---|---|---|---|
+| S0 | 가입(이메일) | P1 (1.0) | 보호자(가입 전) | 입력 · 1회 |
+| S0b | 로그인 정보 찾기 | P1 (1.R1~1.R3) | 보호자(로그인 전) | 입력 · 드묾 |
 | S1 | 아이 관리 | P1 (1.1~1.5) · P6 진입(아이 삭제) | 보호자 | 설정 · 드묾 |
 | S2 | 작품 올리기 | P2 (2.1~2.4) | 보호자 | 입력 · 비동기 경계 앞 |
 | S3 | 판정 제안 확정 | P2 (2.5~2.7) · P0-1 결과(H3) 표시 | 보호자 | 결정 |
@@ -334,7 +337,7 @@ salt
 ```plantuml
 @startuml
 skinparam backgroundColor #F3F1EB
-title S1 아이 관리 - 별칭 중복 차단 상태
+title S1 아이 관리 - 같은 별칭 안내 상태
 salt
 {+
 { 우리 아이 미술관 - 보호자 | 가족: 하*네 | [작품 목록] | [로그아웃] }
@@ -352,17 +355,17 @@ salt
   별칭 | "하*            "
   실명 - 생년월일 - 출생연도는 받지 않아요
 }
-{^"막힘  G4 - 가족 안 별칭 중복  E1"
-  사유: 이미 쓰는 별칭이에요
-  해제 주체: 보호자 - 다른 별칭 입력
-  다음 행동: [별칭 고치기] | [저장 (비활성) - 다른 별칭을 적어 주세요]
+{^"안내  같은 별칭  A5 - 저장은 됐어요"
+  같은 별칭 하*가 이미 있어요. 그대로 둘까요, 고칠까요?
+  아이는 시스템이 따로 구분해요 - 이용자 중복은 이메일 계정으로 막아요
+  다음 행동: [그대로 두기] | [별칭 고치기]
 }
 { [작품 올리기로] | [취소] }
 }
 @enduml
 ```
 
-**[「S1 아이 관리 - 별칭 중복 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNU99P2nAQf-9fccGX_Ygm6J54WMwW3R-wx4UlbJrFiGAAn5CkSllQSNTZatGWlAiDGcyKdFgS_qLe9X_YfdvaMOPD6At3vfvc53P36WqxlCmU9nayUnF7K7ebKWR24Evm6_a3Qn4vt_E-n80XYGF9ZT259k4qbZWym_AxCaQpZDrgOTL-HMIi4Fih6R1Q9wzHf4DsATYGQNUDv2pIxUy2JJVfS2WgK1uUR83426W6xRBBv-PrLrVPYR88W6bOKAW-pr9CpcuZT9Q-83_UAW9_YcdMiwx2DO_BFUjX1TRUpKUlgd9X_IujFNdHE85HQf1biABIHzIBz7U55bc0sjT-493b3ngWxKYrak2HtFlYRJZCDSPC_5z4VwAs420tIZUXHuXvx3Pqugg6NscSBEo4Ti4HzMNab2zRVOcp6ZguHd6RZaS5AW1VNKz8X32FH0Euyk5U3mB8E-w3Ge5avLxSE4xNjS7TBmzK1LCiZQfLmsjYc_BYjRrJVFj-AV0w5M2MFJf7BbVHqYlA1dxvDnyRb29ijY-jkjkT4cTgDF3aeKIEI5hRX-ZFHofEQgXYP_LbOsCHN9wSMuOS-hN3wVoyGHU4JMNKiXOxk4DO7XnuDl2ehoR9zeEtBRrundSc03hDzLbnxvDtGlo9IbHRJbMJbCU8aaWeu4CwpCVTuwcvcKr4LYOU0cungM8tUByrHPs5tiO7OQR9GND3pvBzRVrdzG3wV_kXsKj4xQ==)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1 아이 관리 - 같은 별칭 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNU8Fu2kAQvfsrRuTWNkgk6iWHNm3V_ECPFZVoE1VRCFRATgTJCaYigBRo7RSIjYxKSomI6hSHGIkv8o7_oTNrg0jVQ-2LZ_zm7Xszs9v5QipXODpMK_mD_cynVC51CO9THw4-5rJHmd1X2XQ2B2s7mzuJ1y-Vwn4hvQdvEoCGhpYLvquKH2NYB9_poKWCmGg4u6G_VXHqApZPgrKp5FPpglJ8rBQBuw7Do2Lxy8OqTRRULyZu0Paw14Rj4lKxf7sFgdF-JLQBZd5irxV8qYK4Hom-leSM6Jv-vcdMl-UklJR4nPmHWnBxtkX46ISvtxL_DCICbI9JgO85lAo6BtoGffi_HX8yl7HlMdZy0ZiHILQ1rJsR_7vYQwOwIa4rMaW4tvB9vDyn2uag71CsgHRCcWJDKg-x_sTGWZtOSS7l4ukN2maSCoSjc8Hm_-FL9LK4KDvVqYOyp1wohg2iu-SfXT1G3FgfkGwQDRXrdtRs2aypKq5cUdOjQrQ0sn-CF0T5fY6aR_UsbWE1Jl2tPCvk6zR7S1RoODpacw6nJmXwmyPONXkEKRqq1MhaKGzhQO7NX9sEL54yg61i70qmm00SFbl5CGVJbJ780HbRNKohMg60LOSYtgZEq-3PGpR8EvbUDqPnrF52kPXR0LE2CCqm7IzucKF_NxZTLTCYkAXRmnRHvLI4aInJHcvg6pG07JMg20BzLo8cnkU2qX_1AVoNoD0V5x1a1VVhTTnef82c-7O8BsstpioJx_uf-LnB16CkbO9lduky_wEXjB-N)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 4-2 영역별 설계
 
@@ -372,21 +375,108 @@ salt
 | 여정 레일 | "아이 등록" 단계 | — | UX7 (C1 여정 변형) |
 | 우리 아이 목록 | 별칭 · 작품 수 · 별칭 고치기 · 아이 삭제 | 1.1 Output 별칭 목록 · 작품 수는 6.1의 "지워지는 항목" 안내와 같은 값 [추론] | UX8 — 다른 가족 아이는 목록에 없다 |
 | 아이 추가 | 별칭 입력 하나, "실명 대신 가족이 부르는 별칭" 안내, 받지 않는 항목 명시 | 1.2 · 1.3 Input 별칭 | 최소 수집(BR-CHD-01). 받지 않는 칸을 아예 두지 않는다 |
-| 차단 블록 | G4 별칭 검사(E1 중복 · E2 빈 값) · G3 저장 실패(E5) | 1.4 Output 거절 사유 코드 | UX6 (C2 · C3) |
+| 안내·차단 블록 | 같은 별칭 안내(A5, 저장 유지) · G4 별칭 검사(E2 빈 값·형식) · G3 저장 실패(E5) | 1.4 Output 안내·거절 사유 코드 | UX6 (C2 · C3). 별칭 중복은 막지 않는다(D18) |
 
 ### 4-3 상호작용
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
 | 별칭 입력 | 빈 값이면 저장 버튼 비활성 | UC1 BF3 · E2 |
-| 저장 | `POST /v1/children`. 중복이면 G4 블록, 입력값은 칸에 남김 | UC1 BF4 · E1 |
+| 저장 | `POST /v1/children`. 같은 별칭이면 저장 뒤 안내 블록(A5)을 보인다 | UC1 BF4 · A5 |
 | 별칭 고치기 | 같은 칸을 수정 모드로 열고 같은 검사 | UC1 A1 |
 | 아이 삭제 | S9 대화상자(작품 수 안내) | UC7 A1 |
 | 작품 올리기로 | S2로 이동. 아이가 없으면 버튼 비활성 "아이를 먼저 등록해 주세요" | UC1 A3 |
 
 ### 4-4 상태 전이
 
-`목록` → (아이 추가) → `입력 중` → (저장) → `저장 중` → `목록(갱신)` · `입력 중` → (G4 미통과) → `차단(G4)` → (별칭 고침) → `입력 중` · `저장 중` → (G3 실패) → `차단(G3)` → (다시 시도) → `저장 중` · 어느 상태든 (세션 만료, G0) → 로그인.
+`목록` → (아이 추가) → `입력 중` → (저장) → `저장 중` → `목록(갱신)` · `입력 중` → (G4 미통과: 빈 값·형식) → `차단(G4)` → (별칭 고침) → `입력 중` · `저장 중` → (같은 별칭) → `목록(갱신) + 안내(A5)` · `저장 중` → (G3 실패) → `차단(G3)` → (다시 시도) → `저장 중` · 어느 상태든 (세션 만료, G0) → 로그인.
+
+### 4-5 S0 가입(이메일) · S0b 로그인 정보 찾기 — 2026-09-28 추가(D18)
+
+보호자가 처음 쓰는 화면이다. 이용자 중복은 여기서 **이메일**로 막는다(UC13 · SD_01 1.0 · G26 · G27). 따로 아이디를 만들지 않는다. 받는 것은 이메일과 비밀번호뿐이다.
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S0 가입 - 이미 가입된 이메일 차단 상태
+salt
+{+
+{ 우리 아이 미술관 | [로그인] }
+..
+{ 진행: [가입] > 메일 확인 > 아이 등록 > 작품 올리기 > 확정 > 결과 확인 > 이야기 > 전시 }
+..
+{^"이메일로 가입 - 이메일과 비밀번호만 받아요"
+  이메일 | "ha*@ex*.com    "
+  이메일이 로그인 아이디예요 - 따로 아이디를 만들지 않아요
+  비밀번호 | "********       "
+  비밀번호 확인 | "********       "
+  이름 - 전화번호 - 아이 정보는 받지 않아요
+}
+{^"막힘  G26 - 이미 가입된 이메일  E1"
+  사유: 이미 가입된 이메일이에요
+  해제 주체: 보호자 - 로그인하거나 로그인 정보 찾기
+  다음 행동: [로그인] | [로그인 정보를 잊었어요] | [다른 이메일로 가입]
+}
+}
+@enduml
+```
+
+**[「S0 가입 - 이미 가입된 이메일 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9U19r01AUf8-nONS3yopT8KEPUpTND-DjqBC34sb6R9oMhK1QtwhZW7C6ZEtnEjLslgkFsy5ghOIHyjn5Dp6bpCOVsfuUe-7vnt-fe1LpKHJb2WvUpc7uTvOD3JYb8E7e3H3fbu01t1616q02PFp_tr669lJSdpR6Dd48gcjvkfMZVoDsAH-F2R5HVlL4qZM9B_KvcXANdPQpPrKkjlxXpP3H0j7QuY9XUyBDZSzwbdLcKOjBAWzghRX9DskOq9CVSiUB9tT49LgMGylDFV5A1j4eGwzk_aLRyQ1e2GLvfI2_aUDmlGmi0OeSwLoGf0QzP7rN37UDMuYpiFyVBlZG_LZwZ4RFLftNqqIN_lHR7-FMi80QvSGg_12IOdcLEuSCOIDCtlys1D4WS5utBvBaOk_EL4xnblDXydS4E1Oi7gsJdwd4yczeEE8m5PW43E85uWVej2AtZgvSVfgfksVwP1KQXanCsqvGYz27srKIm_PE2wD7euJ6SUhXxIfeceyYAK-fPn94TGBtNaE7nJLllh9Airc6G6VOYyMgl89-zGkWlIGVsDhyRiKuRZSxYUY3Ph6a-XQT1Tyaf_nNRRyDCdlD4BHDL-Py0gDmx3HhlpMnp09nGp0GLCQFDSZ4GcI941LlJLpSpdbc4r_rH-Nw3yA=)** — 클릭 시 브라우저로 연결됩니다.
+
+| 영역 | 내용 | 데이터 바인딩 | UX 의도 |
+|---|---|---|---|
+| 헤더 | 서비스 이름 · 로그인 링크 | — | 이미 계정이 있으면 바로 로그인(UC13 A2) |
+| 여정 레일 | "가입 → 메일 확인"이 첫 단계 | — | UX7 (C1 여정 변형). 메일 확인까지 해야 끝난다는 것을 보인다 |
+| 가입 양식 | 이메일 · 비밀번호 · 비밀번호 확인. "이메일이 로그인 아이디" 안내, 받지 않는 항목 명시 | 1.0 Input 이메일·비밀번호 | 최소 수집(BR-ACC-07). 아이디 칸을 두지 않는다 |
+| 메일 확인 대기 | "메일함을 확인해 주세요" · [확인 메일 다시 받기] | 1.0 Output 발송 결과 | UC13 BF4 · A1 · E6 |
+| 차단 블록 | G26 이메일 검사(E1 이미 가입 · E2 형식 · E3 비밀번호 · E4 동시 가입) · G27 링크 만료(E7) · G3 저장 실패(E5) · E8 요청 한도 | 1.0 Output 거절 사유 코드 | UX6 (C2 · C3) |
+
+| 조작 | 동작 | 근거 |
+|---|---|---|
+| 가입 | 형식·일치를 먼저 검사하고 `POST /v1/auth/signup`. 이미 가입된 이메일이면 G26 블록에서 로그인·찾기로 안내하고 비밀번호 칸은 비운다 | UC13 BF2~3 · E1 · E4 |
+| 확인 메일 다시 받기 | `POST /v1/auth/email/verify/resend`. 이전 링크는 무효. 재요청 간격 제한 | UC13 A1 · E8 |
+| 메일 링크 | `POST /v1/auth/email/verify`. 유효하면 세션을 받고 S1로 이동해 "이제 아이를 등록해 주세요"를 보인다. 만료면 G27 블록 | UC13 BF5~6 · E7 |
+
+상태 전이: `입력 중` → (가입) → `저장 중` → `메일 확인 대기` → (링크) → `S1(가입 완료)` · `저장 중` → (이미 가입·동시 가입) → `차단(G26)` → (로그인 / 찾기 / 다른 이메일) · `메일 확인 대기` → (링크 만료) → `차단(G27)` → (다시 받기) → `메일 확인 대기`.
+
+**S0b 로그인 정보 찾기** — 로그인 화면의 "로그인 정보를 잊었어요"에서 들어온다(UC14).
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S0b 로그인 정보 찾기 - 메일 보냄 상태
+salt
+{+
+{ 우리 아이 미술관 | [로그인] }
+..
+{^"로그인 정보 찾기"
+  가입한 이메일 | "ha*@ex*.com    " | [메일 받기]
+  로그인 아이디는 가입한 이메일이에요
+}
+{^"안내  가입된 이메일이면 메일을 보냈어요"
+  메일의 링크로 비밀번호를 새로 정해 주세요
+  링크는 한 번만 - 정해진 시간 안에만 쓸 수 있어요
+  메일이 없으면 스팸함을 보거나 잠시 뒤 다시 받아 주세요
+  다음 행동: [메일 다시 받기] | [로그인으로]
+}
+}
+@enduml
+```
+
+**[「S0b 로그인 정보 찾기 - 메일 보냄 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1kt9KAlEQxu_PUwx2VyRFd11JUS_QZRhsJRX-C10hUEFzi62EonbNbA0jywShUy20gfRAO7Pv0BzTSqi92XPOnO-b33y7kayuZfRcMiGy8Z3UrpbRkrCubcS3MulcanMxnUhnYGJ5bnl2aUHoO3oiBisz64C3jv_mUdMDatn46gLJD9-TMA3YtajZBz7DigFUKQcVR2S1hC7yUyIP1JD40AOyDWq6gE8emS3fLUEBVr89o1AU4bDIr4X-aRMSAL4s0c1BYDvARsOmBQhta5OR2N5keCOdBH5CA-MhkrxmbZS1v2wHHGhZeGz9ZckLujyjhiWKiodsE_fdUXM8G7-JXRdGG-MrAZNqLqsV8KhSB-yUg3KPIQDfDZQlfDGDuof3fY7LVMc8bGDzsHd9MjzVHEYaplR8rMBOldP-ukkdTvrE8SW_bJOBVZEueDyzDnQzhPjFwN6Xh-T0FTEdt4OqF9iPQ2j_WeK-krXYEvC8DXjSHizlNcc1TsWVZhWC2hGeXs3_JP0tUIGPfVvV9NaJcpxFEYmlNvnH-wRMWHCv)** — 클릭 시 브라우저로 연결됩니다.
+
+| 영역 | 내용 | 데이터 바인딩 | UX 의도 |
+|---|---|---|---|
+| 찾기 양식 | 이메일 입력 하나 · 메일 받기 | 1.R1 Input 이메일 | 입력은 하나만 받는다 |
+| 안내 블록 | 가입 여부와 관계없이 같은 문구 | 1.R2 Output(화면에는 계정 유무 없음) | BR-ACC-08. 남의 가입 여부를 알아내는 데 쓰이지 않게 한다 |
+| 재설정 화면 | 새 비밀번호 · 확인 · 저장. 만료면 G27 블록 | 1.R3 Input 토큰·새 비밀번호 | UC14 BF4~6 · E2 · E3 |
+
+| 조작 | 동작 | 근거 |
+|---|---|---|
+| 메일 받기 | `POST /v1/auth/recovery`. 응답 문구는 항상 같다. 한도 초과면 "잠시 뒤 다시"(이것도 같은 문구 규칙) | UC14 BF2~3 · A1 · A2 · E6 |
+| 메일 링크 → 저장 | `POST /v1/auth/recovery/reset`. 성공하면 "이메일과 새 비밀번호로 로그인해 주세요"와 함께 로그인 화면으로 | UC14 BF4~6 · E2 · E3 · E5 |
+
+상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
 
 ---
 

@@ -1,7 +1,9 @@
 -- =====================================================================
 -- 우리 아이 미술관 (P0 · P0.5 · P1) — SD_03 데이터베이스 DDL
 -- 설계서: design/SD_03_데이터베이스설계서_우리아이미술관.md
--- 입력: SD_02 UI/UX 설계서 · SD_01 프로세스 설계서(개정 2, D17) · UC_01~UC_12 · 공통 기준 D1~D17
+-- 입력: SD_02 UI/UX 설계서 · SD_01 프로세스 설계서(개정 3, D18) · UC_01~UC_14 · 공통 기준 D1~D18
+-- 개정 (2026-09-28, D18): 보호자 이메일 로그인(guardian_account 이메일·비밀번호 해시·확인 시각,
+--   auth_email_token 신설), 별칭 중복 검사 제거(uq_child_family_alias 삭제)
 --
 -- 표준 SQL을 기준으로 썼다. 검증 DBMS는 MariaDB 12.0.2다. 아래는 MariaDB 때문에
 -- 표준에서 벗어난 곳이다(이탈 사유).
@@ -66,14 +68,43 @@ CREATE TABLE IF NOT EXISTS family (
 CREATE TABLE IF NOT EXISTS guardian_account (
   account_id           BIGINT    NOT NULL AUTO_INCREMENT,
   family_id            BIGINT    NOT NULL,
+  -- D18 · BR-ACC-06: 로그인 아이디는 이메일. 따로 아이디 컬럼을 두지 않는다
+  email                VARCHAR(254) NOT NULL,
+  -- 대소문자 무시 유일(BR-ACC-06, G26). 이탈 사유 5) 생성 컬럼 STORED + UNIQUE
+  email_norm           VARCHAR(254) GENERATED ALWAYS AS (LOWER(email)) STORED,
+  -- BR-ACC-07: 비밀번호는 해시로만 저장한다
+  password_hash        VARCHAR(255) NOT NULL,
+  -- UC13 BF5: 확인 메일 링크를 누르기 전에는 NULL
+  email_verified_at    TIMESTAMP NULL DEFAULT NULL,
   legal_rep_confirmed  BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_guardian_account PRIMARY KEY (account_id),
+  CONSTRAINT uq_guardian_email UNIQUE (email_norm),
+  CONSTRAINT chk_guardian_email_format CHECK (email LIKE '%_@_%._%'),
   CONSTRAINT fk_guardian_family FOREIGN KEY (family_id) REFERENCES family (family_id),
   -- U1 미정: 보호자 1계정 가정. 공동 보호자가 정해지면 이 UNIQUE를 푼다
   CONSTRAINT uq_guardian_family UNIQUE (family_id),
   -- BR-PRV-03: 보호자 계정만으로 법정대리인 확인 완료로 보지 않는다(U13 전까지 항상 FALSE)
   CONSTRAINT chk_guardian_legal_rep CHECK (legal_rep_confirmed = FALSE)
+);
+
+-- D18 · BR-ACC-08: 가입 확인(verify)·비밀번호 재설정(reset) 메일 링크 토큰.
+-- 토큰 원문은 저장하지 않고 해시만 둔다. 1회용(used_at)·유효 시간(expires_at)·재발급 시 무효(revoked_at)
+CREATE TABLE IF NOT EXISTS auth_email_token (
+  token_id       BIGINT       NOT NULL AUTO_INCREMENT,
+  account_id     BIGINT       NOT NULL,
+  purpose        VARCHAR(16)  NOT NULL,
+  token_hash     CHAR(64)     NOT NULL,
+  expires_at     DATETIME     NOT NULL,
+  used_at        DATETIME     NULL DEFAULT NULL,
+  revoked_at     DATETIME     NULL DEFAULT NULL,
+  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT pk_auth_email_token PRIMARY KEY (token_id),
+  CONSTRAINT fk_token_account FOREIGN KEY (account_id) REFERENCES guardian_account (account_id) ON DELETE CASCADE,
+  CONSTRAINT uq_token_hash UNIQUE (token_hash),
+  CONSTRAINT chk_token_purpose CHECK (purpose IN ('verify', 'reset')),
+  -- 쓴 토큰과 무효로 만든 토큰을 겹치지 않게 한다
+  CONSTRAINT chk_token_used_or_revoked CHECK (used_at IS NULL OR revoked_at IS NULL)
 );
 
 CREATE TABLE IF NOT EXISTS child (
@@ -84,8 +115,8 @@ CREATE TABLE IF NOT EXISTS child (
   updated_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_child PRIMARY KEY (child_id),
   CONSTRAINT fk_child_family FOREIGN KEY (family_id) REFERENCES family (family_id),
-  -- BR-CHD-02: 같은 가족 안에서 별칭 중복 금지 (G4)
-  CONSTRAINT uq_child_family_alias UNIQUE (family_id, alias),
+  -- BR-CHD-02 (v2.2 개정, D18): 별칭 중복을 검사하지 않는다. 아이는 child_id로 구분한다.
+  -- 이용자 중복은 guardian_account.email_norm UNIQUE로 막는다
   -- BR-CHD-01 · UC1 E2: 빈 별칭 금지. 길이·허용 문자 규칙은 미정(§미해결)
   CONSTRAINT chk_child_alias_nonblank CHECK (TRIM(alias) <> '')
 );
@@ -1001,4 +1032,7 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G22','승격','safety','evaluator'),
  ('G23','시험 호출 입력','input','integrator'),
  ('G24','요청 크기·형식','input','external_client'),
- ('G25','외부 기능 준비','safety','operator');
+ ('G25','외부 기능 준비','safety','operator'),
+ -- D18: 보호자 이메일 가입과 메일 링크
+ ('G26','이메일 검사(가입)','input','guardian'),
+ ('G27','메일 링크 토큰','input','guardian');

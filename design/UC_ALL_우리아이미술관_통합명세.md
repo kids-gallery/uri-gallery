@@ -1,5 +1,5 @@
 # UseCase 통합 명세 — 우리 아이 미술관 (P0 · P0.5 · P1)
-**우리 아이 미술관 · 개요 + UC1~UC12 통합본 · UML 2.5.1 표준 (UseCase Diagram + UseCase 기술 + Sequence Diagram)**
+**우리 아이 미술관 · 개요 + UC1~UC14 통합본 · UML 2.5.1 표준 (UseCase Diagram + UseCase 기술 + Sequence Diagram)**
 
 ---
 
@@ -7,6 +7,7 @@
 > **작성일**: 2026-09-23 · **개정**: 2026-09-28 (모델 조합 서빙 재검토·이름 변경, DDBM Intent-Specify 기준) · **표준**: UML 2.5.1 (OMG)
 > **개정 (2026-09-28)**: 모델 조합 서빙을 기준으로 전면 다시 합쳤다. 서비스 이름을 "우리 아이 미술관"으로 바꿨다. UC2는 판정 제안과 보호자 확정으로, UC9는 모델 7종의 평가·승격·롤백으로 넓혔고, 옛 UC10(모델 API 변환)은 UC3·UC12로 흡수했다. UC10(작품 설명, P0.5)과 UC12(모델 기능 엔드포인트, P0.5)를 새로 넣었다. 자세한 내용은 §9.1에 있다.
 > **개정 2 (2026-09-28, 통합 결정 D17)**: 외부 모델 기능 엔드포인트 절충안을 반영했다. `segment`·`classify`·`pose`·`relief` 네 기능은 P0, `caption`과 외부 API 약관은 P0.5다. 호출자를 팀 밖 외부 클라이언트까지 넓힌다. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다(이제민 조건부 승인). 단 `pose`는 팀 내부 키 전용이다(보관 처리돼 보안 수정이 없는 M3(Animated Drawings·TorchServe)를 팀 밖 요청이 간접 호출하지 않도록, 외부 키는 403). 요청 한도는 예시값(U12, 확정 아님)이다. `classify`는 라이선스 확정 기록(A2) 뒤에 활성한다.
+> **개정 3 (2026-09-28, 통합 결정 D18)**: 이용자 중복은 별칭이 아니라 **보호자 이메일 계정**으로 막는다. 따로 아이디를 만들지 않고 이메일로 로그인한다. UC13 "보호자 이메일로 가입한다"(P0, 확인 메일로 가입 완료)와 UC14 "이메일로 로그인 정보를 찾는다"(P0)를 새로 두었다. 별칭은 중복 검사를 하지 않는 표시용 이름이 되었다(BR-CHD-02 개정, BR-ACC-06~08 · FR-31 · FR-32 · U19 신설).
 > **원천(SoT)**: `Intent-Specify.md` (2026-09-28 기획 기준안, DDBM에서 수정) + `.specify/features/우리-아이-미술관/spec.md` v2.0 (개정 중). 보조 원천 `Intent-Plan.md` (웹스택 후보 4종, 미확정)
 > **통합 기준**: 같은 폴더의 `UC_00_개요_우리아이미술관.md`와 UC별 문서 `UC_01`~`UC_12`를 합쳤다. §1~§6은 UC_00, §7은 UC 문서 본문을 옮겼다. UC 문서끼리 어긋나거나 비어 있던 곳은 재작성 공통 기준 §11 통합 결정 D1~D15를 반영했고, 바꾼 문장마다 `[통합 D#]`를 붙였다. 개별 UC 문서는 고치지 않았다.
 > **다이어그램**: 전체 UseCase Diagram 1개와 UC별 UseCase·Sequence Diagram 각 1개, 합계 25개다. PlantUML 소스와 렌더 링크는 UC 문서의 것을 그대로 옮겼고, 사내 Kroki(`plantuml.sumzip.com`)에서 렌더를 검증했다(HTTP 200, SVG 안 `Syntax Error` 없음). `plantuml.sumzip.com`은 사내 SSO 로그인 뒤 열린다.
@@ -22,7 +23,7 @@
 4. [Actor 카탈로그](#4-actor-카탈로그)
 5. [L1 UseCase Diagram](#5-l1-usecase-diagram)
 6. [시스템 경계 (하지 않는 것)](#6-시스템-경계-하지-않는-것)
-7. [유스케이스 상세](#7-유스케이스-상세) — 7.1 UC1 ~ 7.12 UC12
+7. [유스케이스 상세](#7-유스케이스-상세) — 7.1 UC1 ~ 7.14 UC14
 8. [업무규칙(Business Rules) 종합](#8-업무규칙business-rules-종합)
 9. [통합 기록·결론](#9-통합-기록결론)
 
@@ -82,6 +83,8 @@
 | F17 | 모델 재현·평가·승격 | 모델 7종 버전 고정·매니페스트·어댑터, 평가 묶음 재평가 후 승격, 롤백 | spec FR-16, FR-17, FR-24 · Intent [핵심 활동] 2·7 | UC9 |
 | F18 | 모델 API 서버 · API활용 메뉴 | Python 가상환경 + uvicorn API 서버, 엔드포인트·가이드라인·매뉴얼 메뉴(팀원 전용) | spec FR-30 · 추가 요구 R3·R4 | UC11 |
 | F19 | 외부 모델 기능 엔드포인트 (P0 · caption은 P0.5) | `segment`·`classify`·`relief`(외부 키) · `pose`(팀 내부 키 전용) · `caption`(P0.5). API 키 인증·요청 한도·크기 제한·입력 비보존 | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 | UC12 |
+| F20 | 보호자 이메일 가입 | 이메일(로그인 아이디, 서비스 전체 유일)·비밀번호만으로 가입하고 확인 메일로 완료. 가족 공간 생성. 이용자 중복은 이메일로 막는다 | D18 · spec FR-31 | UC13 |
+| F21 | 로그인 정보 찾기 | 가입한 이메일로 로그인 아이디와 비밀번호 재설정 링크를 보낸다. 가입 여부는 드러내지 않는다 | D18 · spec FR-32 | UC14 |
 | F20 | 사용 관찰 기록 | 보호자 역할 사용자의 막힌 지점 관찰 | spec FR-18 · Intent [미션] P0 경험 검증 | 미전환(§9.3) |
 | F21 | 추적성 | FR → UC → T → 검증 증거 연결 | spec FR-19 · Intent [핵심 활동] 8 | 미전환(§9.3) |
 
@@ -183,6 +186,7 @@ API 서버는 접수·상태·권한만 맡고 모델을 직접 import하지 않
 
 | 메서드 · 경로 | 용도 | UC |
 |---|---|:--:|
+| `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/login` · `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset` | 이메일 가입 · 확인 메일 검증 · 로그인 · 로그인 정보 찾기 메일 · 비밀번호 재설정([추론], U8) | UC13 · UC14 |
 | `POST /v1/children` · `GET /v1/children` | 아이 별칭 등록·조회 | UC1 |
 | `PATCH /v1/children/{id}` | 아이 별칭 수정 [통합 D13] | UC1 |
 | `POST /v1/artworks` | 사진 접수(202). 원본·작품 기록·작업 기록 저장 후 판정 단계 작업 등록 | UC2 |
@@ -241,6 +245,8 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | UC10 | 키워드로 작품 설명 초안을 만들고 승인한다 | 보호자 | P0.5 | Medium | spec FR-27 · Intent [핵심 이네이블러] 작품 설명 · [부정적 영향] 기억의 재작성 | §7.10 | 신규 2026-09-28 |
 | UC11 | API활용 메뉴에서 엔드포인트·가이드라인·매뉴얼을 확인한다 | 연동 개발 팀원 · 서비스 운영자 | P0 | Medium | spec FR-30 · 추가 요구 R3·R4 | §7.11 | 개정 2026-09-28 |
 | UC12 | 모델 기능 엔드포인트를 호출한다 | 외부 클라이언트(연동 앱) | P0 (caption은 P0.5) | Medium | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 · [핵심 장벽] 외부 엔드포인트 | §7.12 | 신규 2026-09-28 |
+| UC13 | 보호자 이메일로 가입한다 | 보호자(가입 전) | P0 | High | D18 · spec FR-31 | §7.13 | 신규 2026-09-28 |
+| UC14 | 이메일로 로그인 정보를 찾는다 | 보호자(로그인 전) | P0 | High | D18 · spec FR-32 | §7.14 | 신규 2026-09-28 |
 
 **공통·조건부 유스케이스** (독립 문서 없이 기반 UC 문서에서 다룬다)
 
@@ -304,9 +310,12 @@ actor "연동 개발 팀원" as Dev
 actor "외부 클라이언트\n(연동 앱, P0)" as Client
 actor "원본·결과 저장소" as Store <<외부>>
 actor "과정 제공 LLM\n(조건부)" as CLLM <<외부>>
+actor "메일 발송 서비스" as Mail <<외부>>
 
 rectangle "우리 아이 미술관" {
   package "가족 경험" {
+    usecase "UC13 보호자 이메일로 가입한다" as UC13
+    usecase "UC14 이메일로 로그인\n정보를 찾는다" as UC14
     usecase "UC1 아이를 별칭으로 등록한다" as UC1
     usecase "UC2 작품 사진을 접수하고\n판정 제안을 확정한다" as UC2
     usecase "UC3 작품 처리 진행을 확인한다" as UC3
@@ -331,9 +340,13 @@ rectangle "우리 아이 미술관" {
   }
 }
 
+Parent --> UC13
+Parent --> UC14
 Parent --> UC1
 Parent --> UC2
 Parent --> UC3
+UC13 --> Mail
+UC14 --> Mail
 Parent --> UC4
 Parent --> UC5
 Parent --> UC6
@@ -394,7 +407,7 @@ end note
 @enduml
 ```
 
-**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V11PImcUvp9fcUJvNOkaBvzOxmyrbrOJbUlak16YmFkYkSwOBoZtm2YTVGwU2AhdEVQwmOCqG01HoDIm9Maf0st53_kPPe98sDPD4pWcOd_P-Xp9kZKFpJzeiEM6vJpIJ1fD67F4ZDUqxONi8vfVJZ5LvYlJm0JS2IDXQvhNNJlIS5H5RDyRhK9eBl_yi986JFLrQiTxa0yKwpoQT4lcXFyTQU5AMhZdlyESS4phOZaQODkmx0WgJwr5eAO0nKX1DpC_VbrX0DoZ-C9zCEs8LKfEeSElwkJMiDLjIyE_PHYh5B-bMP7yoxwnhGUMxEfaHb2q0rOiD4QUhISkKMk2j2Zr5CFLc03016HVLVvqx82ULaIf7GtKBki-Q_IPoBcy9NSUWXwrxPt2Kgo5OAZNqRGl5hRaEN_2ZY5Vcp8BfatD6j1Mih6pek5dkUYsZVq--xoTGDX05uMxZ5inRdJWH7taS9HaPaCNDD27oH8WDNGfUESE589N-3NzthJK0kYZhWta-x9YWvqeuTpXtLsOille8KtTk2M1EKQo4u8bUgAf_MEBbGK1hShKITT0_A601r96pWryANIpMcyK41ue5y0D5KIHpJ2lD7e01iPnNSAf7sh5XS_XSL5pxIKyXuUA0LOS_tce0O0beolmsphNie5V9XJVazdWJL1QtFKk5T3G1o_L-MFlNeC1GuxbbVWNDC-z-tG-rV1XXdpBr_a4rWbWguVlq5kx0UaW5jE_5Zrm68wqfiUX6meT416TE_2AsCnKPU1VmFX2xwPQhFdzEiz8TaeGmlKkO1sutUmv2pTtkFSLJHfoKBHdvkUwXdpTbu1XP2BNsYBaV8WksSXtAEpa14bC0GSCbtXFX37Gdsg3EW2gzVIf_-6V3cpMAnXeOTuMZpvk064x2Y9da4asiQn5v9RxftC3m_S0QD7UWKPZ2BpmsDydPatXyCWKNLE6QHMP3rrz_gG7ASCfrsh71ahM7gJNVQ7Rh35ww5RzqtEKuGju3fjxgQEAg_BN6BWLEiuu0o_1xy4aOzmkrVtgqgdZD47BAUyMZcX2QcZQR3NfQGIaHOsNe2KnRo8zK5KZBQ6jtfNwADJ6qebsZEf4016rMzYMpJVlbcfmxlqRN_e0XjDne0UyYzOngiGsta4fu-S8SZQ7l4OZAaB5Bo9-XKMn10CuD8l-h1aKmAp4AGewsfbD1sVSs52Kn8hlkykc9YYMNM8PlCNgLWxnW9PKrV5ueOoQGOjnoJ272WXWbsNRxG1oNYPd2GYR33GceYHg2bM5Y-e5yICbDLrJcTc54SYn3eSUx5Gfw6NmEdOO3wgIu2QWNcPhxfrMMc-QTQc4jm30sbE5Y7phFm9HTArH0xERjwfb10NZweGs8eGsieGsyeGsqeEsXA5DedM2KzDAmhnO4vkneH1Agh6esQoZj0XLWOJvsihFHCgyXDwMK3gGi4tj9KHJ4fnhLG98hitWWeMBYdTISY27qEkXNeWipl2UFaXxtJiF_oOD46SELFqPvcSaverZgOFTplGctW4PEJzFnS2ceOTaF6JZwinEJ9iVxrbWWYlWdtmjhJ7hIi9wmCow46aH1wlZTmwwF-btZ5k4vPRfgzi1yPXhZmDnmirvca37cGM29J06jGB4gdEnLBv3gVXCYdrnvDssevNymRcHHwSnDg9PmGbnOsTP2vdJVewTFlwA_aSAO5clgd9RbuS70LK1pMBgPGTJLts63tiduAfduJvLD_FkcHhWlzfYF_gL_x_4H6srRNo=)** — 클릭 시 브라우저로 연결됩니다.
+**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V1tPG1cQft9fMXJfQGoQa3NXhNICqSKR1lKL1AcktDGLsWLWyF7SVlUkAybi4gi7wWDARkYyASJQF3DxItE-8FP6uOfsf8jMXpzddcwDgtmZb86cb26HZxlVSqtLC0lYis2kltIzsflEcnYmLiWTcvqPmUlRyLxOKItSWlqAV1LsdTydWlJmx1LJVBq-eR55Lk5877HIzEuzqd8SShzmpGRGFpLynApqCtKJ-LwKs4m0HFMTKUVQE2pSBn6gsY8XwEs5Xm0A-1vn6zWjkYX_szswKcJURh6TMjKMJ6Q4Oe-K9sJDE6K9Pf3Wb7FbEKSYioGE2E3DLOv8qBACKQNRKS0rqqvjuQq7y_HNOp7X4OVl1-qnxYxrYm5vGFoW2FaDbd2Bmc_yQ9tm4o2UbPnZ09j2PhhahWkVr9G4_KZls6-z2yyYyw1WvcdL8V3d3NSnlS4HzEtX3-IFui3cWDLhDfOwwG70h6ZxrRk398BrWX50wt_lLdOf0USGp09t_6OjLggtea2ExhXj5h-YnHxJRx1rxlUDzZxT8OtXkOx8h1fvAa_C3x1DiyML8lJKJL0QgdImKXFMWahDzkLwpwCwiAUixdEK2eTHV2Bc_2vulW0dwFJGjlE-Q1NjYgRaKQN0ZEfDjitAyKM1s1RhW3YwZNwG7_OD8Mdo6ryKTCMd6JmdIIPaf2xzx-Omr82Ncw2yZjc5fnfJK7a_D1fsuOoPIggOAz8qmn-tA1-54KfoJodpKPL1slkqGze1acXMF5zc8NI6qc39En7weQ0HvUZaXq_LFs-nOXN3w0VXdR-6jZc-F2YXEd3Lhdkx8VqOb-H9tHO-VSWv-JWd6F9ctnHU3woIq7l0b-gaeaVfAYL6g8gBcKrAPtSCaQW-uuyDDQRhg-6BrFzA_HlSxFcukUwfetCPfvEj5rRVDNhLbgBFo-lSYSHJ0A-d-PUXLIetOrINvF5s8d88c3uQLBDz1lvnPFdnn9askfTQdJrfafVo79fqvhfMlTo_zLMPFSo0l1vLDaanse7UCjtFkzpmB_jmXTDvYm-b3zCwT2fsvW5lZvMEXe3t4Bnm9gWBN3WrFLDdbv38ieE2AiPwXfQFRYkZ1_nH6kMTnR3s8OtLIOh2LsBjpI0Ta8rSIMtacHT3FSaGwDOXsSZWK3w_O63Yt8BmdIY1NkDWLFa8lewJfyjoddilgV3nqOyob5zZfnHLq3m7v6cVOza7K4hh4_r8ocmO60y78h0w3Ea0SPSY-xV-cA44gNhGg-8V8CoQIJxoo_LD0sVU0zLAT-y0ToDd-w4NLYpt6Qg7m8Zb1nzv0izVAnkIt9VzxL27XWXObMNWxJnsFINb2HYS3wqCvTrhyZNRe_D65b6A7BfDfjEiWHOeBFoogjW2W5LPNOC33y8O-MXBQBC9Am5yRxjy_I1k0vp2pGEB1_QXjb17XTksUHTQ0zNqTQYYwe2XUGLJpVkZ1x_N-o6qSGdVX2dVf2fVQGfVYGcVDpaOuiFXFW5TDXdWieIjuhYhkYDOGqOko2hJJf-uysqsh0XiJaBwgidafBqrhm2NKHZWBeOzjqLMWq8mK0deqc8nDfikQZ805JOcKK331Ai0XlmCoKRU2XnhpubcNUHNie-3WmHE2VvAsI9Xl3FaoNbdLvUidjC-O88MmnhHRb63Rs8qfoRLIC_gVYGc2ye8SqlqaoGOsN8NdBPPKa33FHY8akM4VWjVc-09roQQTtuauVqFLgwv3P2IZ2u3UCY8rkPenUXR21vP3lb4mDj0nPCIa1r1UXHE3W265q6_yDiYB3mc13QJ_I52XT9Ep5wBB5biLsfWaGIFY_fyHvHzbg9O5JPoCIy9YLDP8C_8J-gzjBeyAQ==)** — 클릭 시 브라우저로 연결됩니다.
 
 #### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -460,14 +473,14 @@ end note
 
 #### 범위·개요
 
-보호자는 작품을 올리기 전에 아이를 **별칭 하나**로 등록한다. 이 서비스는 아동 정보를 최소로 수집한다. 그래서 실명, 생년월일, 출생연도는 받지 않는다. 나이는 아이 정보가 아니라 작품마다 "제작 당시 연령"으로 받는다(UC5). 보호자 한 명이 여러 아이를 등록할 수 있고, 등록한 별칭은 작품 접수(UC2)와 전시(UC6)에서 아이를 구분하는 기준이 된다.
+보호자는 작품을 올리기 전에 아이를 **별칭 하나**로 등록한다. 이 서비스는 아동 정보를 최소로 수집한다. 그래서 실명, 생년월일, 출생연도는 받지 않는다. 나이는 아이 정보가 아니라 작품마다 "제작 당시 연령"으로 받는다(UC5). 보호자 한 명이 여러 아이를 등록할 수 있고, 등록한 별칭은 작품 접수(UC2)와 전시(UC6)에서 아이를 가리키는 표시용 이름이다. 시스템은 아이를 아이 ID로 구분하므로 별칭은 겹쳐도 된다. 이용자(보호자) 중복은 UC13의 이메일 계정으로 막는다(D18).
 
 별칭은 가족 화면 안에서 아이를 가리키는 데만 쓴다. P0.5의 작품 설명 생성(UC10)에도 별칭을 포함한 아이 이름을 넣지 않는다. 또 보호자 계정으로 로그인해 아이를 등록했다고 해서 법정대리인 확인까지 끝났다고 보지 않는다. 동의 절차는 상용화 전에 정할 미해결 사항(U13)이다. 이 UC는 모델을 부르지 않는다. API 서버와 작업 DB만 관여한다.
 
 | 항목 | 값 |
 |---|---|
 | 대상 시스템 | 우리 아이 미술관 (P0) |
-| 상위 프로세스 | 가족 공간 준비 → **아이 등록(UC1)** → 작품 접수(UC2) |
+| 상위 프로세스 | 보호자 이메일 가입(UC13) → **아이 등록(UC1)** → 작품 접수(UC2) |
 | 원천 근거 | spec FR-1 · FR-9 · FR-14 · Intent [핵심 데이터] 아이 · [부정적 영향] 과잉 수집·동의 오판 · [핵심 장벽] 아동 개인정보 |
 | 핵심 UseCase | 1개 (UC1) + 공통 1개 (INC1) |
 | 주요 액터 | 보호자 |
@@ -487,11 +500,17 @@ rectangle "우리 아이 미술관 (P0)" {
   usecase "UC1 아이를 별칭으로 등록한다" as UC1
   usecase "INC1 로그인·가족 접근 확인" as INC1
   usecase "UC2 작품 사진을 접수하고\n판정 제안을 확정한다" as UC2
+  usecase "UC13 보호자 이메일로\n가입한다 (선행)" as UC13
 }
 
+Parent --> UC13
 Parent --> UC1
 Parent --> UC2
 UC1 ..> INC1 : <<include>>
+note top of UC13
+  이용자 중복은 이메일 계정으로 막는다
+  별칭은 중복 검사 없음 (D18)
+end note
 UC2 ..> INC1 : <<include>>
 
 note right of UC1
@@ -513,7 +532,7 @@ end note
 @enduml
 ```
 
-**[「UC1 아이 등록 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNU01r20AQve-vGNyLDUmInVsIJjQ00EvJJbeCUSTFEVGkIq0ppRRMKoObGOq0UeM0krHJVykptWtTu-BTf0qP2tF_6KwsUvsQ6E27896-N29G6y5XHF45MKGiluyKU1L3DFMrlRXT1J1XpeU8c_cN64XiKAewo6j7ZceuWNqGbdoOPNpc2cw_eTyDcPcUzX5pWGXYVUxXZ6a-y4Hb4BjlPQ6a4egqN2yLcYObOuDnnri5A_Q9DIcgvo-x3omGVfhTPYXtjXxaENcTEAMPf33DYCK6AYiPfdENYz8Qx1eMKSonKxkxGMatMbabGVBc2FIc3eKMST3FKpNW5iGx7NZyLgOvGUDF1VXFJeh_aidKhJ2lPn1GXAJGozGG49-jqFfFbh-wcxKNJhCf-3Sb8CRwXrMA2D6JP9QBD-_wltQ9ScN6K_Zb0aDz3IobTez4dBmgX5dl-VzHnzNTYG8Ym3YPi4vFxN7cscBkd0tLxcQBrMLammGpZkXTi0UmTTxQYpbN9XSO9m7atuhdiKNTcuRT_KtpUkB-xWFrWsbbKkV5NIvC4yvxtbZAdXwbipqHF6cYThYAfwZ0gWc98d6T5GnsIfE9SZBo9PpZUl7OSXK7JjrXeNYkOAjv8p-SXAvd0kA6ntresTm3D6TvNPb7bYGIZCjU-5GJ28Z01BL1Q-YrGlVaHCql4wM898RlI4UMhnPCkN3Or-QelJf5Q7pEohnMbFk0-CLCSdKXXIJk-q07cdNLHo0vvPjTO6LPPL1OX_Tf_gUGQtGS)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC1 아이 등록 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVF1L21AYvj-_4qW7aUHF2pshUmRuwm6GN94JJUtjDcZEkpQxxqC4dFQtrG5mVm1KxI_O4Vi13eygV_spu8x58x_2nqTadiDsrjnnec_zcZ7TecuWTLu4oUFRzhlFMyevqVo-V5A0TTFf56bTzFpX9U3JlDbgpSSvF0yjqOcXDM0w4dFiZjH97MkIwlqT8sYrVS_AqqRZCtOUVRtsA0y1sGZDXjUV2VYNndmqrSmAR21-cQXoOuh1gX_vYcUPuiX4U9qH5YX0YIOf94F3HPz1DRt9ftIA_uman3ih2-C7Z4xJsk1SErzTDes9bNYSIFmwJJmKbjMm-CS9QFyJh8iSS9OpBLxhAEVLkSWLoP_JHTERdnT0-QuaJWBw20Ov9_s2aJfw5BrQ3wtu-xAeurQazQngOOcMYHMv_FgB3LrCFrE7Ygwr9dCtBx1_RQ-rNfRdWmygWxHb4jjfHRMz84-PDNwHA8LP5T56wsiKLpQ1y_EwJNHxw8_bqTtLGfaWsThEmJzMxkvj3-OfM0yENjWVjYzBLMzNqbqsFfNKNst0w1aoBZtgrMYngdCCR5eRqrM93vmBXmmoDwKK3HfvIm9t8519cddwdxcCHI1BcFOiuAAP3qNXheTT9OMUU_Q8CEomMn1AUqwprmWsSpzePiYmCtil0GYHZEDx8616vI0tYnZ3RlG4e8a_lieEp3ceLzt4LCxMAP5s0AIetPkHZ1y5IwYEGp3rJDFPp8Rws8z9czyoERy4czpkEs7vLUWyXxq2bWwI3YMWDe84Tm7YQN6qxjEK1I2oC6-W6B3Q1qCNgIcOP60OIJ3uGDEkl9OZ1IP0cd_iN8FrjZFHE3S-cK8f-RKdjspcv-IX7ejQ8NihttH4yNHz9Iv-hv4CgB06yg==)** — 클릭 시 브라우저로 연결됩니다.
 
 ##### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -557,17 +576,17 @@ end note
 | **ID** | UC1 (spec FR-1) |
 | **유스케이스명** | 아이를 별칭으로 등록한다 |
 | **액터** | 주: 보호자 · 보조: 없음 |
-| **사전조건** | (1) 보호자가 로그인되어 있다(INC1, BR-ACC-02). (2) 보호자의 가족 공간이 존재한다. [추론] 가족 공간은 보호자 계정을 만들 때 함께 생긴다고 본다. 계정 생성 절차와 계정 모델은 원천에 없다 — `자료 없음 — 확인 필요` (U1) |
-| **사후조건** | (1) 가족 공간에 새 아이가 별칭으로 저장된다. (2) 별칭은 같은 가족 안에서 유일하다. (3) 실명·생년월일·출생연도는 어디에도 저장되지 않는다. (4) 새 아이가 작품 접수(UC2)의 아이 선택 목록에 나타난다. (5) 등록을 마쳐도 법정대리인 확인이 끝난 것으로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 별칭이 남지 않고 요청 번호와 분류 코드만 남는다 |
+| **사전조건** | (1) 보호자가 로그인되어 있다(INC1, BR-ACC-02). (2) 보호자가 UC13에서 이메일로 가입하고 확인을 마쳐 가족 공간이 존재한다(BR-ACC-07, D18). 공동 보호자·감상 전용 여부(계정 모델)는 아직 미정이다 (U1) |
+| **사후조건** | (1) 가족 공간에 새 아이가 별칭으로 저장된다. (2) 아이는 시스템이 발급한 아이 ID로 구분된다. 별칭은 중복 검사를 하지 않는다(BR-CHD-02 개정, D18). (3) 실명·생년월일·출생연도는 어디에도 저장되지 않는다. (4) 새 아이가 작품 접수(UC2)의 아이 선택 목록에 나타난다. (5) 등록을 마쳐도 법정대리인 확인이 끝난 것으로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 별칭이 남지 않고 요청 번호와 분류 코드만 남는다 |
 | **기본흐름** | ↓ 별도 기본흐름표 |
-| **대체흐름** | A1. 별칭 수정 · A2. 추가 등록 · A3. 아이 없이 작품 접수 진입 · A4. 공동 보호자 등록 — ↓ 별도 대체흐름표 |
-| **예외흐름** | E1. 별칭 중복 · E2. 빈 별칭·형식 위반 · E3. 다른 가족의 아이 접근 · E4. 비로그인·세션 만료 · E5. 작업 DB 저장 실패 — ↓ 별도 예외흐름표 |
+| **대체흐름** | A1. 별칭 수정 · A2. 추가 등록 · A3. 아이 없이 작품 접수 진입 · A4. 공동 보호자 등록 · A5. 같은 가족 안 같은 별칭 — ↓ 별도 대체흐름표 |
+| **예외흐름** | E1. (삭제 — D18로 A5로 옮김) · E2. 빈 별칭·형식 위반 · E3. 다른 가족의 아이 접근 · E4. 비로그인·세션 만료 · E5. 작업 DB 저장 실패 — ↓ 별도 예외흐름표 |
 | **포함/확장** | «include» INC1 로그인·가족 접근 확인 |
 | **우선순위** | Medium — 모든 작품 흐름의 선행 조건이지만 기능 범위가 작다(공통 기준 §6, spec FR-1) |
 | **사용빈도** | [추론] 아이당 등록 1회. 2026-09-28 원천은 "아이 등록 시 1회" 문구를 빼고 "보호자가 정한 별칭"만 적는다. 별칭 수정 빈도는 `자료 없음 — 확인 필요` |
-| **업무규칙** | BR-CHD-01, BR-CHD-02, BR-ACC-01, BR-ACC-02, BR-PRV-01, BR-PRV-03 |
+| **업무규칙** | BR-CHD-01, BR-CHD-02(개정), BR-ACC-01, BR-ACC-02, BR-ACC-06, BR-PRV-01, BR-PRV-03 |
 | **특별 요구사항** | 최소 수집: 등록 화면에 실명·생년월일·출생연도 입력란을 두지 않는다(spec FR-1 수용기준). 별칭은 가족 화면 표시에만 쓴다. P0.5 설명 생성(UC10) 입력에는 별칭을 포함한 아이 이름을 넣지 않는다(Intent [부정적 영향] 과잉 수집, UC10의 BR-CAP-01). 개인정보: 운영 로그와 지표 라벨에 별칭(자유 입력)을 남기지 않는다(BR-PRV-01, spec FR-14). 접근: 가족 ID는 요청 본문이 아니라 로그인 세션에서 정한다 [추론]. 다른 가족의 아이 목록은 어떤 경로로도 조회할 수 없다(spec FR-9). 동의: 보호자 계정만으로 법정대리인 확인이 끝났다고 보지 않는다. 동의 절차는 상용화 전에 정한다(U13). 엔드포인트 `POST /v1/children` · `GET /v1/children`의 이름·형식·응답 코드는 [추론]이며 `/speckit.plan`에서 확정한다(U8) |
-| **비고** | 원천 추적: spec FR-1(수용기준 4개 전부 반영: 입력란 제한 / 가족 내 중복 거절 / 2명 이상 등록·작품 올릴 때 선택 / 수정 가능) · FR-9(가족 단위 접근, 계정 모델 [NEEDS CLARIFICATION]) · FR-14(로그 제한) · Intent [핵심 데이터] "아이: 보호자가 정한 별칭. 생년월일·출생연도는 저장하지 않는다" · Intent [부정적 영향] 과잉 수집("실명·생년월일 대신 별칭", "설명 생성 입력에 이미지와 아이 이름을 넣지 않는다")·동의 오판 · Intent [핵심 장벽] 상 — 아동 개인정보 · 공통 기준 §4(엔드포인트) · §6(UC 목록·INC1) · §8(BR) · §9(최소 수집 원칙) · §10(U1, U8, U13). 아이 삭제는 UC7이 다룬다. 모델이 관여하지 않으므로 시퀀스에 서빙군 lifeline을 두지 않았다. 미결: U1 계정 모델에 따라 공동 보호자의 등록·수정 권한이 달라진다. U13 동의 절차가 정해지면 등록 앞에 동의 단계가 붙을 수 있다 |
+| **비고** | 원천 추적: spec FR-1(수용기준 4개 전부 반영: 입력란 제한 / 별칭 중복 비검사(v2.2 개정, D18) / 2명 이상 등록·작품 올릴 때 선택 / 수정 가능) · FR-9(가족 단위 접근, 계정 모델 [NEEDS CLARIFICATION]) · FR-14(로그 제한) · Intent [핵심 데이터] "아이: 보호자가 정한 별칭. 생년월일·출생연도는 저장하지 않는다" · Intent [부정적 영향] 과잉 수집("실명·생년월일 대신 별칭", "설명 생성 입력에 이미지와 아이 이름을 넣지 않는다")·동의 오판 · Intent [핵심 장벽] 상 — 아동 개인정보 · 공통 기준 §4(엔드포인트) · §6(UC 목록·INC1) · §8(BR) · §9(최소 수집 원칙) · §10(U1, U8, U13). 아이 삭제는 UC7이 다룬다. 모델이 관여하지 않으므로 시퀀스에 서빙군 lifeline을 두지 않았다. 미결: U1 계정 모델에 따라 공동 보호자의 등록·수정 권한이 달라진다. U13 동의 절차가 정해지면 등록 앞에 동의 단계가 붙을 수 있다 |
 
 #### 기본흐름 (Basic Flow)
 
@@ -576,23 +595,24 @@ end note
 | 1 | 보호자가 아이 관리 화면을 연다 | 웹 화면이 `GET /v1/children`을 보낸다. API 서버는 INC1로 로그인과 가족 공간을 확인하고, 이 가족에 등록된 아이 목록(별칭만)을 보여 준다 |
 | 2 | 보호자가 "아이 추가"를 누른다 | 별칭 입력란 하나만 있는 등록 양식을 보여 준다(실명·생년월일·출생연도 입력란 없음). [추론] "실명 대신 가족이 부르는 별칭을 적어 주세요" 같은 안내를 함께 둔다 |
 | 3 | 보호자가 별칭을 입력하고 저장을 누른다 | 웹 화면이 빈 값을 먼저 걸러 낸 뒤 `POST /v1/children`(별칭)을 보낸다. API 서버는 INC1을 다시 확인하고 세션에서 가족 ID를 정한다 |
-| 4 | 보호자가 저장 결과를 기다린다 | API 서버가 작업 DB에서 같은 가족 안의 별칭 중복을 검사하고, 중복이 없으면 별칭과 가족 연결만 저장한다. 법정대리인 확인 상태는 완료로 두지 않는다 |
+| 4 | 보호자가 저장 결과를 기다린다 | API 서버가 아이 ID를 발급하고 별칭과 가족 연결만 저장한다. 별칭 중복은 검사하지 않는다(D18). 같은 가족 안에 같은 별칭이 있으면 저장 뒤 안내한다(A5). 법정대리인 확인 상태는 완료로 두지 않는다 |
 | 5 | 보호자가 갱신된 목록에서 새 아이를 확인한다 | 등록 완료와 새 아이가 포함된 목록을 보여 주고, 작품 접수(UC2)의 아이 선택에 반영한다 |
 
 #### 대체흐름 (Alternative Flow)
 
 | ID | 분기 조건 | 흐름 |
 |:--:|---|---|
-| A1 | 등록된 아이의 별칭을 고친다 | 보호자가 목록에서 아이를 골라 별칭을 수정한다. 가족 내 중복 검사(BR-CHD-02)와 형식 검사를 다시 거쳐 저장한다(spec FR-1 "등록 후 수정할 수 있다"). 수정 엔드포인트는 `PATCH /v1/children/{id}`로 둔다 [통합 D13]. 이름·형식은 U8에서 확정 |
+| A1 | 등록된 아이의 별칭을 고친다 | 보호자가 목록에서 아이를 골라 별칭을 수정한다. 형식 검사를 다시 거쳐 저장한다. 별칭 중복은 검사하지 않는다(BR-CHD-02 개정)(spec FR-1 "등록 후 수정할 수 있다"). 수정 엔드포인트는 `PATCH /v1/children/{id}`로 둔다 [통합 D13]. 이름·형식은 U8에서 확정 |
 | A2 | 두 번째 이후 아이를 등록한다 | 형제 등 추가 아이를 기본흐름 2~5단계로 등록한다. 등록 수 상한은 `자료 없음 — 확인 필요` (spec FR-1 "2명 이상") |
 | A3 | 등록된 아이가 없는 상태에서 작품 접수(UC2)를 시작한다 | [추론] 아이 등록 화면으로 먼저 안내하고, 등록을 마치면 UC2로 돌아간다 |
 | A4 | 공동 보호자가 아이를 등록하려 한다 | 계정 모델(U1)이 정해지기 전에는 가족 공간을 만든 보호자 계정만 등록·수정한다 [추론]. (a) 보호자 1계정 / (b) 공동 보호자 / (c) 관리 보호자 + 감상 전용 중 무엇으로 정하느냐에 따라 이 흐름을 고친다 |
+| A5 | 같은 가족 안에 같은 별칭이 이미 있다 | 저장은 그대로 한다. 목록과 작품 접수의 아이 선택에서 헷갈리지 않게 "같은 별칭이 이미 있어요. 그대로 둘까요, 고칠까요?"를 안내한다 [추론]. 시스템은 아이를 아이 ID로 구분한다(BR-CHD-02 개정, D18) |
 
 #### 예외흐름 (Exception Flow)
 
 | ID | 발생 조건 | 처리 | 근거 |
 |:--:|---|---|---|
-| E1 | 같은 가족 안에 같은 별칭이 있다 | 저장을 거절하고 "이미 쓰는 별칭이에요"라고 안내한다. 입력값은 화면에 남겨 고칠 수 있게 한다 | BR-CHD-02 · spec FR-1 |
+| E1 | (삭제) | 2026-09-28 D18로 별칭 중복을 막지 않게 되어 대체흐름 A5로 옮겼다. 이용자 중복은 UC13 E1(이미 가입된 이메일)이 막는다 | D18 |
 | E2 | 별칭이 비어 있거나 형식에 맞지 않는다 | 웹 화면은 저장 버튼을 막고, API 서버도 같은 검사를 거쳐 거절한다. 별칭 길이·허용 문자 규칙은 `자료 없음 — 확인 필요` | BR-CHD-01 · [추론] |
 | E3 | 다른 가족의 아이 ID로 조회·수정을 요청한다 | 찾을 수 없음으로 응답하고 존재 여부도 알리지 않는다 [추론]. 로그에는 분류 코드만 남긴다 | BR-ACC-01 · spec FR-9 "직접 주소 입력 어떤 경로로도" |
 | E4 | 로그인하지 않았거나 세션이 만료됐다 | INC1에 따라 다시 로그인하게 한다. 입력하던 별칭은 저장하지 않는다 | BR-ACC-02 · spec FR-9 |
@@ -635,20 +655,20 @@ alt 형식 위반
   API --> UI : 거절 (E2)
 end
 
-API -> DB : 4. 가족 내 별칭 중복 검사 후 저장(별칭·가족 연결만)
+API -> DB : 4. 아이 ID 발급 후 저장(별칭·가족 연결만, 별칭 중복 검사 없음)
 note right of API
   법정대리인 확인 상태는
   완료로 두지 않는다 (BR-PRV-03, U13)
   로그: 요청 번호·분류 코드만
 end note
-alt 별칭 중복
-  DB --> API : 중복
-  API --> UI : "이미 쓰는 별칭이에요" (E1)
-else 저장 실패
+alt 저장 실패
   DB --> API : 오류
   API --> UI : "저장되지 않았어요" · 일부 저장 없음 (E5)
 end
 DB --> API : 저장 완료
+opt 같은 가족 안에 같은 별칭 (A5)
+  API --> UI : "같은 별칭이 이미 있어요" 안내 · 저장은 유지
+end
 
 API --> UI : 5. 등록 완료 · 갱신된 아이 목록
 UI --> Parent : 새 아이 표시 · 작품 접수(UC2) 선택지 반영
@@ -659,14 +679,14 @@ opt A1 별칭 수정
   alt 다른 가족의 아이 ID
     API --> UI : 찾을 수 없음 (E3)
   end
-  API -> DB : 중복 검사 후 별칭 갱신
+  API -> DB : 형식 검사 후 별칭 갱신(중복 검사 없음)
   DB --> API : 갱신 완료
   API --> UI : 갱신된 목록
 end
 @enduml
 ```
 
-**[「UC1 아이 등록 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVU1vGlcU3c-vuKIbkAIOdrLxoooxTutNayUhm7SyJjCxUQg4MG5VRZVwGFcoIBVqCBN7BoEKzYccFdvEYIl24Z_S5bw7_6H3zbzBjPEGad47736cc-7lXkGV8-ruiwwUlJebud38ZnI7nUltbsmZjJL_ZfN2VCo8T2d35Lz8Ap7Kyedb-dxuNrWay-Ty8NX9pfvRtdgMorAtp3I_p7Nb8EzOFBRJTasZBRKrUcCmhuaQ9SfAzjS8-IzGhHUNYAcnrGvaTYNVevBfsQEPlZe7SjapSJKcVClHgJ0NbX2M7VoA5AJsyHklq0qUTU0n0ztyVoUAHl2A_a7BPg4dSGLdf72ysQ6oGexUc67pU0rJqvxULij0tl3H1j7EY5cje89NEY9JkpsGwl9TNFiGaETUD9awyP46FukAW0NrPJAIQ0ieZxm-WXsECz9FFxwaKYjEj6e3698RFdS3NRqjOb4cWYMidk8AO3VrNKGoTTqV5IwK7EKbgaE2xn0d2Psq-7MqgRMs7BU3xQEeNqwvxxBcuxMiUMLFiFYIV-lhxZiFN8vs9VBSsimvyHiMcE6bTl1o6l7f7NNH0gmwO7APq0FR9nqcH1gnw5BEL8PTLl2FxRvJV6wvXNAFUluhOcoXIySOC8bzBiUMkIgdu2RKc3252bC9zzp91i5SOPooszcNwLd1rJg_ZINY6bFP-0RkyWT7Gh410JzQ17lBB9gasN-1q_ek6m9o3lDSUsSfC-wjetYpYrsvNCsLwA3suzhg52Xq5ZYXgRTD08-k2GLI0WHWSRvfP_RbCQRfoRs8he1j1z1wOQLXLtiqke3hSivrdICdJgfYepN4oYMivj52ahcnaGhsoF93mHVCD8tXVfrscifipSAzTQnq1dnZF5FghifRwZXxWwOqyjFANqcqkE9vbauQe-ZMKQA7bVLFrMpnjvcmWsTSnl0ySGCC4DuNZsJZJfUavif1mm_ohq-TYOxBeOPB4_DtpVuQiC7xmXDNv-zxzk7LtFsuR-xcY33y-j8NdmBQNbxL4AW5us72REF8Xp-e-hgL8F33N1V6MOA-FCvPHHJNDhsBojJKVNKG9HxBBrWrH-aC6z2qaz6484bVdNEvNnV8O3QCc_XNCTsvTgM7ZqaEd13t_PEFxuFQ8k_q3YhYzuKah7YGJ1jpsJrhn-O5kcRS2UPYdYNvHV5Xu27_Uea7Dst6MLG6GBITzbsg16G-J0m5HRVWolPKyzrpT_1fm0Q3rTC4t5nPPjBzMvdydqKe0CZh3c6PsLHyaPVb32wtvEqnfiW4ozcti_54fgeuxwlwTQsc_IumxtNdMe04jXMtsN5enZsJUavL6nXt3VNPm-sTORVCKMDT3aMf-if_HyqDs5s=)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC1 아이 등록 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVk1vGmcQvu-vGNELSMYOdnzxoYqxndaX1kpCL21lbczGRiHgwLpVVVXC8VJtA1KhgXgd7yKsmuZDjgqYGCzRHvxTetx39j909t13gQVfLPHuMzPPzDPPyPfyqpxTD56lIa88384e5LZ39lLp5PaunE4ruZ-278Sk_NNUZl_Oyc_gsbzzdDeXPcgk17LpbA4-u790P7YRn0Dk9-Rk9sdUZheeyOm8IqkpNa1AYi0GWNfQ6rHWENilhtcf0RyyMxPYqw47s5y6yUrn8F-hBg-V5wdKZkeRJHlHpRohdtlzjAE2KiGQ87Al55SMKlE1NbWT2pczKoTw9Bqckxp73-OQxGbw8-rWJqBmsq7GP9NPKSmr8mM5r1Bso4rHRViP3_SdQ6_EelySvDIQ_ZyywQrE5gV_sHsF9teFKAd43LMHbYkwhHTrrMAXG49g4YfYAh8jJZHc59HXza9oFNS33R-gNbjp2-0CnnUAm1W7P6SsdXqV5LQK7FqbgKE2wKIB7G2Z_VmWgCeL-uRGOMA3NfvTBYQ37kYIlPAwohXClc6xZE7C6zp70ZOUTNInuR4nHG-T80LL8PtmH96TToBnbedNOSxob667D3anF5EoMjrq0lNYxEgBsoF0YQ9IbUVmRr44T-J4YLyqUcEQidh0jixppi-vGjaKrNlijQKlox86e1kDfF3FkvVdJoylc_ahSIM8slhRw9MaWkP6dWXSAx632e_aOJ5U_RWtWygtzQdrgXNKYc0CNlpCM10Abpm-hwN2pVMvc34GUgy7H0mxxQjXYXKTtr5-GFwlEPOK3LJT2Ljwtgdu-uCtCx5XaO1hrJXdbWOz7gIco05zoYcCvrjg3MULmhprG9MbZncoUB-zDKzL3ZE3qARrm_bgt4nBCMrjTT9uEw2SaG40y_Mqu_wkuIxmn8mqCuRSu3sqZJ9wzwKwbp34s7LrQLdT0TAeHTpHJslNEDzRyCH8sFQr-Ja0rL-kL-5xCccfRLcefBO9szQHidiS6xDPCiu-Cqyr06W56bMrjbVo8_-psVcmUXV7BpcQn5QQkjbKKb-jJIHNR-OcQqfnF_JiWMUQlLBu4OselQ1xuawhuyqMEvMJ0LCXvWEH8wsMb1PK7qsk7wlaBV9lsjTJ7j-KCYdXlyMzlAIQ7jK6zn8PXOf41Lz7wBnysi4ezSb1MLEFfsLleXHLBTk3zG53sNRkFTNo-xkH45HuI5yq6R4pt2aj6vyhu6cRdSOcWFuMiAPgzpCWFI1DiU9gNTZaJd2gBaFWp4zrlRV-8A_55TtmDWciJw34LR0edtb8HrZWH619GbDiws-p5C8E57an29IazJ7MzXUCTI0d2_-ipbnlxjrzVXQHKrDCVwGPckcJrt5Uw7f7ZmofPay_L9O2HskjdHFJ3KM_9O_A_6yv4T4=)** — 클릭 시 브라우저로 연결됩니다.
 
 기본흐름 1~5단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`5.`와 1:1로 대응한다.
 
@@ -3397,6 +3417,434 @@ end
 
 ---
 
+### 7.13 UC13 보호자 이메일로 가입한다
+
+#### 범위·개요
+
+보호자는 서비스를 처음 쓸 때 **이메일과 비밀번호로 가입한다.** 따로 아이디를 만들지 않는다. **이메일이 곧 로그인 아이디**이며, 이용자끼리 겹치지 않게 하는 기준도 아이 별칭이 아니라 이 이메일이다. 이메일은 서비스 전체에서 하나뿐이어야 하며 대소문자를 구분하지 않고 비교한다.
+
+가입하면 시스템이 그 주소로 **확인 메일**을 보낸다. 보호자가 메일의 링크를 눌러 주소가 본인 것임을 확인하면 가입이 끝나고, 가족 공간이 열리며, 아이 별칭 등록(UC1)으로 넘어간다 [추론]. 이 확인을 거쳐야 나중에 로그인 정보를 잊었을 때 같은 주소로 찾을 수 있다(UC14).
+
+가입 때 받는 정보는 **이메일과 비밀번호뿐**이다. 실명, 전화번호, 아이 정보는 받지 않는다. 이메일은 로그인과 로그인 정보 찾기에만 쓰고 홍보 메일이나 외부 전달에는 쓰지 않는다. 또 가입했다고 해서 법정대리인 확인까지 끝났다고 보지 않는다(U13). 이 UC는 모델을 부르지 않는다. API 서버, 작업 DB, 메일 발송 서비스가 관여한다.
+
+| 항목 | 값 |
+|---|---|
+| 대상 시스템 | 우리 아이 미술관 (P0) |
+| 상위 프로세스 | **보호자 이메일 가입(UC13)** → 아이 등록(UC1) → 작품 접수(UC2) · (잊었을 때) 로그인 정보 찾기(UC14) |
+| 원천 근거 | D18(신지현 결정) · spec FR-31 · FR-9 · FR-14 · Intent [부정적 영향] 과잉 수집·동의 오판 |
+| 핵심 UseCase | 1개 (UC13) |
+| 주요 액터 | 보호자(가입 전) · 메일 발송 서비스(보조) |
+
+#### UseCase Diagram
+
+```plantuml
+@startuml uc_our_child_gallery_13
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+left to right direction
+title 우리 아이 미술관 — UC13 보호자 이메일로 가입한다
+
+actor "보호자\n(가입 전)" as Visitor
+actor "메일 발송 서비스" as Mail <<외부>>
+
+rectangle "우리 아이 미술관 (P0)" {
+  usecase "UC13 보호자 이메일로 가입한다" as UC13
+  usecase "UC14 이메일로 로그인 정보를 찾는다" as UC14
+  usecase "UC1 아이를 별칭으로 등록한다" as UC1
+  usecase "INC1 로그인·가족 접근 확인" as INC1
+}
+
+Visitor --> UC13
+Visitor --> UC14
+UC13 --> Mail
+UC14 --> Mail
+UC1 ..> INC1 : <<include>>
+
+note right of UC13
+  받는 정보: 이메일, 비밀번호
+  받지 않는 정보: 실명, 전화번호,
+  아이 정보. 따로 아이디 없음
+  이메일은 서비스 전체에서 유일
+  확인 메일 링크로 가입 완료
+end note
+note bottom of UC1
+  가입 뒤에 하는 일 (후행 UC)
+  별칭은 중복 검사 없는 표시용 이름
+end note
+@enduml
+```
+
+**[「UC13 보호자 이메일 가입 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNlF9r02AUxu_fT3GYNxt0xbJejVGGw4EXijd6JZQsTduwLJEkRUSETLIxu12s2rp1S8eKdWMyMWur7aB44Ufxsu_Jd_C8SfpnBcGLQPLyO885z_MesmrZkmmXtjQoyVmjZGbloqrlsgVJ0xTzdTa1xKxNVX8pmdIWbEjyZsE0SnpuzdAME-6tL62nHj6YIqyilDNeqXoB8pJmKUxT8jbYBphqoWhDTjUV2VYNndmqrSmAJz6_uAasudjoAv_ex73zYdeBP04Vnq2lloB3usFxH88OgQB-VcXGgDc9GPoOnu0ENY_vtxiTZJtmmRuzL_T5CAA8dxfmQLLguWqpBI3RUAm47-FuE9D1-K2L5VaIPpZUDVZWsN7nP51MhjExsqQXaNy5f807__Q-9XnDAEqWIksWof87fthTwDPF6bsl9Ax7fWz0yVONZPmXAaD_i5erUxrpGY14UMHyjou339CLxD7e8Gbjbv_p0kdPqHbc8XdPzNu8oc6VYW8AQb1Gp2GdANlbxuJ4YXExE3mZOUizMA7xJeJlob_pL0gmM6EaLFP2qi5rpZwiwtcNW4mXx8iPcuL-KRmPk1ieBJUAukfuO7y9R7FHIF46FEP5Dr_f4l93EmI7gno1ghNEx9caYUngVV-EFWdYpfqjXWwcCHDUEBvOZHuEHra7eHRIR4DeOQEER3HBaOUut4Pt68kSANZd_vmAKXoOhNfI8IZh28ZW7Jg0YpZ_aJE6BLXj0A7JzQenbvDpPWELwm50yWKoVoV3fsCw7eC7azG4KAgqHu57eHIVGrhwJ01X6Y3-AH8BVkr8eQ==)** — 클릭 시 브라우저로 연결됩니다.
+
+##### 다이어그램 쉽게 읽기 (유저 관점)
+
+- **누가 쓰나** — 아직 계정이 없는 보호자가 쓴다. 메일 발송 서비스는 사람이 아니라 확인 메일을 실제로 보내는 외부 구성요소다.
+- **무슨 순서로** — 이메일과 비밀번호를 적어 가입하고, 받은 메일의 링크를 누르면 가입이 끝난다. 그다음 아이 등록(UC1)으로 넘어간다. 로그인 정보를 잊으면 UC14로 찾는다.
+- **«include» = 항상 함께** — UC13은 로그인 전에 하는 일이라 INC1(로그인·가족 접근 확인)을 포함하지 않는다.
+- **«extend» = 특정 상황에서만** — 이 UC에는 확장 관계가 없다. UC14는 별도 목표(잊은 로그인 정보 찾기)라 따로 두었다.
+- **Generalization(◁)** — 이 UC에는 없다.
+
+| 기호 | 의미 |
+|---|---|
+| 사람 모양(actor) | 시스템을 쓰는 사람 또는 외부 구성요소(`<<외부>>`) |
+| 타원(usecase) | 액터가 이루려는 목표 |
+| 사각형(rectangle) | 시스템 경계 |
+| 점선 `<<include>>` | 항상 함께 수행되는 하위 행위 |
+| 노트 | 규칙이나 선후 관계 보충 설명 |
+
+#### Actor
+
+| 구분 | 액터 | 이 UC에서의 역할 | 원천 근거 |
+|:--:|---|---|---|
+| Primary | 보호자(가입 전) | 이메일과 비밀번호를 정해 가입하고, 확인 메일의 링크로 주소를 확인한다 | D18 · spec FR-31 |
+| Secondary | 메일 발송 서비스 | 확인 메일을 보낸다. 실제 제품(SMTP 서비스)은 미정 | D18 · [추론] · U19 |
+| 이해관계자 | 아이 | 가입과 관계없다. 아이 정보는 가입 때 받지 않는다 | BR-CHD-01 |
+
+#### 관련 UseCase
+
+| UC ID | 유스케이스명 | 관계 | 원천 근거 |
+|:--:|---|---|---|
+| UC13 | 보호자 이메일로 가입한다 | 본 문서 | D18 · spec FR-31 |
+| UC14 | 이메일로 로그인 정보를 찾는다 | 짝(확인된 이메일이 있어야 UC14가 동작) | D18 · spec FR-32 |
+| UC1 | 아이를 별칭으로 등록한다 | 후행(가입으로 열린 가족 공간에 아이를 등록) | D18 · spec FR-1 |
+| INC1 | 로그인·가족 접근 확인 | UC13이 포함하지 않음(로그인 전). 가입 완료 세션을 UC1부터 확인 | spec FR-9 |
+
+> **쉽게 말하면** — 처음 오신 보호자가 이메일 주소와 비밀번호만 적어 가입합니다. 따로 아이디를 만들 필요는 없습니다. 이미 가입된 이메일이면 로그인하라고 알려 줍니다. 메일함에 온 확인 링크를 누르면 가입이 끝나고, 바로 아이 별명을 등록하는 화면으로 넘어갑니다.
+
+#### 유스케이스 기술
+
+| 속성 | 내용 |
+|---|---|
+| **ID** | UC13 (D18 · spec FR-31) |
+| **유스케이스명** | 보호자 이메일로 가입한다 |
+| **액터** | 주: 보호자(가입 전) · 보조: 메일 발송 서비스 |
+| **사전조건** | (1) 로그인하지 않은 상태다. (2) 보호자가 메일을 받을 수 있는 이메일 주소를 갖고 있다. (3) 가입을 누구에게나 열지, 초대 등으로 제한할지는 `자료 없음 — 확인 필요` (U19) |
+| **사후조건** | (1) 보호자 계정이 이메일과 비밀번호 해시로 저장된다. 이메일은 서비스 전체에서 유일하다(대소문자 무시). (2) 그 계정의 가족 공간 1개가 함께 저장된다. 계정과 가족 공간은 둘 다 있거나 둘 다 없다. (3) 확인 링크를 누르면 계정이 "이메일 확인됨"이 되고 로그인 세션이 발급된다. (4) 실명·전화번호·아이 정보는 어디에도 저장되지 않는다. (5) 법정대리인 확인은 완료로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 이메일·비밀번호·토큰 원문이 남지 않고 요청 번호와 분류 코드만 남는다 |
+| **기본흐름** | ↓ 별도 기본흐름표 |
+| **대체흐름** | A1. 확인 메일을 다시 받기 · A2. 이미 계정이 있음 · A3. 로그인한 상태에서 가입 화면 진입 — ↓ 별도 대체흐름표 |
+| **예외흐름** | E1. 이미 가입된 이메일 · E2. 이메일 형식 위반 · E3. 비밀번호 규칙 위반·확인 불일치 · E4. 동시 가입 경쟁 · E5. 작업 DB 저장 실패 · E6. 확인 메일 발송 실패 · E7. 확인 링크 만료·재사용 · E8. 가입 요청 과다 — ↓ 별도 예외흐름표 |
+| **포함/확장** | 없음. 로그인 전 행위라 INC1을 포함하지 않는다 |
+| **우선순위** | High — 모든 보호자 흐름(UC1~UC7, UC10)의 선행 조건이고, 이용자 중복을 막는 유일한 지점이다(D18) |
+| **사용빈도** | 보호자당 1회(확인 메일 재요청 포함). 정량값은 `자료 없음 — 확인 필요` |
+| **업무규칙** | BR-ACC-06, BR-ACC-07, BR-ACC-08, BR-ACC-02, BR-CHD-01, BR-PRV-01, BR-PRV-03 |
+| **특별 요구사항** | 최소 수집: 가입 양식에는 이메일·비밀번호·비밀번호 확인 칸만 둔다. 이메일은 로그인과 로그인 정보 찾기에만 쓰고 홍보·외부 전달에 쓰지 않는다(BR-ACC-07). 보안: 비밀번호는 해시로만 저장한다 [추론]. 확인 링크의 토큰은 1회용이고 유효 시간이 있으며, DB에는 토큰 원문이 아니라 해시만 둔다 [추론 — 예시 24시간, U19]. 이메일 중복의 최종 판정은 DB 유일 제약(대소문자 무시)이다. 가입 요청에는 요청 한도를 둔다 [추론]. 비밀번호 규칙 예시: 8자 이상 [추론 — 확정 아님, U19]. 메일 발송 서비스(SMTP)는 미정이다 — 개발 환경에서는 메일을 실제로 보내지 않는 테스트용 수신함을 쓴다 [추론, U19]. 엔드포인트 `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/email/verify/resend`의 이름·형식·응답 코드는 [추론]이며 `/speckit.plan`에서 확정한다(U8) |
+| **비고** | 원천 추적: D18(2026-09-28 신지현 결정, 이메일 로그인·이메일로 찾기로 개정) · spec FR-31(신설) · FR-32(UC14) · FR-9(가족 단위 접근. 계정 모델 U1은 공동 보호자·감상 전용 여부만 남음) · FR-14(로그 제한) · Intent [부정적 영향] 과잉 수집·동의 오판 · 공통 기준 §8(BR-ACC-06~08 신설) · §10(U8, U13, U19). 이메일은 연락처라서 D18 이전의 "연락처 받지 않음" 원칙을 "로그인·찾기 용도의 이메일만 받음"으로 좁혀 바꿨다. 탈퇴한 이메일로 다시 가입할 수 있는지는 U19 |
+
+#### 기본흐름 (Basic Flow)
+
+| 단계 | 액터 행위 | 시스템 행위 |
+|:--:|---|---|
+| 1 | 보호자가 "시작하기"를 누른다 | 이메일·비밀번호·비밀번호 확인 칸만 있는 가입 양식을 보여 준다(실명·전화번호·아이 정보 입력란 없음) |
+| 2 | 보호자가 이메일과 비밀번호를 입력하고 "가입"을 누른다 | 웹 화면이 형식과 비밀번호 확인 일치를 먼저 검사한 뒤 `POST /v1/auth/signup`을 보낸다 |
+| 3 | 보호자가 결과를 기다린다 | API 서버가 형식을 다시 검사하고, 대소문자를 무시해 같은 이메일이 있는지 확인한다. 없으면 보호자 계정(이메일·비밀번호 해시·"확인 전")과 가족 공간 1개를 한 번에 저장하고, 1회용 확인 토큰(해시)을 만든다 |
+| 4 | 보호자가 "메일함을 확인해 주세요" 안내를 본다 | 메일 발송 서비스로 확인 링크가 담긴 메일을 보낸다 |
+| 5 | 보호자가 메일의 확인 링크를 누른다 | `POST /v1/auth/email/verify`로 토큰을 검사해(유효 시간·1회용) 계정을 "이메일 확인됨"으로 바꾸고, 토큰을 쓴 것으로 표시하고, 로그인 세션을 발급한다 |
+| 6 | 보호자가 가입 완료를 확인한다 | "이제 아이를 등록해 주세요"와 함께 아이 등록(UC1) 화면으로 보낸다 |
+
+#### 대체흐름 (Alternative Flow)
+
+| ID | 분기 조건 | 흐름 |
+|:--:|---|---|
+| A1 | 확인 메일을 받지 못했다 | 보호자가 "확인 메일 다시 받기"를 누른다. `POST /v1/auth/email/verify/resend`로 새 토큰을 만들고 이전 토큰은 무효로 한다. 재요청 간격 제한을 둔다 [추론] |
+| A2 | 이미 계정이 있는 보호자가 가입 화면에 왔다 | "이미 가입하셨나요? 로그인" 링크로 로그인 화면으로 보낸다. 비밀번호를 잊었으면 UC14로 간다 |
+| A3 | 로그인한 상태에서 가입 화면을 연다 | 가입 양식을 보이지 않고 아이 관리 화면(UC1)으로 보낸다 [추론] |
+
+#### 예외흐름 (Exception Flow)
+
+| ID | 발생 조건 | 처리 | 근거 |
+|:--:|---|---|---|
+| E1 | 같은 이메일이 이미 있다(대소문자 무시) | 가입을 거절하고 "이미 가입된 이메일이에요. 로그인하거나 로그인 정보 찾기를 이용해 주세요"라고 안내한다. 비밀번호 칸은 비운다 | BR-ACC-06 · D18 |
+| E2 | 이메일이 비어 있거나 형식에 맞지 않는다 | 웹 화면은 가입 버튼을 막고, API 서버도 같은 검사를 거쳐 거절한다 | BR-ACC-06 · [추론] |
+| E3 | 비밀번호가 규칙에 맞지 않거나 확인 값과 다르다 | 가입 버튼을 막고 어떤 규칙이 맞지 않는지 문장으로 안내한다 | BR-ACC-07 · [추론] |
+| E4 | 거의 동시에 같은 이메일로 두 번 가입한다 | DB 유일 제약이 두 번째 가입을 막는다. E1과 같이 안내한다 | BR-ACC-06 · [추론] |
+| E5 | 작업 DB 장애로 저장하지 못한다 | "가입되지 않았어요, 다시 시도해 주세요"라고 안내한다. 계정만 있고 가족 공간이 없는 상태를 남기지 않는다. 로그에는 요청 번호와 분류 코드(DB)만 남긴다 | BR-ACC-07 · BR-PRV-01 |
+| E6 | 메일 발송 서비스가 실패한다 | 계정은 "확인 전"으로 남기고 "메일을 보내지 못했어요. 잠시 뒤 다시 받기를 눌러 주세요"라고 안내한다(A1). 로그에는 분류 코드(메일)만 남긴다 [추론] | [추론] · U19 |
+| E7 | 확인 링크가 만료됐거나 이미 쓴 링크다 | 계정을 바꾸지 않고 "링크가 만료됐어요. 확인 메일을 다시 받아 주세요"라고 안내한다(A1) | BR-ACC-08 · [추론] |
+| E8 | 짧은 시간에 가입·재발송을 너무 많이 요청한다 | 요청 한도 초과로 잠시 뒤 다시 시도하라고 안내한다. 한도 수치는 `자료 없음 — 확인 필요` (U19) | [추론] |
+
+#### Sequence Diagram
+
+```plantuml
+@startuml seq_our_child_gallery_13
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+title UC13 보호자 이메일로 가입한다 — Sequence
+
+actor "보호자(가입 전)" as Visitor
+participant "웹 화면" as UI
+participant "API 서버" as API
+database "작업 DB·큐" as DB
+participant "메일 발송 서비스" as Mail
+
+Visitor -> UI : 1. "시작하기" 누르기
+alt 이미 로그인한 상태
+  UI --> Visitor : 아이 관리 화면으로 이동 (A3)
+end
+UI --> Visitor : 이메일 · 비밀번호 · 비밀번호 확인 칸만 있는 양식
+
+Visitor -> UI : 2. 이메일 · 비밀번호 입력 후 "가입"
+alt 형식 위반 · 비밀번호 규칙 위반 · 불일치
+  UI --> Visitor : 가입 버튼 비활성, 이유 안내 (E2 · E3)
+end
+UI -> API : POST /v1/auth/signup (이메일, 비밀번호)
+alt 요청 한도 초과
+  API --> UI : 잠시 뒤 다시 시도 (E8)
+end
+API -> DB : 3. 계정(이메일·비밀번호 해시·확인 전) + 가족 공간 + 확인 토큰 해시를 한 번에 저장
+note right of API
+  이메일 유일 제약(대소문자 무시)이 최종 판정 (E4)
+  법정대리인 확인 완료로 두지 않음 (U13)
+  로그: 요청 번호 · 분류 코드만
+end note
+alt 이미 가입된 이메일 (동시 가입 포함)
+  DB --> API : 유일 제약 위반
+  API --> UI : "이미 가입된 이메일이에요" · 로그인 / 로그인 정보 찾기 안내 (E1 · E4)
+else 저장 실패
+  DB --> API : 오류
+  API --> UI : "가입되지 않았어요" · 일부 저장 없음 (E5)
+end
+DB --> API : 저장 완료
+API -> Mail : 4. 확인 링크 메일 발송
+alt 발송 실패
+  Mail --> API : 오류
+  API --> UI : "메일을 보내지 못했어요" · 다시 받기 안내 (E6 · A1)
+end
+API --> UI : "메일함을 확인해 주세요"
+
+Visitor -> UI : 5. 메일의 확인 링크 누르기
+UI -> API : POST /v1/auth/email/verify (토큰)
+API -> DB : 토큰 해시 조회 · 유효 시간 · 1회용 확인
+alt 만료 · 이미 쓴 링크
+  API --> UI : "링크가 만료됐어요" · 다시 받기 안내 (E7)
+end
+API -> DB : 계정 "이메일 확인됨" · 토큰 사용 표시
+API --> UI : 6. 로그인 세션 발급
+UI --> Visitor : "이제 아이를 등록해 주세요" · 아이 등록(UC1)으로 이동
+@enduml
+```
+
+**[「UC13 보호자 이메일 가입 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFVkFPG1cQvu-vGLkXWw1GjpO04oACCZFyqBoppVe0gQVWMTax16lys5MFuWAJU7ywhrVlGihQuaoBB9sq6YGf0qPfvP_QeW93nV3cNAeE12_me998882sH-YMNWvkV1KQ017NZfLZufllPbUwt6SmUlr2zVwiqeRe6ulVNauuwAt1_uVSNpNPLzzKpDJZ-OpJ8kliZjoQkVtWFzI_6eklWFRTOU0xdCOlweyjRBLYZYfbPWxUAOsddlbF-jU7dGDQLmBjjVsO2zyCfwpVeK69ymvpeU1R1HmDLokME6NuLGDTjEVAzcGPek6nEIXuNvR5fVVNGxDBgz7wWpWddWTM7NPw8dSzp4Cmwy5MeUyPyoJqqC_UnEa5jW3cW4PH0zddXqzIgMfT4XyXObC2g-uHEqlv4saRjP1O1VOK4rGCsUm6HCYgESfgTYewuWUPeu0IsJLJjjv0UVFThpTjzx6QGINuD-s90gLwXZG_cxQQCGME5GNOAFomJcCgU2C_tbxC0ZFSCqCtGkSnkjFFSy8oo7m-8HDTBeLN2gV2USJxR555zSImgP0eOykDNkpsowq4u42b9dEC78b_B5kaxprHwA9MiLj9i8iquW0RGKBDsfZI1qDrYL8WPL0qETr27f_SxPMF9ZRvXAsgXnPQPL8jaKHTJM1K7G0HojN3BdRMQJ5JYQBCePb98x9g_HViXM0by-M5fSmdX4XosKo7IXYxt237Vbz4A4Rzt0zATmlweU3kBN6Yrww2mtR5YL8cAdlbfKQ_ER6d-dYlIcMnyWUUnYzD4NLEpvXp4ptuuC1WhwDInF57aBDga1n-4Tnlfhi0TXr2Tvl6kxfbXg47vhZUSaMS7tEINkmxYyWdMTTI6kvLBmQW5SxAoJUknfzXdND6GGXlAq6XWUuOMGsJ0JhwIn5w8Nc14OUKMafC7sUIhF1Y9EQpZFLJxSNcM9n7svAq267gSYE6s4H1MkRnE0mZJmdgwtc2YM4rmhgb8GOV7ThkSaEdCPbBCXJtwCpOoIYoTYTQ3bMI32px61RcRYqPDdsfqtRz3e1eRj5_i7DZXoVIRyRXf5BhPPBZyHFJarX_prn_5MiEdCRpptG69NpCJjni5dMRkvYRaTBCy-dj-3paNu52fDJiy14VhsB761Lumfuu-8L4XozskW9MsdLo7F7cbyE7KfJiC0JrUDbB34g-d5n5Rfa-gKZ4P5Akogj2-198txQowpsd1j4IafdAnE0lAoN0C5ZaLZBd5jQHgO-v0ewJ2NEtdj8OPhn7drHDff35naGtUL3jr7WsvvgGou7sxULjHZpHwMM23y_LFjlNvn8qNoMYX_oiQQe4f-aRcMU9KVNT3IZKF-JOx2M3Kqn8mmzhZbFK5ctafjO6jtxd5Pre7bZLiFVOJZJXD75tSbLbDuGG2_AgHhwAEn7NFjYZ9H4efTeJa2j-vPebWFds55wd1sNtkwq4b0D3OEq_LWKh95_ykAqhHzT_Amhfd0c=)** — 클릭 시 브라우저로 연결됩니다.
+
+기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다.
+
+#### UML 노트
+
+| 항목 | 적용 |
+|---|---|
+| 액터 | 보호자(가입 전)는 Primary이며 시스템 경계 밖에 둔다. 가입 뒤에는 같은 사람이 UC1~UC7의 "보호자" 액터가 된다. 메일 발송 서비스는 Secondary actor(`<<외부>>`)다 |
+| System Boundary | `rectangle`로 우리 아이 미술관(P0)의 책임 범위를 표시했다 |
+| «include» | UC13은 INC1을 포함하지 않는다. INC1은 로그인한 보호자의 공통 행위라 가입 전 행위에는 해당하지 않는다 |
+| 선후 관계 | UC13 → UC1은 include나 extend가 아닌 업무 선후 관계라서 노트로만 표시했다. UC14는 잊었을 때만 쓰는 별도 목표라 독립 UC로 두었다 |
+| Sequence | 공통 기준 §3의 lifeline 이름(`웹 화면` · `API 서버` · `작업 DB·큐`)에 `메일 발송 서비스`를 더했다. 모델이 관여하지 않으므로 서빙군과 원본·결과 저장소는 넣지 않았다. 예외는 `alt`에 E1~E8을 붙였다 |
+
+---
+
+### 7.14 UC14 이메일로 로그인 정보를 찾는다
+
+#### 범위·개요
+
+로그인 아이디는 가입한 이메일이다(UC13). 보호자가 로그인 정보를 잊으면 **가입한 이메일 주소를 입력하고, 그 주소로 온 메일의 링크를 눌러 비밀번호를 새로 정한다.** 메일에는 로그인 아이디(가입한 이메일)가 함께 적혀 있어, 어떤 주소로 가입했는지 헷갈린 보호자도 메일을 받은 주소가 로그인 아이디임을 알 수 있다 [추론].
+
+이 화면은 **그 이메일이 가입돼 있는지 알려 주지 않는다.** 가입된 주소든 아니든 똑같이 "가입된 이메일이면 메일을 보냈어요"라고만 답한다. 남의 이메일이 이 서비스에 가입했는지 알아내는 데 쓰이지 않게 하기 위해서다(BR-ACC-08). 링크는 한 번만 쓸 수 있고 유효 시간이 지나면 쓸 수 없다. 이 UC는 모델을 부르지 않는다.
+
+| 항목 | 값 |
+|---|---|
+| 대상 시스템 | 우리 아이 미술관 (P0) |
+| 상위 프로세스 | 보호자 이메일 가입(UC13) → … → (잊었을 때) **로그인 정보 찾기(UC14)** → 로그인 → 이전 흐름 |
+| 원천 근거 | D18(신지현 결정) · spec FR-32 · FR-31 · FR-14 |
+| 핵심 UseCase | 1개 (UC14) |
+| 주요 액터 | 보호자(로그인 전) · 메일 발송 서비스(보조) |
+
+#### UseCase Diagram
+
+```plantuml
+@startuml uc_our_child_gallery_14
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+left to right direction
+title 우리 아이 미술관 — UC14 이메일로 로그인 정보를 찾는다
+
+actor "보호자\n(로그인 전)" as Guardian
+actor "메일 발송 서비스" as Mail <<외부>>
+
+rectangle "우리 아이 미술관 (P0)" {
+  usecase "UC14 이메일로 로그인 정보를 찾는다" as UC14
+  usecase "UC13 보호자 이메일로 가입한다" as UC13
+}
+
+Guardian --> UC14
+UC14 --> Mail
+
+note right of UC14
+  입력: 가입한 이메일
+  응답: 가입 여부와 관계없이 같은 문구
+  메일: 로그인 아이디(이메일) +
+  비밀번호 재설정 링크(1회용, 유효 시간)
+end note
+note bottom of UC13
+  선행: 확인된 이메일이 있어야
+  찾기 메일을 받을 수 있다
+end note
+@enduml
+```
+
+**[「UC14 로그인 정보 찾기 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqVk99r01AUx9_vX3GoLy06sHRPZZThcD4JvvgmlLskbcPSXEluEBEhgzjq6sOEdltrWjro1EHA4DrNYOyP8TH35H_w3nTtquCDDyE_zvd8z_dzkmy6nDrca1vgaXXmOXWtZVp6vUkty3Be18vrxN017ZfUoW3Yodpu02GerW8xizlwb7uyXX78aEXhtqjOXpl2ExrUcg1iGQ0OnIFjNlscdNMxNG4ym3CTWwbgMBafI8B-gKMZiG8JdibpzIdffg-eb5XXQT4W5z0cXYvTEOSR_kxwlABO-uJiJs6uAeMbcdAT3SkhVOMyUkEWspMEx4cv7OJqR1AqAHXhiUcd3aT2Up7bg4hD3D8FDEJxFeDBNNc-paYFGxs4SMQPv1YjRKWndlMmL_wrevHZQznoDQHwXEOjrpT-J0k-WvX85VGBJdqfbmns4_hd1g9XmivkLSELVlhbq80d8yjqTqERYjNu3L4a1ljMlF5icla9s72bpqqjj6J7uagCHkdyNzjwQcKnFwEe76t9pPEARz6IKEkvI9k1b6-ugueLE71ecelegvtKehWI2BffOxJVZokwmMolgfiyl-1FxXI2_IDD8weA4SQbfgXshmkclIhh66Bo5kg7jHPWvmWqqNTBJDt6X4Vs0JfDxeEKk4qL4w4ezbCfA8Y3aRLDohjIT-OTOmHnROnUp7Yctimv5J_zG-NYpT4=)** — 클릭 시 브라우저로 연결됩니다.
+
+##### 다이어그램 쉽게 읽기 (유저 관점)
+
+- **누가 쓰나** — 로그인 정보를 잊은 보호자가 쓴다. 메일 발송 서비스가 찾기 메일을 실제로 보낸다.
+- **무슨 순서로** — 이메일을 적는다 → 메일함에서 링크를 누른다 → 새 비밀번호를 정한다 → 로그인한다.
+- **«include» = 항상 함께** — 로그인 전 행위라 INC1을 포함하지 않는다.
+- **«extend» = 특정 상황에서만** — 이 UC에는 확장 관계가 없다.
+- **Generalization(◁)** — 이 UC에는 없다.
+
+| 기호 | 의미 |
+|---|---|
+| 사람 모양(actor) | 시스템을 쓰는 사람 또는 외부 구성요소(`<<외부>>`) |
+| 타원(usecase) | 액터가 이루려는 목표 |
+| 사각형(rectangle) | 시스템 경계 |
+| 노트 | 규칙이나 선후 관계 보충 설명 |
+
+#### Actor
+
+| 구분 | 액터 | 이 UC에서의 역할 | 원천 근거 |
+|:--:|---|---|---|
+| Primary | 보호자(로그인 전) | 가입한 이메일을 입력하고, 메일의 링크로 비밀번호를 새로 정한다 | D18 · spec FR-32 |
+| Secondary | 메일 발송 서비스 | 로그인 아이디와 재설정 링크가 담긴 메일을 보낸다 | D18 · [추론] · U19 |
+
+#### 관련 UseCase
+
+| UC ID | 유스케이스명 | 관계 | 원천 근거 |
+|:--:|---|---|---|
+| UC14 | 이메일로 로그인 정보를 찾는다 | 본 문서 | D18 · spec FR-32 |
+| UC13 | 보호자 이메일로 가입한다 | 선행(확인된 이메일을 만든다) | D18 · spec FR-31 |
+
+> **쉽게 말하면** — 비밀번호가 생각나지 않으면 가입할 때 쓴 이메일을 적습니다. 그 메일함으로 "로그인 아이디는 이 이메일이에요. 아래 링크로 비밀번호를 새로 정하세요" 메일이 옵니다. 링크는 한 번만, 정해진 시간 안에만 쓸 수 있습니다.
+
+#### 유스케이스 기술
+
+| 속성 | 내용 |
+|---|---|
+| **ID** | UC14 (D18 · spec FR-32) |
+| **유스케이스명** | 이메일로 로그인 정보를 찾는다 |
+| **액터** | 주: 보호자(로그인 전) · 보조: 메일 발송 서비스 |
+| **사전조건** | (1) 로그인하지 않은 상태다. (2) 보호자가 UC13에서 가입해 이메일을 확인했다(확인 전 계정의 처리는 A2) |
+| **사후조건** | (1) 가입된 이메일이면 그 주소로 로그인 아이디(이메일)와 1회용 재설정 링크가 담긴 메일이 간다. (2) 화면 응답은 가입 여부와 관계없이 같다. (3) 링크로 새 비밀번호를 정하면 비밀번호 해시가 바뀌고, 그 링크와 이전에 발급된 재설정 링크는 모두 쓸 수 없게 된다. (4) 비밀번호가 바뀌면 그 계정의 다른 로그인 세션은 끊긴다 [추론]. (5) 가족 데이터(아이·작품·이야기)는 바뀌지 않는다. (6) 운영 로그에는 이메일·토큰·비밀번호 원문이 남지 않는다 |
+| **기본흐름** | ↓ 별도 기본흐름표 |
+| **대체흐름** | A1. 가입되지 않은 이메일 · A2. 이메일 확인 전 계정 · A3. 어느 이메일로 가입했는지 모름 · A4. 메일을 다시 받기 — ↓ 별도 대체흐름표 |
+| **예외흐름** | E1. 이메일 형식 위반 · E2. 링크 만료·재사용 · E3. 새 비밀번호 규칙 위반·불일치 · E4. 메일 발송 실패 · E5. 작업 DB 저장 실패 · E6. 찾기 요청 과다 — ↓ 별도 예외흐름표 |
+| **포함/확장** | 없음. 로그인 전 행위라 INC1을 포함하지 않는다 |
+| **우선순위** | High — 연락처를 받지 않던 D18 이전 설계의 "계정을 되찾을 수 없음"(옛 U19)을 해결하는 유일한 수단이다 |
+| **사용빈도** | `자료 없음 — 확인 필요` |
+| **업무규칙** | BR-ACC-06, BR-ACC-08, BR-ACC-02, BR-PRV-01 |
+| **특별 요구사항** | 존재 비노출: 가입된 이메일이든 아니든 같은 문구·같은 응답 코드로 답한다. 응답 시간도 비슷하게 맞춘다 [추론]. 토큰: 1회용, 유효 시간 예시 30분 [추론 — 확정 아님, U19], DB에는 해시만 저장. 새 재설정 링크를 발급하면 이전 링크는 무효다 [추론]. 요청 한도: 같은 이메일·같은 접속지에서의 반복 요청을 제한한다 [추론, U19]. 메일 내용에는 로그인 아이디(이메일)와 링크만 담고, 아이 별칭·작품 등 가족 정보는 넣지 않는다 [추론]. 엔드포인트 `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset`의 이름·형식은 [추론]이며 `/speckit.plan`에서 확정한다(U8) |
+| **비고** | 원천 추적: D18(2026-09-28 신지현 결정 "아이디를 잊었을 때 이메일로 메일을 발송해서 찾는다") · spec FR-32(신설) · FR-31 · FR-14 · 공통 기준 §8(BR-ACC-08) · §10(U8, U19). 로그인 아이디가 이메일이므로 "아이디 찾기"와 "비밀번호 재설정"을 한 흐름으로 합쳤다 [추론]. 어느 이메일로 가입했는지 전혀 모를 때는 시스템이 찾아 줄 수 없다(A3) — 다른 식별 정보를 받지 않기 때문이다 |
+
+#### 기본흐름 (Basic Flow)
+
+| 단계 | 액터 행위 | 시스템 행위 |
+|:--:|---|---|
+| 1 | 보호자가 로그인 화면에서 "로그인 정보를 잊었어요"를 누른다 | 이메일 입력란 하나만 있는 찾기 화면을 보여 준다 |
+| 2 | 보호자가 가입한 이메일을 입력하고 "메일 받기"를 누른다 | 웹 화면이 형식을 검사한 뒤 `POST /v1/auth/recovery`를 보낸다. API 서버는 대소문자를 무시해 확인된 계정을 찾고, 있으면 1회용 재설정 토큰(해시)을 만들고 이전 토큰은 무효로 한다 |
+| 3 | 보호자가 "가입된 이메일이면 메일을 보냈어요" 안내를 본다 | 계정이 있을 때만 메일 발송 서비스로 로그인 아이디(이메일)와 재설정 링크가 담긴 메일을 보낸다. 화면 응답은 계정이 있든 없든 같다 |
+| 4 | 보호자가 메일의 링크를 누르고 새 비밀번호와 확인을 입력한다 | `POST /v1/auth/recovery/reset`로 토큰(유효 시간·1회용)과 새 비밀번호 규칙을 검사한다 |
+| 5 | — | 비밀번호 해시를 바꾸고, 토큰을 쓴 것으로 표시하고, 그 계정의 다른 세션을 끊는다 [추론] |
+| 6 | 보호자가 새 비밀번호로 로그인한다 | "비밀번호를 바꿨어요. 이메일과 새 비밀번호로 로그인해 주세요"를 보이고 로그인 화면으로 보낸다 |
+
+#### 대체흐름 (Alternative Flow)
+
+| ID | 분기 조건 | 흐름 |
+|:--:|---|---|
+| A1 | 입력한 이메일로 가입한 계정이 없다 | 메일을 보내지 않는다. 화면에는 기본흐름 3단계와 같은 문구를 보인다(BR-ACC-08) |
+| A2 | 계정은 있으나 이메일 확인 전이다 | 재설정 메일 대신 가입 확인 메일(UC13 A1)을 다시 보낸다. 화면 문구는 같다 [추론] |
+| A3 | 보호자가 어느 이메일로 가입했는지 모른다 | 쓰는 이메일 주소마다 찾기를 시도하라고 안내한다. 찾기 메일을 받은 주소가 로그인 아이디다. 시스템이 다른 정보로 찾아 주지는 않는다 [추론] |
+| A4 | 메일을 받지 못했다 | 잠시 뒤 "메일 다시 받기"를 누른다. 새 토큰을 만들고 이전 토큰은 무효로 한다. 요청 한도를 따른다 |
+
+#### 예외흐름 (Exception Flow)
+
+| ID | 발생 조건 | 처리 | 근거 |
+|:--:|---|---|---|
+| E1 | 이메일이 비어 있거나 형식에 맞지 않는다 | 웹 화면이 "메일 받기" 버튼을 막고 형식을 안내한다 | [추론] |
+| E2 | 링크가 만료됐거나 이미 쓴 링크다 | 비밀번호를 바꾸지 않고 "링크가 만료됐어요. 다시 요청해 주세요"라고 안내한다 | BR-ACC-08 |
+| E3 | 새 비밀번호가 규칙에 맞지 않거나 확인 값과 다르다 | 저장 버튼을 막고 이유를 문장으로 안내한다. 토큰은 아직 쓴 것으로 보지 않는다 [추론] | BR-ACC-07 · [추론] |
+| E4 | 메일 발송 서비스가 실패한다 | 화면 문구는 기본흐름 3단계와 같게 두고(존재 비노출), 운영 로그에 분류 코드(메일)만 남긴다. 보호자는 A4로 다시 요청한다 [추론] | BR-ACC-08 · BR-PRV-01 |
+| E5 | 작업 DB 장애로 새 비밀번호를 저장하지 못한다 | "바꾸지 못했어요, 다시 시도해 주세요"라고 안내한다. 이전 비밀번호와 토큰 상태를 그대로 둔다 | BR-PRV-01 · [추론] |
+| E6 | 짧은 시간에 찾기를 너무 많이 요청한다 | 요청 한도 초과로 잠시 뒤 다시 시도하라고 안내한다. 이 안내도 가입 여부와 관계없이 같다 | BR-ACC-08 · [추론] |
+
+#### Sequence Diagram
+
+```plantuml
+@startuml seq_our_child_gallery_14
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+title UC14 이메일로 로그인 정보를 찾는다 — Sequence
+
+actor "보호자(로그인 전)" as Guardian
+participant "웹 화면" as UI
+participant "API 서버" as API
+database "작업 DB·큐" as DB
+participant "메일 발송 서비스" as Mail
+
+Guardian -> UI : 1. "로그인 정보를 잊었어요"
+UI --> Guardian : 이메일 입력란 하나만 있는 화면
+
+Guardian -> UI : 2. 가입한 이메일 입력 후 "메일 받기"
+alt 형식 위반
+  UI --> Guardian : 버튼 비활성, 형식 안내 (E1)
+end
+UI -> API : POST /v1/auth/recovery (이메일)
+alt 요청 한도 초과
+  API --> UI : 잠시 뒤 다시 시도 (E6)
+end
+API -> DB : 확인된 계정 조회(대소문자 무시)
+alt 계정 없음
+  DB --> API : 없음
+  API -> API : 메일 보내지 않음 (A1)
+else 확인 전 계정
+  API -> Mail : 가입 확인 메일 다시 발송 (A2)
+else 확인된 계정
+  API -> DB : 재설정 토큰 해시 저장 · 이전 토큰 무효
+  API -> Mail : 3. 로그인 아이디(이메일) + 재설정 링크 메일
+  alt 발송 실패
+    Mail --> API : 오류 · 로그엔 분류 코드만 (E4)
+  end
+end
+API --> UI : "가입된 이메일이면 메일을 보냈어요" (모든 경우 같은 문구)
+
+Guardian -> UI : 4. 메일 링크 누르고 새 비밀번호 · 확인 입력
+alt 규칙 위반 · 불일치
+  UI --> Guardian : 저장 불가, 이유 안내 (E3)
+end
+UI -> API : POST /v1/auth/recovery/reset (토큰, 새 비밀번호)
+API -> DB : 토큰 해시 조회 · 유효 시간 · 1회용 확인
+alt 만료 · 이미 쓴 링크
+  API --> UI : "링크가 만료됐어요" · 다시 요청 안내 (E2)
+end
+API -> DB : 5. 비밀번호 해시 변경 · 토큰 사용 표시 · 다른 세션 끊기
+alt 저장 실패
+  DB --> API : 오류
+  API --> UI : "바꾸지 못했어요" · 이전 상태 유지 (E5)
+end
+API --> UI : 6. 변경 완료
+UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · 로그인 화면
+@enduml
+```
+
+**[「UC14 로그인 정보 찾기 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVU1vGlcU3c-vuKKbQbWxsJ0ssrBiJ6TKomqkNGtrAlMbhUACQ6ruwB5bCCOV1EMMeEBYATmOqDo10xhUJ4v8lC7n3fkPve_NB1BYdIE0vLkf55x7z5v7BU3Ja8WXGSior3dzxfxucj-dSe3uKZmMmv9lN74pFV6ks6-UvPISnivJF3v5XDGbepDL5PLwzaONR_HEzkxEYV9J5X5OZ_fgJyVTUCUtrWVUePYgvgnYsdmVgZ1bdmEC_ZybMXbGgL0GG9lscAtofWFVg5304Z-SAU_V10U1m1QlSUlq1CtCUW5zjN26PJusRyOgFOC7opJPpZWsRDC0dDL9SslqEMHzCbgtg13ZIujZ4_nX208eA-omu9bFa_orpRRNea4UVMrtvsWzI3i48_XGLddFwMOd-XyPDjDLxOMLUWmiY7UvYr9X0hlJCmDB6hZ1h3sQj1HaMu7dKp5V8J2NbSMiUegqZYTZ96biUeQR6w1YtwRuo8kOmuyyRmcVUs6nuqTregwcq0SZbsNcKAXuuT7D5dwZWxFJyWjgNht40gE0dWY1JYBFVKScW6Wkie62TNT_XAlzGhV2YIOciEclNZsShLa4wJT05IenP8Lam_iaUtT21_JqMveGFg3kEFdUdCch8Pp3ImmyX3VAu-KMbgkEr7Ea8MJuD09omX7rA60Nf6QfD5cTd73GInyLJkfRbqtBorO6Cc5IJ-kBLyy3XZNZrYTHNTbkuwVsaFMND0IQdnaMnRr1piqrIY3w1G_hnQYy0lQPbLwskRJVCgN5mytBjvBR8M31609L8J2hGt6ogsCgosfP3zV5e32u3JTUtJrgjN0h6n3Owj3uuWWL9LSFTj3qMYCvN3wdOBb_NdF32x8WIG3EZh3b0PmsDGNmZPDtTCt2WXbLQx851eJaBiY56bs1Xh-80jN6Nvts0OSI_E5nBrBPOj_DzwY7Nfmiy4nNKCXzyYbTDZYh4unGpQhxiQcbgj-6GMxh4DOQ2ccP7LQHzvVnbFskfAs7JdJg7Pw1jC7x0WYsHIdPsUIAbWfUAzyscB8wq8SuK3RPcSLBqIXNvI26MXHS8i0luH6qcGST5f7yp0RBxG1FjMrsTc218X_NRQ8FVQPZG_LKAtjovE_mN0WYRGyK2aPd4BZzLJ0fxOkFtq98noIgDYm9r_l7xf4g8qe2L9Z_zRvxjomZn8Xq9WAwXBnf0N41EHJeX_T1ndi88j5wNirRXMUcPEJ4MBRo35r8tdeCDQiiPsajJrByla4-7-7xdA-Xdd74YlEX2ViG82XMLc8-_u2-q8xQ8S2Gh2X30OQy8ig5cSe6uMR3YwFubOmkyZJPQSTcbroRF0Y593ElJQDf33KCgaqhi_2PxX2CQF__fwEqcfk-)** — 클릭 시 브라우저로 연결됩니다.
+
+기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다.
+
+#### UML 노트
+
+| 항목 | 적용 |
+|---|---|
+| 액터 | 보호자(로그인 전)는 Primary, 메일 발송 서비스는 Secondary actor(`<<외부>>`)다 |
+| System Boundary | `rectangle`로 우리 아이 미술관(P0)의 책임 범위를 표시했다 |
+| UC 분리 | 가입(UC13)과 찾기(UC14)는 목표와 시점이 달라 따로 두었다. 로그인 아이디가 이메일이라 아이디 찾기와 비밀번호 재설정은 한 UC로 합쳤다 |
+| Sequence | 존재 비노출을 드러내려고 계정 유무 분기(`alt`)가 모두 같은 응답 메시지로 모이게 그렸다. 예외는 E1~E6, 대체는 A1·A2를 붙였다 |
+
+---
+
 ## 8. 업무규칙(Business Rules) 종합
 
 도메인 16개, 84개다. CHD 아이 · INT 접수 · SUG 판정 제안 · PRC 처리 · FBK 낮춤 · APR 승인 · STY 이야기 · CAP 설명 · EXH 전시 · DEL 삭제 · ACC 접근 · OPS 운영 · MDL 모델 · SRV 서빙 · API · PRV 개인정보. 규칙 문장은 재작성 공통 기준 §8의 요지를 따랐다. 80개는 UC 문서에 정의되어 있고, 근거 열은 그 규칙을 처음 정의한 UC 문서의 근거를 옮겼다. 적용 UC는 UC 문서 12건에서 그 ID가 실제로 나오는 문서를 모은 것이다(`BR-ACC-01`처럼 표의 적용 범위 열에만 나오는 경우도 포함). 통합 결정으로 보강한 규칙에는 `[통합 D#]`를 붙였다. 끝의 "통합 시 추가" 4개(BR-APR-06, BR-CAP-07, BR-EXH-07, BR-DEL-05)는 UC 문서에 없고 이 문서와 UC_00 §7.1에만 있다. 옛 `BR-ENG-01~05`는 `BR-MDL-*`로 옮겼다(ENG-01 → MDL-06, ENG-02 → MDL-01, ENG-03 → MDL-03, ENG-04 → MDL-04, ENG-05 → MDL-05).
@@ -3404,7 +3852,7 @@ end
 | BR ID | 규칙 | 적용 UC | 근거 |
 |---|---|---|---|
 | BR-CHD-01 | 아이는 별칭만 받는다. 실명·생년월일·출생연도 금지 | UC1, UC5, UC10 | spec FR-1 · Intent [핵심 데이터] 아이 · [부정적 영향] 과잉 수집 |
-| BR-CHD-02 | 가족 안에서 별칭 중복 금지 | UC1 | spec FR-1 수용기준 2 |
+| BR-CHD-02 | (v2.2 개정, D18) 별칭은 중복 검사를 하지 않는다. 아이는 아이 ID로 구분하고, 같은 가족 안 같은 별칭은 저장 뒤 안내만 한다 | UC1 | D18 · spec FR-1 |
 | BR-INT-01 | 형식(JPEG·PNG·HEIC)·용량(20MB 이하 기본값)·판독 검사 | UC2, UC11, UC12 | spec FR-2 · 공통 기준 §8 |
 | BR-INT-02 | 원본·작품 기록·작업 기록이 모두 저장돼야 "접수 완료" | UC2, UC5 | spec FR-2 |
 | BR-INT-03 | 중복 전송은 1건으로 처리 | UC2 | spec FR-2 |
@@ -3460,6 +3908,9 @@ end
 | BR-ACC-03 | 운영자·팀원은 가족 이미지·이야기에 접근하지 못한다 | UC6~UC9, UC11 | spec FR-9 · Intent [부정적 영향] 아동 이미지 유출 |
 | BR-ACC-04 | 삭제는 보호자만 | UC6, UC7 | spec FR-9·FR-10 |
 | BR-ACC-05 | 팀원 역할(운영자·평가 담당·연동 개발) 분리 | UC8, UC9, UC11 | 공통 기준 §6 INC2 |
+| BR-ACC-06 | 보호자 로그인 아이디는 이메일이며 서비스 전체에서 유일(대소문자 무시). 이용자 중복은 이메일로 막고 별칭으로 막지 않는다. 따로 아이디를 만들지 않는다 | UC13, UC14 | D18 |
+| BR-ACC-07 | 가입 때는 이메일·비밀번호만 받는다(실명·전화번호·아이 정보 금지). 이메일은 로그인과 로그인 정보 찾기에만 쓴다. 가입과 함께 가족 공간 1개를 만들고 계정과 함께 저장한다. 비밀번호는 해시로만 저장한다 | UC13 | D18 · Intent [부정적 영향] 과잉 수집 |
+| BR-ACC-08 | 확인·재설정 메일 링크 토큰은 1회용·유효 시간 있음, DB에는 해시만. 로그인 정보 찾기 응답은 가입 여부를 드러내지 않는다 | UC13, UC14 | D18 · [추론] |
 | BR-OPS-01 | 생존(`/live`)과 준비(`/ready`) 분리, 준비는 모델별로 표시 | UC8, UC11, UC12 | Intent [핵심 활동] 3 · [핵심 자원] 외부 사용 · FR-12 |
 | BR-OPS-02 | 지표 정의: 첫 결과 승인율(= 좋아요 / 결과가 도달한 작품의 첫 결정) · 판정 수정률(제안 전 직접 확정 건은 분모 제외) · 모델별 낮춤률 · 설명 규칙 검사 실패율(P0.5) · 모델별 처리 시간 p95 · 재시도율 · 큐 적체 · 결과 미도달 수(목표 0). 정의·검증 계획이며 실적 아님 [통합 D14] | UC2, UC4, UC7, UC8, UC10 | Intent [미션] 서빙 지표 · spec FR-26 |
 | BR-OPS-03 | 원인별 분리 집계(BR-FBK-04) | UC3, UC4, UC8 | Intent [미션] 서빙 지표 |
@@ -3484,7 +3935,7 @@ end
 | BR-API-07 | 'API활용' 메뉴는 엔드포인트·가이드라인·매뉴얼 3영역, 팀원 전용(보호자 화면에 없음) | UC11 | 추가 요구 R4 · spec FR-30 |
 | BR-API-08 | 엔드포인트 탭은 `/openapi.json`에서 생성해 실제 API·모델 버전과 어긋나지 않게 한다 | UC11 | 추가 요구 R4 · 공통 기준 §4 |
 | BR-API-09 | 시험 호출에는 평가 묶음 작품만 쓴다 | UC9, UC11, UC12 | Intent [핵심 활동] 7 평가 묶음 · [부정적 영향] 아동 이미지 유출 |
-| BR-PRV-01 | 운영 로그에 이미지·객체 키·자유 입력·오류 원문 금지 | 전 UC (UC1~UC12) | spec FR-14 · Intent [부정적 영향] 아동 이미지 유출 |
+| BR-PRV-01 | 운영 로그에 이미지·객체 키·자유 입력·오류 원문 금지 | 전 UC (UC1~UC14) | spec FR-14 · Intent [부정적 영향] 아동 이미지 유출 |
 | BR-PRV-02 | 얼굴 인식·학습 재사용 금지. 가족 기록을 외부 업체·외부 모델 API로 자동 전달하지 않는다 | UC2, UC5, UC10, UC12 | Intent [부정적 영향] · [핵심 파트너] |
 | BR-PRV-03 | 보호자 계정만으로 법정대리인 확인이 끝났다고 보지 않는다 | UC1 | Intent [핵심 장벽] 상 — 아동 개인정보 · [부정적 영향] 동의 오판 |
 
@@ -3532,12 +3983,13 @@ end
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정. 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 | §7.2 A3 · §7.4 §1 · §7.8 지표 표 · §8 BR-OPS-02 |
 | D15 | 신규 미해결 U16(승인된 설명을 내리거나 교체하는 절차), U17('API활용' 메뉴 위치·관리 엔드포인트 조회 권한), U18(`invalid_input` 등 연동 오류 분류) | UC10, UC11, UC3 | §7.3 대응표 아래 · §7.5 A7 · §7.10 E3 · §7.11 §1.2·비고 · §7.12 E4 · §9.4 |
 | D17 | (2026-09-28 추가, 신지현 결정 · 이제민 조건부 승인 — 절충안) 외부 모델 기능 엔드포인트를 나눈다. P0: `segment`·`classify`·`relief`(외부 키)와 `pose`(팀 내부 키 전용), API 키, 요청 한도(U12 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건), 크기 제한, 입력 비보존, 승격된 활성 버전만, 낮은 우선순위 대기열. P0.5: `caption`과 외부 API 약관. 호출자는 팀 밖 외부 클라이언트까지. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다. Intent-Specify(DDBM)는 반영 대기. `classify`는 OpenCLIP 가중치 라이선스 확정 기록(A2) 전까지 비활성(BR-MDL-07). | UC11, UC12 | §2.4 · §7.11 · §7.12 · §8 BR-API-03~05 |
+| D18 | (2026-09-28 추가, 신지현 결정) 이용자 중복은 별칭이 아니라 보호자 이메일 계정으로 막는다. 따로 아이디를 만들지 않고 이메일이 로그인 아이디다(서비스 전체 유일, 대소문자 무시). UC13 "보호자 이메일로 가입한다"(P0): 이메일·비밀번호만 받고, 확인 메일 링크로 가입을 끝내며, 가족 공간 1개를 함께 만든다. UC14 "이메일로 로그인 정보를 찾는다"(P0): 가입한 이메일로 로그인 아이디와 1회용 재설정 링크를 보내고, 응답은 가입 여부를 드러내지 않는다. 별칭은 중복 검사를 하지 않는 표시용 이름이다(같은 가족 안 같은 별칭은 저장 뒤 안내만, UC1 A5). BR-CHD-02 개정, BR-ACC-06·07·08 · FR-31 · FR-32 · U19 신설, SD_01 G26·G27 신설, 메일 발송 서비스 의존 추가. 비밀번호 규칙·링크 유효 시간·SMTP 제품은 예시값·미정 [추론] | UC1, UC13, UC14 | §7.1 · §7.13 · §7.14 · §8 BR-ACC-06~08 · BR-CHD-02 |
 
 ### 9.2 도출 결과
 
 | 항목 | 결과 |
 |---|---|
-| 유스케이스 | 12개(UC1~UC12). P0 11개(UC6은 P1 3D 대체흐름 포함, UC12는 caption만 P0.5), P0.5 1개(UC10) |
+| 유스케이스 | 14개(UC1~UC14). P0 13개(UC13·UC14 신규, D18)(UC6은 P1 3D 대체흐름 포함, UC12는 caption만 P0.5), P0.5 1개(UC10) |
 | 공통·조건부 | «include» 3개(INC1 로그인·가족 접근 확인, INC2 팀원 로그인·역할 확인, INC3 API 키 인증·요청 한도 확인) · «extend» 3개(EXT1 실행 중 처리 취소, EXT2 다시 찍어 재접수, EXT3 평가 작품으로 시험 호출) + UC10 → UC5 «extend»(설명 초안 받기) |
 | 액터 | 7개 = Primary 5(보호자, 서비스 운영자, 평가 담당 팀원, 연동 개발 팀원, 외부 클라이언트) + Secondary 1(원본·결과 저장소) + 조건부 Secondary 1(과정 제공 LLM). 이해관계자(아이, 성장한 아이)는 액터로 두지 않음. 모델 M1~M7은 내부 구성요소 |
 | 모델 | 7종(M1~M7). M4는 규칙이며 모델이 아님. 서빙군 3종(CPU 비전 · GPU · LLM) |
@@ -3560,6 +4012,8 @@ end
 | UC10 | 키워드로 작품 설명 초안을 만들고 승인한다 | §7.10 | 14/14 | E1~E7 (7) | UC + Seq |
 | UC11 | API활용 메뉴에서 엔드포인트·가이드라인·매뉴얼을 확인한다 | §7.11 | 14/14 | E1~E6 (6) | UC + Seq |
 | UC12 | 모델 기능 엔드포인트를 호출한다 | §7.12 | 14/14 | E1~E7 (7) | UC + Seq |
+| UC13 | 보호자 이메일로 가입한다 | §7.13 | 14/14 | E1~E8 (8) | UC + Seq |
+| UC14 | 이메일로 로그인 정보를 찾는다 | §7.14 | 14/14 | E1~E6 (6) | UC + Seq |
 
 ### 9.3 원천 커버리지
 
@@ -3591,6 +4045,8 @@ end
 | FR-28 | UC12 | P0 (caption은 P0.5) |
 | FR-29 | UC6 (P1 대체흐름) · UC2 확정값 `sculpture` | P1, GPU 확인 후(U2) |
 | FR-30 | UC11 · UC3 · UC12 | R3·R4 |
+| FR-31 | UC13 | D18 |
+| FR-32 | UC14 | D18 |
 | **FR-18 사용 관찰 기록** | **미전환** | 사람이 수행하는 검증 활동이라 시스템과 상호작용하는 액터 목표가 아니다. P0 검증 계획(관찰 기록 양식)으로 관리한다. 실제 아동 참여는 동의·수집 조건 확정 뒤에만 한다(Intent [미션]) |
 | **FR-19 추적성** | **미전환** | 프로젝트 관리 활동(FR → UC → T → 검증 증거)이다. UC 목록(§3)과 업무규칙(§8)의 "원천 근거"·"근거" 열이 FR → UC 구간을 채운다. UC → T → 증거는 `/speckit.tasks` 이후 이어 간다 |
 
@@ -3622,14 +4078,14 @@ end
 
 | # | 항목 | 관련 UC | 영향 |
 |:--:|---|---|---|
-| U1 | 가족 접근 계정 모델(보호자 1계정 / 공동 보호자 / 감상 전용) | UC1, UC6, UC7, INC1 | 높음. 액터 추가, 초대·해제 UC 신설, 삭제 권한 규칙이 달라진다 |
+| U1 | 가족 접근 계정 모델(보호자 1계정 / 공동 보호자 / 감상 전용). 보호자 가입은 UC13(이메일)으로 정함(D18) | UC1, UC6, UC7, INC1 | 높음. 액터 추가, 초대·해제 UC 신설, 삭제 권한 규칙이 달라진다 |
 | U2 | 팀 서버 GPU 유무 — M5 속도, M7(P1) 가능 여부 | UC3, UC6, UC8, UC9 | 높음. 2.5D 처리 시간과 P1 노출 여부를 가른다 |
 | U3 | 과정 제공 LLM 엔드포인트 유무와 조건 — M6 실행 방식 | UC10 | 중간. 조건부 액터 추가 여부와 BR-CAP-05 적용 방식이 정해진다 |
 | U4 | 라이선스 확인: OpenCLIP 가중치 · Qwen3 · TRELLIS 의존성 · AGPL 예비 모델 채택 여부 | UC2, UC3, UC9, UC10, UC12 | 높음. BR-MDL-07에 따라 확인 전에는 활성화하지 않는다. OpenCLIP은 P0 판정 제안의 핵심이다 |
 | U5 | 모델별 품질 임계값(분리·판정·관절·깊이·설명 규칙 검사)과 승격 기준 — 평가 묶음 1차 측정 뒤 | UC2, UC3, UC9, UC10 | 높음. 낮춤 여부와 승격을 가르는 기준이다 |
 | U6 | 모델별 시간 상한·동시 처리 수·처리 시간(M3 외 미측정) | UC3, UC8 | 중간. BR-PRC-06·07, BR-SRV-03의 수치가 비어 있다 |
-| U7 | 보호자 앱 API 스택(Intent-Plan 후보 4종) 확정과 모델 서빙 계층(Python) 분리 여부 | UC1~UC12 | 중간. `/speckit.plan`의 첫 결정이다 |
-| U8 | 엔드포인트 이름·응답 형식·포트·인증 방식(현재 [추론]) | UC1~UC12 | 중간. OpenAPI로 확정한다 |
+| U7 | 보호자 앱 API 스택(Intent-Plan 후보 4종) 확정과 모델 서빙 계층(Python) 분리 여부 | UC1~UC14 | 중간. `/speckit.plan`의 첫 결정이다 |
+| U8 | 엔드포인트 이름·응답 형식·포트·인증 방식(현재 [추론]) | UC1~UC14 | 중간. OpenAPI로 확정한다 |
 | U9 | 움직이는 작품·2.5D 결과의 서비스 파일 형식(GIF/MP4/깊이맵+셰이더 등) | UC3, UC4, UC6 | 중간. 저장·전시 화면 구현이 달라진다 |
 | U10 | 판정 제안 문구 확정과 제안 지연 시 화면 | UC2 | 중간. 현재 문구는 [추론] |
 | U11 | 설명 규칙 검사의 금지어·사건 판별 방식, 재생성 상한 | UC10 | 중간. 기억 왜곡 방지의 핵심이다. 상한 2회는 [추론] |
@@ -3640,6 +4096,7 @@ end
 | U16 | 승인된 설명을 내리거나 교체하는 절차(승인 후 고정 원칙과의 관계) | UC5, UC10 | 중간. 한마디를 고친 뒤 설명이 어긋날 수 있다 |
 | U17 | 'API활용' 메뉴 위치와 연동 개발 팀원·운영자의 관리 엔드포인트(`/v1/admin/models`) 조회 권한 | UC9, UC11 | 낮음 |
 | U18 | 연동 오류(`invalid_input` 등)의 분류. Intent 오류 분류 5종(엔진 다운·시간 초과·저장소·DB·모델 미준비)에 없다 | UC3, UC12 | 낮음 |
+| U19 | 보호자 계정 세부: 비밀번호 규칙 · 확인·재설정 링크 유효 시간 · 메일 발송 서비스(SMTP) 선정과 발신 주소 · 탈퇴한 이메일로 재가입 허용 · 가입 공개 범위(누구나/초대) · 가입·찾기 요청 한도 · 메일 문구 | UC13, UC14 | 중간. 메일 발송 서비스가 정해져야 가입과 찾기가 실제로 동작한다 |
 
 ### 9.5 다음 단계 권고
 
