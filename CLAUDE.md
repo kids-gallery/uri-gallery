@@ -1,3 +1,9 @@
+# 절대 규정
+
+- **이 프로젝트의 설계를 변형하거나 기능을 추가할 때 반드시 경로의 설계서들에 먼저 반영하고 기능을 구현하여 설계와 구현내역의 일관성을 유지하라.**
+  - 설계서 경로: `design/`(REF 공통기준 · UC_00~UC_15 · UC_ALL · SD_01 프로세스 · SD_02 UI/UX · SD_03 데이터베이스와 `uri_gallery_ddl.sql` · `style-guide/`)와 `.specify/features/우리-아이-미술관/`(spec · plan · research · data-model · contracts · tasks).
+  - 순서: 설계서 반영 → 구현. 구현을 먼저 하고 설계서를 나중에 맞추지 않는다.
+
 <!-- SPECIFY:BEGIN managed -->
 <!-- 이 블록은 update-agent-context.sh가 생성합니다. 직접 편집하지 마세요.
      블록 바깥의 내용은 보존됩니다. -->
