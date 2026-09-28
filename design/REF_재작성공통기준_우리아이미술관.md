@@ -320,7 +320,6 @@
 | D13 | 엔드포인트 추가([추론], U8): `PATCH /v1/children/{id}`(별칭 수정), `GET /v1/artworks`(목록), `GET /v1/models/jobs/{job_id}`·`…/result`(외부 비동기 결과). 옛 `/v1/jobs…`는 쓰지 않는다 | UC1, UC3, UC12 |
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정(Intent 정의). 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 |
 | D15 | 신규 미해결 U16: 승인된 설명을 내리거나 교체하는 절차. U17: 'API활용' 메뉴 위치·연동 개발 팀원의 관리 엔드포인트 조회 권한. U18: `invalid_input` 등 연동 오류 분류(Intent 오류 5종에 없음) | UC10, UC11, UC3 |
-
 | D16 | (2026-09-28 추가) 채택 모델은 5종으로 확정한다: BiRefNet(M1) · OpenCLIP(M2) · Animated Drawings(M3) · Depth Anything V2 Small(M5) · Qwen3-4B(M6). rembg와 Qwen3 8B는 후보에서 뺀다. M4는 규칙이라 모델 수에 넣지 않는다. M7(TripoSR, 3D)은 5종 밖의 P1 후보로 남기고, 노출 설정은 계속 꺼 둔다(D10). 실제 실행 확인은 M3뿐이다 | 전체 |
 
 신규 BR은 BR-EXH-07, BR-DEL-05, BR-CAP-07, BR-APR-06 네 개다(전체 84개). 개별 UC 파일에는 넣지 않았고, UC_00 §7.1과 UC_ALL §8에 "통합 시 추가"로 적는다.
