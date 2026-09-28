@@ -122,6 +122,7 @@
 | 확정 | G8·G17 | `artwork` `FOR UPDATE` 상태 확인 → `artwork_outcome` INSERT(`suggestion_at_confirm` = 제안값/`before`/`none`) → 경로별 `stage_job`(`animate_render`·`depth_relief`·`frame_compose`·`sculpture`) → `processing`. `relief` 확정인데 `judgment.split_ok=FALSE`면 `frame_compose`(+`downgrade_cause='split_fail'`는 워커가 결과 기록 시) |
 | 결과 저장 | H5 | 워커: `artwork` 삭제 중 재확인 → `stored_object` + `result` + `artwork_outcome.result_kind/result_cause` + `stage_job` 종료 + `awaiting_review` |
 | 낮춤 | BR-PRC-02 | 워커: 현재 작업 `done_downgraded` + 다음 작업(`depth_relief` 또는 `frame_compose`, `origin='downgrade'`) INSERT |
+| 결정 frame의 전시 | — | "액자로 걸기"(UC4 A2·A5)는 결과 행을 만들지 않는다. `v_gallery`가 결정 `frame`이면 원본 액자로 보이고, 앱은 `artwork_outcome.result_kind='frame'`을 기록한다(SD_03 §19 #17) |
 | 결정 | G10·G3 | `decision` INSERT(트리거가 상태 검사, `uq_dc_round`로 중복 차단 → 중복이면 기존 결정 반환) + `artwork_outcome` 갱신 + 전이(`approved` / `use_lower`면 2.5D 없을 때 `depth_relief` 작업·`processing` / `retake`면 `deleting` + `deletion_request(origin='retake')`) |
 | 이야기 | G11·G12 | `story` UPSERT(트리거: 미래 제작일·삭제 중·전시 작품 필수 항목 비우기 거절). 전시 여부는 저장하지 않고 뷰로 |
 | 삭제 요청 | G18 | `artwork.status='deleting'`, `deleting_since` + 작품의 `stage_job.cancel_requested_at` + `deletion_request(accepted→waiting_stop)` → 202 |
