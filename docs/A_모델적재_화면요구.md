@@ -64,7 +64,7 @@ python -m ops.models status                     # 매니페스트·DB 활성 버
 - 점수·모델 이름·버전·장치는 보호자 화면에 보이지 않는다(BR-SUG-02, D3).
 - `model_failed`는 보호자에게 적재 실패라고 말하지 않는다 — 작업은 "다시 시도하는 중"(S4 기존 문구)으로 보인다.
 
-### 3.2 운영 화면 S11 "모델 상태" 표 (팀원 `operator`·`integrator`)
+### 3.2 운영 화면 S11 "모델 상태" 표 — 보기: `operator`·`evaluator`·`integrator`, "지금 불러오기": `operator`·`evaluator`만(SD_02 e6c464c, openapi warmup security)
 
 | 열 | 값 |
 |---|---|
