@@ -1,0 +1,18 @@
+# GitLab CI(T010) — 검사만. 배포는 ssh + pm2 reload(quickstart §7, research R-02). Docker 이미지 빌드 없음.
+stages: [check]
+
+api:
+  stage: check
+  image: node:20
+  script:
+    - cd api && npm ci && npm run lint
+    # DB 시험은 임시 MariaDB가 필요하다 — 러너에 mariadb-server가 있을 때만
+    - if command -v mariadbd >/dev/null; then npm test; else echo "skip db tests (no mariadbd)"; fi
+
+contracts:
+  stage: check
+  image: node:20
+  script:
+    - npx @redocly/cli@latest lint .specify/features/우리-아이-미술관/contracts/openapi.yaml .specify/features/우리-아이-미술관/contracts/model-api.openapi.yaml
+    # 루트 사본과 정본이 같은지(T134)
+    - diff -r -x README.md .specify/features/우리-아이-미술관/contracts contracts
