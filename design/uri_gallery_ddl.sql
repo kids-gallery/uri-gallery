@@ -4,6 +4,14 @@
 -- 입력: SD_02 UI/UX 설계서 · SD_01 프로세스 설계서(개정 3, D18) · UC_01~UC_14 · 공통 기준 D1~D18
 -- 개정 (2026-09-28, D18): 보호자 이메일 로그인(guardian_account 이메일·비밀번호 해시·확인 시각,
 --   auth_email_token 신설), 별칭 중복 검사 제거(uq_child_family_alias 삭제)
+-- 개정 (2026-09-28, 구현 보완 S1~S9 — B 이제민, plan v1.1 data-model §6):
+--   S1 stage_job.available_at(재시도 간격·판정 열기) · S2 stage_job.priority + ix_sj_claim
+--   S3 평가 작업(origin 'eval', evaluation_id·eval_item_id, 트리거·운영 뷰에서 평가 작업 분리)
+--   S4 external_job 점유 컬럼 · S5 team_member.password_hash·disabled_at
+--   S6 app_session · S7 auth_rate_event(이메일·IP는 HMAC만) · S9 release_event.kind 'deactivate'
+--   (S8 장치 표기는 스키마 변경 없음: MPS는 exec_device='gpu' + runtime에 mps)
+-- 개정 (2026-09-28, 1c460b0 사용자 결정 후속 — B): 가족당 공동 보호자 1명(uq_guardian_co_family), 대기 초대 1건
+--   (uq_invite_one_pending), 초대는 만든 보호자만·자리 차면 거부(trg_family_invite_bi), G29 이름 "보호자 관리 권한"
 --
 -- 표준 SQL을 기준으로 썼다. 검증 DBMS는 MariaDB 12.0.2다. 아래는 MariaDB 때문에
 -- 표준에서 벗어난 곳이다(이탈 사유).
@@ -73,6 +81,8 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   role                 VARCHAR(8) NOT NULL DEFAULT 'owner',
   -- 가족당 만든 보호자 1명. 이탈 사유 8) 부분 UNIQUE 대신 조건부 생성 컬럼 + UNIQUE
   owner_family_id      BIGINT    GENERATED ALWAYS AS (CASE WHEN role = 'owner' THEN family_id END) STORED,
+  -- 1c460b0 사용자 결정(부모 두 명까지): 가족당 공동 보호자 1명. 같은 방식(조건부 생성 컬럼 + UNIQUE)
+  co_family_id         BIGINT    GENERATED ALWAYS AS (CASE WHEN role = 'co' THEN family_id END) STORED,
   -- D18 · BR-ACC-06: 로그인 아이디는 이메일. 따로 아이디 컬럼을 두지 않는다
   email                VARCHAR(254) NOT NULL,
   -- 대소문자 무시 유일(BR-ACC-06, G26). 이탈 사유 5) 생성 컬럼 STORED + UNIQUE
@@ -93,6 +103,8 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   CONSTRAINT fk_guardian_family FOREIGN KEY (family_id) REFERENCES family (family_id),
   -- U1 확정: 한 가족에 여러 보호자. uq_guardian_family를 풀고 만든 보호자만 가족당 1명으로 제한한다
   CONSTRAINT uq_guardian_owner_family UNIQUE (owner_family_id),
+  -- BR-ACC-09 · UC15 E9: 보호자는 만든 보호자 1명 + 공동 보호자 1명까지
+  CONSTRAINT uq_guardian_co_family UNIQUE (co_family_id),
   CONSTRAINT chk_guardian_role CHECK (role IN ('owner', 'co')),
   -- 만든 보호자는 반드시 가족 공간이 있다(나가기는 공동 보호자만, G29)
   CONSTRAINT chk_guardian_owner_family CHECK (role <> 'owner' OR family_id IS NOT NULL),
@@ -114,6 +126,10 @@ CREATE TABLE IF NOT EXISTS family_invite (
   accepted_account    BIGINT       NULL,
   revoked_at          DATETIME     NULL DEFAULT NULL,
   created_at          DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  -- UC15 E9 [추론]: 대기 중(수락·취소 전) 초대는 가족당 1건. 새로 초대하면 앱이 이전 초대를 먼저 revoked 처리한다.
+  --   만료된 초대도 revoked 처리 전까지는 대기로 본다(sweeper가 만료 시 revoked_at을 채운다)
+  pending_family_key  BIGINT       GENERATED ALWAYS AS
+                        (CASE WHEN accepted_at IS NULL AND revoked_at IS NULL THEN family_id END) STORED,
   CONSTRAINT pk_family_invite PRIMARY KEY (invite_id),
   CONSTRAINT fk_invite_family FOREIGN KEY (family_id) REFERENCES family (family_id) ON DELETE CASCADE,
   CONSTRAINT fk_invite_by FOREIGN KEY (invited_by) REFERENCES guardian_account (account_id) ON DELETE SET NULL,
@@ -121,7 +137,8 @@ CREATE TABLE IF NOT EXISTS family_invite (
   CONSTRAINT uq_invite_token_hash UNIQUE (token_hash),
   CONSTRAINT chk_invite_email_format CHECK (email LIKE '%_@_%._%'),
   -- 수락한 초대와 취소한 초대를 겹치지 않게 한다
-  CONSTRAINT chk_invite_accepted_or_revoked CHECK (accepted_at IS NULL OR revoked_at IS NULL)
+  CONSTRAINT chk_invite_accepted_or_revoked CHECK (accepted_at IS NULL OR revoked_at IS NULL),
+  CONSTRAINT uq_invite_one_pending UNIQUE (pending_family_key)
 );
 -- 같은 가족·같은 이메일의 이전 초대를 찾아 무효로 만든다(재초대 시)
 CREATE INDEX IF NOT EXISTS ix_invite_family_email ON family_invite (family_id, email_norm);
@@ -147,6 +164,35 @@ CREATE TABLE IF NOT EXISTS auth_email_token (
 -- 보완 2: 재발급 때 같은 계정·같은 목적의 이전 토큰을 찾아 무효로 만든다
 CREATE INDEX IF NOT EXISTS ix_token_account_purpose ON auth_email_token (account_id, purpose);
 
+-- S6: 로그인 세션(express-session 저장소). 세션 ID는 해시로만, 가족 ID는 저장하지 않는다
+--     (가족 소속은 요청마다 guardian_account.family_id로 확인 — 해제·나가기 즉시 반영, U1).
+--     보호자는 created_at < guardian_account.password_changed_at 이면 무효(이제민 결정 ⑥)
+CREATE TABLE IF NOT EXISTS app_session (
+  sid_hash       CHAR(64)     NOT NULL,
+  subject_kind   VARCHAR(8)   NOT NULL,
+  subject_id     BIGINT       NOT NULL,
+  data           TEXT         NULL,       -- 세션 부가값(JSON). 자유 입력·이메일·토큰을 넣지 않는다(BR-PRV-01)
+  created_at     DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  expires_at     DATETIME     NOT NULL,
+  CONSTRAINT pk_app_session PRIMARY KEY (sid_hash),
+  CONSTRAINT chk_session_subject CHECK (subject_kind IN ('guardian','staff')),
+  CONSTRAINT chk_session_expiry CHECK (expires_at > created_at)
+);
+CREATE INDEX IF NOT EXISTS ix_session_subject ON app_session (subject_kind, subject_id);
+
+-- S7: 가입·확인 재발송·찾기·로그인·초대 요청 한도(FR-31 · FR-32 · UC15). 이메일·IP 원문 없이 HMAC만
+CREATE TABLE IF NOT EXISTS auth_rate_event (
+  event_id       BIGINT       NOT NULL AUTO_INCREMENT,
+  subject_hash   CHAR(64)     NOT NULL,
+  subject_type   VARCHAR(8)   NOT NULL,
+  action         VARCHAR(10)  NOT NULL,
+  occurred_at    DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  CONSTRAINT pk_auth_rate_event PRIMARY KEY (event_id),
+  CONSTRAINT chk_rate_subject CHECK (subject_type IN ('email','ip','family')),
+  CONSTRAINT chk_rate_action CHECK (action IN ('signup','resend','recovery','login','invite'))
+);
+CREATE INDEX IF NOT EXISTS ix_rate_window ON auth_rate_event (subject_type, subject_hash, action, occurred_at);
+
 CREATE TABLE IF NOT EXISTS child (
   child_id       BIGINT       NOT NULL AUTO_INCREMENT,
   family_id      BIGINT       NOT NULL,
@@ -164,6 +210,9 @@ CREATE TABLE IF NOT EXISTS child (
 CREATE TABLE IF NOT EXISTS team_member (
   member_id      BIGINT       NOT NULL AUTO_INCREMENT,
   email          VARCHAR(254) NOT NULL,
+  -- S5 · INC2 · G1: 팀원 로그인 수단. 해시로만 저장(BR-ACC-07과 같은 규칙)
+  password_hash  VARCHAR(255) NOT NULL,
+  disabled_at    DATETIME     NULL DEFAULT NULL,
   created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_team_member PRIMARY KEY (member_id),
   CONSTRAINT uq_team_member_email UNIQUE (email)
@@ -302,6 +351,13 @@ CREATE TABLE IF NOT EXISTS stage_job (
   error_class        VARCHAR(16)  NULL,
   claimed_by         VARCHAR(60)  NULL,
   claim_expires_at   TIMESTAMP    NULL,
+  -- S1: 이 시각 전에는 점유하지 않는다(인프라 재시도 간격, split 뒤 judge 열기)
+  available_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- S2: 작은 값이 먼저. 보호자 10 · 평가 50 (외부 호출은 external_job, D17)
+  priority           SMALLINT     NOT NULL DEFAULT 10,
+  -- S3: 평가 실행 작업(UC9 8.4)의 평가·항목 연결. FK는 evaluation 생성 뒤 ALTER로 붙인다(위상 순서)
+  evaluation_id      BIGINT       NULL,
+  eval_item_id       BIGINT       NULL,
   queued_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at         TIMESTAMP    NULL,
   finished_at        TIMESTAMP    NULL,
@@ -312,7 +368,10 @@ CREATE TABLE IF NOT EXISTS stage_job (
   CONSTRAINT fk_sj_version FOREIGN KEY (model_version_id) REFERENCES model_version (version_id),
   CONSTRAINT chk_sj_stage CHECK (stage_kind IN ('split','judge','animate_render','depth_relief',
     'frame_compose','caption','sculpture')),
-  CONSTRAINT chk_sj_origin CHECK (origin IN ('intake','confirm','use_lower','downgrade','caption')),
+  CONSTRAINT chk_sj_origin CHECK (origin IN ('intake','confirm','use_lower','downgrade','caption','eval')),
+  -- S3: 평가 작업은 가족 작품이 아니라 평가 묶음 항목을 다룬다(BR-MDL-04 · BR-API-09).
+  --     "평가 작업에 작품 연결 없음"은 artwork_id가 SET NULL FK라 CHECK에 쓸 수 없어(이탈 사유 9) trg_stage_job_bi로 옮겼다
+  CONSTRAINT chk_sj_eval_owner CHECK ((origin = 'eval') = (evaluation_id IS NOT NULL AND eval_item_id IS NOT NULL)),
   CONSTRAINT chk_sj_serving CHECK (serving_group IN ('cpu_vision','gpu','llm')),
   CONSTRAINT chk_sj_status CHECK (status IN ('queued','running','done','done_downgraded',
     'retry_wait','failed','cancelled')),
@@ -601,7 +660,7 @@ CREATE TABLE IF NOT EXISTS eval_item_result (
 CREATE TABLE IF NOT EXISTS release_event (
   event_id         BIGINT       NOT NULL AUTO_INCREMENT,
   model_id         VARCHAR(2)   NOT NULL,
-  kind             VARCHAR(8)   NOT NULL,
+  kind             VARCHAR(10)  NOT NULL,
   from_version_id  BIGINT       NULL,
   to_version_id    BIGINT       NOT NULL,
   evaluation_id    BIGINT       NULL,
@@ -614,11 +673,21 @@ CREATE TABLE IF NOT EXISTS release_event (
   CONSTRAINT fk_re_to FOREIGN KEY (to_version_id) REFERENCES model_version (version_id),
   CONSTRAINT fk_re_eval FOREIGN KEY (evaluation_id) REFERENCES evaluation (evaluation_id),
   CONSTRAINT fk_re_actor FOREIGN KEY (actor) REFERENCES team_member (member_id),
-  CONSTRAINT chk_re_kind CHECK (kind IN ('promote','rollback')),
+  -- S9: deactivate = 롤백 후보가 없는 첫 버전 문제 시 평가 담당이 활성 버전을 내림(2026-09-28 clarify).
+  --     to_version_id = 내린 버전(retired), 사유 필수
+  CONSTRAINT chk_re_kind CHECK (kind IN ('promote','rollback','deactivate')),
+  CONSTRAINT chk_re_deactivate CHECK (kind <> 'deactivate' OR (reason IS NOT NULL AND evaluation_id IS NULL)),
   -- BR-MDL-03: 승격에는 평가 근거, 롤백에는 사유
   CONSTRAINT chk_re_promote_eval CHECK (kind <> 'promote' OR evaluation_id IS NOT NULL),
   CONSTRAINT chk_re_rollback CHECK (kind <> 'rollback' OR (reason IS NOT NULL AND from_version_id IS NOT NULL))
 );
+
+-- S3: 평가 작업 FK — evaluation·eval_item이 stage_job보다 뒤에 만들어져 여기서 붙인다(멱등: IF NOT EXISTS)
+-- 이탈 사유(추가): ADD FOREIGN KEY IF NOT EXISTS는 MariaDB 구문이다(표준에는 IF NOT EXISTS가 없음, 멱등 실행용)
+ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_evaluation (evaluation_id)
+  REFERENCES evaluation (evaluation_id);
+ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_eval_item (eval_item_id)
+  REFERENCES eval_item (item_id);
 
 -- ---------------------------------------------------------------------
 -- 영역 G 외부 호출·API
@@ -651,6 +720,10 @@ CREATE TABLE IF NOT EXISTS external_job (
   result_class     VARCHAR(14)  NULL,
   error_class      VARCHAR(16)  NULL,
   attempt_count    SMALLINT     NOT NULL DEFAULT 0,
+  -- S4: 외부 작업도 점유·이어받기·재시도(BR-PRC-05)
+  claimed_by       VARCHAR(60)  NULL,
+  claim_expires_at TIMESTAMP    NULL,
+  available_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   result_temp_ref  VARCHAR(200) NULL,     -- 워커 임시 영역 참조. 내려받으면 지운다
   queued_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at       TIMESTAMP    NULL,
@@ -728,6 +801,9 @@ CREATE INDEX IF NOT EXISTS ix_ge_subject ON gate_event (subject_kind, subject_id
 CREATE INDEX IF NOT EXISTS ix_ge_open ON gate_event (gate_id, released_at);
 CREATE INDEX IF NOT EXISTS ix_ecl_key_time ON external_call_log (key_id, called_at);
 CREATE INDEX IF NOT EXISTS ix_ej_queue ON external_job (status, queued_at);
+-- S2: 점유 쿼리(SELECT … FOR UPDATE SKIP LOCKED)용
+CREATE INDEX IF NOT EXISTS ix_sj_claim ON stage_job (serving_group, status, available_at, priority, queued_at);
+CREATE INDEX IF NOT EXISTS ix_ej_claim ON external_job (status, available_at, queued_at);
 
 -- ---------------------------------------------------------------------
 -- 트리거 — CHECK로 표현할 수 없는 규칙(시점 의존 · 다중 행)
@@ -826,9 +902,17 @@ END//
 -- BR-MDL-07 · D17: 단계 작업·외부 작업은 활성 버전만 쓴다 / BR-DEL-05: 삭제 중 작품에 새 단계 작업 금지
 CREATE OR REPLACE TRIGGER trg_stage_job_bi BEFORE INSERT ON stage_job FOR EACH ROW
 BEGIN
-  IF NEW.model_version_id IS NOT NULL AND
+  -- S3: 평가 작업(origin='eval')은 평가 대상인 후보 버전을 돌린다. 단 라이선스 미확인 버전은 평가 작업도 거부(BR-MDL-07)
+  IF NEW.model_version_id IS NOT NULL AND NEW.origin <> 'eval' AND
      (SELECT release_state FROM model_version WHERE version_id = NEW.model_version_id) <> 'active' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BR-MDL-07 version_not_active';
+  END IF;
+  IF NEW.origin = 'eval' AND NEW.artwork_id IS NOT NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G21 BR-MDL-04 eval_job_with_family_artwork';
+  END IF;
+  IF NEW.model_version_id IS NOT NULL AND NEW.origin = 'eval' AND
+     (SELECT release_state FROM model_version WHERE version_id = NEW.model_version_id) = 'retired' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G21 eval_on_retired_version';
   END IF;
   IF NEW.artwork_id IS NOT NULL AND (SELECT status FROM artwork WHERE artwork_id = NEW.artwork_id) = 'deleting' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BR-DEL-01 new_job_blocked';
@@ -883,6 +967,18 @@ BEGIN
   END IF;
 END//
 
+-- G29 · BR-ACC-09 · UC15 A1·E9 (1c460b0 사용자 결정): 초대는 만든 보호자만, 공동 보호자가 이미 있으면 초대 불가
+CREATE OR REPLACE TRIGGER trg_family_invite_bi BEFORE INSERT ON family_invite FOR EACH ROW
+BEGIN
+  IF NEW.invited_by IS NULL OR NOT EXISTS (
+       SELECT 1 FROM guardian_account g
+        WHERE g.account_id = NEW.invited_by AND g.family_id = NEW.family_id AND g.role = 'owner') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G29 invite_owner_only';
+  END IF;
+  IF EXISTS (SELECT 1 FROM guardian_account g WHERE g.family_id = NEW.family_id AND g.role = 'co') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G29 co_guardian_full';
+  END IF;
+END//
 DELIMITER ;
 
 -- ---------------------------------------------------------------------
@@ -993,7 +1089,7 @@ SELECT mv.model_id, mv.version_label, j.serving_group,
        SUM(CASE WHEN j.attempt_count > 1 THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) AS retry_rate,
        SUM(CASE WHEN j.status = 'queued' THEN 1 ELSE 0 END) AS queue_backlog
   FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
- WHERE j.status <> 'cancelled'
+ WHERE j.status <> 'cancelled' AND j.origin <> 'eval'   -- S3: 평가 작업은 운영 지표에서 뺀다
  GROUP BY mv.model_id, mv.version_label, j.serving_group;
 
 -- S10 원인 5분류 (BR-OPS-03)
@@ -1004,7 +1100,8 @@ SELECT result_cause, COUNT(*) AS n FROM artwork_outcome WHERE result_cause IS NO
 CREATE OR REPLACE VIEW v_not_delivered_trace AS
 SELECT j.job_id, mv.model_id, mv.version_label, j.error_class, j.attempt_count, j.finished_at
   FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
- WHERE j.status = 'failed' AND j.stage_kind IN ('animate_render','depth_relief','sculpture');
+ WHERE j.status = 'failed' AND j.stage_kind IN ('animate_render','depth_relief','sculpture')
+   AND j.origin <> 'eval';   -- S3: 평가 작업의 소진은 결과 미도달이 아니다(UC9 E4 평가 미완료)
 
 -- S10 외부 호출량·거부 수 (UC8 A5)
 CREATE OR REPLACE VIEW v_external_usage AS
@@ -1082,4 +1179,6 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G27','메일 링크 토큰','input','guardian'),
  -- U1 확정: 공동 보호자
  ('G28','초대 수락','input','guardian'),
- ('G29','보호자 해제 권한','access','guardian');
+ ('G29','보호자 관리 권한','access','guardian');
+-- 1c460b0: G29 이름 변경("보호자 해제 권한" → "보호자 관리 권한"). 이미 시드된 DB에도 적용(멱등)
+UPDATE gate_catalog SET gate_name = '보호자 관리 권한' WHERE gate_id = 'G29';

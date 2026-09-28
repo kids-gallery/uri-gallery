@@ -11,6 +11,7 @@
 > **표기**: `S` = 화면 · `C` = 공통 컴포넌트 · `UX` = 설계 원칙(프롬프트의 `U1~UN`에 해당. 이 프로젝트에서 `U`는 공통 미해결 번호라 겹치지 않게 `UX`로 썼다) · `P`/`G`/`H` = SD_01의 프로세스/게이트/인계 · `BF n` = UC 기본흐름 n단계 · `A`/`E` = UC 대체/예외흐름 · `[추론]` = 원천에 직접 없는 설계 판단
 > **와이어프레임 예시 값**: 별칭은 `하*`, 가족명은 `하*네`, 팀원 계정은 `jo*@su*.kr`처럼 가렸다. 날짜의 일은 `**`로 가렸다.
 > **개정 (2026-09-28, 통합 결정 D18)**: 이용자 중복을 별칭이 아니라 보호자 이메일 계정으로 막게 되어 **S0 가입(이메일)**과 **S0b 로그인 정보 찾기** 화면을 추가하고(SD_01 1.0 · 1.R1~1.R3 · G26 · G27), S1의 별칭 중복 차단을 "같은 별칭 안내(저장은 유지)"로 바꿨다.
+> **개정 (2026-09-28, main `1c460b0` 후속)**: 보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1)이고 초대는 만든 보호자만 한다. 그에 맞춰 **S1b 와이어프레임을 "두 명 찬 상태"로 다시 그렸고**, T107이 만들 **S1c 초대 수락**과 **S1d 가족 없음** 화면을 추가했다(UC15 BF4~6 · A4 · A6 · E1~E3 · E9 · G28 · G29 · U20).
 
 ---
 
@@ -80,6 +81,8 @@
 | S0 | 가입(이메일) | P1 (1.0) | 보호자(가입 전) | 입력 · 1회 |
 | S0b | 로그인 정보 찾기 | P1 (1.R1~1.R3) | 보호자(로그인 전) | 입력 · 드묾 |
 | S1b | 가족 보호자 관리 | P1 (1.I1~1.I4) | 보호자(만든·공동) | 설정 · 드묾 |
+| S1c | 초대 수락 | P1 (1.I2) | 초대받은 보호자 | 결정 · 1회 |
+| S1d | 가족 없음 | P1 (1.I4 뒤 · U20) | 나가거나 해제된 보호자 | 선택 · 드묾 |
 | S1 | 아이 관리 | P1 (1.1~1.5) · P6 진입(아이 삭제) | 보호자 | 설정 · 드묾 |
 | S2 | 작품 올리기 | P2 (2.1~2.4) | 보호자 | 입력 · 비동기 경계 앞 |
 | S3 | 판정 제안 확정 | P2 (2.5~2.7) · P0-1 결과(H3) 표시 | 보호자 | 결정 |
@@ -98,7 +101,7 @@
 - **P0(상시 워커)** — 보호자가 조작하지 않는다. 그 출력(단계 작업의 상태·시도 횟수·낮춤 원인·오류 분류)이 S4 진행 상세와 C1 진행 레일에 그대로 보인다. 판정 결과(H3)는 S3, 처리 결과(H5)는 S5에 보인다.
 - **P10(외부 모델 기능 호출)** — 호출자가 사람이 아닌 외부 클라이언트다(UC12 액터 `<<시스템>>`). 화면 대신 응답 계약(SD_01 G2 · G24 · G25 · H16)이 인터페이스다. 팀 안에서 사람이 보는 곳은 S12의 시험 호출 패널이며, 거기서 같은 계약의 응답을 그대로 보인다.
 
-**역할별 뷰** — 같은 프로세스에서 두 역할이 서로 다른 판단을 하는 곳은 없다. 운영 화면은 역할마다 **다른 화면**을 연다(S10 운영자 · S11 평가 담당 · S12 운영자와 연동 개발). S12는 두 역할이 같은 범위를 읽는다(UC11 UML 노트 [추론])라 한 벌만 그렸다. 보호자 계정 모델(공동 보호자·감상 전용)은 미정이라(U1) 보호자 화면을 나누지 않았다.
+**역할별 뷰** — 같은 프로세스에서 두 역할이 서로 다른 판단을 하는 곳은 없다. 운영 화면은 역할마다 **다른 화면**을 연다(S10 운영자 · S11 평가 담당 · S12 운영자와 연동 개발). S12는 두 역할이 같은 범위를 읽는다(UC11 UML 노트 [추론])라 한 벌만 그렸다. 보호자 계정 모델은 U1로 확정됐다(공동 보호자 초대, 같은 권한, 부모 두 명까지). 역할별로 화면을 나누지 않고 S1b에서 초대·해제 버튼만 만든 보호자에게 보인다(G29).
 
 ### 2-2 내비게이션 구조
 
@@ -111,9 +114,17 @@ skinparam shadowing false
 title 화면 지도와 이동 경로
 
 rectangle "로그인\n(보호자 - 팀원)" as LOGIN
+rectangle "초대 메일 링크" as MAIL
+package "계정 - 가족" {
+  rectangle "S0 가입(이메일)" as S0
+  rectangle "S0b 로그인 정보 찾기" as S0b
+  rectangle "S1c 초대 수락" as S1c
+  rectangle "S1d 가족 없음" as S1d
+}
 package "보호자 앱" {
   rectangle "S4 작품 목록-진행\n(진입 홈)" as S4
   rectangle "S1 아이 관리" as S1
+  rectangle "S1b 가족 보호자 관리" as S1b
   rectangle "S2 작품 올리기" as S2
   rectangle "S3 판정 제안 확정" as S3
   rectangle "S5 결과 확인" as S5
@@ -129,6 +140,16 @@ package "운영 화면 (팀원 전용)" {
 }
 
 LOGIN --> S4 : G0 가족 접근
+LOGIN ..> S0 : 가입
+LOGIN ..> S0b : 로그인 정보 찾기
+S0 --> S1 : G26 - G27 메일 확인
+S0b ..> LOGIN : 재설정 뒤 다시 로그인
+LOGIN --> S1d : 가족 없음
+MAIL --> S1c : 로그인 - 가입 뒤
+S1c --> S4 : G28 수락
+S1d --> S1 : 새 가족 공간
+S4 ..> S1b : 가족 보호자
+S1b ..> LOGIN : 나가기 - 세션 삭제
 LOGIN --> S10 : G1 운영자
 LOGIN --> S11 : G1 평가 담당
 LOGIN --> S12 : G1 운영자 - 연동 개발
@@ -167,12 +188,13 @@ end note
 @enduml
 ```
 
-**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VU1PG2cQvu-vGNELHIy8NjZ2D1U-1JhIVYuEeuvFCQ5FATuyHfVQVTJhiYxNhEkxttNdy0hOsCMSLbAhi-r8oX1n_0Nn3nf9waIeELueZ2aemXlm9l6pnC2WX25vaaXnm_kX2WJ2G55knz7fKBZe5tcfFrYKRfjuUfyR_uODGUTp9-x64Y_N_AY8y26Vclp5s7yVA79zLIYO4FlFHBrYqQBajjjsgHf5TZyamlbMPS1n8xuEnKN376uLlvtbfl5cOX7bxW4DIuAfVPCfxsIcZEvw0y-Zxz9rL4hMdoNdJjBsXszBnxrATMC1JcDukf-2CuLjUJxaETwz_JN9Ck8P2N0jclUVdm0p5KlTQIOogudUxIdzBdJDoNg4PLbPCeS5tsLFQrg4ldDAXhOwZ2KzSmmb9Kaw8RA2QZ2xvauRBFmuAiVCoCR3EZsjygj4tz1JnAzhlgGNvvi4B-hUKTEVvhpdTBCbgTCChq4th3xS4NkVPL0gsgbWTQVKhUBpwFefqJqA5bSx4qBCE8fdHZpJkCCt_TUdGL5zsL0zVsW8Gq1M9W64cHeAehQolr9rUoaKf2Ty6AxT3BhY64OKNU2kR8PeOg1-IN644B_uU1URrN14l0MKot5B1B1Rvxm7h8erx-D-6mO_YxI3EMNjse9w_nFWUia2bKll2xS2OQ4To3o1qVOIRH4gacH3kIlOu3rkfR3N2qlGAujTcm4ZdWW8RfgWIBbyDtPSiIBCSh4a_Zev7BdoXJcSIUXt7kzQ_2eOKXOcgyUoVyYJ_usvLNgIxKIxjSzTqlOB1JnTZZtWBLB_NEmRIIjSD5BsWMtjmN9s07xpeP_6zQFk0hphpUuSo8Z5RTiqsNssJvKq3VAU0RhMYjNQ_SrF1WrQ9aFt3RO99xoZJSYlO6dzEdRFJfdbBFMMXVykp-WAavc99hrSIU5_SxoZpH02ndq4FVIjsZZW7qWo92V4-w0XurI8MXKjxKvPeN0ONp_OIHgXroQl73RO-sQDOvKkGOMr9OvDONxPT0Bp5iS3dJIrfZdIigUxxauJj93SU4oZPSXrToN42w_uqcbalQipQnHWpxXBkxFwn5o9nipaxJqsCsUSDDbS-9LAS8rUq6I9mIHwMqiVBzruRFFjt6lNnPaFfcEHVdQHoK6CpuUL5Rw8KZTLhW0oPJNLCEBl-q028Afi2gyOHle3SoG8KwOb3-ZXdNbwip5cQMvghCyjen-RvTuuuK6Av-MIa8TqP3H9mitqx9Sdc9E9CG6YbFfrtXTK5deBmdyhw1-X1Si1fkB5eVzY2kOrDepsolUhO3-s6GwaLhsUUjBYQVqNWXaTRPfoib7T_wFKX2kg)** — 클릭 시 브라우저로 연결됩니다.
+**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1Vs9PG1cQvu9fMaIXOBh5bTA2hyo0akyktEVCvfViA6EoYEfgqIeqkh0WZH5EmBRjk3qRkZxiIlotYIhRTf-gfbP_Q2fee961l-ZgybvzvZlvZr6Zt082Cpn1wpu1VWPj1UrudWY9swbZzMKr5fX8m9zi0_xqfh2-ehZ_Zn77zQBi4-fMYv6XldwyvMysbiwZhZXC6hJ4J0fiogN4XhQHFp4UAe2OODgB9_pBnDUMY31poZDJLRNyhJ7dz120uz_lRsVNx6t38bQCEfD2i_hHZWwEMhvw4of08-8HD2GnLPaLIC6O0O6BOC95pUuJ_G7m-QvjNbHOLBPMvbGwWSVnrlPEs6sR-NUAGHAzH5WW061R5iedqYDz0TAwCz5RIJ_EFND51-06Gp8NHTAXQJPEcl3YDwpmLoRhi5obYG0b7X0NWzR-C7IIqoLV_8lhAvD00HtfBvHpQpzZETy3vOMdqib9odSoF2Wd1EQ4ODm0KHNwO0Xx56WOHQZl-wwDHkP4cOaxPh-sXxLKL1EshItTiyvcHmw2sFomnlV6Uth4CDtJynHcm54E2V0FmgyBEqwyrPYoIuDvjh84EcJNAVot8WmLG0SBqVJz0fFJYtMWlhbc_FToTNJvU9PCvYYCJUOgFODbvygbzTLoBMmAJgI3S1Q8HSA12GH80MF6qT81o0r6MtSHi7HHHTejQL68zQZFKHqHDe611RD3Fu62QPkKAplhKZsmKaUt3nXBO9ihrCK4e-9eX5AT9QxiryP27vvHH-khBjNzz72TBnHjARQ7HY7fj0rDhjVHzrrTEE6j7yZG-RpyjiES-Zq0CNOQjgZVPXQ_97R9fJzsUbKr2Rx6m6XXXxhEg85I1ya7jiWISTo21d8RqiUGe2BPyuc0SfWSxMAqFO9blHmLmhsEGCRMkzo9PKsGLxttXBjiFdHU2anBxiDlWFIvBIM9-nxxs9x37t7cuo5lEFymbGaDuP4EGvx6MA_xtk4YVj7V3-riVl1rcSgFLmraDCQyZDSVcUgEQ4BY6HS41Uw5aECUOKpHPqcXjSnHjqZ0s-Sjv2SOKXOcnU1yMxPgbd_yEohALBozyBKUNanXB3O6rtPaAWwd-iEmCaIEADSKukoS5lXrNEM0EP941TakUwZh5ZEEe43z2pHicOo8oHRq9568iErb981A9VYObK1CNx7Jaks0PxpklJikrJzJSVAV1QoZIphkqGz3lKZ6-hGbFXkgTr8JgwzSPhhObbFZmnBiLa1cSy1idN5xorNTvnFC6uRvvKvrbUqCBfeqK2GJR5WTZ-KajlzTVn-z__g0DjMpH5RiTkpt_Vipx0SSLIgArzreP5YKKKbNpMw7pUZSXmoGa1eNg0zxvEVrB497wHWqNrmraBNrsioUS1BvOfe2gtcUqVlGpz0Aicqx4zXKcyUXiGkO2MRZSzhXfEmJvTaoTWsYuXxhCbL5QiG_BvmXcrEBUJperQ48m3cNfZFwdnPkiL9Bqg-jsyZreNZMjKFtcUCW0V5rnE-fdMVdEbxSR9g9Vv9x19vtit0jqs6lON3X94IsV21bHlrKLQIzeUSHr_i5KJW-TXG5XVjbQpuWgbyK0C6Snb8Y6CqiLUEGhRQMVpBaZZCdH-gJ_aNvw_8ANcZ-aA==)** — 클릭 시 브라우저로 연결됩니다.
 
 **읽는 법**
 
 - **진입 홈은 S4다.** 로그인 뒤 G0를 통과하면 작품 목록이 먼저 열린다. 보호자는 올린 뒤 떠났다가(UX7) 여기로 돌아와 확정(S3)·결과 확인(S5)·이야기(S6)로 간다.
 - **점선 셋이 되돌아가는 루프다.** 다시 찍기(S5 → S2, H7), 낮춘 결과로 걸기(S5 → S4, H6), 확정 전 작품(S4 → S3, UC3 A9).
+- **계정·가족 화면(S0 · S0b · S1c · S1d)은 G0 앞에 있다.** 가족에 속하지 않은 계정은 S4 대신 S1d로 가고, 초대 메일 링크는 로그인(없으면 S0 가입) 뒤 S1c를 연다. S1b는 S4의 가족 메뉴에서 연다.
 - **S9는 대화상자다.** S4 · S5 · S1 어디서든 열리고, 끝나면 S4로 돌아온다.
 - **운영 화면은 보호자 앱과 연결선이 없다**(UX8). 운영 화면 셋 사이의 점선은 UC11 A4·A5와 UC9 A1이 적은 참조 이동이다.
 
@@ -480,49 +502,138 @@ salt
 상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
 
 
-**S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 보호자는 부모 두 명까지다(만든 보호자 + 공동 보호자 1명). 권한은 같고 **초대하기와 해제 버튼만 만든 보호자에게 보인다**(G29). 공동 보호자가 이미 있으면 초대하기는 이유 달린 비활성("보호자는 두 명까지예요")이다.
+**S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 보호자는 부모 두 명까지다(만든 보호자 + 공동 보호자 1명). 권한은 같고 **초대하기와 해제 버튼만 만든 보호자에게 보인다**(G29). 공동 보호자가 이미 있으면 초대하기는 이유 달린 비활성("보호자는 두 명까지예요")이다. 아래는 만든 보호자 화면의 **두 명 찬 상태**다.
 
 ```plantuml
 @startuml
 skinparam backgroundColor #F3F1EB
-title S1b 가족 보호자 관리 - 만든 보호자 화면
+title S1b 가족 보호자 관리 - 만든 보호자 화면 - 두 명 찬 상태
 salt
 {+
 { 우리 아이 미술관 - 보호자 | 가족: 하*네 | [작품 목록] | [로그아웃] }
 ..
-{^"우리 가족 보호자  2명"
+{^"우리 가족 보호자  2명 - 두 명까지"
 {# 보호자 | 역할 | 조작
-  ha*@ex*.com | 만든 보호자 | .
+  ha*@ex*.com (나) | 만든 보호자 | .
   pa*@ex*.com | 공동 보호자 | [해제]
 }
 }
 {^"초대하기 - 이메일로 초대해요"
-  초대할 이메일 | "ma*@ex*.com    " | [초대 보내기]
+  [초대 보내기 (비활성) - 보호자는 두 명까지예요]
+  공동 보호자를 해제하면 다시 초대할 수 있어요
   공동 보호자는 아이 - 작품 - 이야기를 똑같이 관리해요
-  해제는 가족 공간을 만든 보호자만 할 수 있어요
+  초대와 해제는 가족 공간을 만든 보호자만 할 수 있어요
 }
-{^"대기 중 초대  1건"
-  ma*@ex*.com | 7일 안에 수락 | [초대 취소]
+{^"대기 중 초대  0건"
+  보호자가 두 명이라 보낼 수 있는 초대가 없어요
 }
 }
 @enduml
 ```
 
-**[「S1b 가족 보호자 관리 - 만든 보호자 화면」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNplUl9LwlAUf7-f4rDejATrIehJivoCPYbBKqnIaeiCwAQpixFCWa7UMib0zyhadEMf7AvtnH2Hzt20NHdfdu_9nd-_LZ4z9ay5Z6REbmc7vatndQPW9PWdzWxmL72xkEllsjCxNLMUW5wX5raZSsJybA08t0itD8BP6de6dHcOnizi4ytMAT6V8dIZuvHrVWxLkdNTpshPijxQw1VQskvUlIDvXbIcHlezv0MHfYU58O1aBEv3fLJCdxX_wgJ8aWOrmVAn2Lr1Ol3FdHOUgIKIRkV-VesLjHmEaXw51kR-YkSIrt9821EvLZcVBMCWHokn9yPR9YzBx2OBDiDKoN0RkPf5hWf1EdCKb0tybhOiwEu5khaWixzH67qclbNju0rNHmeAwZ2kRlVj8sHe-YMxo2YMafKjBaUEUKWMh5KpEzz-3w2eVgd1s3DYYuCA7B6P4EMPsFbx3LpChF8y9MJcYQrF0O-TyT2XuUpjzfAeAs9WjVUsugoogvBsUcWm-0o_G0DM-5AqqzFS5KyKSrZF1-eKB5vfQyGp80wn5bDReDK9wX_tDxYKeB4=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1b 가족 보호자 관리 - 만든 보호자 화면 - 두 명 찬 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk19r2mAUxu_fT3GwN61jsm53u5KV9QvsUhykrWyl_imawsAKWc1GWIXVzaxJp6JgVxwdizRjFvKJck6-w84x0ekc3sT3nPN7nvO8Sbama1X9pFRUtaPD8rFW1Uqwp-0fvapWTsoHO5VipQobu092t58_U_qhXizAi-09CD2DhhPAOz9yptS_gNA38NstPAS8aeHnwVIlcjs49qXSvgD8_g7IuwVqvo2aXVXTirqqP1B1oCtP5sk2qecD_pySNWCmjC1Ip4nsU4hsJ43miE9y1G9HnywGj3HYy8sJDrvh76mQvjbz0FCZjKq_TCUCa8bhsXhauAvvW3RjpFR9Y0WYLn9E9kAehh4rKoDXWjpbeJPO7FdKsIlnzhYX13Y_hQy3Hi-18g53v_Cju9KUi2yfBt28avBPvPoWtgxeMpx6bI0TwXGHegFvBvOaT1edFMNz8YHw8MyXgU28NyO3S-Zkazk-_NBZXZIcixl5ZvxrCa8DiC2xB7k8PB_R-V_tAZDlAPUt-iI2_kdgseQu2X98RbNFyA7Yowig0w49VzridydeiVmxCrlG4kFYybWxTOgx1VyLmv_DurFZmgyTWGjUTtAAj8KJL-Etxpk_D0fS7gVxnsGcN9tnNiyddPl-IdBQ2UL5gL-fP8tb2Mo=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
-| 보호자 목록 | 이메일(가림) · 역할 · 해제(만든 보호자 화면에만) | 1.I1 · 1.I3 `GET /v1/family/members` | 같은 권한임을 먼저 보인다. 해제 버튼은 G29를 통과하는 사람에게만 |
-| 초대하기 | 이메일 하나 · 초대 보내기 · 같은 권한 안내 | 1.I1 Input | 응답은 항상 "초대 메일을 보냈어요"(가입 여부 비노출) |
-| 대기 중 초대 | 초대 번호 · 초대 이메일(가림) · 만료 시각 · 취소 | 1.I1 `GET /v1/family/invites` | UC15 A2 |
-| 공동 보호자 화면 | 해제 버튼 대신 [가족 공간에서 나가기] | 1.I4 | UC15 A5 · 만든 보호자에게는 나가기 버튼 없음(E5) |
+| 보호자 목록 | 이메일(가림) · 역할 · 해제(만든 보호자 화면에만). "두 명까지" 표시 | 1.I1 · 1.I3 `GET /v1/family/members` | 같은 권한임을 먼저 보인다. 해제 버튼은 G29를 통과하는 사람에게만 |
+| 초대하기 | 만든 보호자 화면에만 있다. 공동 보호자 자리가 비었으면 이메일 하나 · 초대 보내기 · 같은 권한 안내. 두 명 찼으면 C3 이유 달린 비활성("보호자는 두 명까지예요")과 "해제하면 다시 초대할 수 있어요" | 1.I1 Input · `GET /v1/family/members`의 공동 보호자 수 | 응답은 항상 "초대 메일을 보냈어요"(가입 여부 비노출). 누를 수 없는 이유를 버튼에 붙인다(UX6 · G29 · UC15 E9) |
+| 대기 중 초대 | 초대 번호 · 초대 이메일(가림) · 만료 시각 · 취소. **대기 초대는 1건만**이고 새로 초대하면 이전 초대는 무효 | 1.I1 `GET /v1/family/invites` | UC15 A2 · E9 |
+| 공동 보호자 화면 | 초대하기 영역과 해제 버튼이 없다. 해제 대신 [가족 공간에서 나가기] | 1.I4 | UC15 A1 · A5 · 만든 보호자에게는 나가기 버튼 없음(E5) |
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 초대 보내기 | `POST /v1/family/invites`(항상 202). 초대 메일 요청 한도를 넘으면 메일만 보내지 않는다 | UC15 BF2~3 · E6 · E8 |
-| 초대 수락(메일 링크) | 로그인(없으면 S0 가입, 이메일 미리 채움) 뒤 `POST /v1/family/invites/accept`. 성공하면 S4로 이동. 400 `token_invalid` · 409 `already_in_family`는 안내 블록 | UC15 BF4~6 · A4 · E1~E3 |
-| 해제 | 확인 창("해제하면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요") 뒤 `DELETE /v1/family/members/{id}`. 대상 계정의 세션은 즉시 모두 지워진다 | UC15 A3 · G29 |
-| 나가기 | 확인 창 뒤 `POST /v1/family/leave`. 세션이 모두 지워져 로그인 화면으로 간다. 다시 로그인하면 "받은 초대를 기다리거나 새 가족 공간을 만들 수 있어요" 화면(자동 생성 없음, U20 P0 기본값 [추론]) | UC15 A5 · A6 |
+| 초대 보내기 | `POST /v1/family/invites`(항상 202). 초대 메일 요청 한도를 넘으면 메일만 보내지 않는다. 화면을 거쳐 오지 않은 요청은 서버가 막는다: 공동 보호자가 보내면 403 `invite_owner_only`, 두 명 찬 뒤면 409 `co_guardian_full`(C2 블록 "보호자는 두 명까지예요") | UC15 BF2~3 · A1 · E6 · E8 · E9 · G29 |
+| 초대 수락(메일 링크) | 로그인(없으면 S0 가입, 이메일 미리 채움) 뒤 S1c에서 `POST /v1/family/invites/accept`. 성공하면 S4로 이동 | UC15 BF4~6 · A4 · E1~E3 → S1c |
+| 해제 | 확인 창("해제하면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요") 뒤 `DELETE /v1/family/members/{id}`. 대상 계정의 세션은 즉시 모두 지워진다. 해제 뒤 초대하기가 다시 활성이 된다 | UC15 A3 · G29 |
+| 나가기 | 확인 창 뒤 `POST /v1/family/leave`. 세션이 모두 지워져 로그인 화면으로 간다. 다시 로그인하면 S1d로 간다 | UC15 A5 · A6 → S1d |
+
+상태 전이(만든 보호자 화면): `보호자 1명` → (초대 보내기) → `대기 초대 1건` → (수락) → `두 명 찬 상태`(초대 비활성) → (해제) → `보호자 1명` · `대기 초대 1건` → (취소·만료) → `보호자 1명`.
+
+**S1c 초대 수락** — 초대 메일의 링크에서 들어온다(UC15 BF4~6). 로그인하지 않았으면 먼저 로그인하고, 계정이 없으면 초대받은 이메일이 미리 채워진 S0 가입으로 간다(A4). 아래는 이미 다른 가족 공간에 속한 계정(E3)의 차단 상태다.
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S1c 초대 수락 - 이미 다른 가족 공간에 속한 상태
+salt
+{+
+{ 우리 아이 미술관 - 보호자 | 로그인: ma*@ex*.com | [로그아웃] }
+..
+{^"가족 공간 초대를 받았어요"
+  수락하면 공동 보호자가 되어 아이 - 작품 - 이야기를 함께 관리해요
+  만든 보호자와 권한이 같아요. 나중에 스스로 나갈 수 있어요
+  초대 링크는 한 번만 - 7일 안에만 쓸 수 있어요
+}
+{^"막힘  G28 - 이미 다른 가족 공간에 있음  E3"
+  사유: 이 계정은 이미 다른 가족 공간에 있어요. 한 계정은 한 가족 공간에만 속해요
+  해제 주체: 보호자 - 지금 가족 공간에서 나간 뒤 이 링크로 다시 수락
+  만든 보호자는 가족 공간을 나갈 수 없어요 - 초대한 분께 다른 이메일로 다시 초대를 부탁해 주세요
+  다음 행동: [지금 가족 공간으로] | [수락 (비활성) - 다른 가족 공간에서 나간 뒤 수락할 수 있어요]
+}
+}
+@enduml
+```
+
+**[「S1c 초대 수락 - 이미 다른 가족 공간에 속한 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVN9r01AUfs9fcZgvOrEw96D0qSibf4CPo0Lsioz1h7QdCLWQrmFka8Vua7a0S0qGmXVQMFtjjVj_odxz_wfPvY10rX0Y5CG599zvfN93vptUuaKWKnv5nFLe3Sm8V0tqHt6qmd13peJeYftlMVcswYPN9c21jRdKZaeSy8LrtQxgYLCWBmhYzPkDTwCdgH0PgTU9dhVC5Gt4eQPR6Efk63jeBjz4xE0bsFHnDVspq7mKUn2sVAF7Pvs6BDR1AgBCQMONAo0A2SjgVoj9NnwEdmlHP0N0wiTk1dVU9sNqIlPM08ZWvEPHLxppqCmJhFJ9szLXPqbKribA_As0LTwLsNdZUSBmz02LXQeimn3uzvoSCLC2qP5Hj1T2j_mJMZWL5iQKfQHLzW_RbwuIN2nhpkAncDZosVN3hoddDaJxi2wQWJHfFai9TgLYvoXesXTpyKOHNIm1yDcEQeppTBkLwlPX2aDO60N21AFhKrs1qBeReobOhLgaBCUW8DRcAKgJc9jgkPctgFdPn99jbnTWaQFsrEu_9odou0mQAkY6uiY62n0gZPuEZDs7J78WqiVvkZVYsHhxKTdfJngbJO-EgpgPtCg0_kNAPXZPB3biSaqxXcLWpodNO577khkJS-cBHX1uFucHUy2iv5yFHMBYF_OPDRB2XHdoFHcbziI41jhdAjOQmvQwzgqVkc387JAimIStpdpsgZgWqY9v3UP2S-ddG_WbR-LCLPd_0Y848u58NNKUjZqSyha26UfwF_xmYhc=)** — 클릭 시 브라우저로 연결됩니다.
+
+| 영역 | 내용 | 데이터 바인딩 | UX 의도 |
+|---|---|---|---|
+| 헤더 | 지금 로그인한 계정 이메일(가림) · 로그아웃 | `GET /v1/me` | 초대받은 이메일로 로그인했는지 스스로 확인하게 한다(E2) |
+| 초대 안내 | 공동 보호자가 되면 무엇을 하는지 · 같은 권한 · 나가기 가능 · 1회용·유효 기간 | 초대 토큰(링크) | 수락 전에 결과를 안다. 아이 별칭·작품은 보이지 않는다(초대 메일과 같은 원칙) |
+| 수락 | [수락하기] 하나. 차단이면 C3 이유 달린 비활성 | 1.I2 Input 토큰 | 결정은 한 번 누름으로 끝난다 |
+| 안내·차단 블록 | E1 링크 무효(400 `token_invalid` — "초대 링크를 쓸 수 없어요. 초대한 분께 다시 요청해 주세요") · E2 이메일 다름(403 `forbidden_role` · reason `invite_email_mismatch` — "초대받은 이메일로 로그인해 주세요" + [로그아웃하고 다시 로그인]) · E3 다른 가족 소속(409 `already_in_family`. 만든 보호자면 나갈 수 없으니 다른 이메일로 다시 초대받으라는 안내 추가 [추론]) | 1.I2 Output | UX6 (C2 · C3). 만료·사용·취소를 구분하지 않는다(BR-ACC-08) |
+
+| 조작 | 동작 | 근거 |
+|---|---|---|
+| 수락하기 | `POST /v1/family/invites/accept` {token}. 204면 "하*네 가족 공간에 합류했어요"와 함께 S4로 | UC15 BF5~6 · G28 |
+| 로그아웃하고 다시 로그인 | 세션을 끝내고 로그인 화면으로. 로그인 뒤 같은 링크로 돌아온다 | UC15 E2 |
+| 이메일로 가입(계정 없음) | S0으로, 초대받은 이메일을 미리 채운다. 가입하면 새 가족 공간 없이 이 가족에 합류하고 확인 메일은 생략한다 | UC15 A4 · UC13 A4 [추론] |
+| 지금 가족 공간으로 | S4로 | UC15 E3 |
+
+상태 전이: `링크 열림` → (로그인 안 됨) → `로그인 - 가입` → `수락 대기` → (수락) → `S4(합류 완료)` · `수락 대기` → (400) → `차단(E1)` · (403 이메일 다름) → `차단(E2)` → (다시 로그인) → `수락 대기` · (409) → `차단(E3)`.
+
+**S1d 가족 없음** — 가족에서 나가거나 해제된 계정이 다시 로그인하면 S4 대신 이 화면이 열린다(UC15 A6 · U20 P0 기본값 [추론]). 새 가족 공간을 자동으로 만들지 않고 보호자가 고른다.
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S1d 가족 없음 - 초대 기다리기와 새 가족 공간 만들기
+salt
+{+
+{ 우리 아이 미술관 - 보호자 | 로그인: pa*@ex*.com | [로그아웃] }
+..
+{^"막힘  G0 - 속한 가족 공간이 없음"
+  사유: 가족 공간에서 나갔거나 해제되어 아이 - 작품 화면에 들어갈 수 없어요
+  해제 주체: 보호자 - 받은 초대를 수락하거나 새 가족 공간을 만들기
+  예전 가족 공간에 올린 작품은 그 가족에 남아 있어요
+}
+{^"초대 기다리기"
+  다른 보호자에게 초대를 부탁하고 메일의 링크를 눌러 주세요
+  가족 공간이 없는 동안에는 바로 수락할 수 있어요
+}
+{^"새 가족 공간 만들기"
+  [새 가족 공간 만들기]
+  만들면 이 가족의 만든 보호자가 돼요
+  만든 보호자는 나갈 수 없어 다른 가족의 초대를 받을 수 없어요
+}
+}
+@enduml
+```
+
+**[「S1d 가족 없음 - 초대 기다리기와 새 가족 공간 만들기」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9k81u00AQx-9-ilG5FRFRccspAlEegGNVJNNEqGo-qsSVkEIkJ7GqBYwIYLdOawdX9INKlnAbAz6EF9odvwOztkNMWpAvuzuzM7__f9aVjqa2tb1GXensbDd31bbagOfq1s6LdmuvWX3UqrfacGf9wfra44eKtq3Va_B0rQo81PHkCvBwHz0T7gFGTJg68DgUb0_FeUALHOuAQzZP5dPvPDRAXJji0ymFlY5a15TuXaULeBTSFUDbQC8C8S1G5vNIp7JiGiVOjJMRvAJx4vKfMXpxGXbV1Urt5Wppq9WgwEYeoevHw03oKaWS0n22Ii5eJxMH4Ml9ybf_LrHdv1lks0zAigKAgwBdv7yUcjhCwwUxcHho8auQFpDYEfquGDl4EM2ZqcHkQ_KRQTK2xGVE14BUUgIPGSBz0j4HER5Z1CkrAPhlhtdRuaCR9IbH6Om5m-JsJu8K71diO3nzG4aiV_SUZDgMfeOGCjoPxHmYY8oe5FieldIOvpIUCrMcsyctvGWq0iq5OYsX4FSAX5sFavFDT4Z9ST31QVxa6M3Qc4izn_SDNIGZ4nOQWmDEmSu3jUa8sUC8H6PNqEW6CS0a9h9X_MzbJeh_vzkJv_Gf-KYUl25oiCAhcodSeDr3F6IpQmyzDH45mLLKR1Oc_ty3Rc2CY3LwxtJT6dFXqTWr9HP-BvOeJdk=)** — 클릭 시 브라우저로 연결됩니다.
+
+| 영역 | 내용 | 데이터 바인딩 | UX 의도 |
+|---|---|---|---|
+| 차단 블록 | G0 가족 없음. 사유 · 해제 주체 · 예전 작품은 남는다는 안내 | `GET /v1/me` `hasFamily=false` | UX6 (C2). 왜 작품이 안 보이는지 먼저 말한다 |
+| 초대 기다리기 | 할 일 안내만(버튼 없음) | — | 초대 수락은 메일 링크(S1c)로만 한다 |
+| 새 가족 공간 만들기 | 버튼 하나 · 만든 보호자가 된다는 것과 그 결과(나갈 수 없어 다른 가족 초대를 못 받음) | 1.0 Output 가족 공간 | 되돌리기 어려운 선택이라 결과를 버튼 옆에 적는다 [추론] |
+
+| 조작 | 동작 | 근거 |
+|---|---|---|
+| 새 가족 공간 만들기 | `POST /v1/family`(201). 만든 보호자(owner)가 되고 S1 아이 관리로 가서 "이제 아이를 등록해 주세요"를 보인다. 이미 가족이 있으면 409 `already_in_family`(다른 탭에서 수락한 경우)라 S4로 보낸다 | UC15 A6 · U20 [추론] · T106 |
+| 로그아웃 | 로그인 화면으로 | — |
+
+상태 전이: `로그인` → (`hasFamily=false`) → `S1d` → (새 가족 공간 만들기) → `S1(만든 보호자)` · `S1d` → (초대 링크) → `S1c` → (수락) → `S4(공동 보호자)`.
 
 ---
 
@@ -1333,7 +1444,7 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | 6 | 화면 갱신 방식(폴링/푸시)과 갱신 주기 (U8) | S3 · S4 · S9 · S12 | 중간. 레일·배지가 언제 바뀌는지가 여기서 정해진다 |
 | 7 | 제안 문구·낮춤 문구 확정 (U10) — 이 문서의 문구는 UC의 [추론 문구]를 옮긴 것 | S3 · S4 · S5 · S7 | 중간 |
 | 8 | 결과 파일 형식(U9) — 재생·시차 컨트롤의 모양 | S5 · S8 | 중간 |
-| 9 | ~~가족 계정 모델(U1)~~ → 확정: 공동 보호자 초대, 같은 권한. 역할별 뷰는 나누지 않고 S1b의 해제 버튼만 만든 보호자에게 보인다 | S1b | 닫음 |
+| 9 | ~~가족 계정 모델(U1)~~ → 확정: 공동 보호자 초대, 같은 권한, 부모 두 명까지, 초대는 만든 보호자만(`1c460b0`). 역할별 뷰는 나누지 않고 S1b의 초대·해제 버튼만 만든 보호자에게 보인다. 초대 이메일 불일치(UC15 E2) 응답 코드도 확정: 403 `forbidden_role` · reason `invite_email_mismatch`(이제민 결정, R-25). 남은 것: 만든 보호자의 탈퇴·권한 이전(U20) | S1b · S1c · S1d | 닫음 |
 | 10 | 입력 중 세션 만료 시 임시 보존 (UC5 E5) · 별칭 길이·허용 문자 (UC1 E2) · 키워드 개수·길이 (UC10 E6) | S1 · S6 · S7 | 낮음 |
 | 11 | 명암·움직임 줄이기 등 접근성 수치 — 원천에 없어 일반 기준을 [추론]으로 적었다 | 전 화면 | 낮음 |
 
@@ -1346,10 +1457,11 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | 3 | C1 진행 레일 - 상태별 변형 | §3-2 |
 | 4 | C2 차단 블록과 C3 비활성 버튼 - 변형 | §3-3 |
 | 5~16 | S1 ~ S12 와이어프레임 (화면당 1장, 모두 차단 상태 포함) | §4 ~ §15 |
+| 17~21 | S0 가입 · S0b 로그인 정보 찾기 · S1b 가족 보호자 관리 · S1c 초대 수락 · S1d 가족 없음 (D18 · U1 · `1c460b0`) | §4-5 |
 
-도면은 16개다. 기준(14개 내외)보다 둘 많은 이유는 화면이 12개라서다(프로세스 11개 중 P3을 결정·이야기·설명의 세 화면으로, P2를 올리기·확정의 두 화면으로 나눴다 — 사이에 비동기 대기가 있어 보호자가 한 자리에서 끝내지 않기 때문이다(SD_01 §1-3)).
+도면은 21개다(처음 16개에 D18·U1로 계정·가족 화면 5개를 더했다). 처음 16개가 기준(14개 내외)보다 둘 많은 이유는 화면이 12개라서다(프로세스 11개 중 P3을 결정·이야기·설명의 세 화면으로, P2를 올리기·확정의 두 화면으로 나눴다 — 사이에 비동기 대기가 있어 보호자가 한 자리에서 끝내지 않기 때문이다(SD_01 §1-3)).
 
-`plantuml.sumzip.com`에서 16개 모두 HTTP 200, `image/svg+xml`, SVG 안 `Syntax Error` 없음을 확인했다(2026-09-28). URL 최대 1,393자로 4096자 이하다. 링크를 복호한 소스가 코드블록과 글자까지 같다. PNG로 받아 차단 블록·비활성 버튼이 그려졌는지 눈으로 확인했다.
+`plantuml.sumzip.com`에서 처음 16개 모두 HTTP 200, `image/svg+xml`, SVG 안 `Syntax Error` 없음을 확인했다(2026-09-28). URL 최대 1,393자로 4096자 이하다. 링크를 복호한 소스가 코드블록과 글자까지 같다. PNG로 받아 차단 블록·비활성 버튼이 그려졌는지 눈으로 확인했다. 추가 5개(S0 · S0b · S1b · S1c · S1d)도 같은 기준으로 확인했다(2026-09-28, S1b는 두 명 찬 상태로 다시 그림).
 
 ---
 
