@@ -22,13 +22,13 @@
 
 재현 전 모델만 가짜로: `UAM_FAKE_MODELS=M3`(목록) — 지금은 M1·M2·M5 실제 + M3 가짜로 전체 흐름이 돈다.
 
-시험 DB는 임시 mariadbd(소켓 `/tmp/uamt*`)에 `design/uri_gallery_ddl.sql` + 큐 보완 대역(`serving/tests/sql/impl_queue_fixture.sql`)을 넣는다. `db/migrations/0100_impl_queue.sql`(T014)이 생기면 그것을 먼저 쓴다.
+시험 DB는 임시 mariadbd(소켓 `/tmp/uamt*`)에 `design/uri_gallery_ddl.sql`만 넣는다. main `b62cb5f` 이후 DDL에 큐 보완 S1~S4가 들어와서 A의 대역 파일은 지웠다(병합 `b827968` 뒤 시험 52건 통과).
 
 ## 2. B에게 요청
 
 | # | 대상 | 내용 | 이유 |
 |:--:|---|---|---|
-| 1 | T014 `0100_impl_queue.sql` | S3의 `CHECK (origin <> 'eval' OR (artwork_id IS NULL AND evaluation_id IS NOT NULL))`는 **MariaDB가 거부한다**(ERROR 1901 — `artwork_id`가 `ON DELETE SET NULL` FK). `trg_stage_job_bi` 안의 `SIGNAL`로 옮긴다. 대역 파일에 동작하는 예시가 있다 | 2026-09-28 실측 |
+| 1 | ~~T014 S3 CHECK~~ | **처리됨** — B가 DDL에 `chk_sj_eval_owner`(`artwork_id` 없이)로 넣어 ERROR 1901을 피했다. 다만 data-model §6 S3 행에는 아직 옛 CHECK 문장이 남아 있어 문서만 맞추면 된다 | 확인 2026-09-28 |
 | 2 | `contracts/model-api.openapi.yaml` | `/internal/ready` 응답에 `models[]` 추가, `/internal/models`·`/internal/models/{id}/warmup`·`/internal/console` 경로 추가(형식: `docs/A_모델적재_화면요구.md` §2.2) | 적재 시간 화면 요구 |
 | 3 | T008 `ops/ecosystem.config.cjs` | 아래 §4 항목 | 진입점이 생겼다 |
 | 4 | llm-contract §1 호출자 상한 30초 | 공유 Ollama 규칙(가이드 §1.3)은 **클라이언트 타임아웃 300초 이상**(앞 사람 요청 대기 포함). llm-server→Ollama는 300초로 두었다. app-api→llm-server 30초는 유지하되, 30초에 끊기면 G15 선택지로 가는 것이 정상 동작임을 계약에 적어 달라 | 규칙 충돌 |
@@ -38,6 +38,14 @@
 | 8 | `limits.yaml`·pm2 | M1(BiRefNet) CPU 추론 중 RSS 8.5GB — 팀 서버 RAM 확인(T068) 전에는 worker-cpu를 1개로 | 실측 |
 | 9 | 팀 서버 준비 | Homebrew ffmpeg가 깨져 있다(`libx265.215.dylib` 없음). 서빙은 `imageio-ffmpeg` 고정 바이너리를 쓰므로 영향 없음 — 다른 용도로 ffmpeg가 필요하면 `brew reinstall ffmpeg` | 실측 |
 | 7 | US5 이야기(T085·T090) | 공동 보호자 두 명이 같은 이야기를 동시에 고치는 충돌: `story`에 버전 컬럼(또는 `updated_at` 비교) + 409 `story_conflict`("다른 보호자가 먼저 고쳤어요") 작업이 tasks.md에 없다. spec 인계 문서 §2의 "이야기 동시 수정 충돌 안내"에 해당 | 누락 |
+
+### 2.1 tasks.md 완료 표시 요청
+
+A는 tasks.md를 고치지 않는다. main의 tasks.md에 아래 18건을 [X]로 표시해 달라(브랜치 `a/model-serving`, 병합 전 기준).
+
+T005 · T027 · T028 · T029 · T030 · T031 · T032 · T034 · T064 · T065 · T070 · T071 · T073 · T076 · T077 · T082 · T109 · T126
+
+부분 완료(표시하지 말 것): T072·T083 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤.
 
 ## 3. C에게 요청
 

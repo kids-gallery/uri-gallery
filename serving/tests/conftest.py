@@ -1,4 +1,4 @@
-"""시험용 MariaDB — 임시 datadir·소켓으로 mariadbd를 띄우고 SD_03 DDL + 큐 보완(S1~S4)을 넣는다.
+"""시험용 MariaDB — 임시 datadir·소켓으로 mariadbd를 띄우고 SD_03 DDL(큐 보완 S1~S4 포함, main b62cb5f 이후)을 넣는다.
 
 팀 DB는 쓰지 않는다(R-19: 로컬만). 소켓 경로는 길이 제한 때문에 /tmp 아래 짧게 둔다.
 """
@@ -16,8 +16,6 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 DDL = REPO / "design" / "uri_gallery_ddl.sql"
-QUEUE = REPO / "db" / "migrations" / "0100_impl_queue.sql"
-QUEUE_FIXTURE = Path(__file__).parent / "sql" / "impl_queue_fixture.sql"
 MARIADB_BIN = Path(os.environ.get("MARIADB_BIN", "/opt/homebrew/bin"))
 
 
@@ -58,7 +56,6 @@ def mariadb():
     c.cursor().execute("CREATE DATABASE uam_test CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci")
     c.close()
     _client(sock, "uam_test", DDL)
-    _client(sock, "uam_test", QUEUE if QUEUE.exists() else QUEUE_FIXTURE)
     yield sock
     proc.terminate()
     proc.wait(10)
