@@ -246,10 +246,12 @@
 - **Decision**:
   - 경로 7개(결정 ③): `POST /v1/auth/signup`(항상 202) · `/email/verify`(204 / 400 `token_invalid`) · `/email/verify/resend`(항상 202) · `/login`(204 / 401 / 403 `email_unverified` / 429) · `/logout`(204) · `/recovery`(항상 202) · `/recovery/reset`(204 / 400 `token_invalid`).
   - 가입: 한 트랜잭션에서 `family` + `guardian_account` + `auth_email_token(verify)`. 이미 있는 `email_norm`이면 계정을 만들지 않고 안내 메일만(결정 ④). 동시 가입은 `uq_guardian_email`이 최종 판정 — 중복 키 오류도 같은 202로 흡수.
-  - 토큰: 32바이트 난수(base64url)를 링크에 담고 DB에는 SHA-256만(`token_hash`). 유효 시간 확인 24시간·재설정 1시간 `[예시값 U19]`. 사용 시 `used_at`, 재발급 시 같은 계정·목적의 이전 토큰 `revoked_at`(`ix_token_account_purpose`). 만료·사용·무효는 구분 없이 `token_invalid`. 시각은 모두 UTC(`UTC_TIMESTAMP()`).
+  - 토큰: 32바이트 난수(base64url)를 링크에 담고 DB에는 SHA-256만(`token_hash`). 유효 시간 확인 24시간(UC13)·재설정 30분(UC14) `[예시값 U19]`. 사용 시 `used_at`, 재발급 시 같은 계정·목적의 이전 토큰 `revoked_at`(`ix_token_account_purpose`). 만료·사용·무효는 구분 없이 `token_invalid`. 시각은 모두 UTC(`UTC_TIMESTAMP()`).
   - 재설정: `password_hash`·`password_changed_at` 갱신 + 그 계정의 `app_session` 전부 삭제(현재 세션 포함, 결정 ⑥). 요청마다 세션 `created_at < password_changed_at`이면 401.
   - 요청 한도(보완 S7 `auth_rate_event`): 같은 이메일 10분 3회 · 같은 IP 1시간 20회 `[추론 예시값]`(signup·resend·recovery). 넘으면 메일을 보내지 않고 응답은 그대로(가입 여부 비노출). 로그인 실패는 같은 이메일 15분 10회 뒤 429 `[추론]`. 이메일·IP는 HMAC-SHA256으로만 저장.
-  - 비밀번호 규칙: 8자 이상 `[예시값 U19]`, 흔한 비밀번호 목록 거절은 U19 뒤.
+  - 비밀번호 규칙: 8자 이상 `[예시값 U19]`, 흔한 비밀번호 목록 거절은 U19 뒤. 새 비밀번호 규칙 위반이면 토큰을 쓴 것으로 보지 않는다(UC14 E3).
+  - 이메일 확인이 성공하면 로그인 세션을 발급한다(UC13 BF5). DB 장애는 503 `not_saved`, 계정만 있고 가족이 없는 상태를 남기지 않는다(UC13 E5).
+  - 메일은 커밋 뒤 비동기로 보내므로 발송 실패는 응답을 바꾸지 않는다(가입 여부 비노출). 보호자는 "다시 받기"로 재요청한다(UC13 E6·UC14 E4).
   - 로그인 타이밍: 계정이 없어도 argon2 검증을 한 번 수행해 응답 시간으로 가입 여부가 드러나지 않게 한다.
 - **Rationale**: FR-31·32 수용 기준과 결정 ③④⑥을 그대로 옮겼다. 원문 이메일·토큰을 저장·로그하지 않아 BR-PRV-01·BR-ACC-07·08을 지킨다.
 
