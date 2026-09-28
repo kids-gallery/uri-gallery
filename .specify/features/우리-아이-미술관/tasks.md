@@ -243,7 +243,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T104 [US6] 수락을 만든다: `POST /v1/family/invites/accept`(G28 — 토큰 유효·로그인 이메일 일치·`family_id IS NULL`, `role='co'`), 초대 링크 가입은 새 가족 없이 합류하고 확인 메일 생략(UC13 A4, `signup.ts`에 초대 토큰 분기) — `api/src/modules/family/accept.ts` · `api/src/modules/auth/signup.ts` · 담당 B · 스킬 AUTH · 근거 G28, UC13 A4
 - [ ] T105 [US6] 구성원·해제·나가기를 만든다: `GET /v1/family/members`(역할·이메일 가림), `DELETE /v1/family/members/{id}`(만든 보호자만, G29), `POST /v1/family/leave`(공동 보호자만), 둘 다 `family_id=NULL` + 그 계정 `app_session` 전부 삭제 + `gate_event`(대상 `guardian_account`) — `api/src/modules/family/members.ts` · 담당 B · 스킬 AUTH · 근거 G29, FR-9 "즉시 접근 불가", R-25
 - [ ] T106 [US6] 가족 없는 계정 처리를 만든다: 나가거나 해제된 계정이 로그인하면 자동으로 가족을 만들지 않고 "초대 기다리기 / 새 가족 공간 만들기" 중 고르게 함(U20 P0 기본값 `[추론]`), 경로는 `GET /v1/me`(가족 소속·역할)와 `POST /v1/family`(새 가족 만들기, `family` + `role='owner'`, 이미 소속이면 409) — `api/src/modules/family/noFamily.ts` · 담당 B · 스킬 API, AUTH · 근거 U20
-- [ ] T107 [US6] S1b 가족 보호자 화면과 초대 수락·가족 없음 화면을 만든다(초대하기는 만든 보호자에게만·두 명 차면 이유 달린 비활성, 대기 초대 취소·구성원·해제·나가기, 권한 없으면 이유 달린 비활성 C3) — `web/src/app/views/FamilyView.vue` · `InviteAcceptView.vue` · `NoFamilyView.vue` · 담당 C · 스킬 FD, RL · 근거 S1b, UX6, G28, G29
+- [ ] T107 [US6] S1b 가족 보호자 화면과 초대 수락·가족 없음 화면을 만든다(초대하기는 만든 보호자에게만·두 명 차면 이유 달린 비활성, 대기 초대 취소·구성원·해제·나가기, 권한 없으면 이유 달린 비활성 C3) — **SD_02 S1b 와이어프레임은 1c460b0 이전 모습(두 명 찼는데 초대 활성·대기 초대 표시)이라, C가 SD_02를 고치기 전까지 S1b 설명 문단·조작 표를 기준으로 한다. 초대 수락·가족 없음 화면은 와이어프레임이 없어 조작 표의 "초대 수락"·"나가기" 행과 U20 기본값을 기준으로 한다** — `web/src/app/views/FamilyView.vue` · `InviteAcceptView.vue` · `NoFamilyView.vue` · 담당 C · 스킬 FD, RL · 근거 S1b, UX6, G28, G29
 
 **Checkpoint**: US6 독립 검증 기준 통과.
 
