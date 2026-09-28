@@ -30,3 +30,38 @@ export async function seedModels(db: Pool, activeModels: string[]) {
 
 export const upload = (a: ReturnType<typeof request.agent>, childId: string, buf: Buffer, key = randomUUID(), name = 'p.png') =>
   a.post('/v1/artworks').set('Idempotency-Key', key).field('childId', childId).attach('photo', buf, name);
+
+const STAGE: Record<string, [string, string | null, string]> = {
+  animated: ['animate_render', 'M3', 'result_animated'], relief: ['depth_relief', 'M5', 'result_relief'],
+  frame: ['frame_compose', null, ''], sculpture: ['sculpture', 'M7', 'result_glb'],
+};
+
+/** 워커가 결과를 만든 것처럼 흉내 낸다: 판정(마스크)·단계 작업(done)·결과·확인 대기. */
+export async function simulateResult(db: Pool, artworkId: string | number, kind: 'animated' | 'relief' | 'frame' | 'sculpture',
+  opts: { mask?: boolean; origin?: string; cause?: string | null } = {}) {
+  const id = Number(artworkId);
+  const [[fam]] = (await db.query(`SELECT family_id FROM artwork WHERE artwork_id = ?`, [id])) as unknown as [{ family_id: number }[]];
+  await db.query(`UPDATE stage_job SET status = 'done' WHERE artwork_id = ? AND status IN ('queued','running','retry_wait')`, [id]);
+  const [jr] = await db.query(`SELECT artwork_id FROM judgment WHERE artwork_id = ?`, [id]);
+  if (!(jr as unknown[]).length) {
+    let maskId: number | null = null;
+    if (opts.mask !== false) {
+      const [m] = await db.query(`INSERT INTO stored_object (owner_kind, family_id, artwork_id, object_kind, object_key) VALUES ('family', ?, ?, 'mask', ?)`, [fam.family_id, id, `family/m${id}/mask/${randomUUID()}.png`]);
+      maskId = (m as { insertId: number }).insertId;
+    }
+    await db.query(`INSERT INTO judgment (artwork_id, split_ok, mask_object_id, suggestion, suggestion_state) VALUES (?, ?, ?, ?, 'presented')`, [id, opts.mask !== false, maskId, opts.mask !== false ? 'animated' : 'frame']); // chk_jd_split_fail_frame
+  }
+  const [stage, model, objKind] = STAGE[kind];
+  const [[v]] = (await db.query(`SELECT version_id FROM model_version WHERE model_id = ? AND release_state = 'active'`, [model ?? 'none'])) as unknown as [{ version_id: number }[]];
+  const [j] = await db.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id, status, attempt_count) VALUES (?, ?, ?, 'cpu_vision', ?, 'done', 1)`,
+    [id, stage, opts.origin ?? 'confirm', model ? v?.version_id ?? null : null]);
+  let objId: number | null = null;
+  if (objKind) {
+    const [o] = await db.query(`INSERT INTO stored_object (owner_kind, family_id, artwork_id, object_kind, object_key) VALUES ('family', ?, ?, ?, ?)`, [fam.family_id, id, objKind, `family/r${id}/${objKind}/${randomUUID()}`]);
+    objId = (o as { insertId: number }).insertId;
+  }
+  await db.query(`INSERT INTO result (artwork_id, job_id, result_kind, object_id) VALUES (?, ?, ?, ?)`, [id, (j as { insertId: number }).insertId, kind, objId]);
+  await db.query(`INSERT INTO artwork_outcome (artwork_id, result_kind, result_cause) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE result_kind = VALUES(result_kind), result_cause = COALESCE(VALUES(result_cause), result_cause)`,
+    [id, kind, opts.cause ?? null]);
+  await db.query(`UPDATE artwork SET status = 'awaiting_review' WHERE artwork_id = ?`, [id]);
+}

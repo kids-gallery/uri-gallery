@@ -13,10 +13,12 @@ import { LocalFsDriver, type StoragePort } from '../../storage/LocalFsDriver.js'
 import { MAX_BYTES, validateUpload } from './validateUpload.js';
 import { JUDGE_MODELS, KIND_MODEL, PRIMARY_MODEL, activeVersions, confirmChoices, type ConfirmKind } from './models.js';
 import { artworkDetail, artworkList, type ViewHooks } from './view.js';
+import { decide, decisionOptions, type DecisionCode } from './decision.js';
+import { saveStory } from './story.js';
 
 const LOCKED = `UTC_TIMESTAMP() + INTERVAL 5 YEAR`; // 판정 전 확정·split 전 judge 잠금(stage-job §2). TIMESTAMP는 2038년까지라 100년은 넘친다
 
-export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hooks: ViewHooks = {}): Router {
+export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hooks: ViewHooks = { decisionChoices: (q, id) => decisionOptions(q, storage, id) }): Router {
   const r = Router();
   const auth = guardianAuth(db, { requireFamily: true });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1, fields: 5 } });
@@ -113,6 +115,41 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
         await confirmTx(conn, cfg, id, kind);
       }).catch(async (e) => {
         if (e instanceof Problem && e.gate) await recordGate(db, e.gate, 'artwork', id, 'guardian', e.reason ?? e.code);
+        throw e;
+      });
+      res.json(await detail(familyId, id));
+    } catch (e) { next(e); }
+  });
+
+  // --- 결과 확인 결정(G9·G10, UC4) ---
+  r.post('/v1/artworks/:id/decision', auth, async (req, res, next) => {
+    const familyId = req.guardian!.familyId!;
+    const id = Number(req.params.id);
+    try {
+      const d = z.object({ decision: z.enum(['like', 'use_lower', 'frame', 'retake']) }).safeParse(req.body);
+      if (!d.success) throw new Problem('validation_failed', 'decision', 'G10');
+      let out;
+      try {
+        out = await withTx(db, (conn) => decide(db, cfg, storage, conn, familyId, req.guardian!.accountId, id, d.data.decision as DecisionCode));
+      } catch (e) {
+        if (e instanceof Problem) {
+          if (e.gate) await recordGate(db, e.gate, 'artwork', id, 'guardian', e.reason ?? e.code);
+          throw e;
+        }
+        throw new Problem('not_saved', 'decision_not_saved', 'G3'); // UC4 E3
+      }
+      const artwork = await artworkDetail(db, cfg, familyId, id, hooks);
+      res.json({ artwork, alreadyDecided: out.alreadyDecided, ...(out.retakeChildId ? { retake: { childId: String(out.retakeChildId) } } : {}) });
+    } catch (e) { next(e); }
+  });
+
+  // --- 이야기(G11·G12, UC5, T142) ---
+  r.put('/v1/artworks/:id/story', auth, async (req, res, next) => {
+    const familyId = req.guardian!.familyId!;
+    const id = Number(req.params.id);
+    try {
+      await withTx(db, (conn) => saveStory(conn, familyId, id, req.body)).catch(async (e) => {
+        if (e instanceof Problem) { if (e.gate) await recordGate(db, e.gate, 'artwork', id, 'guardian', e.reason ?? e.code); throw e; }
         throw e;
       });
       res.json(await detail(familyId, id));

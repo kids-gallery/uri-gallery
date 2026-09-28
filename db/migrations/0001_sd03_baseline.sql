@@ -10,6 +10,7 @@
 --   S4 external_job 점유 컬럼 · S5 team_member.password_hash·disabled_at
 --   S6 app_session · S7 auth_rate_event(이메일·IP는 HMAC만) · S9 release_event.kind 'deactivate'
 --   (S8 장치 표기는 스키마 변경 없음: MPS는 exec_device='gpu' + runtime에 mps)
+-- 개정 (2026-09-28, B 구현 중 발견): 결정 frame(액자로 걸기)이면 v_gallery가 원본 액자로 보인다(결과 행을 만들지 않음, UC4 A2·A5)
 -- 개정 (2026-09-28, 1c460b0 사용자 결정 후속 — B): 가족당 공동 보호자 1명(uq_guardian_co_family), 대기 초대 1건
 --   (uq_invite_one_pending), 초대는 만든 보호자만·자리 차면 거부(trg_family_invite_bi), G29 이름 "보호자 관리 권한"
 --
@@ -1031,15 +1032,18 @@ SELECT c.child_id, c.family_id, c.alias, COUNT(a.artwork_id) AS artwork_count
 CREATE OR REPLACE VIEW v_gallery AS
 SELECT a.family_id, a.child_id, a.artwork_id,
        s.age_at_creation AS age_group, s.made_on, s.title, s.utterance,
-       CASE WHEN cr.result_kind = 'sculpture'
+       -- 결정 frame("액자로 걸기", UC4 A2·A5)이면 원본 액자로 보인다. 결과 행은 만들지 않는다(모델 없음, 만든 결과는 보관만)
+       CASE WHEN fd.artwork_id IS NOT NULL OR cr.result_kind IS NULL THEN 'frame'
+            WHEN cr.result_kind = 'sculpture'
              AND COALESCE((SELECT f.enabled FROM feature_setting f WHERE f.setting_key = 'sculpture_exposure'), FALSE) = FALSE
             THEN 'frame' ELSE cr.result_kind END AS display_kind,
-       cr.object_id AS result_object_id,
+       CASE WHEN fd.artwork_id IS NOT NULL THEN NULL ELSE cr.object_id END AS result_object_id,
        cp.body AS caption_body, cp.ai_badge
   FROM artwork a
   JOIN v_exhibit_gate g ON g.artwork_id = a.artwork_id AND g.exhibitable
   JOIN story s ON s.artwork_id = a.artwork_id
   LEFT JOIN v_current_result cr ON cr.artwork_id = a.artwork_id
+  LEFT JOIN (SELECT DISTINCT artwork_id FROM decision WHERE decision_code = 'frame') fd ON fd.artwork_id = a.artwork_id
   LEFT JOIN caption cp ON cp.artwork_id = a.artwork_id AND cp.status = 'approved';
 
 -- G19 보류 판정 — 단일 지점: 취소 요청됐고 아직 멈추지 않은 단계 작업이 있는 작품
