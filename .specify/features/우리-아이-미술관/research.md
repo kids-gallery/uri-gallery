@@ -66,7 +66,7 @@
 ## R-06. 원본·결과 저장소 (Docker 없는 S3 호환 요구)
 
 - **Decision**: 저장소를 `StoragePort` 인터페이스(put/get/delete/exists/list-by-prefix)로 감싸고 P0 구현은 **로컬 파일시스템 드라이버**로 한다. S3 호환 드라이버(MinIO 네이티브 바이너리 또는 외부 S3)는 같은 인터페이스로 바꿔 끼울 수 있게 둔다.
-  - 루트 `STORAGE_ROOT`(예: `/srv/uam/store`), 영역 분리: `family/`(원본·마스크·깊이·결과·GLB), `tmp/`(단계 작업 임시), `ext/`(외부 호출 임시, D8 — 가족 영역과 경로 분리).
+  - 루트 `STORAGE_ROOT`(예: `/srv/uam/store`), 영역 분리: `family/`(원본·마스크·깊이·결과·GLB), `tmp/`(단계 작업 임시), `ext/`(외부 호출 임시, D8 — 가족 영역과 경로 분리), `evalset/`(평가 묶음 사진, SD_03 `stored_object.owner_kind='eval_set'`, BR-MDL-04·G20 — 가족 데이터와 경로 분리, 키 `evalset/{uuid}.{ext}`).
   - 객체 키는 **불투명 UUID**(`family/{artwork_uuid}/{kind}/{uuid}.{ext}`), 별칭·제목을 경로에 넣지 않는다.
   - 원본 쓰기: `tmp`에 쓰고 `fsync` → `rename`으로 확정, 파일 권한 `0440`, 덮어쓰기 금지(`O_EXCL`) — BR-INT-04 원본 불변.
   - 파일은 가족 인증을 거친 앱 API의 `GET /v1/files/{token}`으로만 내려준다(nginx `internal` 위치 + `X-Accel-Redirect`). 정적 공개 경로는 없다(BR-ACC-01).
