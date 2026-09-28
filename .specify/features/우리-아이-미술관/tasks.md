@@ -181,6 +181,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [x] T076 (A 완료 — `a/model-serving`, main 병합 전) [US3] 결과 단계 핸들러를 만든다: `animate_render`(M3, 600초), `depth_relief`(M1 마스크+M5, GPU 없으면 cpu_vision), `frame_compose`(모델 없음·원본 참조) — `serving/workers/stages/results.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-5, FR-22, BR-SRV-02
 - [x] T077 (A 완료 — `a/model-serving`, main 병합 전) [US3] 낮춤 체인과 결과 기록을 만든다: 움직임→2.5D→액자, 마스크 없으면 액자, `result`(종류당 처음 1건), `artwork_outcome.result_kind`·`result_cause`, `awaiting_review` — `serving/workers/chain.py` · 담당 A · 스킬 — · 근거 stage-job §6, data-model §4 결과 저장·낮춤, BR-APR-03
+- [ ] T144 [US3] 판정 전 확정 순서를 지킨다(stage-job §2 "판정 전 확정의 순서", main 52b1d09): 워커가 `judge`를 닫을 때(성공·품질 미달·소진 모두) 같은 작품의 잠긴 `origin='confirm'` 결과 작업을 `available_at=UTC_TIMESTAMP()`로 열고, `relief` 확정인데 `split_ok`가 TRUE가 아니면 `depth_relief`를 `done_downgraded`·`split_fail`로 닫고 `frame_compose`를 등록한다. 시험: 판정 중 확정 → 판정 완료 뒤에만 결과 작업 실행 — `serving/workers/stages/judge.py` · `serving/tests/test_confirm_before_judge.py` · 담당 A · 스킬 — · 근거 BR-SUG-05, stage-job §2·§6 — **B 구현 중 발견(2026-09-28), A 세션 연결이 끊겨 작업으로 등록**
 - [ ] T078 [US3] 작품 목록 API를 만든다: `GET /v1/artworks`(`v_artwork_display`, 현재 단계, 삭제 중 제외) — `api/src/modules/artworks/list.ts` · 담당 B · 스킬 API · 근거 FR-4, D13
 - [ ] T079 [P] [US3] C6 낮춤 안내 컴포넌트를 만든다(S4·S5 전용) — `web/src/components/DowngradeNote.vue` · 담당 C · 스킬 FD · 근거 UX3, BR-EXH-07
 - [ ] T080 [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7
