@@ -36,8 +36,9 @@ export const currentCaption = (db: Pool | PoolConnection, artworkId: number) => 
 export function templateCaption(age: number | null, words: string[]): string {
   const parts: string[] = [];
   if (age !== null) parts.push(`${age}살 때 그린 작품이에요.`);
-  if (words.length) parts.push(`${words.join(', ')}을(를) 그렸어요.`);
-  return parts.join(' ');
+  const uniq = [...new Set(words)];
+  if (uniq.length) parts.push(`${uniq.join('·')}을(를) 그렸어요.`);
+  return parts.join(' ') || '아이가 그린 작품이에요.'; // llm-server cap.template과 같은 문장
 }
 
 export function captionsRouter(db: Pool, cfg: Config, llm: LlmPort, retryDelaysMs = [1000, 3000]): Router {

@@ -7,7 +7,7 @@ import { resetData } from './helpers/db.js';
 import { testApp } from './helpers/app.js';
 import { familyWithChild, png, seedModels, simulateResult, upload } from './helpers/fixtures.js';
 import { processDeletions } from '../src/sweeper/deletion.js';
-import { takeOver } from '../src/sweeper/takeover.js';
+import { takeOver, takeOverExternal } from '../src/sweeper/takeover.js';
 import { LocalFsDriver } from '../src/storage/LocalFsDriver.js';
 
 const t = testApp();
@@ -105,6 +105,18 @@ describe('이어받기(BR-PRC-05, stage-job §4.3)', () => {
                       VALUES (?, ?, ?, 'cpu_vision', ?, 'running', ?, 'w1', UTC_TIMESTAMP() - INTERVAL 5 SECOND)`, [r.body.id, stage, origin, v.version_id, attempt]);
     return r.body.id as string;
   };
+  it('외부 작업 점유 만료: 3회 미만 queued, 3회째 failed(stage-job §9)', async () => {
+    await t.db.query(`INSERT INTO api_key (key_id, key_kind, key_hash) VALUES (900, 'team_internal', REPEAT('9', 64))`);
+    const [[v]] = (await t.db.query(`SELECT version_id FROM model_version WHERE model_id = 'M1'`)) as unknown as [{ version_id: number }[]];
+    for (const [id, n] of [[901, 1], [902, 3]]) {
+      await t.db.query(`INSERT INTO external_job (ext_job_id, key_id, func, model_version_id, status, attempt_count, claimed_by, claim_expires_at)
+                        VALUES (?, 900, 'segment', ?, 'running', ?, 'w1', UTC_TIMESTAMP() - INTERVAL 5 SECOND)`, [id, v.version_id, n]);
+    }
+    expect(await takeOverExternal(t.db)).toBe(2);
+    expect(await q(`SELECT ext_job_id, status, error_class FROM external_job ORDER BY ext_job_id`)).toEqual([
+      { ext_job_id: 901, status: 'queued', error_class: 'engine_down' }, { ext_job_id: 902, status: 'failed', error_class: 'engine_down' }]);
+    await t.db.query(`DELETE FROM external_job`); await t.db.query(`DELETE FROM api_key`);
+  });
   it('시도가 남으면 retry_wait(engine_down)', async () => {
     await running('to1@test.local', 'split', 'intake', 1);
     await takeOver(t.db);

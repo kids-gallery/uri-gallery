@@ -99,7 +99,7 @@ describe('인프라·비활성(G13·G15, D1, BR-FBK-04)', () => {
   it('소진 뒤 보호자 선택 template은 LLM을 부르지 않고 단계 작업도 없음(낮춤률 제외), direct는 AI 작성 아님', async () => {
     const f = await artwork();
     const tp = await f.a.post(`/v1/artworks/${f.id}/captions`).send({ keywords: ['해'], selectedTags: ['바다'], fallback: 'template' }).expect(201);
-    expect(tp.body).toMatchObject({ source: 'template', aiAuthored: true, body: '5살 때 그린 작품이에요. 해, 바다을(를) 그렸어요.' });
+    expect(tp.body).toMatchObject({ source: 'template', aiAuthored: true, body: '5살 때 그린 작품이에요. 해·바다을(를) 그렸어요.' });
     await f.a.post(`/v1/artworks/${f.id}/captions`).send({ keywords: [], selectedTags: [], fallback: 'direct' }).expect(422);
     const dr = await f.a.post(`/v1/artworks/${f.id}/captions`).send({ keywords: [], selectedTags: [], fallback: 'direct', body: '우리 아이가 좋아한 바다' }).expect(201);
     expect(dr.body).toMatchObject({ source: 'direct', aiAuthored: false });

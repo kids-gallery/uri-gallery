@@ -107,6 +107,7 @@ def test_think_block_stripped_and_rule_fail_to_template(llm):
     fake.replies = ["", "", ""]                               # 규칙 검사 3회 실패
     r = TestClient(appmod.app).post("/v1/caption", json={"keywords": ["바다"], "tags": ["사람"], "ageAtMaking": 5}).json()
     assert (r["outcome"], r["source"], r["generationCount"], r["ruleFailCount"]) == ("ok", "template", 3, 3)
+    assert r["failClasses"] == ["fail_event"] * 3             # 걸린 초안마다 분류 하나(T145)
     assert r["body"] == "5살 때 그린 작품이에요. 바다·사람을(를) 그렸어요."
     import llm_server.ollama_client as oc
     fake.replies = ["<think>생각</think>\n좋아요."]

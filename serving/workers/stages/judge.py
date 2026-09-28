@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rules.m4_geometry import evaluate_file, suggest
 
-from ..records import store_output
+from ..records import open_confirmed, store_output
 
 _WAITING = ("received", "judging")
 
@@ -12,6 +12,7 @@ def _to_awaiting_confirm(cur, ctx) -> None:
     # 이미 확정됐으면(판정 중 직접 확정) 상태는 두고 제안값만 기록한다
     cur.execute("UPDATE artwork SET status = 'awaiting_confirm' WHERE artwork_id = %s AND status IN ('received','judging')",
                 (ctx.artwork_id,))
+    open_confirmed(cur, ctx.artwork_id)   # 판정 중 확정으로 잠가 둔 결과 작업을 연다(T144)
 
 
 def on_ok(cur, storage, ctx, res) -> str | None:

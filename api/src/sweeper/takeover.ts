@@ -70,3 +70,14 @@ export async function takeOver(db: Pool): Promise<number> {
   }
   return n;
 }
+
+/** 외부 작업 이어받기(stage-job §9): 점유가 만료된 running 외부 작업 — 3회 미만이면 다시 대기, 3회째면 failed·engine_down. */
+export async function takeOverExternal(db: Pool): Promise<number> {
+  const [u1] = await db.query(`UPDATE external_job SET status = 'queued', error_class = 'engine_down', claimed_by = NULL, claim_expires_at = NULL,
+                                      available_at = UTC_TIMESTAMP()
+                                WHERE status = 'running' AND claim_expires_at < UTC_TIMESTAMP() AND attempt_count < 3`);
+  const [u2] = await db.query(`UPDATE external_job SET status = 'failed', error_class = 'engine_down', claimed_by = NULL, claim_expires_at = NULL,
+                                      finished_at = UTC_TIMESTAMP()
+                                WHERE status = 'running' AND claim_expires_at < UTC_TIMESTAMP() AND attempt_count >= 3`);
+  return (u1 as { affectedRows: number }).affectedRows + (u2 as { affectedRows: number }).affectedRows;
+}

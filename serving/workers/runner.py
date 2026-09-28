@@ -330,7 +330,11 @@ class Worker:
     # ── 루프 ──────────────────────────────────────────────────────────
     def run_once(self):
         got = self.claim()
-        if got is None or isinstance(got, str):
+        if got is None:
+            # 보호자 작업이 없을 때만 외부 작업(stage-job §9, D17 낮은 우선순위)
+            from .external import ExternalRunner
+            return ExternalRunner(self).run_once()
+        if isinstance(got, str):
             return got
         return self.process(got)
 

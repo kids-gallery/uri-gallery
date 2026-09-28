@@ -189,6 +189,7 @@ def _preload_once() -> None:
 def _generate(inp: dict, call) -> dict:
     """규칙 검사 재생성 최대 2회(총 3회). 모두 걸리면 템플릿(llm_to_template). 걸린 문장은 돌려주지 않는다(BR-CAP-07)."""
     fails, last_fail, n = 0, None, 0
+    classes: list[str] = []          # 걸린 초안마다 분류 하나(llm-contract §4 failClasses, T145)
     msgs = cap.build_messages(inp)
     for n in range(1, cap.MAX_REGEN + 2):
         out = oc.chat(msgs, options=cap.GEN_OPTIONS, call=call)
@@ -197,10 +198,11 @@ def _generate(inp: dict, call) -> dict:
         fc = cap.rule_check(out["content"], inp)
         if fc is None:
             return {"source": "llm", "body": out["content"], "generationCount": n, "ruleCheck": "pass",
-                    "ruleFailCount": fails, "lastFailClass": last_fail}
+                    "ruleFailCount": fails, "lastFailClass": last_fail, "failClasses": classes}
         fails, last_fail = fails + 1, fc
+        classes.append(fc)
     return {"source": "template", "body": cap.template(inp), "generationCount": n, "ruleCheck": "fail",
-            "ruleFailCount": fails, "lastFailClass": last_fail}
+            "ruleFailCount": fails, "lastFailClass": last_fail, "failClasses": classes}
 
 
 @app.post("/v1/caption")

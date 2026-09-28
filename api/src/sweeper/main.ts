@@ -3,13 +3,14 @@ import { loadConfig } from '../config.js';
 import { createPool } from '../db/pool.js';
 import { LocalFsDriver } from '../storage/LocalFsDriver.js';
 import { log } from '../lib/logger.js';
-import { takeOver } from './takeover.js';
+import { takeOver, takeOverExternal } from './takeover.js';
 import { processDeletions } from './deletion.js';
 import { housekeeping } from './housekeeping.js';
 
 export async function sweepOnce(db: ReturnType<typeof createPool>, storage: LocalFsDriver, storageRoot: string) {
   for (const [name, fn] of [
     ['takeover', () => takeOver(db)],
+    ['takeover_external', () => takeOverExternal(db)],
     ['deletion', () => processDeletions(db, storage, storageRoot)],
     ['housekeeping', () => housekeeping(db, storageRoot)],
   ] as const) {

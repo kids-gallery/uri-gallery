@@ -26,6 +26,28 @@ def open_judge(cur, artwork_id: int) -> None:
                       AND available_at > UTC_TIMESTAMP()""", (artwork_id,))
 
 
+def open_confirmed(cur, artwork_id: int) -> None:
+    """judge가 끝나면(성공·품질 미달·소진 모두) 잠긴 확정 결과 작업을 연다(stage-job §2 "판정 전 확정의 순서", T144).
+
+    relief 확정인데 split_ok가 TRUE가 아니면 depth_relief를 done_downgraded·split_fail로 닫고 frame_compose를 등록한다
+    (§6 넷째 줄과 같은 결과). sweeper `openConfirmJobs`와 같은 규칙.
+    """
+    cur.execute("SELECT split_ok FROM judgment WHERE artwork_id = %s", (artwork_id,))
+    j = cur.fetchone()
+    split_ok = bool(j and j["split_ok"] == 1)
+    cur.execute("""SELECT job_id, stage_kind FROM stage_job
+                    WHERE artwork_id = %s AND origin = 'confirm' AND status = 'queued'
+                      AND available_at > UTC_TIMESTAMP() FOR UPDATE""", (artwork_id,))
+    for r in cur.fetchall():
+        if r["stage_kind"] == "depth_relief" and not split_ok:
+            cur.execute("""UPDATE stage_job SET status = 'done_downgraded', downgrade_cause = 'split_fail', attempt_count = 1,
+                                  started_at = UTC_TIMESTAMP(), finished_at = UTC_TIMESTAMP() WHERE job_id = %s""", (r["job_id"],))
+            cur.execute("""INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group)
+                           VALUES (%s, 'frame_compose', 'downgrade', 'cpu_vision')""", (artwork_id,))
+        else:
+            cur.execute("UPDATE stage_job SET available_at = UTC_TIMESTAMP() WHERE job_id = %s", (r["job_id"],))
+
+
 def upsert_outcome(cur, artwork_id: int, **cols) -> None:
     names = ", ".join(cols)
     ph = ", ".join(["%s"] * len(cols))
