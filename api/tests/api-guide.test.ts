@@ -19,7 +19,7 @@ fake.get('/v1/models/openapi.json', (_q, s) => (specUp ? s.json({ openapi: '3.1.
 fake.post('/v1/models/:fn', express.raw({ type: '*/*', limit: '30mb' }), (q, s) => {
   seen.push({ key: q.header('x-api-key'), fn: q.params.fn, bytes: (q.body as Buffer).length });
   if (q.params.fn === 'pose') return s.status(429).set('Retry-After', '30').json({ code: 'rate_limited' });
-  s.status(202).json({ jobId: '11111111-2222-3333-4444-555555555555', function: q.params.fn, status: 'queued' });
+  s.status(202).json({ jobId: '42', function: q.params.fn, status: 'queued' });
 });
 fake.get('/v1/models/jobs/:id', (q, s) => s.json({ jobId: q.params.id, function: 'segment', status: 'done', outcome: 'ok', model: { id: 'M1', version: 'v1' } }));
 const srv = http.createServer(fake).listen(0, '127.0.0.1');
@@ -107,7 +107,7 @@ describe('model-api 연결 실패', () => {
   it('시험 호출 503 model_api_unreachable', async () => {
     await resetData(down.db);
     const op = (await staff(down, 'op2@test.local', ['operator'])).a;
-    const r = await op.get('/v1/admin/api-guide/test-call/11111111-2222-3333-4444-555555555555').expect(503);
+    const r = await op.get('/v1/admin/api-guide/test-call/42').expect(503);
     expect(r.body.reason).toBe('model_api_unreachable');
   });
 });

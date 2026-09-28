@@ -32,6 +32,11 @@ export async function housekeeping(db: Pool, storageRoot: string): Promise<void>
     await fs.rm(path.join(storageRoot, 'ext', String(ext_job_id)), { recursive: true, force: true });
     await db.query(`UPDATE external_job SET result_temp_ref = NULL WHERE ext_job_id = ?`, [ext_job_id]);
   }
+  // 실패한 외부 작업은 결과가 없으니 입력만 남는다 — 끝난 뒤 곧바로 지운다(D8)
+  const [failed] = await db.query(`SELECT ext_job_id FROM external_job WHERE status = 'failed' AND finished_at < CURRENT_TIMESTAMP - INTERVAL 10 MINUTE`);
+  for (const { ext_job_id } of failed as { ext_job_id: number }[]) {
+    await fs.rm(path.join(storageRoot, 'ext', String(ext_job_id)), { recursive: true, force: true });
+  }
   await db.query(`DELETE FROM app_session WHERE expires_at < UTC_TIMESTAMP()`);
   await db.query(`DELETE FROM auth_email_token WHERE expires_at < UTC_TIMESTAMP() - INTERVAL 7 DAY`);
   await db.query(`DELETE FROM auth_rate_event WHERE occurred_at < UTC_TIMESTAMP() - INTERVAL 2 DAY`);

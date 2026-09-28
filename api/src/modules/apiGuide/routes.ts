@@ -83,7 +83,7 @@ export function apiGuideRouter(db: Pool, cfg: Config, storage: StoragePort): Rou
 
   r.get('/v1/admin/api-guide/test-call/:jobId', readers, async (req, res, next) => {
     try {
-      if (!/^[0-9a-f-]{36}$/i.test(req.params.jobId)) throw new Problem('not_found');
+      if (!/^[0-9]+$/.test(req.params.jobId)) throw new Problem('not_found');
       if (!cfg.apiGuideTestKey) throw new Problem('not_saved', 'test_key_missing');
       await forward(res, await reach(`${modelBase}/v1/models/jobs/${req.params.jobId}`, {
         headers: { 'X-API-Key': cfg.apiGuideTestKey }, signal: AbortSignal.timeout(3000),
