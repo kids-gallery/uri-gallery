@@ -6,6 +6,7 @@
 > **문서 식별**: `design/UC_ALL_우리아이미술관_통합명세.md`
 > **작성일**: 2026-09-23 · **개정**: 2026-09-28 (모델 조합 서빙 재검토·이름 변경, DDBM Intent-Specify 기준) · **표준**: UML 2.5.1 (OMG)
 > **개정 (2026-09-28)**: 모델 조합 서빙을 기준으로 전면 다시 합쳤다. 서비스 이름을 "우리 아이 미술관"으로 바꿨다. UC2는 판정 제안과 보호자 확정으로, UC9는 모델 7종의 평가·승격·롤백으로 넓혔고, 옛 UC10(모델 API 변환)은 UC3·UC12로 흡수했다. UC10(작품 설명, P0.5)과 UC12(모델 기능 엔드포인트, P0.5)를 새로 넣었다. 자세한 내용은 §9.1에 있다.
+> **개정 2 (2026-09-28, 통합 결정 D17)**: 외부 모델 기능 엔드포인트 절충안을 반영했다. `segment`·`classify`·`pose`·`relief` 네 기능은 P0, `caption`과 외부 API 약관은 P0.5다. 호출자를 팀 밖 외부 클라이언트까지 넓힌다. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다(이제민 조건부 승인). 단 `pose`는 팀 내부 키 전용이다(보관 처리돼 보안 수정이 없는 M3(Animated Drawings·TorchServe)를 팀 밖 요청이 간접 호출하지 않도록, 외부 키는 403). 요청 한도는 예시값(U12, 확정 아님)이다. `classify`는 라이선스 확정 기록(A2) 뒤에 활성한다.
 > **원천(SoT)**: `Intent-Specify.md` (2026-09-28 기획 기준안, DDBM에서 수정) + `.specify/features/우리-아이-미술관/spec.md` v2.0 (개정 중). 보조 원천 `Intent-Plan.md` (웹스택 후보 4종, 미확정)
 > **통합 기준**: 같은 폴더의 `UC_00_개요_우리아이미술관.md`와 UC별 문서 `UC_01`~`UC_12`를 합쳤다. §1~§6은 UC_00, §7은 UC 문서 본문을 옮겼다. UC 문서끼리 어긋나거나 비어 있던 곳은 재작성 공통 기준 §11 통합 결정 D1~D15를 반영했고, 바꾼 문장마다 `[통합 D#]`를 붙였다. 개별 UC 문서는 고치지 않았다.
 > **다이어그램**: 전체 UseCase Diagram 1개와 UC별 UseCase·Sequence Diagram 각 1개, 합계 25개다. PlantUML 소스와 렌더 링크는 UC 문서의 것을 그대로 옮겼고, 사내 Kroki(`plantuml.sumzip.com`)에서 렌더를 검증했다(HTTP 200, SVG 안 `Syntax Error` 없음). `plantuml.sumzip.com`은 사내 SSO 로그인 뒤 열린다.
@@ -37,8 +38,8 @@
 
 | 구간 | 포함 |
 |:--:|---|
-| P0 | 판정 제안 · 움직임 · 2.5D · 액자 · 전시 · 삭제 · 모델별 지표 · 모델 평가·승격 · API활용 메뉴 |
-| P0.5 | 키워드 기반 작품 설명(UC10) · 외부 모델 기능 엔드포인트(UC12) |
+| P0 | 판정 제안 · 움직임 · 2.5D · 액자 · 전시 · 삭제 · 모델별 지표 · 모델 평가·승격 · API활용 메뉴 · 외부 모델 기능 네 가지(UC12, D17) |
+| P0.5 | 키워드 기반 작품 설명(UC10) · 외부 `caption` 엔드포인트와 외부 API 약관(UC12 일부, D17) |
 | P1 | 만들기 작품(점토·종이 공작)의 3D 조각. 팀 서버 GPU 확인 후 결정한다. 그 전에는 화면에 노출하지 않는다 |
 | 후속 | 하이라이트 영화 · 실물 필름 · 결제 · 촬영 보정 · 내보내기·권한 이전 · 큐레이션 · 기관용 다아동 권한 |
 
@@ -80,7 +81,7 @@
 | F16 | 생존·준비·모델별 지표 | `/live`·`/ready`(모델별)·`/metrics`. 서빙 지표 전체, 원인별 분리 집계, 식별 정보 없음 | spec FR-12, FR-13, FR-14, FR-26 · Intent [미션] 서빙 지표 | UC8 |
 | F17 | 모델 재현·평가·승격 | 모델 7종 버전 고정·매니페스트·어댑터, 평가 묶음 재평가 후 승격, 롤백 | spec FR-16, FR-17, FR-24 · Intent [핵심 활동] 2·7 | UC9 |
 | F18 | 모델 API 서버 · API활용 메뉴 | Python 가상환경 + uvicorn API 서버, 엔드포인트·가이드라인·매뉴얼 메뉴(팀원 전용) | spec FR-30 · 추가 요구 R3·R4 | UC11 |
-| F19 | 외부 모델 기능 엔드포인트 (P0.5) | `segment`·`classify`·`pose`·`relief`·`caption`. API 키 인증·요청 한도·크기 제한·입력 비보존 | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 | UC12 |
+| F19 | 외부 모델 기능 엔드포인트 (P0 · caption은 P0.5) | `segment`·`classify`·`relief`(외부 키) · `pose`(팀 내부 키 전용) · `caption`(P0.5). API 키 인증·요청 한도·크기 제한·입력 비보존 | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 | UC12 |
 | F20 | 사용 관찰 기록 | 보호자 역할 사용자의 막힌 지점 관찰 | spec FR-18 · Intent [미션] P0 경험 검증 | 미전환(§9.3) |
 | F21 | 추적성 | FR → UC → T → 검증 증거 연결 | spec FR-19 · Intent [핵심 활동] 8 | 미전환(§9.3) |
 
@@ -136,7 +137,7 @@
 | 8 | (P0.5, 선택) 키워드를 적고 M2 태그 후보 중 일부를 고른다 | M6가 초안을 만들고 규칙 검사를 한다. 실패가 상한을 넘으면 템플릿 설명으로 낮춘다 | "AI 작성" 표시 초안 → 보호자 수정·승인 후 고정 | UC10 |
 | 9 | 아이를 골라 전시를 감상한다 | 아이별 → 연령 묶음 → 제작일 순으로 보여 준다. 재생·시차 효과는 고를 때만 | 전시 화면 (P1: 3D 회전 보기) | UC6 |
 
-모델은 가족 흐름 밖에서도 같은 어댑터로 쓰인다. UC9의 평가 담당 팀원이 평가 묶음으로 모델 버전을 검증하고, UC8의 `/ready`가 모델별 준비 상태를 보여 주고, UC12의 외부 클라이언트가 모델 기능 엔드포인트로 각 기능을 따로 부른다(P0.5).
+모델은 가족 흐름 밖에서도 같은 어댑터로 쓰인다. UC9의 평가 담당 팀원이 평가 묶음으로 모델 버전을 검증하고, UC8의 `/ready`가 모델별 준비 상태를 보여 주고, UC12의 외부 클라이언트가 모델 기능 엔드포인트로 각 기능을 따로 부른다(P0 네 기능, caption은 P0.5).
 
 ### 2.3 낮춤 체인과 원인 분리
 
@@ -195,8 +196,8 @@ API 서버는 접수·상태·권한만 맡고 모델을 직접 import하지 않
 | `DELETE /v1/artworks/{id}` · `DELETE /v1/children/{id}` | 삭제 | UC7 |
 | `GET /live` · `GET /ready` (모델별 상태 포함) · `GET /metrics` | 운영 | UC8 |
 | `GET /v1/admin/models` · `POST /v1/admin/models/{mid}/evaluate` · `POST .../promote` · `POST .../rollback` | 매니페스트 조회·평가·승격·롤백 | UC9 |
-| `POST /v1/models/{segment\|classify\|pose\|relief\|caption}` | 외부 클라이언트용 모델 기능(P0.5, API 키 인증·요청 한도·크기 제한·입력 비보존) | UC12 |
-| `GET /v1/models/jobs/{job_id}` · `GET /v1/models/jobs/{job_id}/result` | 외부 비동기 작업 상태·결과 조회(P0.5). 옛 `/v1/jobs…`는 쓰지 않는다 [통합 D13] | UC12 |
+| `POST /v1/models/{segment\|classify\|pose\|relief\|caption}` | 외부 클라이언트용 모델 기능(P0: segment·classify·relief는 외부 키, pose는 팀 내부 키 전용 / P0.5: caption. API 키 인증·요청 한도(예시값)·크기 제한·입력 비보존, D17) | UC12 |
+| `GET /v1/models/jobs/{job_id}` · `GET /v1/models/jobs/{job_id}/result` | 외부 비동기 작업 상태·결과 조회(P0부터). 옛 `/v1/jobs…`는 쓰지 않는다 [통합 D13] | UC12 |
 | `GET /openapi.json` · `GET /docs` | API활용 메뉴의 엔드포인트 탭 원천 | UC11 |
 
 **응답 분류 대응** — 단계 작업 응답 분류와 작업 기록 분류를 1:1로 맞춘다(BR-API-02). 그래야 "모델 낮춤"과 "인프라 실패"가 섞이지 않는다.
@@ -218,7 +219,7 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | 엔드포인트 | §2.4 엔드포인트 목록, 요청·응답 형식, 응답 분류와 작업 기록 분류 대응표, 요청 예시, 모델별 활성 버전. `/openapi.json`에서 생성해 실제 API·모델 버전과 어긋나지 않게 한다 | R4 · BR-API-08 |
 | 가이드라인 | 호출 규칙: 모델 런타임은 내부망 전용, 외부 엔드포인트는 API 키 필수·요청 한도·크기 제한, 품질 미달은 낮춤·인프라 장애는 최대 3회 재시도, 모델별 시간 상한, 로그에 이미지·자유 입력 금지, 외부 입력 비보존, 시험 호출은 평가 묶음 작품만 | R4 · BR-PRC-02·03·06 · BR-API-03~05·09 · BR-PRV-01 |
 | 매뉴얼 | 가상환경 만들기·의존성 설치, uvicorn 기동·중지, `/live`·`/ready`·`/metrics` 확인, 모델 경로 설정(U14)과 매니페스트, 모델 버전 변경 시 UC9 재평가·승격·롤백 절차, 장애 대응(모델 미준비·시간 초과·큐 적체·디스크 부족) | R3 · R4 · spec FR-12 · FR-24 |
-| 시험 호출 (선택, EXT3, P0.5) | 평가 묶음 작품을 골라 모델 기능 엔드포인트(UC12)를 직접 불러 응답을 확인한다. UC12를 포함하므로 P0.5부터 쓴다 [통합 D12] | R4 · BR-API-09 |
+| 시험 호출 (선택, EXT3) | 평가 묶음 작품을 골라 모델 기능 엔드포인트(UC12)를 직접 불러 응답을 확인한다. UC12를 포함하므로 UC12와 같은 구간을 따른다. P0는 네 기능, caption은 P0.5 [통합 D12·D17] | R4 · BR-API-09 |
 
 ---
 
@@ -239,7 +240,7 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | UC9 | 모델 버전을 평가 묶음으로 검증하고 승격·롤백한다 | 평가 담당 팀원 | P0 | Medium | spec FR-16, FR-17, FR-24 · Intent [핵심 활동] 2·7 · [핵심 데이터] 모델 매니페스트·평가 묶음 | §7.9 | 개정 2026-09-28 |
 | UC10 | 키워드로 작품 설명 초안을 만들고 승인한다 | 보호자 | P0.5 | Medium | spec FR-27 · Intent [핵심 이네이블러] 작품 설명 · [부정적 영향] 기억의 재작성 | §7.10 | 신규 2026-09-28 |
 | UC11 | API활용 메뉴에서 엔드포인트·가이드라인·매뉴얼을 확인한다 | 연동 개발 팀원 · 서비스 운영자 | P0 | Medium | spec FR-30 · 추가 요구 R3·R4 | §7.11 | 개정 2026-09-28 |
-| UC12 | 모델 기능 엔드포인트를 호출한다 | 외부 클라이언트(연동 앱) | P0.5 | Low | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 · [핵심 장벽] 외부 엔드포인트 | §7.12 | 신규 2026-09-28 |
+| UC12 | 모델 기능 엔드포인트를 호출한다 | 외부 클라이언트(연동 앱) | P0 (caption은 P0.5) | Medium | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 · [핵심 장벽] 외부 엔드포인트 | §7.12 | 신규 2026-09-28 |
 
 **공통·조건부 유스케이스** (독립 문서 없이 기반 UC 문서에서 다룬다)
 
@@ -250,13 +251,13 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | INC3 | API 키 인증·요청 한도 확인 | UC12가 «include» | spec FR-28 · Intent [부정적 영향] 외부 엔드포인트 남용 |
 | EXT1 | 실행 중 처리 취소 | UC7을 «extend» (확장점: 삭제 대상에 처리 중인 단계 작업이 있음) | spec FR-10 |
 | EXT2 | 다시 찍어 재접수 | UC2가 UC4를 «extend» (확장점: 보호자가 "다시 찍기" 선택) | spec FR-6 |
-| EXT3 | 평가 작품으로 시험 호출 | UC11을 «extend» (확장점: 팀원이 "시험 호출" 선택). 실행 시 UC12를 «include». UC12가 P0.5이므로 EXT3도 P0.5 | 추가 요구 R4 · BR-API-09 |
+| EXT3 | 평가 작품으로 시험 호출 | UC11을 «extend» (확장점: 팀원이 "시험 호출" 선택). 실행 시 UC12를 «include». EXT3은 UC12와 같은 구간을 따른다(P0 네 기능, caption은 P0.5, D17) | 추가 요구 R4 · BR-API-09 |
 | — | 설명 초안 받기 | UC10이 UC5를 «extend» (확장점: 보호자가 "키워드로 설명 초안 받기" 선택, P0.5) | spec FR-27 |
 
 **우선순위 근거**
 - High: 가족 경험의 핵심 흐름(접수·확정 → 처리 → 확인 → 이야기 → 전시)과 아동 정보 삭제 통제. Intent [개요]가 P0로 적은 판정 제안·움직임·2.5D·액자·전시·삭제다.
 - Medium: UC1은 선행 조건이지만 기능이 작다. UC8·UC9·UC11은 가족이 직접 쓰지 않는 운영·검증·연동 기능이다. UC8은 Intent [미션] 서빙 지표, UC9는 [핵심 장벽] 서빙 기반(치명), UC11은 추가 요구 R4에 근거한다. UC10은 P0.5이지만 보호자 상품 가설의 근거다(Intent [수익]).
-- Low: UC12는 P0.5이며 외부 연동 수요가 가설이다. Intent [수익]은 권한·동의·계약 검증 전에는 판매 가능 제품으로 표시하지 않는다고 적었다.
+- Medium(UC12): 절충안(D17)으로 네 기능이 P0에 들어왔다. 외부 연동 수요는 여전히 가설이다. Intent [수익]은 권한·동의·계약 검증 전에는 판매 가능 제품으로 표시하지 않는다고 적었다.
 
 **추상수준 판정** — [추론] 다음 항목은 UC로 두지 않았다.
 - 모델별 처리(분리·판정·관절·깊이·설명·3D)는 액터의 목표가 아니라 시스템의 단계 작업이다. UC2(판정)·UC3(생성)·UC10(설명)의 시스템 행위와 시퀀스 lifeline으로 내렸다.
@@ -275,7 +276,7 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | Primary | 서비스 운영자 | 생존·준비 상태와 모델별 운영 지표를 확인하고 API활용 메뉴를 본다. 가족의 이미지와 이야기에는 접근하지 않는다(BR-ACC-03) | UC8, UC11 | Intent [미션] 서빙 지표 · spec FR-9 |
 | Primary | 평가 담당 팀원 | 직접 만든 평가 묶음으로 모델 버전을 재평가하고 승격·롤백한다 | UC9 | Intent [핵심 활동] 7 · [핵심 데이터] 평가 묶음 |
 | Primary | 연동 개발 팀원 | API활용 메뉴에서 엔드포인트·가이드라인·매뉴얼을 보고 연동을 구현하며, 시험 호출을 할 수 있다 | UC11 | 추가 요구 R4 |
-| Primary | 외부 클라이언트(연동 앱, P0.5, 가설) | API 키로 인증해 모델 기능 엔드포인트를 부른다. 가족 데이터에는 접근하지 못한다. 유치원·알림장 앱은 확장 가설이다 | UC12 | Intent [핵심 이네이블러] 외부 사용 · [혜택] 외부 개발자 · [수익] 연동 수익 가설 |
+| Primary | 외부 클라이언트(연동 앱, P0, 수요는 가설) | API 키로 인증해 모델 기능 엔드포인트를 부른다. 가족 데이터에는 접근하지 못한다. 유치원·알림장 앱은 확장 가설이다 | UC12 | Intent [핵심 이네이블러] 외부 사용 · [혜택] 외부 개발자 · [수익] 연동 수익 가설 |
 | Secondary | 원본·결과 저장소(S3 호환) | 원본·마스크·깊이·중간·최종 결과·설명·GLB·임시 파일을 보관한다. 실제 제품은 미확정 | UC2~UC4, UC6, UC7, UC8 | Intent [핵심 이네이블러] 기반 |
 | Secondary(조건부) | 과정 제공 LLM | 과정에서 제공하는 LLM 엔드포인트. 쓰게 되면 M6를 대체하는 외부 시스템 보조 액터로 올린다. 기본은 자체 호스팅이라 액터가 아니다. 조건 확인 전에는 아이 데이터를 보내지 않는다(BR-CAP-05) | UC10 | Intent [핵심 파트너] |
 | 이해관계자 | 아이 | 계정이 없고 보호자와 함께 화면을 본다. 주 수혜자이며 결제 대상이 아니다. 시스템을 직접 조작하지 않으므로 액터로 두지 않는다 | (UC6 감상 맥락) | Intent [가치제안] · [수익] |
@@ -300,7 +301,7 @@ actor "보호자" as Parent
 actor "서비스 운영자" as Ops
 actor "평가 담당 팀원" as Eval
 actor "연동 개발 팀원" as Dev
-actor "외부 클라이언트\n(연동 앱, P0.5)" as Client
+actor "외부 클라이언트\n(연동 앱, P0)" as Client
 actor "원본·결과 저장소" as Store <<외부>>
 actor "과정 제공 LLM\n(조건부)" as CLLM <<외부>>
 
@@ -316,7 +317,7 @@ rectangle "우리 아이 미술관" {
     usecase "INC1 로그인·가족 접근 확인" as INC1
     usecase "EXT1 실행 중 처리 취소" as EXT1
   }
-  package "P0.5 설명·외부 연동" {
+  package "설명 P0.5·외부 연동 P0" {
     usecase "UC10 키워드로 작품 설명\n초안을 만들고 승인한다" as UC10
     usecase "UC12 모델 기능\n엔드포인트를 호출한다" as UC12
     usecase "INC3 API 키 인증·\n요청 한도 확인" as INC3
@@ -393,11 +394,11 @@ end note
 @enduml
 ```
 
-**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V91PIlcUf5-_4oS-aNI1DvidjdlW3WYT25K0Jn0wMbMwIlkcDIzbNs0mqNgosBG6oqhgMMFVN5qOQmVM6It_Sh_n3vkfeu6dGXZmWHySM-f7d76uL9KqlFLXVxOwHllKrqeWIivxRHQpJiUScur3pXlRSL-JK2tSSlqF11LkTSyVXFeiM8lEMgVfvQy9FOe-dUmkV6Ro8te4EoNlKZGWhYS8rIKahFQ8tqJCNJ6SI2o8qQhqXE3IQI818vEaaDlLay0gf-t0p260MvBfZh_mRVhIyzNSWobZuBRjxgfCw_DYhvDw0Cj_Kw4KghRRMZAAabbMik5PiwGQ0hCWUrKiOjyarZKHLM010F-LVjYcqR_X0o6IubdraBkg-RbJP4BZyNATS2burZTo2jnUyN4RGFqVaFW30Kz8titzpJP7DJgbLVLrYFL0QDdz-qIyYCvT8u3XPIFBrjmTiLsDPSmSpv7YNu40o9kBWs_Q03P6Z4GL_oQiMjx_bnmYnnaUUJLWyyhcNZr_wPz898zZmWbctlDM9oJf3ZoCq4KkxLACgT4lCMAfAsAa1luKoRSCQ89uwbj71zysWDyA9bQcYeUJLMyItgFy3gHSzNKHG1rtkLMqkA-35Kxmlqsk3-CxoKxfOQj0tGT-tQN085peoJksZlOiOxWzXDGa9UXFLBTtFGl5h7HNozJ-8FgN-q2GulbvKjzDi6x5sOto13SPdsivPeKoWbVgeTlqVky0nqV5zE-7ovkas4pfybn-2eSI3-RoNyBsi3LH0DVmlf3xATTq1xwDG3_LKVfTinRrw6M25lcbdxySSpHk9l0lops3CKZHe9yr_eoHrCkW0GjrmDS2pBNAyWg7UHBNJuhVnfvlZ2yHfAPRBtoodfFvXzqtzCRQ5527w_hQ02yDfNp-bNtTZM3Ml9ptGMzNBj0pkA9V1mUOsFwda9PasRuFXKBIA0sDNPfgL7o43GM3COTTJXmv87LkztHU4T76MPeumXJO532Ae-beC54Y7EEvBN-EX7Eosdw6_Vh7bKOx4316dwNMdS_rAzHkB8TaVWwZZLg6mvsCEhPg2m7YEFtVepRZVKwscBLtlYfdnzFLVXcbu8Kf8FuddGAgd1nWc2xo7A15fU9rBWu4FxUrNmskGMLG3dVjm5w1iHbrcTDZA7TI4DGPqvT4CsjVPtlt0cMipgI-wBlsrPewb7HUbKXiJ3LRYAoHnT7TLIo95Qja-9rd0_TwxizXfXUI9jRzyMnd6jJ7seEc4iq0m8HpaquI7wTBOkDw7Nk0X3geMuglQ15yxEuOeskxLznuczQs4E2ziQnXbwSEHTKbmhTwYH3mWDfIoYOCwNb50NA0H22YwsMRVyKJ9aiMl4Mt676sUH_WSH_WaH_WWH_WeH8WLoe-vAmHFexhTfZnieITvC4gIR-P70HGY9EylvybKitRF4oMFx_DDp7B4uHwPrQ4otif5Y-Pu2KV5a8HXiM3NeKhxjzUuIea8FB2lPxdMQXd14YgKElVtt96yWVnz7MBw3dMvThlHx4gOItbGzjxyHXOQ6OEU4gvsEuDba3TEj3cZi8SeoqLvCBgqsCMWx5eJ1U1ucpcWIefZeLy0n0M4tQiN4Cbgd1qqr3HtR7AjVk3t2owgOEFB5-wzO8Dq4TLdMB9d1j0_OSAdXHwNXDi8vCEaXarw-KUc590zTlhoVkwjwu4c1kS-B3lBr4LL9hLCjjjIUu22dbxx-7GPeTF3Vp-iCeDw7e6_MG-wF_478D_skVEnQ==)** — 클릭 시 브라우저로 연결됩니다.
+**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V11PImcUvp9fcUJvNOkaBvzOxmyrbrOJbUlak16YmFkYkSwOBoZtm2YTVGwU2AhdEVQwmOCqG01HoDIm9Maf0st53_kPPe98sDPD4pWcOd_P-Xp9kZKFpJzeiEM6vJpIJ1fD67F4ZDUqxONi8vfVJZ5LvYlJm0JS2IDXQvhNNJlIS5H5RDyRhK9eBl_yi986JFLrQiTxa0yKwpoQT4lcXFyTQU5AMhZdlyESS4phOZaQODkmx0WgJwr5eAO0nKX1DpC_VbrX0DoZ-C9zCEs8LKfEeSElwkJMiDLjIyE_PHYh5B-bMP7yoxwnhGUMxEfaHb2q0rOiD4QUhISkKMk2j2Zr5CFLc03016HVLVvqx82ULaIf7GtKBki-Q_IPoBcy9NSUWXwrxPt2Kgo5OAZNqRGl5hRaEN_2ZY5Vcp8BfatD6j1Mih6pek5dkUYsZVq--xoTGDX05uMxZ5inRdJWH7taS9HaPaCNDD27oH8WDNGfUESE589N-3NzthJK0kYZhWta-x9YWvqeuTpXtLsOille8KtTk2M1EKQo4u8bUgAf_MEBbGK1hShKITT0_A601r96pWryANIpMcyK41ue5y0D5KIHpJ2lD7e01iPnNSAf7sh5XS_XSL5pxIKyXuUA0LOS_tce0O0beolmsphNie5V9XJVazdWJL1QtFKk5T3G1o_L-MFlNeC1GuxbbVWNDC-z-tG-rV1XXdpBr_a4rWbWguVlq5kx0UaW5jE_5Zrm68wqfiUX6meT416TE_2AsCnKPU1VmFX2xwPQhFdzEiz8TaeGmlKkO1sutUmv2pTtkFSLJHfoKBHdvkUwXdpTbu1XP2BNsYBaV8WksSXtAEpa14bC0GSCbtXFX37Gdsg3EW2gzVIf_-6V3cpMAnXeOTuMZpvk064x2Y9da4asiQn5v9RxftC3m_S0QD7UWKPZ2BpmsDydPatXyCWKNLE6QHMP3rrz_gG7ASCfrsh71ahM7gJNVQ7Rh35ww5RzqtEKuGju3fjxgQEAg_BN6BWLEiuu0o_1xy4aOzmkrVtgqgdZD47BAUyMZcX2QcZQR3NfQGIaHOsNe2KnRo8zK5KZBQ6jtfNwADJ6qebsZEf4016rMzYMpJVlbcfmxlqRN_e0XjDne0UyYzOngiGsta4fu-S8SZQ7l4OZAaB5Bo9-XKMn10CuD8l-h1aKmAp4AGewsfbD1sVSs52Kn8hlkykc9YYMNM8PlCNgLWxnW9PKrV5ueOoQGOjnoJ272WXWbsNRxG1oNYPd2GYR33GceYHg2bM5Y-e5yICbDLrJcTc54SYn3eSUx5Gfw6NmEdOO3wgIu2QWNcPhxfrMMc-QTQc4jm30sbE5Y7phFm9HTArH0xERjwfb10NZweGs8eGsieGsyeGsqeEsXA5DedM2KzDAmhnO4vkneH1Agh6esQoZj0XLWOJvsihFHCgyXDwMK3gGi4tj9KHJ4fnhLG98hitWWeMBYdTISY27qEkXNeWipl2UFaXxtJiF_oOD46SELFqPvcSaverZgOFTplGctW4PEJzFnS2ceOTaF6JZwinEJ9iVxrbWWYlWdtmjhJ7hIi9wmCow46aH1wlZTmwwF-btZ5k4vPRfgzi1yPXhZmDnmirvca37cGM29J06jGB4gdEnLBv3gVXCYdrnvDssevNymRcHHwSnDg9PmGbnOsTP2vdJVewTFlwA_aSAO5clgd9RbuS70LK1pMBgPGTJLts63tiduAfduJvLD_FkcHhWlzfYF_gL_x_4H6srRNo=)** — 클릭 시 브라우저로 연결됩니다.
 
 #### 다이어그램 쉽게 읽기 (유저 관점)
 
-- **누가 쓰나** — 보호자는 가족 경험 일곱 가지(UC1~UC7)와 P0.5 설명 초안(UC10)을 쓴다. 서비스 운영자는 상태·지표 확인(UC8)과 API활용 메뉴(UC11)를, 평가 담당 팀원은 모델 검증·승격(UC9)을, 연동 개발 팀원은 API활용 메뉴(UC11)를 쓴다. 외부 클라이언트(연동 앱)는 P0.5에서 모델 기능 엔드포인트(UC12)만 부른다. 원본·결과 저장소와 과정 제공 LLM(쓰게 될 때만)은 사람이 아니라 시스템이 기대는 외부 구성요소다.
+- **누가 쓰나** — 보호자는 가족 경험 일곱 가지(UC1~UC7)와 P0.5 설명 초안(UC10)을 쓴다. 서비스 운영자는 상태·지표 확인(UC8)과 API활용 메뉴(UC11)를, 평가 담당 팀원은 모델 검증·승격(UC9)을, 연동 개발 팀원은 API활용 메뉴(UC11)를 쓴다. 외부 클라이언트(연동 앱)는 P0부터(caption은 P0.5) 모델 기능 엔드포인트(UC12)만 부른다. 원본·결과 저장소와 과정 제공 LLM(쓰게 될 때만)은 사람이 아니라 시스템이 기대는 외부 구성요소다.
 - **무슨 순서로** — 아이 등록(UC1) → 사진 올리고 제안 확정(UC2) → 처리 진행 보기(UC3) → 결과 고르기(UC4) → 이야기 쓰기(UC5, 원하면 설명 초안 UC10) → 전시 감상(UC6). 삭제(UC7)는 언제든 할 수 있다.
 - **모델은 어디에** — 다이어그램에 모델 이름이 없다. 모델 7종은 시스템 안쪽의 부품이라 액터로 그리지 않는다. 분리·판정은 UC2, 움직임·2.5D 생성은 UC3, 설명은 UC10 안에서 일어난다.
 - **«include» = 항상 함께** — 보호자 기능은 매번 "로그인·가족 접근 확인"을, 팀원 기능은 "팀원 로그인·역할 확인"을, 외부 호출은 "API 키 인증·요청 한도 확인"을 거친다.
@@ -409,7 +410,7 @@ end note
 | 사람 모양(actor) | 시스템을 쓰는 사람 또는 외부 시스템(`<<외부>>`) |
 | 타원(usecase) | 액터가 이루려는 목표 |
 | 사각형(rectangle) | 시스템 경계. 안쪽이 이 시스템의 책임 |
-| 폴더(package) | 성격이 같은 UC 묶음(가족 경험 / P0.5 설명·외부 연동 / 운영·검증·API) |
+| 폴더(package) | 성격이 같은 UC 묶음(가족 경험 / 설명 P0.5·외부 연동 P0 / 운영·검증·API) |
 | 실선 화살표 | 액터와 유스케이스의 연결 |
 | 점선 `<<include>>` | 기반 UC가 항상 포함하는 하위 행위 |
 | 점선 `<<extend>>` | 확장점 조건일 때만 기반 UC에 끼어드는 행위 |
@@ -2172,7 +2173,7 @@ UI --> Parent : "삭제했어요"
 | 큐 적체 | 서빙군별 대기 중 단계 작업 수. CPU 비전 큐·GPU 전용 큐는 대기 작업 수, LLM 서버는 동시 처리 상한에 걸려 기다리는 요청 수 [추론] | 서빙 3종 | Intent [미션] · [핵심 활동] 6 |
 | 결과 미도달 수 | 결과를 만드는 단계(움직임 렌더·깊이·부조·3D)를 첫 시도 포함 3회 시도하고도 실패해 `처리하지 못함` 이 된 건. 판정·설명 단계 소진은 인프라 실패로만 센다 [통합 D1]. **목표 0** | 모델 ID, 오류 분류 | Intent [미션] · 공통 기준 §5 |
 | (보조) 삭제 미완료 수 | 자동 재시도 뒤에도 끝나지 않은 삭제 건 | — | 공통 기준 BR-DEL-03 |
-| (보조, P0.5) 외부 엔드포인트 호출량·한도 초과 수 | `/v1/models/{…}` 엔드포인트별 호출 수와 요청 한도·크기 제한 초과 거부 수 [추론] | 엔드포인트 | Intent [핵심 장벽] 외부 엔드포인트 · [핵심 자원] 운영 시 |
+| (보조) 외부 엔드포인트 호출량·한도 초과 수 | `/v1/models/{…}` 엔드포인트별 호출 수와 요청 한도·크기 제한 초과 거부 수 [추론] | 엔드포인트 | Intent [핵심 장벽] 외부 엔드포인트 · [핵심 자원] 운영 시 |
 
 원천은 이 지표들이 **정의와 검증 계획이며 달성 실적이 아니다**라고 명시한다(Intent [미션]). 결과 미도달 0건 외의 비율 지표에는 목표값을 두지 않고 기준선으로만 쓴다. 지표 라벨에는 이미지·작품 번호·식별 정보를 넣지 않는다(Intent [핵심 데이터]). `삭제 중` 작품에서 취소된 단계 작업은 "취소"로 분류해 모든 지표에서 뺀다(BR-DEL-05) [통합 D4].
 
@@ -2203,7 +2204,7 @@ rectangle "우리 아이 미술관 (P0)" {
   usecase "UC3 작품 처리 진행을 확인한다" as UC3
   usecase "UC4 처리 결과를 확인하고\n전시 방식을 고른다" as UC4
   usecase "UC10 키워드로 작품 설명\n초안을 만들고 승인한다 (P0.5)" as UC10
-  usecase "UC12 모델 기능 엔드포인트를\n호출한다 (P0.5)" as UC12
+  usecase "UC12 모델 기능 엔드포인트를\n호출한다 (P0)" as UC12
 }
 
 Ops --> UC8
@@ -2226,7 +2227,7 @@ end note
 @enduml
 ```
 
-**[「UC8 운영 상태·모델별 지표 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVF1P02AUvu-vOMEbFgX5jMQoMaIYL1ASw5UYUrcyGktruk5jjKZAIYPNuCmVoR2WZDhU1GUsW0lITPZTvOx7-h88bzvGRyTxat37Pufp85zznN5IGaJupOcVSMdntLQ-E5-TlcRMUlQUSX8x0zcipJ7I6lNRF-fhsRh_ktS1tJoY0xRNhwvjg-P9t2-eQKTmxIT2XFaTMCsqKUlQpFkDDA10OTlnQELWpbgha6pgyIYiAX6ssi97gLaFpTqwXx5mXL9uwh9zHabGRgAthx1YuFYGXFoIlhzcNIF922VvPLZvUXUdiwuAFTMoOGznEIJNG0teYDssWxYEMW6QxK4THCEet_JdIKbg_tNUB_Ipz_a9VtOvVf39Q0DXxK0dXMmFuAcEkeDaNdz0WMMcHRUE7kFUk6S_6zwD3ZN9sS54KQCkU1JcTBH0HD_T6n8aCsUQyUnOu_fGBiDImWQA2LbjNz2Ct5rTKm78CGy3XR9WcuhpOQOAW4XgXQZwcQ8rZIAEuAXMFAO76O-702qQy6Nr06GDdoZfczrXPiXnDOdgh7NWDBtTsYIPq0e1Z6wMnq4dOiqKxnDSf6QHXQuzDrDqV8yWOCedsh3vmHDoNGF_HwSLZfyUY-8d6k5HmlVm35aJrp5p-2IVgpSJDXDtoKOSD7F3ONbm7u87Qz7QTiL4XpWt7QBurNN7grd7nGDNI_nUwaKHDeefdAPCK0GgDEJPz2g4Vp6P3t7RcFBwlQInq3ElnZAocfyKw8IoCoKqGVJ7obTZdiRwqYTb9e7LivxMioUhLpsUte7LuiQmXsSANSxqLQeG53Adbt1sNTtJbzWDhTxchIn-1xNXjleM8Hcmp8jaCpZyV2FiGMb432yZhnoJOPLAYsvcIyFZ6ZDVdnEjD7QLfBUqJr0h6jmrZagXbSJBUhPATUROHmuGoc1HVngkovgDZRprDpYOgf3OAy2VzzfEtli2SKBult0ND7YKuLFMNQX-L6Dr906M7qfCxYjymynyn1aT8wNb_ImNMhe2R2Fiby16zDp-1QqLeAa_w9F3IAxDVEhZ8psOHmzSpUkLE6IpA9GE2edV6qDN6YBixYsfYmOdbbuPjs3eoCf6zP4FheK6sw==)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC8 운영 상태·모델별 지표 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVF1P02AUvu-vOMEbFgX50EiIEiOK8QI1MVyJIXUro7G0pOs0xGgKFDLYDJtSGdphSYZDRF3GspWExGQ_xcu-p__B87ZjfCQmXq173-c8fZ5zntPbKUPUjfSsAun4lJbWp-IzspKYSoqKIunzU31DQuqFrM6JujgLz8X4i6SupdXEqKZoOlwaGxzrv3fnDCI1Iya0V7KahGlRSUmCIk0bYGigy8kZAxKyLsUNWVMFQzYUCfBTlX09ALQtLNWB_fIw4_p1E_6YGzAxOgRoOezIwrUy4NJCsOTglglsf4-989ihRdV1LC4AVsyg4LDdYwi2bCx5ge2wbFkQxLhBErvOcIR43M53gZiCR3OpDuRznh16raZfq_qHx4Cuidu7uJILcU8IIsHNm7jlsYY5MiII3IOoJkl_178MdD_ui3XBawEgnZLiYoqg__Azqf6noVAMkZzlfPBwdACCnEkGgO04ftMjeKs5qeLmj8B22_VhJYeelzMAuF0I3mcAFw-wQgZIgFvATDGwi_6hO6kGuTy6Nh06aGf4Nadz7XNyLnAOdjhrxbAxFSv4uHpSe8HK4PnaaydF0RjO-o_0oGth1gFW_YbZEuekU7brnRJeO0_Y3wfBYhk_59gHh7rTkWaV2f4y0dUzbV-sQpAysQGuHXVU8iH2Xo-1ufv7LpAPtJMIvldla7uAmxv0nmD9gBOseSSfOlj0sOGc0nXIBoQ3gkAJhJ6ekXCoPB29vSPhmGCY4iarcSWdkChv_IrDwiAKgqoZUnudtOl2IHCphDv17quK_FKKhREumxS07qu6JCbmY8AaFjWWA8NzuAV377SanZy3msFCHi7DeP_b8RunC0b4-48nyNgKlnLDMH4dRvnfbJlGegU48shiy9whIVnpmNX2cDMPtAl8ESomvSHqOKtlqBNtIkFSE8BNRE6ea4ahzUZWeCCi8AMlGmsOlo6B_c4DrZTP98O2WLZIoG6W3QsPtgu4uUw1Bf4voOsPTozuJ8K1iNKbKfKfVpPzA1v8iY0yF3ZAUWLrFj1mHb9qhUU8gd_h5CsQRiEqpCT5TQePtujSpHUJ0ZSAaL7syyp10OZ0QKHixU-xscF23GenZm_TE31k_wI7NbpQ)** — 클릭 시 브라우저로 연결됩니다.
 
 ##### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -2263,7 +2264,7 @@ end note
 | UC3 | 작품 처리 진행을 확인한다 | 데이터 원천(단계 작업의 모델·버전·시도 횟수·처리 시간·낮춤 원인·오류 분류) | FR-5 · FR-23 · FR-25 |
 | UC4 | 처리 결과를 확인하고 전시 방식을 고른다 | 데이터 원천(좋아요·보호자 전환 → 첫 결과 승인율) | FR-6 · BR-APR-04 |
 | UC10 | 키워드로 작품 설명 초안을 만들고 승인한다 (P0.5) | 데이터 원천(규칙 검사 결과·출처 → 설명 규칙 검사 실패율, 설명→템플릿 낮춤) | FR-27 · BR-CAP-03 |
-| UC12 | 모델 기능 엔드포인트를 호출한다 (P0.5) | 데이터 원천(호출량·한도 초과 수) [추론] | FR-28 · BR-API-04 |
+| UC12 | 모델 기능 엔드포인트를 호출한다 (P0 · caption은 P0.5) | 데이터 원천(호출량·한도 초과 수) [추론] | FR-28 · BR-API-04 |
 
 > **쉽게 말하면** — 운영 담당 팀원이 서비스와 모델 7종이 제대로 돌고 있는지 확인합니다. "그림이 움직이기 어려워 2.5D로 낮춘 것"과 "서버가 고장 나서 결과가 못 간 것"이 따로 집계되어, 어느 모델을 먼저 손봐야 할지 알 수 있습니다. 가족의 그림·이야기·아이 별칭은 운영 화면에 나오지 않습니다.
 
@@ -2277,14 +2278,14 @@ end note
 | **사전조건** | (1) 운영자가 팀원 계정을 갖고 있고 운영자 역할이 부여돼 있다(INC2). 팀원 인증 방식은 `자료 없음 — 확인 필요`(U8). (2) API 서버가 `/live`·`/ready`·`/metrics` 를 제공한다(엔드포인트 이름·형식은 [추론], U8). (3) 단계 작업 기록에 모델 ID·버전·상태·시도 횟수·처리 시간·낮춤 원인 또는 오류 분류가 쌓여 있다(없으면 A6). (4) 모델 7종의 매니페스트에 활성 버전이 정해져 있다(BR-MDL-01) |
 | **사후조건** | (1) 운영자는 생존과 준비 상태를 따로 확인했고, 준비는 DB·저장소·큐와 모델 M1~M7별로 확인했다. (2) 운영자는 지정 기간의 서비스 지표, 모델별 지표, 서빙 3종별 큐 적체, 결과 원인 5분류 집계, 결과 미도달·삭제 미완료 건수를 확인했다. (3) 이 과정에서 이미지, 객체 키, 작품 번호, 별칭, 제목, 아이의 한마디, 자유 입력, 오류 원문은 노출되지 않았다. (4) 이 UC는 가족 데이터와 모델 매니페스트를 바꾸지 않는다(읽기 전용) |
 | **기본흐름** | ↓ 별도 기본흐름표 |
-| **대체흐름** | A1. 준비 안 됨 — 작업 DB·큐나 원본·결과 저장소 중 하나라도 쓸 수 없으면 "준비 안 됨"과 해당 구성요소를 표시한다. 접수도 받을 수 없는 상태다. A2. 일부 모델 미준비 — 특정 모델(예: M3)만 준비되지 않았으면 전체를 "준비 안 됨"으로 뭉뚱그리지 않고 해당 모델을 "미준비"로, 영향받는 경로(예: 움직임)를 함께 표시한다. 모델이 필요 없는 원본 액자 경로와 접수는 계속 동작한다고 알린다 [추론]. 미준비 중 들어온 단계 작업은 낮춤이 아니라 인프라 재시도로 집계된다(BR-PRC-03). A3. GPU 없음 — GPU 워커가 GPU를 찾지 못하면 M5는 "CPU 실행"(속도 미측정, U2·U6), M7은 "비노출(P1)"로 표시한다. 둘 다 장애가 아니라 정해진 운영 상태로 구분한다(BR-SRV-02). A4. 활성화 금지 모델 — 라이선스 조건이 확인되지 않아 활성화하지 않은 모델(예: AGPL 예비 모델, 조건 미확인 M6)은 "비활성(라이선스 확인 전)"으로 표시하고 "미준비"와 섞지 않는다 [추론](BR-MDL-07, U4). A5. P0.5 외부 엔드포인트 지표 — P0.5가 가동 중이면 `/v1/models/{segment\|classify\|pose\|relief\|caption}` 엔드포인트별 호출 수와 요청 한도·크기 제한 초과 거부 수를 함께 보여 준다. 라벨은 엔드포인트 이름까지만 쓰고 입력은 남기지 않는다 [추론](BR-API-04, BR-API-05, U12). A6. 해당 없음 — 선택 기간에 분모가 0이거나 P0.5가 가동 전이면(설명 규칙 검사 실패율·설명→템플릿 낮춤률·외부 호출 지표) 비율을 "해당 없음"으로 표시한다 [추론]. A7. 삭제 미완료 확인 — 자동 재시도 뒤에도 끝나지 않은 삭제 건수를 이미지·식별 정보 없이 보여 준다(BR-DEL-03) |
+| **대체흐름** | A1. 준비 안 됨 — 작업 DB·큐나 원본·결과 저장소 중 하나라도 쓸 수 없으면 "준비 안 됨"과 해당 구성요소를 표시한다. 접수도 받을 수 없는 상태다. A2. 일부 모델 미준비 — 특정 모델(예: M3)만 준비되지 않았으면 전체를 "준비 안 됨"으로 뭉뚱그리지 않고 해당 모델을 "미준비"로, 영향받는 경로(예: 움직임)를 함께 표시한다. 모델이 필요 없는 원본 액자 경로와 접수는 계속 동작한다고 알린다 [추론]. 미준비 중 들어온 단계 작업은 낮춤이 아니라 인프라 재시도로 집계된다(BR-PRC-03). A3. GPU 없음 — GPU 워커가 GPU를 찾지 못하면 M5는 "CPU 실행"(속도 미측정, U2·U6), M7은 "비노출(P1)"로 표시한다. 둘 다 장애가 아니라 정해진 운영 상태로 구분한다(BR-SRV-02). A4. 활성화 금지 모델 — 라이선스 조건이 확인되지 않아 활성화하지 않은 모델(예: AGPL 예비 모델, 조건 미확인 M6)은 "비활성(라이선스 확인 전)"으로 표시하고 "미준비"와 섞지 않는다 [추론](BR-MDL-07, U4). A5. 외부 엔드포인트 지표 — 외부 엔드포인트가 가동 중이면(P0부터, D17) `/v1/models/{segment\|classify\|pose\|relief\|caption}` 엔드포인트별 호출 수와 요청 한도·크기 제한 초과 거부 수를 함께 보여 준다. 라벨은 엔드포인트 이름까지만 쓰고 입력은 남기지 않는다 [추론](BR-API-04, BR-API-05, U12). A6. 해당 없음 — 선택 기간에 분모가 0이거나 해당 기능이 가동 전이면(설명 규칙 검사 실패율·설명→템플릿 낮춤률은 P0.5 전, 외부 호출 지표) 비율을 "해당 없음"으로 표시한다 [추론]. A7. 삭제 미완료 확인 — 자동 재시도 뒤에도 끝나지 않은 삭제 건수를 이미지·식별 정보 없이 보여 준다(BR-DEL-03) |
 | **예외흐름** | E1. 작업 DB 장애 — 지표 계산용 단계 작업 기록을 읽을 수 없으면 "지표를 계산할 수 없어요"라고 표시한다. 생존·준비 결과는 별개로 보여 준다(준비 = 준비 안 됨). 원천: Intent [핵심 데이터] 처리 작업 오류 분류(DB). E2. 가족 데이터 접근 시도 — 운영 화면에서 결과 미도달 건의 원본·결과 이미지·이야기·설명을 열려고 하면 제공하지 않는다. 운영 화면에는 그런 경로가 없다(BR-ACC-03). 원천: Intent [부정적 영향] 아동 이미지 유출. E3. 역할 없는 접근 — INC2에서 운영자 역할이 확인되지 않으면(보호자 계정, 다른 팀원 역할 등) 운영 화면과 지표 조회를 거부한다(BR-ACC-05). 평가 담당·연동 개발 팀원에게 지표를 읽기로 열지는 `자료 없음 — 확인 필요`. E4. 생존 확인 무응답 — API 서버 프로세스가 응답하지 않으면 생존 실패로 표시된다. 이 경우 운영 화면 자체가 열리지 않을 수 있다. 외부 감시 수단은 `자료 없음 — 확인 필요`. E5. 서빙군 응답 시간 초과 — 준비 확인 중 CPU 비전 워커·GPU 워커·LLM 서버 가운데 응답하지 않는 서빙군이 있으면 그 서빙군의 모델을 "확인 불가"로 표시하고 "준비됨"으로 보지 않는다 [추론]. 원천: Intent [핵심 장벽] 치명 — 서빙 기반(보관 처리된 Animated Drawings·TorchServe, 보안 수정 없음). E6. 라벨 규칙 위반 — 지표 수집 중 라벨에 이미지·작품 번호·객체 키·자유 입력이 들어간 항목이 발견되면 그 항목을 화면에 싣지 않고 "라벨 규칙 위반"으로 표시한다 [추론](BR-OPS-04, BR-PRV-01) |
 | **포함/확장** | «include» INC2 팀원 로그인·역할 확인. 확장 없음. 보호자용 INC1은 포함하지 않는다 |
 | **우선순위** | Medium — 가족이 직접 쓰지 않는 기능이다. 하지만 Intent [미션] "어떤 사진을 올려도 결과가 돌아오게" 하는 서빙 목표와 "결과 미도달 0"을 확인하는 유일한 수단이다 |
 | **사용빈도** | `자료 없음 — 확인 필요`. [추론] 정기 점검과 장애 신고 때 연다 |
 | **업무규칙** | BR-OPS-01, BR-OPS-02, BR-OPS-03, BR-OPS-04, BR-FBK-03, BR-FBK-04, BR-PRC-03, BR-SRV-01, BR-SRV-02, BR-SRV-03, BR-MDL-01, BR-MDL-07, BR-SUG-03, BR-CAP-03, BR-API-05, BR-DEL-02, BR-DEL-03, BR-DEL-05 [통합 D4], BR-ACC-03, BR-ACC-05, BR-PRV-01 |
-| **특별 요구사항** | 개인정보: 운영 화면·지표·라벨에 이미지, 객체 키, 작품 번호, 별칭, 제목, 아이의 한마디, 자유 입력, 오류 원문이 없다. 라벨은 모델 ID·버전·서빙군·단계·낮춤 구간·원인 분류·오류 분류·(P0.5) 엔드포인트 이름으로 한정한다 [추론]. 운영 로그 표본 점검에서 위 항목 0건이 목표다. 정확성: 장애 주입 시험(워커 정지·시간 초과·저장소 장애·DB 장애·모델 미준비)에서 인프라 장애가 "모델 낮춤"으로 집계되는 건수 0건이 목표다(옛 spec Success Criteria "원인 분리 정확도" — v2.0 반영 여부 확인 필요). 상태 표시: GPU 없음(M5 CPU 실행·M7 비노출)과 라이선스 전 비활성은 장애와 다른 표시로 보여 준다. 보안: TorchServe·Ollama 등 모델 런타임 포트는 내부망에만 두고 운영 화면은 API 서버를 거쳐서만 상태를 읽는다(BR-SRV-04). `/metrics`·`/ready` 의 외부 노출 범위는 `자료 없음 — 확인 필요`(U8). 목표값: 결과 미도달 0건 외에는 목표값 없이 기준선으로만 쓴다(Intent [미션]). 시간 상한·처리 시간 기준은 M3 외 미측정이다(U6) |
-| **비고** | 원천 추적: Intent-Specify.md [미션] 서빙 지표(첫 결과 승인율·판정 수정률·모델별 낮춤률·설명 규칙 검사 실패율·p95·큐 적체·결과 미도달)와 "지표는 정의와 검증 계획이며 달성 실적이 아니다" · [핵심 활동] 3(운영용 `/live`·`/ready`·`/metrics`)·6(서빙 3종) · [핵심 자원] 외부 사용(`/ready`(모델별)) · 기반(Prometheus·구조화 로그) · [핵심 데이터] 처리 작업(오류 분류: 엔진 다운·시간 초과·저장소·DB·모델 미준비) · 운영 지표(재시도율 포함, "이미지·작품 번호는 라벨에 넣지 않는다") · [핵심 장벽] 서빙 기반·자원(GPU)·외부 엔드포인트 · [부정적 영향] 아동 이미지 유출. spec v2.0 FR-12(생존·준비 분리), FR-13(지표 — Intent [미션] 서빙 지표 전체), FR-14(로그 규칙), FR-26(모델별 지표). 연관 FR-25(서빙 3종), FR-28(P0.5 외부 엔드포인트). 옛 spec FR-9 수용기준 3(운영자 이미지 차단)은 BR-ACC-03으로 옮겼다. 공통 기준 §2(모델)·§3(서빙·lifeline)·§4(엔드포인트)·§5(상태·원인 5분류)·§6(INC2)·§8(BR)·§10(U2·U4·U6·U8·U12). 추가 요구 R1~R4 중 직접 해당 없음(R4 'API활용' 메뉴는 UC11). 옛 문서의 지표 6종(비인물 액자율·모델 품질 대체율·미리보기 시간 p95 포함)은 모델별 지표로 바뀌었다. 재시도율은 Intent [미션] 목록에는 없고 [핵심 데이터] 운영 지표와 공통 기준 BR-OPS-02에 있다 |
+| **특별 요구사항** | 개인정보: 운영 화면·지표·라벨에 이미지, 객체 키, 작품 번호, 별칭, 제목, 아이의 한마디, 자유 입력, 오류 원문이 없다. 라벨은 모델 ID·버전·서빙군·단계·낮춤 구간·원인 분류·오류 분류·엔드포인트 이름으로 한정한다 [추론]. 운영 로그 표본 점검에서 위 항목 0건이 목표다. 정확성: 장애 주입 시험(워커 정지·시간 초과·저장소 장애·DB 장애·모델 미준비)에서 인프라 장애가 "모델 낮춤"으로 집계되는 건수 0건이 목표다(옛 spec Success Criteria "원인 분리 정확도" — v2.0 반영 여부 확인 필요). 상태 표시: GPU 없음(M5 CPU 실행·M7 비노출)과 라이선스 전 비활성은 장애와 다른 표시로 보여 준다. 보안: TorchServe·Ollama 등 모델 런타임 포트는 내부망에만 두고 운영 화면은 API 서버를 거쳐서만 상태를 읽는다(BR-SRV-04). `/metrics`·`/ready` 의 외부 노출 범위는 `자료 없음 — 확인 필요`(U8). 목표값: 결과 미도달 0건 외에는 목표값 없이 기준선으로만 쓴다(Intent [미션]). 시간 상한·처리 시간 기준은 M3 외 미측정이다(U6) |
+| **비고** | 원천 추적: Intent-Specify.md [미션] 서빙 지표(첫 결과 승인율·판정 수정률·모델별 낮춤률·설명 규칙 검사 실패율·p95·큐 적체·결과 미도달)와 "지표는 정의와 검증 계획이며 달성 실적이 아니다" · [핵심 활동] 3(운영용 `/live`·`/ready`·`/metrics`)·6(서빙 3종) · [핵심 자원] 외부 사용(`/ready`(모델별)) · 기반(Prometheus·구조화 로그) · [핵심 데이터] 처리 작업(오류 분류: 엔진 다운·시간 초과·저장소·DB·모델 미준비) · 운영 지표(재시도율 포함, "이미지·작품 번호는 라벨에 넣지 않는다") · [핵심 장벽] 서빙 기반·자원(GPU)·외부 엔드포인트 · [부정적 영향] 아동 이미지 유출. spec v2.0 FR-12(생존·준비 분리), FR-13(지표 — Intent [미션] 서빙 지표 전체), FR-14(로그 규칙), FR-26(모델별 지표). 연관 FR-25(서빙 3종), FR-28(외부 엔드포인트, P0 · caption은 P0.5). 옛 spec FR-9 수용기준 3(운영자 이미지 차단)은 BR-ACC-03으로 옮겼다. 공통 기준 §2(모델)·§3(서빙·lifeline)·§4(엔드포인트)·§5(상태·원인 5분류)·§6(INC2)·§8(BR)·§10(U2·U4·U6·U8·U12). 추가 요구 R1~R4 중 직접 해당 없음(R4 'API활용' 메뉴는 UC11). 옛 문서의 지표 6종(비인물 액자율·모델 품질 대체율·미리보기 시간 p95 포함)은 모델별 지표로 바뀌었다. 재시도율은 Intent [미션] 목록에는 없고 [핵심 데이터] 운영 지표와 공통 기준 BR-OPS-02에 있다 |
 
 #### 기본흐름 (Basic Flow)
 
@@ -2364,7 +2365,7 @@ API --> OUI : 첫 결과 승인율 · 판정 수정률 · 설명 규칙 검사 �
 Ops -> OUI : 5. 모델별 지표 보기
 OUI -> API : 모델별 지표 요청
 API -> DB : 모델 ID·버전별 낮춤·재시도·처리 시간, 서빙군별 대기 작업 조회
-opt P0.5 외부 엔드포인트 가동
+opt 외부 엔드포인트 가동
   API -> API : 엔드포인트별 호출 수 · 한도 초과 수 [추론] (A5)
 end
 opt 라벨에 이미지·작품 번호·자유 입력
@@ -2389,7 +2390,7 @@ OUI --> Ops : 목록 표시
 @enduml
 ```
 
-**[「UC8 운영 상태·모델별 지표 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNV11PG0cUfd9fceW-2AqQ8GGSIjVKQghCCi1SmqeqQhtwEysOENu0ypuBJaLYFaa1g03WdGnt4qSmNcaxjeq-8FPyuDP7H3rvzK7tXZuoDwhm5879OOfcO8OdWFyNxtdfRCAWerm4uh5dXHoWjiwvPlUjkVD01eKNW0rseXhlTY2qL-CJuvT8aXR1fWV5ejWyGoXPHow_GJ2512MRe6Yur_4QXnkK36mRWEiJh-OREDyevgVc09mFxneLwLc2rC2d5xPA3pfZTy12rgE_rPPcBvCThLWvs1IbrHyWF1pWVmfJInxMZOBR6OV6aGUppCjqUhxj-3ocisP8KO0DNQZfrcUUTCYeXgqvqStxNJS-rXyGvatLk8dzbpO7C3MiwZom9nGpLKtx9YkaC-H5o31-sA337102rQ0Z4_499_nphcdAyRhYydsU_6corPCr22wWzXr2Z737Dx_O96aBS08lb9PsvHXZNGtV87wN3EjwoxJ_nRLWjxAVRAfLh-HbVCJMwegIuKoHdqybzRYiq5AB2lHlU2ClEui7u3vZ5AenVtawaQD_3JfTYwFFjcS7YINtwrMaS-YUEK6GO6G5sW8222CeVVkjAf6Z8YASWllWPEYdZzKQJ_0xTH-rwI_rzrYr6dmZr-F6JPx9SORlZTRMn2stUgSr1HlhnyU_YFriDLlEz1OOP54sWqkyoNh4UsfsJgZmJ22_AOnLypbBzws5-mZ-qHDtjB9mEH22mwF2XkftIha7vJAKeMoYxzKKCdSHLf2rq4mG1OVXMovbKDLKwSU-4JsVfvgOzGqC7ZYcP7a9EIBA3pbFJ61JslMwP3rZnB_Dn3H8mbDTxFB5RPIMUIgkaffBWXkwiAdu_q8DpGo8MOmA4Ghq4cZIUGrKqY7l0gRmtwDW2MHk-7Tlc-DM7gBLl31wzUUI-O-OIp84f5C5NslPDhpgf7fkyT6P3Unk6xiRW1Sn9aYEZu1fFNcQBjwmscolsL080oPRxuxoor8PXqMEMAAthrv09m65Y88H5QAhTb750QeXTUBkfZgB227xhu5fGA34MMq4HYUV2rxQ55pBSrfBJNRlDf1goSNJj_-Kk8L7hIMYjdW8-aFqqx7T0s0qYl3fwZnT593K1lnyoueUDbXPdi8ZxAAzwUEt1nMDuDrkmtBERwhCHp6umhgBs1UVqWmGtVUY6r1ixD1CXYkm7j6zt0gptVO_9BAYgusvQvFoeClGPlk15-pBliyblKFsRX6yTysLx94vOjvBLjuuWocpORydbgXKO2sMUG7nhkMnfLMqJuhOTmjjTR2zIqhGJVSra3HET0OM4IbTG9Q0oqH38kSdE8CpjurXy4i-TYtQHNE7OXDA1f4E5y7ZvUC66CzKz0qluZGlvPAXKxn0jWtF9n4bzKbOL_J4KoHDxR6j9inbE_YP28MroSLqopObp9zQRfPlNfZ7Snz3373pHZPBkV45XM1gn5Hk0k2ZVOHc_cumnElkzjb_4o0iyuqogqLGJPHPWo79UbE1PtSVsTBPJTB2h3bJMnEiOOD5Fk0WfpBBGVh7FXqt7LZsary0eKzIu5Wj3nYwoofOntNk4uM3vJFhx8a3iFSwRw44z2plfoA3QaFOiJ4kqJ5962echLUddErLNNdRVUfbzCh5M7GFYWVP2ft3qCB8h7WGcEYIvw67XNewB0iJk59uWomorZC1z4OCbgddR0x0bRkbvFb3S3hhnP-27SV_Eu_It2mER7htaJjn4PbtGNl9OIB8R9LCFILUQqWcbe8t5bxORNBrRgwRuN65K0RptO6aGDhIc_iJWMTnRqFtN4BfhsCsArjr7QNPpTdH-jvFPMMnSSODMHmk3rFAtthxYaDUXdPJEUFfA6AuckXCQeaKS0ESWIe_otw8neCoHQMM90zOnsEn1NirQbxXsm3RLwd1dpQC6X7As1A3z_Eples-l1BmYwNl5i3e7xV6N7xZLaDAwNos2jMvoLjffbYL-eBT7mA0_J_nP2yQbEg=)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC8 운영 상태·모델별 지표 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNl09PG0cUwO_7KZ7ci60ACX9MUqRGSQhBSKFFSnOqKrQBN7HiALFNq9wMLBHFrjCtHWyypktrFyc1rTGObVT3wkfJcWf2O_S9mV3buzZRDwhm5837-3tvhjuxuBqNr7-IQCz0cnF1Pbq49CwcWV58qkYioeirxRu3lNjz8MqaGlVfwBN16fnT6Or6yvL0amQ1Cp89GH8wOnOvRyL2TF1e_SG88hS-UyOxkBIPxyMheDx9C7imswuN7xaBb21YWzrPJ4C9L7OfWuxcA35Y57kN4CcJa19npTZY-SwvtKyszpJF-JjIwKPQy_XQylJIUdSlONr29SgUh_lR2gdqDL5aiynoTDy8FF5TV-IoKHVb-Qx7V5cij-fcIncX5oSDNU3s41JZVuPqEzUWwvNH-_xgG-7fu2xaG9LG_Xvu89MLj4GcMTCStyn-T1FI4Ve32CyK9ezPevcfPpzvdQOXnkjeptl567Jp1qrmeRu4keBHJf46JaQfYVYwOxg-DN-mEGEKRkfAFT2wY91stjCzCgmgHEU-BVYqgbq7u5dNfnBqZQ27DOCf-3J6LKCokXg32WCL8KzGkjkFhKrhjmlu7JvNNphnVdZIgH9mPKCEVpYVj1BHmTTkcX8M3d8q8OO6s-1yenbma7geCX8fEn5ZGQ3d51qLiGCVOi_ss-QHdEucIZWoecrRx5NFK1UGhI0ndfRuYqB3UvYLkLqsbBn8vJCjb-aHCtfO-GEGs892M8DO68gu5mKXF1IBTxjjGEYxgXzY6F8dTTSkLr-SXtxGyMgHF3zANyv88B2Y1QTbLTl6bHkBgMi8jcUnpQnZKZgfvWzOj-HPOP5M2G6iqTxm8gwQRELafXBWHgzigZv_6wBRjQcmnSQ4TC3cGAlKppzoWC5NyewGwBo76HwfWz4nndkdYOmyD665CgL-u6NYT5w_WLk24ScHDbC_W_Jkn8buJPJ1hEgt0mm9KYFZ-xfhGkKDxwSrXALby2N50NqYbU3098FrRAAN0GK4W97eLbft-aAcIMTkmx99cNkEzKwPPWDbLd7Q_QujAR9aGbetsEKbF-pcM4h0O5mUdRlDf7JQkSyP_4qTQvuEkzEaq3nzQ9WmHt3SzSrmur6DM6dPu5Wts-RFzyk71T5bvawgGpgJDmqxnhvA1SHXBBMdEAQenq6aGAGzVRWuaYa1VRjqvWLEPUJdiSLuPrO3iJTaqV9qCAzB9ReheDS8FCOdrJpz9SBLlk3yULYiP9mnlYVj7xednWCXHVetw5Qcjk63AvmdNQaQ27nhUAnfrIoJupMTbLypo1eUqlGZqtW1OOZPwxzBDac3qGlEQ-_lqXSOASc6il8vY_btsgjiqLyTAwdc7U9w7pLdCywXnUX8rFSaG1nyC3-xkkHfuFZk77fBbOr8Io-nEjhc7DFqn7I1Yf-wPbwSKiIuOrl5yg1dNF9eY7-nxHf_3ZveMRkc6cXh6gr2CclauksmKZy7f9mUM4nE2eZfvFFErI4qCDU6iX_WcuyPis34UBdjIZ5KoO1O2WWVqSY836Khwg8ySIC1V6GHym7Lroq3Ih4pUmzlqK2d9NAbZ8_pL_HxG97IsGPjW0xSsIcEHGW1Mj_AS6BQp2SeJCiUfetnHIK1HVRKyzTXEaijbWaUvJ7YTFjZU_b-HcKDT7DWEI4HodcpLNc1xJ8gnPx0v8pk2nCsfR4UlXYS63BEN5axwWt1v8wsjPPftr11n8Tr8W0a0yPUNjT0c3DndoTsFhxQd4dmIQpB6p5Szpb3hnJep0LQQ0bMD7jeuSZEaLTuihg4Q3P4iaqIL41C22bfL02gVwHc9baAJ9KbI_1NYp7ha6SRwTR5KO9IYLXYcWEg5a7B5EDQxz5ykStSHqSvuBRFAuvwV8TN0wQO6GhguGdo9sw82QM9DOKVkm2LVjmos6MUSPUDXoS6eY6vqFz3pYSYjQ3EzBu83wt617xZLSBgYG0W7XEXUNxPPluFfOspd9Aa_rvzH4z0a0U=)** — 클릭 시 브라우저로 연결됩니다.
 
 기본흐름 1~7단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`7.`과 1:1로 대응한다.
 
@@ -2885,7 +2886,7 @@ UI --> Parent : "설명이 전시에 붙었어요" (AI 작성 표시)
 
 우리 아이 미술관은 공개 사전학습 모델 7종(M1~M7)을 API 서버 뒤에서 서빙한다. 팀원이 이 서버와 연동하거나 운영하려면 어떤 엔드포인트가 있고, 어떤 규칙으로 불러야 하며, 서버와 모델 런타임을 어떻게 띄우고 바꾸는지 알아야 한다. 추가 요구 R4에 따라 이 정보를 **'API활용' 메뉴** 하나에 모은다. 메뉴는 **엔드포인트 · 가이드라인 · 매뉴얼** 세 영역으로 이루어지고(BR-API-07), 팀원만 들어올 수 있으며 보호자 화면에는 나타나지 않는다.
 
-엔드포인트 탭은 손으로 쓴 목록이 아니라 API 서버의 `/openapi.json`에서 만들어, 실제 API와 모델 버전이 문서와 어긋나지 않게 한다(BR-API-08). 팀원이 평가 묶음 작품으로 모델 기능 엔드포인트를 직접 불러 보는 **시험 호출**(EXT3)은 선택 기능이며, 실행하면 UC12(모델 기능 엔드포인트를 호출한다)를 그대로 거친다. UC12가 P0.5 범위이므로 시험 호출(EXT3)도 P0.5이며, 모델 기능 엔드포인트가 열린 뒤에만 쓸 수 있다 [통합 D12].
+엔드포인트 탭은 손으로 쓴 목록이 아니라 API 서버의 `/openapi.json`에서 만들어, 실제 API와 모델 버전이 문서와 어긋나지 않게 한다(BR-API-08). 팀원이 평가 묶음 작품으로 모델 기능 엔드포인트를 직접 불러 보는 **시험 호출**(EXT3)은 선택 기능이며, 실행하면 UC12(모델 기능 엔드포인트를 호출한다)를 그대로 거친다. 시험 호출(EXT3)은 UC12와 같은 구간을 따른다. P0에서는 `segment`·`classify`·`pose`·`relief` 네 기능을(시험 키는 팀 내부 키라 `pose`도 부를 수 있다), P0.5부터 `caption`을 시험 호출할 수 있다 [통합 D12·D17].
 
 | 항목 | 값 |
 |---|---|
@@ -2894,13 +2895,13 @@ UI --> Parent : "설명이 전시에 붙었어요" (AI 작성 표시)
 | 원천 근거 | 추가 요구 R4·R3 · spec v2.0 FR-30 · Intent [핵심 활동] 3 · [핵심 이네이블러] API 서버 연결·외부 사용·기반 · 공통 기준 §3·§4 |
 | 핵심 UseCase | 1개 (UC11) + 공통 1개 (INC2) + 확장 1개 (EXT3, 실행 시 UC12 «include») |
 | 주요 액터 | 연동 개발 팀원 · 서비스 운영자 |
-| 구간 | P0 (시험 호출과 `/v1/models/…` 묶음은 P0.5부터 실제 호출 가능) |
+| 구간 | P0 (시험 호출과 `/v1/models/…` 묶음도 P0부터. 단 `caption`은 P0.5부터, D17) |
 
 ##### 1.1 세 영역이 담는 것
 
 | 영역 | 내용 | 근거 BR |
 |---|---|---|
-| 엔드포인트 | `/openapi.json`에서 만든 네 묶음: 보호자 앱용(`/v1/children`, `/v1/artworks…`, `/v1/gallery`) · 운영용(`/live`, `/ready` 모델별, `/metrics`) · 관리용(`/v1/admin/models…`) · 외부 모델 기능 P0.5(`/v1/models/{segment\|classify\|pose\|relief\|caption}`). 엔드포인트마다 요청·응답 스키마와 가상 값 예시, 오류 코드와 작업 기록 분류 대응표(아래 1.2), 현재 활성 모델 매니페스트(아래 1.3) | BR-API-08, BR-API-02, BR-MDL-01, BR-OPS-01 |
+| 엔드포인트 | `/openapi.json`에서 만든 네 묶음: 보호자 앱용(`/v1/children`, `/v1/artworks…`, `/v1/gallery`) · 운영용(`/live`, `/ready` 모델별, `/metrics`) · 관리용(`/v1/admin/models…`) · 외부 모델 기능(P0 네 기능, `caption`은 P0.5)(`/v1/models/{segment\|classify\|pose\|relief\|caption}`). 엔드포인트마다 요청·응답 스키마와 가상 값 예시, 오류 코드와 작업 기록 분류 대응표(아래 1.2), 현재 활성 모델 매니페스트(아래 1.3) | BR-API-08, BR-API-02, BR-MDL-01, BR-OPS-01 |
 | 가이드라인 | 서빙 3종 구분과 호출 방식 · 인프라 재시도(최대 3회)와 품질 낮춤의 구분 · 단계별 시간 상한 · 외부 호출의 인증·요청 한도·크기 제한·입력 비보존·가족 데이터 차단 · 로그 금지 항목 · 라이선스 주의 | BR-SRV-01, BR-PRC-02, BR-PRC-03, BR-PRC-06, BR-API-03~06, BR-PRV-01, BR-MDL-07 |
 | 매뉴얼 | Python 가상환경 + uvicorn 기동 · 모델 런타임(TorchServe, Ollama/vLLM) 내부망 기동 · 모델 파일 경로 · GPU 유무에 따른 설정 · 모델 교체 시 UC9 절차 · 장애 대응 | BR-API-01, BR-SRV-04, BR-MDL-06, BR-SRV-02, BR-MDL-03 |
 
@@ -2920,7 +2921,7 @@ UI --> Parent : "설명이 전시에 붙었어요" (AI 작성 표시)
 | 재시도 소진(결과를 만드는 단계) | ⑤ 결과 미도달 | 작품 상태 `처리하지 못함` | 없음. 보호자는 원본 액자로 걸기를 고를 수 있다. 판정·설명 단계 소진은 ④ 인프라 실패로만 센다 [통합 D1] |
 | 품질 미달(낮춤) | ② 모델 낮춤 | `200` + 낮춤 원인(어느 단계에서 어디로) | 재시도하지 않는다(BR-PRC-02) |
 | 형식·용량·판독 오류 | 접수 거부(작품 미생성) | `400` · `413` | 없음(BR-INT-01) |
-| 인증 실패 · 요청 한도 초과 (P0.5) | 외부 호출 거부 | `401` · `429` | 클라이언트가 한도 뒤 다시 요청 |
+| 인증 실패 · 요청 한도 초과 | 외부 호출 거부 | `401` · `429` | 클라이언트가 한도 뒤 다시 요청 |
 | 권한 없음 | 접근 거부 | `403` | 없음(BR-ACC-01, BR-API-06) |
 
 ##### 1.3 활성 모델 매니페스트 (엔드포인트 탭)
@@ -2985,7 +2986,7 @@ rectangle "우리 아이 미술관 — API 서버 · API활용 메뉴" {
   usecase "UC11 API활용 메뉴에서 엔드포인트·\n가이드라인·매뉴얼을 확인한다" as UC11
   usecase "INC2 팀원 로그인·역할 확인" as INC2
   usecase "EXT3 평가 작품으로 시험 호출" as EXT3
-  usecase "UC12 모델 기능 엔드포인트를\n호출한다 (P0.5)" as UC12
+  usecase "UC12 모델 기능 엔드포인트를\n호출한다 (P0)" as UC12
 }
 
 Dev --> UC11
@@ -3003,12 +3004,12 @@ end note
 note bottom of EXT3
   확장점: 팀원이 "시험 호출" 선택
   평가 묶음 작품만 사용
-  P0.5 모델 기능 엔드포인트가 열린 뒤
+  P0 네 기능부터 - caption은 P0.5
 end note
 @enduml
 ```
 
-**[「UC11 API활용 메뉴 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqVVN9P01AYfb9_xZf5AokMBzEmhCwoQsIDyoMmPpAsZetGpbRL2_kjRjOkMTBQBm52w26ZyfhlRiy6sBp54k_xcff2f_C77QakJkTf2t5zzv3Od046oRuCZuSWZcglEzlNSghSIiPIsqi9TMRiRF-SlKygCcuwICSXMpqaU1KTqqxqcGN6dDo2de8KQl8UUupzSclAWpB1kchi2gBDBU3KLBqQkjQxaUiqQgzJkEVguw7dbwErm6zWBvrNZWuNbjsPv_MleDwZi8HduRmvarPdI6BHJbreZlaRmTYwq0Q_2t5Wi9Vcr-Ced7pOHhXwG62d4bfzDj1ocvgnfDPBq5Y5sGzTjSYhQtLA0SPMcuhWFbqOTR0bvM08-1yMgKDDffHZBca06U-TFZo4aZtVVlg9gDzM6oRwK4KSQRuR63ygBeA630047_xlKAKvCEBOF5OCjkL_ZXpe-Xfb_thc_eptMw8mR3rOgX6xux3XF2HWsVdu9Og-kQOvEqeePBoFb2sd7wdW3_Z21ph9hgrANmzPqoBXcdmp7VM5NORwBOjXQ_reha7r0MJe2BjdO5tXAoVgdhiYuxW9Pdi3MEJeE4IhwdBQPLCEcVy--CuMRuP-0DAG4-OSkpRzKTEeJ_7c_MwH8TPxhSEqqdBRmEYU1RB7FVbT_TXyPljHMIoNGgt7gGEIZYNfLsLh5JDnQgmG1ayoCFkp-lRXFeiHvlpj5gkSeCPMk_7muNTGmvehgt1E-sBs7M3snUHwyofdX7j-bRuD4KQgW9YwsU03gf5o873Wi6hWoke8WHjPO1bbJLgE4C4DqwuqYajL3GsvPt6F-h5rFMd6mrznkVDazGx4qzWODppBW6co3SsIPcCnty2cAwE8z-tL4DfLatN9B-hO83K8CXzCH9Ufa7FYbg==)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC11 API활용 메뉴 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqVVF1P01AYvu-veDNvIJHBIMaEkAVFSLhAudDEC5KldGVUSru0nR8xmqmNgYEydHMD22UmQ8CMWHRhNXLFT_Fy55z_4HvaDkhNjN6dj-d9zvu8z5MzaVqiYRVWVShImYKhZEQlkxNVVTaeZFIpwVxRtLxoiKuwKEorOUMvaNkpXdUNuDIzNpOavnkJYS6LWf2RouVgSVRNWVDlJQssHQwlt2xBVjFkyVJ0TbAUS5WB7nrkcxto1aZuB8hXn641e50i_CpW4N5UKgU35mfZjkN3D4EcVsh6h9bK1HaA1irkvcO22tT1Wck_6_a8IjLgGXFP8eysS_ZbHP4BdzawnSoHVh2y0RIEUbKw9QSteWRrB3qeQzwH2GaRfiwnQDThlvzwHGM75IdNSy3stEPrL2gjhNzJm4LApYhaDmUk_qYDJQDn-WbDWfcPQQl4KgAUTFkSTST6L9EL2r_LDtrm7Jdfm709NRopB_LJ6XX9gITWjli1GZUHhRx4uXD6_t0xYFvr-D7QxjZ7t0adU2QAuuGwWh1Y3acnTlDKoTGFo0C-HJA3PvR8j5T24sLI3umCFjKEvcPA_MhgX8Co8EwQ0CIYGkqHgtCMi00wwGQyHbQM4zAxoWiSWsjK6bQQdM3vAhC_kx9bspaNXcXLBE235CjA-lJ_iDwNtSMYw_yMxxXAMMScwZNza3hxTHGpAsN6XtbEvJJ8YOoa9C1_5VL7GAt4Huzj_tw41cYae1vHZGL5wFzq-dz1QWDVg95PHP62gzbwotBZ2rQxS1eBfO_wqTbKyFYhhzxW-M5r6m4KOATgKkOpi7pl6atca2QeT0JjjzbL4xEnT3ki5jW1m-yVy9FhLkj7BKmjeJB9XL1sYx8ImB8BYrci98lJkdkeDIEk5vnPQN0iApLXLnqaxBX-Tb8BmAZMGw==)** — 클릭 시 브라우저로 연결됩니다.
 
 ##### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -3043,7 +3044,7 @@ end note
 | UC11 | API활용 메뉴에서 엔드포인트·가이드라인·매뉴얼을 확인한다 | 본 문서 | 추가 요구 R4 · spec FR-30 |
 | INC2 | 팀원 로그인·역할 확인 | UC11이 «include» | BR-ACC-05 · 공통 기준 §6 |
 | EXT3 | 평가 작품으로 시험 호출 | UC11을 «extend» (확장점: 팀원이 "시험 호출" 선택). 실행 시 UC12를 «include» | 추가 요구 R4 [추론] · BR-API-09 |
-| UC12 | 모델 기능 엔드포인트를 호출한다 | EXT3이 «include» (P0.5) | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 |
+| UC12 | 모델 기능 엔드포인트를 호출한다 | EXT3이 «include» (P0 네 기능, caption은 P0.5) | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 |
 | UC8 | 서비스 상태와 모델별 운영 지표를 확인한다 | 매뉴얼 장애 대응 절이 지표 확인으로 연결(관계선 없음) | spec FR-12~14, FR-26 |
 | UC9 | 모델 버전을 평가 묶음으로 검증하고 승격·롤백한다 | 매뉴얼 모델 교체 절이 이 절차로 연결(관계선 없음) | spec FR-24 · BR-MDL-03 |
 
@@ -3073,7 +3074,7 @@ end note
 | 단계 | 액터 행위 | 시스템 행위 |
 |:--:|---|---|
 | 1 | 팀원이 로그인한 뒤 운영 화면에서 'API활용' 메뉴를 연다 | INC2로 역할(서비스 운영자·연동 개발 팀원)을 확인하고 엔드포인트·가이드라인·매뉴얼 세 영역을 보여 준다(BR-API-07) |
-| 2 | 팀원이 엔드포인트 탭을 고른다 | `/openapi.json`을 읽어 보호자 앱용·운영용·관리용·외부 모델 기능(P0.5) 네 묶음으로 엔드포인트 목록을 만든다(BR-API-08) |
+| 2 | 팀원이 엔드포인트 탭을 고른다 | `/openapi.json`을 읽어 보호자 앱용·운영용·관리용·외부 모델 기능 네 묶음으로 엔드포인트 목록을 만든다(BR-API-08) |
 | 3 | 팀원이 엔드포인트 하나를 고른다 | 요청·응답 스키마, 가상 값 예시, 오류 코드와 작업 기록 분류 대응표(§7.11의 1.2)를 보여 준다(BR-API-02) |
 | 4 | 팀원이 활성 모델 매니페스트를 연다 | 작업 DB에서 M1~M7 매니페스트를 읽고 서빙군별 준비 상태(`/ready`)를 확인해, 명세·매니페스트·문서 버전을 대조한 뒤 모델별 버전·SHA-256·런타임·활성/롤백 후보·준비 상태를 보여 준다(BR-MDL-01, BR-OPS-01) |
 | 5 | 팀원이 가이드라인 탭을 고른다 | 서빙 3종과 호출 방식, 인프라 재시도 3회와 품질 낮춤의 구분, 시간 상한, 외부 호출 조건, 로그 금지 항목, 라이선스 주의를 보여 준다 |
@@ -3083,8 +3084,8 @@ end note
 
 | ID | 분기 시점 | 흐름 |
 |:--:|:--:|---|
-| A1 | 3단계 이후 | **시험 호출(EXT3, P0.5)** [통합 D12] — 팀원이 외부 모델 기능 엔드포인트 하나(`segment`·`classify`·`pose`·`relief`·`caption`)에서 "시험 호출"을 누르고 평가 묶음 작품(caption은 평가 묶음의 설명 입력 세트)을 고른다. 메뉴가 팀원용 시험 키로 UC12 흐름을 실행하고, 응답(결과·모델 ID와 버전·처리 시간·낮춤 원인 또는 오류 분류)을 보여 준다. 입력은 처리 뒤 보관하지 않고 결과는 가족 저장소에 쓰지 않는다(BR-API-09, BR-API-05, BR-MDL-04). 시험 키 발급 방식은 [추론]이며 U12에서 정한다 |
-| A2 | 2단계 | **P0 구간** — `/v1/models/…` 묶음과 `/v1/artworks/{id}/captions…`는 명세에 있어도 "P0.5 예정"으로 표시하고 시험 호출 버튼을 숨긴다 [추론] |
+| A1 | 3단계 이후 | **시험 호출(EXT3)** [통합 D12·D17] — 팀원이 외부 모델 기능 엔드포인트 하나(`segment`·`classify`·`pose`·`relief`·`caption`)에서 "시험 호출"을 누르고 평가 묶음 작품(caption은 평가 묶음의 설명 입력 세트)을 고른다. 메뉴가 팀원용 시험 키로 UC12 흐름을 실행하고, 응답(결과·모델 ID와 버전·처리 시간·낮춤 원인 또는 오류 분류)을 보여 준다. 입력은 처리 뒤 보관하지 않고 결과는 가족 저장소에 쓰지 않는다(BR-API-09, BR-API-05, BR-MDL-04). 시험 키 발급 방식은 [추론]이며 U12에서 정한다 |
+| A2 | 2단계 | **P0 구간** — `/v1/models/caption`과 `/v1/artworks/{id}/captions…`는 명세에 있어도 "P0.5 예정"으로 표시하고 그 기능의 시험 호출 버튼을 숨긴다. 나머지 네 기능은 P0부터 시험 호출할 수 있다(D17) [추론] |
 | A3 | 4단계 | **GPU 없는 환경** — 매니페스트에서 M5의 실행 장치를 "CPU"로, M7을 "비노출(GPU 확인 전, P1)"로 표시한다. 매뉴얼의 GPU 설정 절이 같은 상태를 가리킨다(BR-SRV-02, U2) |
 | A4 | 6단계 | **매뉴얼에서 상태 확인** — 운영자가 장애 대응 절에서 `/live`·`/ready` 결과를 바로 보고, 모델별 처리 시간·낮춤률·재시도율·큐 적체는 UC8로 이동해 확인한다(BR-OPS-01) |
 | A5 | 6단계 | **모델 교체 안내** — 운영자가 모델 교체 절을 열면 "평가 묶음 전체 재평가 → 통과 시 승격 → 문제 시 직전 활성 후보로 롤백"을 안내하고 UC9로 연결한다. 이 메뉴에서는 승격·롤백을 실행하지 않는다(BR-MDL-03, BR-MDL-05) [추론] |
@@ -3128,7 +3129,7 @@ else 서비스 운영자·연동 개발 팀원
   alt 명세를 읽지 못함
     API --> UI : 마지막 확인 명세·시각 + 장애 대응 안내 (E2)
   else 명세 수신
-    API --> UI : 네 묶음 목록 (보호자 앱·운영·관리·모델 기능 P0.5)
+    API --> UI : 네 묶음 목록 (보호자 앱·운영·관리·모델 기능)
   end
   Dev -> UI : 3. 엔드포인트 하나 선택
   UI --> Dev : 스키마·가상 예시·오류 코드↔작업 기록 분류표
@@ -3149,7 +3150,7 @@ else 서비스 운영자·연동 개발 팀원
   Dev -> UI : 6. 매뉴얼 탭 선택
   UI -> API : 매뉴얼 요청
   API --> UI : venv+uvicorn·런타임 내부망·모델 경로·GPU 설정·교체(UC9)·장애 대응
-  opt 시험 호출 (EXT3, P0.5)
+  opt 시험 호출 (EXT3)
     Dev -> UI : 평가 묶음 작품 선택 후 시험 호출
     alt 평가 묶음 밖 입력 (E4) 또는 라이선스 미확인 모델 (E6)
       UI --> Dev : 호출 거부
@@ -3162,7 +3163,7 @@ end
 @enduml
 ```
 
-**[「UC11 API활용 메뉴 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VttOG1cUffdXbKUvthLsGANReagSCKFIoUUiSH2ohCb2lLoxY-ILUVS1MjBE5tJiWjs2YFNTmRJSaAfj2kaBF39KHn3O_EPXmRnfBudhLM05a9_W3nuNH0ZjUiQWXwxRVH45H48E56Xg_IIUCsmR1_NeryP6IqgsSRFpkZ5L_hcLkXBcCYyHQ-EIffbE98Q7MdaFiH4vBcKvgsoCfSeForIjFoyFZJob93rp0cyUvpfn-6fETtNso8KzKa7miWfT7Pe8vnPGC3V9s96oNbUEL1RwxgrXOGvU2ElJwN_iTSV9LyOAmTzbKtHHRJpm5ZdxWfHLDofkjyGnOzyrsZ09amp5puVJ307wg9S3iocQjF2pfLNEfL_Ccyv8MHWHpCg9lpcdSD4W9AeXJCUGB8Y1IqXZacWAzE31IlCK4a6sGtd4dQSkmPRcisowP9zl2XV6PNao6StWiLFe-_GZORK5FFXiB9v8Q8lA4bQXNglY1_2k_f7p0-nuNPDqcKAaGvgCGdMoed3EjvLNWh2MkX6g3moByK8065oDaNiIqkbbN_tpXj4n59RX44OAneuZosW9yyGFYsQuK3quDg7Rnyu1HaZRs7A8-4YXth1keB1oZTR033evFUGYrdd5NU_OCa_LIWNc-vVIeLzdULtjgc2ekw8gXHWTMOi2jxjpa-eIVNTXCsB21z458Yw84SVZkZaC7h-iYQX3RrHv17laZ8fXxAs3_CSBgw965h1ubWmwkySu2cmGxZVliRq28k1the4SPzzmoIehisIu8UySrVZAwKALzgwKTAviyRzfKvaJoJaInVXBLZCn7KhAznYr4O4CoQzmsEeVBPvrDO15_479Uif0mW0e08x997ARSwnYiPL1ISqTY6u5Xq4AF1agfLOkr5ZQsbmyaytoQhJ1IoNciR3D7EZ4-_gmbW2EyAD5sqqKW33X3qghN4nhVC_Iyljs_VZS_zUnIiEba1j7tGzZ65ECi0HFsxgOgERq1MzziCwFXrdGBXmPGS3q9Trt_Xn6AfEjTd_f7kDFho7irlGbHsTjwzNEvJTAdFqt7WAnTewwMA96MeQ0VthYBYEQbu8RUO3Zd3XciG0GaMTuotUxC2ZtqTVXtmpwcFYXqgpNEOoixuxIUBZeirXPqkkOZb3K9Rku07ipXWD20H0VKkDN8k3zsogZ9XXmptfKaBe7VK0Ijdrsl48GBodHkM0fmr6W4Ic4s6rCnOhr9tYPu8mm-p_eUTvQFKpbeiCEZI98_M91hD48w1yyHdXDVv_h1ZK1jmYyGTGwe3VWTZDYoipeTTXDvIplxqsIVEEy4NiW-Iib2l-nT6fcgfRPdllWlu_Gl4P-cETp4owgDUiLnRQ6S1y-QXKNmjFWaokXM1i-_1K8XHHOjX_uEqV2yYvVdxSrZ3NWdejjN88gwq2p6q1H39kAvy2Bwd7qvyWtmowPSI8rw1rIY68V097Ccp0VjxFryEUsl2Kbaepmkdi_9bZAGoU5J0bMbGwiYyXdvNDAhAEwRFLPJvEV6zJoUT3z9aypB6YSeH40Ze8nAj_eQWr8HVT8oXhAbnxohevpRLOsNS-v23S35pmXc5BSMqcGt8YU4dOcMiow67NEz1Q31GOxa-6L-BXPQ_zgj9b_AvKOsA==)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC11 API활용 메뉴 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VttOG1cUffdXbKUvthLsGANReagSCKFIoUUiSH2ohCb2lLoxY-ILUVS1MjBE5tJiWjs2YFNTmRJSaAfj2kaBF39KHn3O_EPXmRnfBudhLM05a9_W3nuNH0ZjUiQWXwxRVH45H48E56Xg_IIUCsmR1_NeryP6IqgsSRFpkZ5L_hcLkXBcCYyHQ-EIffbE98Q7MdaFiH4vBcKvgsoCfSeForIjFoyFZJob93rp0cyUvpfn-6fETtNso8KzKa7miWfT7Pe8vnPGC3V9s96oNbUEL1RwxgrXOGvU2ElJwN_iTSV9LyOAmTzbKtHHRJpm5ZdxWfHLDofkjyGnOzyrsZ09amp5puVJ307wg9S3iocQjF2pfLNEfL_Ccyv8MHWHpCg9lpcdSD4W9AeXJCUGB8Y1IqXZacWAzE31IlCK4a6sGtd4dQSkmPRcisowP9zl2XV6PNao6StWiLFe-_GZORK5FFXiB9v8Q8lA4bQXNglY1_2k_f7p0-nuNPDqcKAaGvgCGdMoed3EjvLNWh2MkX6g3moByK8065oDaNiIqkbbN_tpXj4n59RX44OAneuZosW9yyGFYsQuK3quDg7Rnyu1HaZRs7A8-4YXth1keB1oZTR033evFUGYrdd5NU_OCa_LIWNc-vVIeLzdULtjgc2ekw8gXHWTMOi2jxjpa-eIVNTXCsB21z458Yw84SVZkZaC7h-iYQX3RrHv17laZ8fXxAs3_CSBgw965h1ubWmwkySu2cmGxZVliRq28k1the4SPzzmoIehisIu8UySrVZAwKALzgwKTAviyRzfKvaJoJaInVXBLZCn7KhAznYr4O4CoQzmsEeVBPvrDO15_479Uif0mW0eG2GUgI0jXx-OMjm2muulCXBhBbY3S_pqCcWa27q2Av6TKBHBcyV2DLMb4e3jm7S1DCI4UmVVFbf6rr1HQ24Sc6lekJWsWPmtpP5rTkRCNtac9unWstcjBRaDimcxHAB_1KiZ5xFZCrxuTQnyHjO60-t12vvz9APiR5q-v92BiuUcxV2jNj2Ix4dniHgpgcG0utrBTprYYWAe9GLIaWyvsQUCIdzeI6DaY-_quBGLDNCI3cXMffdwF8xaUGukbNXg4KwuBBVyIIRFTNiRoCy8FGufVZMconqV6zNXpnFTu8DYofsqBICa5ZvmZRHj6evMTa-V0S52qVoRGrXZLx8NDA6PIJs_NH0twQ9xZlWFOdHX7K0fdpNN8D-9nnagqVG3pEBoyB75-J_rCH14hrlkO6qHrf7DqyVrE81kMmJg9-qsmiCxQFW8mkKGeRV7jFcRqIJkwLEt8RE3tT9Mn065A-mf7LKsLN-NLwf94YjSxRlBFZAWOyl09rd8g-QaNWOs1BIvZrB8_6V4ueKcG__cJUrtUhar7yhWz-as6tDHb54ZneytRN_ZALMtVcHG6r8lrWqMr0aPE8NaaGKvFdPewnKdFY8RZchFLJdim2nq5o_Yv_W2KholOSdGzGxs8mKl27zQwIEBMJRRzybx6eoyaJE88_WsqQSmBnh-NLXuJwIz3kFq_B1U_KF4QG58aIXr6UGzrDUvr9tEtyaZl3PQTzLnBbfG_OB7nDIqMOuz5M7UNdQzbAYwN0X8iuchfvDv6n8CYox-)** — 클릭 시 브라우저로 연결됩니다.
 
 기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다. 시험 호출(EXT3)은 번호 없는 `opt` 프래그먼트로 두었고, 모델 기능 호출 안쪽(인증·한도·서빙군 처리·입력 폐기)은 UC12 시퀀스를 따른다.
 
@@ -3173,7 +3174,7 @@ end
 | 시스템 경계 | API 서버와 그 안의 'API활용' 메뉴를 한 경계로 그렸다. 모델 M1~M7은 내부 구성요소라 경계 밖 액터로 두지 않았다 |
 | 액터 | 연동 개발 팀원과 서비스 운영자는 둘 다 Primary actor다. 두 액터 사이에 Generalization을 두지 않았다 [추론] |
 | 포함 관계 | UC11 → INC2 «include»(메뉴를 열 때마다 역할 확인). EXT3 → UC12 «include»(시험 호출은 항상 모델 기능 호출을 거친다) |
-| 확장 관계 | EXT3 → UC11 «extend». 확장점 조건("시험 호출" 선택, 평가 묶음 작품만, P0.5 이후)을 note로 적었다 |
+| 확장 관계 | EXT3 → UC11 «extend». 확장점 조건("시험 호출" 선택, 평가 묶음 작품만, P0 네 기능부터·caption은 P0.5)을 note로 적었다 |
 | Sequence | 권한 분기는 바깥 `alt`, 명세 수신 여부는 안쪽 `alt`, 버전 불일치 경고는 `opt`, 시험 호출은 `opt` 안의 `alt`로 표현했다. 서빙군은 CPU 비전 워커 / GPU 워커 / LLM 서버 lifeline으로 나누고 메시지에 모델 ID를 적었다. 예외흐름 ID(E1~E6)를 메시지에 병기했다 |
 | 1:1 대응 | 기본흐름 1~6단계 = 번호 붙은 메시지 `1.`~`6.` |
 
@@ -3183,7 +3184,7 @@ end
 
 #### 범위·개요
 
-우리 아이 미술관은 보호자 앱 뒤에서 쓰는 모델 기능 가운데 다섯 가지를 **외부 클라이언트용 모델 기능 엔드포인트** `POST /v1/models/{segment|classify|pose|relief|caption}` 로 연다(P0.5). 외부 클라이언트는 유치원·알림장 앱 같은 연동 앱을 가정한다. 다만 연동 수요는 **가설**이고, 지금은 시연·포트폴리오용이며 **상품화하지 않는다**(Intent [수익]). 권한·동의·계약 검증 전에는 판매 가능한 제품으로 표시하지 않는다.
+우리 아이 미술관은 보호자 앱 뒤에서 쓰는 모델 기능 가운데 다섯 가지를 **외부 클라이언트용 모델 기능 엔드포인트** `POST /v1/models/{segment|classify|pose|relief|caption}` 로 연다. **P0**에는 `segment`·`classify`·`pose`·`relief` 네 기능을 열고(`pose`는 팀 내부 키 전용), `caption`은 **P0.5**에 연다(D17). 외부 클라이언트는 유치원·알림장 앱 같은 연동 앱을 가정한다. 다만 연동 수요는 **가설**이고, 지금은 시연·포트폴리오용이며 **상품화하지 않는다**(Intent [수익]). 권한·동의·계약 검증 전에는 판매 가능한 제품으로 표시하지 않는다.
 
 이 UC는 외부 클라이언트가 API 키로 인증하고(INC3), 요청 한도·크기 검사를 통과해, 기능별 서빙군(CPU 비전 워커 / GPU 워커 / LLM 서버)에서 결과를 받아 가기까지를 다룬다. 외부 입력은 처리 뒤 보관하지 않고 로그에도 남기지 않는다. 외부 클라이언트는 가족 데이터(`/v1/artworks…`, `/v1/gallery`)에 접근하지 못한다. 보호자 작품의 내부 처리(UC3)와는 같은 모델·어댑터를 쓰지만 작업 기록·저장소·권한이 분리된다 [추론].
 
@@ -3191,9 +3192,9 @@ end
 |---|---|---|---|---|---|
 | `segment` | M1 배경·작품 분리 | CPU 비전 워커 | 이미지 1장 | 작품 마스크·컷아웃 | 비동기 작업(202 → 조회) [추론] |
 | `classify` | M2 제로샷 종류 판정·태그 | CPU 비전 워커 | 이미지 1장 | 종류 제안 문구·태그 후보(점수 비노출) [추론] | 비동기 작업 [추론] |
-| `pose` | M3 관절 + M4 기하 규칙 | CPU 비전 워커 | 이미지 1장 | 관절 좌표·기하 규칙 결과(움직임 가능성 제안) | 비동기 작업 |
+| `pose` (팀 내부 키 전용) | M3 관절 + M4 기하 규칙 | CPU 비전 워커 | 이미지 1장 | 관절 좌표·기하 규칙 결과(움직임 가능성 제안) | 비동기 작업 |
 | `relief` | M1 마스크 + M5 깊이 | GPU 워커(없으면 CPU) | 이미지 1장 | 2.5D 부조 결과(마스크·깊이) | 비동기 작업 |
-| `caption` | M6 설명 생성 + 규칙 검사 | LLM 서버 | 키워드·아이의 발언·제작 당시 나이·제작일(이미지·이름 금지) | 설명 초안 + 출처(LLM/템플릿) + "AI 작성" 표시 의무 | 동기 응답 |
+| `caption` (P0.5) | M6 설명 생성 + 규칙 검사 | LLM 서버 | 키워드·아이의 발언·제작 당시 나이·제작일(이미지·이름 금지) | 설명 초안 + 출처(LLM/템플릿) + "AI 작성" 표시 의무 | 동기 응답 |
 | (열지 않음) | M7 3D 조각 | GPU 워커 | — | — | 외부 비공개 [추론] |
 
 | 항목 | 값 |
@@ -3202,7 +3203,7 @@ end
 | 상위 프로세스 | (연동 앱) 모델 기능 호출 → INC3 인증·한도 → 서빙군 처리 → 결과 수령 → 입력·결과 즉시 폐기 · (팀 내부) UC11 API활용 메뉴 → EXT3 시험 호출 → **UC12** |
 | 원천 근거 | Intent [핵심 활동] 3 · [핵심 이네이블러] 외부 사용(엔드포인트) · [핵심 장벽] 외부 엔드포인트·라이선스 · [부정적 영향] 외부 엔드포인트 남용 · [혜택] 외부 개발자(P0.5) · [수익] · spec FR-28 |
 | 핵심 UseCase | 1개 (UC12) + 공통 1개 (INC3) · UC11의 EXT3이 이 UC를 «include» |
-| 주요 액터 | 외부 클라이언트(연동 앱, P0.5, 가설) · (EXT3 경유) 연동 개발 팀원 |
+| 주요 액터 | 외부 클라이언트(연동 앱, P0, 수요는 가설) · (EXT3 경유) 연동 개발 팀원 |
 
 #### UseCase Diagram
 
@@ -3213,7 +3214,7 @@ skinparam shadowing false
 left to right direction
 title 우리 아이 미술관 — UC12 모델 기능 엔드포인트를 호출한다
 
-actor "외부 클라이언트\n(연동 앱, P0.5·가설)" as Client <<시스템>>
+actor "외부 클라이언트\n(연동 앱, P0·수요 가설)" as Client <<시스템>>
 actor "연동 개발 팀원" as Dev
 
 rectangle "우리 아이 미술관 — 모델 기능 API (Python·uvicorn)" {
@@ -3244,7 +3245,7 @@ end note
 @enduml
 ```
 
-**[「UC12 모델 기능 호출 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVE1PE1EU3c-vuKmbNgixrWhCSIMWMCTUsJDERAwZptMyocyQmSlKjEnFwUCBFLDlc0rapAUxGAs2bY1d8VNY9t35D943LVpYGHfz3jn365x3Z8gwRd1MzicgKU0ndWVaVKb9AcGYU9QFURfnYUaU5uK6llSjYS2h6XBvNDjqH3naxTBmxaj2RlHjEBMThiwk5JgJpga6Ep81IarosmQqmiqYipmQAQ8r7OQcMGdhvgrsewNXC61qCq5TWZgM-wPAvn5hmw1oNSosXQbcy7LPtpM5x3zDSTdYuQnOfgNrtpOz2XpJEETJpK48eNBgtRQ4H6os36TMuMvpU6oX9yosc0D1Lu7DxIO-_qt6q5JCq-TzgGhAOKHIqgmDg7huY7rkrNih0J-U7chWxWYVG5yNFB5tuUHD8qIg8KlENU4Tef410u1pnkyMgXdiyZzV1Kt6clGRNF2lRt4JAElDlkSDsv2XCFNqtwpuVzyuO8_Y83DQLegsl4AC8SR_VZ9S8TCLl9-AB2YscA5yBLnxnH-nDz-Pdw5sPDwDdpZla1Xc20LLpiy3O2qLmq_SnSs_XbDTEufv0ummzO1m_d3FRl6-CIKTWaM0gMfbzs4q2k1W5JXWbWdvv2O6G8u5wntB6HjX2xtqz0623Bz8gqtiX1_IHQsGyGFFlRLJqEz-usU45o7IMfmtKavRO1DgTpigaqbcedVa7EZvQ47PUxveiN8HV3WQEqJhKLElbyTgnhc0Q_ZGgj2Rhz4iA1x_2oHwxCSwnxYWLMCjDfxVIkSXaZoYZemJ9Ptc1jNi_YElcYHvkDfyqA2Oj0eAjGCXFoHBYW_ksY-ls9DeAjKJnkwVT0nLXJruSXV4hbUsKxZeEx-PV1ihzFtgP6pYrPI-uX_FC2CbFbLRsSqAhe1WvQmstkqQQOoAH7-twYxmmto8F8H1Alx_j8tY2Bro7AlfBM8d69AqOB_znN32mZ3XML_RsZud0tfyOb20v7WG6Iv-TL8BXDwwdg==)** — 클릭 시 브라우저로 연결됩니다.
+**[「UC12 모델 기능 호출 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVE1LG1EU3c-vuKSbBKs0ph8gEmyjFsEUFxUKtcg4mcTBOCMzE1sphdSOJUYlahPjx0QiJFpLSqMNSUpd5ae4zLvzH3rfJFp1Ubqb9865X-e8O0OGKepmYj4OCWk6oSvTojLt7xeMOUVdEHVxHmZEaS6mawk1EtLimg73RgOj_pFnNxjGrBjR3ipqDKJi3JCFuBw1wdRAV2KzJkQUXZZMRVMFUzHjMuB-lR1XAHMWFmrAfjQxVWzXknCZzMJkyN8P7NtXttGEdrPK0mXAfJZ9sZ1MBQtNJ91k5QtwdptYt52czdZKgiBKJnXlwb0mqyfB-VhjhQvKjDucPqV6MV9lmT2qd3YfJh60Gpjaxf0stKtJtEo-D4gGhOKKrJowOIhrNqZLzoodDF7n7YS3qzar2uCsJ_Fg0w0alhcFgY8mqjEay_OvuW6P9HRiDLwTS-asprYaiUVF0nSVGnkvACQMWRINyvZfSkypN6Vwu-JxN_OMvQgF3ILOcgkoEI8LrcaUSgrg-XfggRkLnL0cQW4859_pw8_jnT0b90-BnWbZag3zm2jZlOV2R60GF7VQozvXA7pgJyXO36HTVZnbzfpvFht59TIATmaV0gAebjnbKbQv2BGvtGY7-d2u824s5wofBKHrXW9vsDM72XJ18Auuin19QXcsGCCHFVWKJyIy-esW45g7Isfkd6asRu5A_XfCBFUz5e7T1qJXehtybJ7a8Ib9Pmg1QIqLhqFEl7zhfve8oBmyNxzoCT_0ERng8vM2hCYmgf2ysGgBHqzj7xIhukzTRClLT_iRz2U9J9Y1LIkLfJG84ccdcHw8DGQEO7cIDAx7w098LJ2FziqQSfRkanhCWubSdE-qw2usZ9lR8Q3x8XCFFcu8Bfazhkc13if37-gM2EaVbHSsKmBxq924AFZPESSQOsDH72gwo5mmNs9FcL0A19_DMhY3B7p7whfBc8c6tIrOpwJnd3xmlToW1rt2sxP6Wq7QS_tba4i-6Pf0BxipNFk=)** — 클릭 시 브라우저로 연결됩니다.
 
 ##### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -3292,15 +3293,15 @@ end note
 |---|---|
 | **ID** | UC12 (spec FR-28 · Intent [핵심 활동] 3 · 추가 요구 R3) |
 | **유스케이스명** | 모델 기능 엔드포인트를 호출한다 |
-| **액터** | 주: 외부 클라이언트(연동 앱, P0.5, 가설) · 간접: 연동 개발 팀원(EXT3 경유) · 보조: 없음(CPU 비전 워커·GPU 워커·LLM 서버는 내부 구성요소) |
-| **사전조건** | (1) 외부 클라이언트가 유효한 API 키를 갖고 있다. 키 발급 주체·절차·약관은 `자료 없음 — 확인 필요`(U12). (2) 모델 기능 API가 Python 가상환경 + uvicorn으로 떠 있고(BR-API-01), 모델 런타임(TorchServe·Ollama) 포트는 내부망에만 열려 있다(BR-SRV-04). (3) 호출할 기능의 모델이 매니페스트에서 활성 버전이고 라이선스 조건이 확인되어 있다(BR-MDL-01·07). (4) 기능이 필요로 하는 서빙군이 `/ready`에서 준비 상태다(BR-OPS-01). (5) 요청 한도·요청 크기 상한이 설정되어 있다. 수치는 `자료 없음 — 확인 필요`(U12) |
+| **액터** | 주: 외부 클라이언트(연동 앱, P0, 수요는 가설) · 간접: 연동 개발 팀원(EXT3 경유) · 보조: 없음(CPU 비전 워커·GPU 워커·LLM 서버는 내부 구성요소) |
+| **사전조건** | (1) 외부 클라이언트가 유효한 API 키를 갖고 있다. 키 발급 주체와 절차는 확정 전이며 예시값(서비스 운영자가 'API활용' 메뉴에서 발급·폐기)을 쓴다. 약관은 P0.5(U12). (2) 모델 기능 API가 Python 가상환경 + uvicorn으로 떠 있고(BR-API-01), 모델 런타임(TorchServe·Ollama) 포트는 내부망에만 열려 있다(BR-SRV-04). (3) 호출할 기능의 모델이 매니페스트에서 활성 버전이고 라이선스 조건이 확인되어 있다(BR-MDL-01·07). (4) 기능이 필요로 하는 서빙군이 `/ready`에서 준비 상태다(BR-OPS-01). (5) 요청 한도·요청 크기 상한이 설정되어 있다. 수치는 확정 전 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건(U12, [추론]). (6) 호출한 기능이 현재 구간에 열려 있다. P0는 네 기능, `caption`은 P0.5부터다(D17) |
 | **사후조건** | (1) 요청은 결과(성공 또는 품질 미달 분류) 또는 오류 분류(401/403/413/422/429/503/시간 초과) 중 하나로 끝난다. (2) 성공 시 응답에 모델 ID·버전·처리 시간이 담기고, `classify`·`pose` 응답에는 "판정은 제안이며 확정은 호출 측 사용자가 한다"는 안내가 붙는다 [추론 문구]. (3) 결과를 돌려준 뒤 입력·중간·결과·임시 파일이 남아 있지 않다(BR-API-05·BR-PRC-08). (4) 작업 기록에는 기능·모델 버전·결과 분류·처리 시간·키 식별자만 남고, 운영 로그에는 이미지·자유 입력·오류 원문이 없다(BR-PRV-01). (5) 가족 데이터는 조회되지도 변경되지도 않았다(BR-API-06). (6) 요청 한도 사용량이 1건 차감되었다 |
 | **기본흐름** | ↓ 별도 기본흐름표 (`segment` 비동기 호출 성공 기준) |
-| **대체흐름** | A1. `classify`(M2) — 같은 CPU 비전 경로를 밟는다. 응답은 "사람 그림 / 동물 / 집 / 사물" 종류 제안 문구와 태그 후보이며 점수는 노출하지 않는다 [추론, BR-SUG-02 준용]. 제안임을 안내한다. A2. `pose`(M3 관절 + M4 기하 규칙) — CPU 비전 워커가 관절 좌표와 팔다리 길이·좌우 대칭·몸통 비율 규칙 결과를 돌려준다. 리깅·렌더(움직이는 그림 생성)는 하지 않는다 [추론]. 엔진 사람 점수만으로 "움직일 수 있음"을 제안하지 않는다(BR-SUG-04). A3. `relief`(M1 + M5) — GPU 워커 전용 큐로 보낸다. M1 마스크를 먼저 만들고 M5 깊이로 부조를 만든다(BR-FBK-02). GPU가 없으면 M5를 CPU에서 실행하며 처리 시간이 길어진다(BR-SRV-02, U2). M1 분리가 품질 미달이면 부조를 만들지 않고 `quality_below`로 끝낸다. 오류 코드가 아니다(BR-API-02). 외부 호출에는 액자 낮춤이 의미가 없으므로 낮춤 체인을 적용하지 않는다 [추론]. A4. `caption`(M6) — LLM 서버로 짧은 동기 요청을 보낸다. 입력은 키워드·태그·아이의 발언·제작 당시 나이·제작일만 받는다(BR-CAP-01). 생성 뒤 규칙 검사를 같게 적용해 입력에 없는 사건·감정·발달 상태 표현이 있으면 재생성하고, 상한(2회 [추론], U11)을 넘으면 템플릿 설명을 돌려준다(BR-CAP-02). 응답에 출처(LLM/템플릿)·규칙 검사 결과·생성 횟수와 "AI 작성" 표시 의무를 담는다(BR-CAP-03). 동기 200으로 끝나고 입력·결과를 즉시 버린다. A5. 동기 응답 — [추론] `segment`·`classify`는 처리 시간이 미측정(U6)이라 기본을 비동기(202)로 둔다. 1차 측정 뒤 동기 대기 상한 안에 끝나는 기능은 200 동기 응답으로 바꿀 수 있으며, 이때 4~7단계가 한 응답으로 합쳐진다. 동기·비동기 선택은 U8에서 확정한다. A6. 대기 — 모델별 동시 처리 상한에 닿으면 작업은 `queued`로 기다리고, 6단계 조회에 `queued`/`running`을 돌려준다(BR-PRC-07). A7. 시험 호출(EXT3) — 연동 개발 팀원이 UC11에서 평가 묶음 작품을 골라 호출한다. 흐름은 기본흐름과 같고, 팀원용 시험 키를 쓰며 [추론] 결과는 화면에만 보이고 가족 저장소에 쓰지 않는다(BR-API-09) |
-| **예외흐름** | E1. 인증 실패 — API 키가 없거나 무효·폐기된 키면 `401`, 키는 유효하지만 해당 기능 권한이 없거나 가족 데이터 경로(`/v1/artworks…`, `/v1/gallery`)를 부르면 `403`(BR-API-03·06). 한도를 차감하지 않는다 [추론]. E2. 한도 초과 — 키별 요청 한도를 넘으면 `429`와 다시 시도할 수 있는 시각을 돌려준다 [추론]. 수치는 `자료 없음 — 확인 필요`(U12)(BR-API-04). E3. 크기 초과 — 요청 본문이 상한을 넘으면 본문을 끝까지 읽지 않고 `413`(BR-API-04). E4. 형식 오류 — 이미지 판독 불가·지원하지 않는 형식(JPEG·PNG·HEIC 외 [추론, BR-INT-01 준용])·필수 필드 누락이면 `422`. 이 연동 오류 분류는 원천 오류 분류 5종에 없어 미해결 U18로 둔다 [통합 D15]. `caption`에 이미지나 이름 필드가 들어 있으면 처리하지 않고 `422`(BR-CAP-01). E5. 모델 미준비 — 해당 기능 모델이 라이선스 미확인으로 비활성이거나(현재 OpenCLIP 가중치 → `classify`, Qwen3 → `caption`, U4), 서빙군이 준비되지 않았으면 `503`(BR-MDL-07·BR-OPS-01). 작업을 만들지 않는다. 처리 도중 워커가 멈추면 같은 단계를 최대 3회 재시도하고, 소진되면 작업을 `failed` + 인프라 실패로 끝낸다(BR-PRC-03). 품질 미달로 바꾸지 않는다. E6. 시간 초과 — 모델별 시간 상한(BR-PRC-06, M3 외 `자료 없음 — 확인 필요`, U6)을 넘으면 비동기 작업은 `failed` + `timeout`, 동기 `caption`은 `504` [추론]. 입력·임시 파일은 즉시 지운다. E7. 결과 없음·지원하지 않는 기능 — 이미 받아 간 결과나 보관 상한(`자료 없음 — 확인 필요`, U12) [통합 D8]을 넘겨 지운 결과를 다시 조회하면 `404`. 3D(`sculpture` 등 M7)나 목록에 없는 기능을 부르면 `404`. M7은 외부 엔드포인트에 열지 않는다 [통합 D9] |
+| **대체흐름** | A1. `classify`(M2) — 같은 CPU 비전 경로를 밟는다. 응답은 "사람 그림 / 동물 / 집 / 사물" 종류 제안 문구와 태그 후보이며 점수는 노출하지 않는다 [추론, BR-SUG-02 준용]. 제안임을 안내한다. A2. `pose`(M3 관절 + M4 기하 규칙) — CPU 비전 워커가 관절 좌표와 팔다리 길이·좌우 대칭·몸통 비율 규칙 결과를 돌려준다. 리깅·렌더(움직이는 그림 생성)는 하지 않는다 [추론]. 엔진 사람 점수만으로 "움직일 수 있음"을 제안하지 않는다(BR-SUG-04). A3. `relief`(M1 + M5) — GPU 워커 전용 큐로 보낸다. M1 마스크를 먼저 만들고 M5 깊이로 부조를 만든다(BR-FBK-02). GPU가 없으면 M5를 CPU에서 실행하며 처리 시간이 길어진다(BR-SRV-02, U2). M1 분리가 품질 미달이면 부조를 만들지 않고 `quality_below`로 끝낸다. 오류 코드가 아니다(BR-API-02). 외부 호출에는 액자 낮춤이 의미가 없으므로 낮춤 체인을 적용하지 않는다 [추론]. A4. `caption`(M6) — LLM 서버로 짧은 동기 요청을 보낸다. 입력은 키워드·태그·아이의 발언·제작 당시 나이·제작일만 받는다(BR-CAP-01). 생성 뒤 규칙 검사를 같게 적용해 입력에 없는 사건·감정·발달 상태 표현이 있으면 재생성하고, 상한(2회 [추론], U11)을 넘으면 템플릿 설명을 돌려준다(BR-CAP-02). 응답에 출처(LLM/템플릿)·규칙 검사 결과·생성 횟수와 "AI 작성" 표시 의무를 담는다(BR-CAP-03). 동기 200으로 끝나고 입력·결과를 즉시 버린다. A5. 동기 응답 — [추론] `segment`·`classify`는 처리 시간이 미측정(U6)이라 기본을 비동기(202)로 둔다. 1차 측정 뒤 동기 대기 상한 안에 끝나는 기능은 200 동기 응답으로 바꿀 수 있으며, 이때 4~7단계가 한 응답으로 합쳐진다. 동기·비동기 선택은 U8에서 확정한다. A6. 대기 — 모델별 동시 처리 상한에 닿으면 작업은 `queued`로 기다리고, 6단계 조회에 `queued`/`running`을 돌려준다(BR-PRC-07). A7. 시험 호출(EXT3) — 연동 개발 팀원이 UC11에서 평가 묶음 작품을 골라 호출한다. 흐름은 기본흐름과 같고, 팀원용 시험 키를 쓰며 [추론] 결과는 화면에만 보이고 가족 저장소에 쓰지 않는다(BR-API-09). A8. 키 종류(D17) — 팀·과정 내부 키와 팀 밖 클라이언트 키를 구분한다. U12 확정 전에는 내부 키만 발급한다. `pose`는 내부 키로만 부를 수 있고, 팀 밖 키로 부르면 E1의 `403`이다 [이제민 조건부 승인] |
+| **예외흐름** | E1. 인증 실패 — API 키가 없거나 무효·폐기된 키면 `401`, 키는 유효하지만 해당 기능 권한이 없거나 가족 데이터 경로(`/v1/artworks…`, `/v1/gallery`)를 부르면 `403`(BR-API-03·06). 외부 키로 `pose`를 부르는 경우도 기능 권한 없음으로 `403`이다(D17). 한도를 차감하지 않는다 [추론]. E2. 한도 초과 — 키별 요청 한도를 넘으면 `429`와 다시 시도할 수 있는 시각을 돌려준다 [추론]. 수치는 확정 전 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건(U12, [추론])(BR-API-04). E3. 크기 초과 — 요청 본문이 상한을 넘으면 본문을 끝까지 읽지 않고 `413`(BR-API-04). E4. 형식 오류 — 이미지 판독 불가·지원하지 않는 형식(JPEG·PNG·HEIC 외 [추론, BR-INT-01 준용])·필수 필드 누락이면 `422`. 이 연동 오류 분류는 원천 오류 분류 5종에 없어 미해결 U18로 둔다 [통합 D15]. `caption`에 이미지나 이름 필드가 들어 있으면 처리하지 않고 `422`(BR-CAP-01). E5. 모델 미준비 — 해당 기능 모델이 라이선스 미확인으로 비활성이거나(현재 OpenCLIP 가중치 → `classify`, Qwen3 → `caption`, U4), 서빙군이 준비되지 않았으면 `503`(BR-MDL-07·BR-OPS-01). 작업을 만들지 않는다. 처리 도중 워커가 멈추면 같은 단계를 최대 3회 재시도하고, 소진되면 작업을 `failed` + 인프라 실패로 끝낸다(BR-PRC-03). 품질 미달로 바꾸지 않는다. E6. 시간 초과 — 모델별 시간 상한(BR-PRC-06, M3 외 `자료 없음 — 확인 필요`, U6)을 넘으면 비동기 작업은 `failed` + `timeout`, 동기 `caption`은 `504` [추론]. 입력·임시 파일은 즉시 지운다. E7. 결과 없음·지원하지 않는 기능 — 이미 받아 간 결과나 보관 상한(`자료 없음 — 확인 필요`, U12) [통합 D8]을 넘겨 지운 결과를 다시 조회하면 `404`. 3D(`sculpture` 등 M7)나 목록에 없는 기능을 부르면 `404`. M7은 외부 엔드포인트에 열지 않는다 [통합 D9] |
 | **포함/확장** | «include» INC3 API 키 인증·요청 한도 확인 · UC11의 «extend» EXT3(평가 작품으로 시험 호출)이 실행 시 이 UC를 «include» · 이 UC를 확장하는 UC는 없다 |
-| **우선순위** | Low — P0.5 구간이고 연동 수요가 가설이며 시연·포트폴리오용이다(Intent [수익]). 보호자 가치 흐름(UC1~UC7)에 영향이 없다. 다만 열게 되면 남용·아동 이미지 유출 위험이 "상" 등급이므로 인증·한도·입력 비보존은 선택이 아니라 필수다(Intent [핵심 장벽]) |
-| **사용빈도** | 시연과 EXT3 시험 호출 때만 발생한다. 외부 연동이 없으므로 운영 호출량은 0을 전제로 한다. 정량값은 `자료 없음 — 확인 필요`(요청 한도와 함께 U12에서 정한다) |
+| **우선순위** | Medium — 절충안(D17)으로 네 기능이 P0에 들어왔다. 연동 수요는 여전히 가설이고 시연·포트폴리오용이다(Intent [수익]). 외부 호출은 보호자 단계 작업보다 낮은 우선순위의 별도 대기열에서 처리한다 [추론 — D17]. 보호자 가치 흐름(UC1~UC7)에 영향이 없다. 다만 열게 되면 남용·아동 이미지 유출 위험이 "상" 등급이므로 인증·한도·입력 비보존은 선택이 아니라 필수다(Intent [핵심 장벽]) |
+| **사용빈도** | 시연, EXT3 시험 호출, 팀 밖 외부 클라이언트 호출에서 발생한다. 정량값은 `자료 없음 — 확인 필요`이며, 호출량은 요청 한도 예시값(키당 하루 1,000건)으로 묶는다(U12) |
 | **업무규칙** | BR-API-01, BR-API-02, BR-API-03, BR-API-04, BR-API-05, BR-API-06, BR-API-09, BR-MDL-01, BR-MDL-02, BR-MDL-05, BR-MDL-07, BR-SRV-01, BR-SRV-02, BR-SRV-03, BR-SRV-04, BR-PRC-03, BR-PRC-06, BR-PRC-07, BR-PRC-08, BR-SUG-02, BR-SUG-04, BR-FBK-02, BR-CAP-01, BR-CAP-02, BR-CAP-03, BR-CAP-05, BR-INT-01, BR-OPS-01, BR-OPS-04, BR-PRV-01, BR-PRV-02 |
 | **특별 요구사항** | 보안: 모든 기능이 API 키 인증 필수이고, 키는 가족 데이터 경로에 쓸 수 없다. 모델 런타임 포트는 외부에 노출하지 않고 API 서버만 워커를 부른다(BR-SRV-04). 보관 처리된 엔진(M3)을 외부 요청이 간접적으로 부르므로 내부망 격리·고정 이미지·체크섬 운영을 지킨다(BR-MDL-06 전제). 개인정보: 입력·결과는 메모리 또는 워커 임시 영역에만 두고 원본·결과 저장소에 쓰지 않는다. 결과는 1회 수령 또는 보관 상한(`자료 없음 — 확인 필요`, U12) 경과 시 지운다. 처리 중 임시 보관은 BR-API-05의 "보관"이 아니다 [통합 D8]. 로그·지표 라벨에는 키 식별자·기능·분류 코드만 남긴다(BR-PRV-01·BR-OPS-04). 학습 재사용 금지(BR-PRV-02). 자원: 외부 호출은 보호자 작품 처리와 같은 워커를 쓰므로, 외부 요청이 보호자 처리 시간을 밀어내지 않게 동시 처리 몫을 나눈다 [추론, U6]. 계약: 응답 분류는 내부 작업 기록 분류와 1:1(BR-API-02). 모델 버전을 바꿔도 이 계약은 바뀌지 않는다(BR-MDL-05). 상품 표시: API활용 메뉴와 응답 어디에도 판매 가능 제품·요금을 표시하지 않는다(Intent [수익]) |
 | **비고** | 원천 추적: Intent-Specify [핵심 활동] 3 "외부 클라이언트용 모델 기능 엔드포인트(P0.5, 인증 필수)" · [핵심 이네이블러] 외부 사용(엔드포인트) `/v1/models/{segment\|classify\|pose\|relief\|caption}`(P0.5, 인증·한도 필수) · [핵심 장벽] "상 — 외부 엔드포인트: 남용·아이 이미지 유출 위험, 인증·요청 한도·입력 비보존 필수", "상 — 라이선스" · [부정적 영향] 외부 엔드포인트 남용 · [핵심 데이터] "외부 모델 엔드포인트 입력은 처리 뒤 보관하지 않는다" · [혜택] 외부 개발자(P0.5) · [수익] 연동 수익 가설("시연·포트폴리오용이며 상품화하지 않는다", "판매 가능 제품으로 표시하지 않는다") · spec v2.0 FR-28 · 추가 요구 R3(가상환경 + uvicorn) · R4(API활용 메뉴, EXT3) · 공통 기준 §2(M1~M7) · §3(서빙 3종) · §4(엔드포인트) · §6(INC3·EXT3) · §8(BR) · §10(U4·U8·U12). 옛 문서 `UC_10_모델API변환.md`의 내부 워커 호출은 UC3으로 옮겼고, 이 문서는 외부 호출만 다룬다. 작업 조회 경로 `GET /v1/models/jobs/{job_id}`·결과 경로·응답 필드 이름·동기/비동기 선택·3D 비공개·점수 비노출은 원천에 없는 설계 판단([추론])이며 `/speckit.plan`의 OpenAPI에서 확정한다(U8). 미해결: U12(키 발급 주체·한도 수치·약관) · U8(엔드포인트 이름·응답 형식·인증 방식) · U4(라이선스 — `classify`·`caption` 활성 여부, AGPL 예비 모델 채택 시 외부 공개가 소스 공개 조건과 직결) · U6(시간 상한·동시 처리 수) · U2(GPU 유무 — `relief` 속도) |
@@ -3476,9 +3477,9 @@ end
 | BR-SRV-04 | TorchServe·Ollama 등 모델 런타임 포트는 내부망에만 | UC3, UC8~UC12 | Intent [핵심 이네이블러] 외부 사용 |
 | BR-API-01 | 모델 기능 API는 Python 가상환경 + uvicorn으로 띄운다(R3). 보호자 앱 API는 접수·상태·권한을 맡는다 | UC3, UC11, UC12 | 추가 요구 R3 · spec FR-30 |
 | BR-API-02 | 단계 작업 응답 분류와 작업 기록 분류를 1:1로 맞춘다 | UC3, UC9, UC11, UC12 | spec FR-5 · FR-23 · Intent [핵심 데이터] 처리 작업 |
-| BR-API-03 | (P0.5) 외부 모델 기능 엔드포인트 `/v1/models/{segment\|classify\|pose\|relief\|caption}`는 API 키 인증 필수 | UC3, UC11, UC12 | Intent [핵심 장벽] 외부 엔드포인트 · [부정적 영향] 외부 엔드포인트 남용 |
-| BR-API-04 | (P0.5) 요청 한도·요청 크기 제한 | UC8, UC11, UC12 | Intent [부정적 영향] 외부 엔드포인트 남용 |
-| BR-API-05 | (P0.5) 외부 호출 입력·결과는 처리 뒤 보관하지 않고 로그에도 남기지 않는다. 입력·결과는 워커 임시 영역에만 두고 원본·결과 저장소에 쓰지 않는다. 결과를 내려받거나 보관 상한(`자료 없음 — 확인 필요`, U12)이 지나면 지운다. 처리 중 임시 보관은 "보관"이 아니다 [통합 D8] | UC7, UC8, UC11, UC12 | Intent [부정적 영향] 외부 엔드포인트 남용 · FR-28 |
+| BR-API-03 | 외부 모델 기능 엔드포인트 `/v1/models/{segment\|classify\|pose\|relief\|caption}`는 API 키 인증 필수 | UC3, UC11, UC12 | Intent [핵심 장벽] 외부 엔드포인트 · [부정적 영향] 외부 엔드포인트 남용 |
+| BR-API-04 | 요청 한도·요청 크기 제한(한도 수치는 U12 예시값, 확정 아님) | UC8, UC11, UC12 | Intent [부정적 영향] 외부 엔드포인트 남용 |
+| BR-API-05 | 외부 호출 입력·결과는 처리 뒤 보관하지 않고 로그에도 남기지 않는다. 입력·결과는 워커 임시 영역에만 두고 원본·결과 저장소에 쓰지 않는다. 결과를 내려받거나 보관 상한(`자료 없음 — 확인 필요`, U12)이 지나면 지운다. 처리 중 임시 보관은 "보관"이 아니다 [통합 D8] | UC7, UC8, UC11, UC12 | Intent [부정적 영향] 외부 엔드포인트 남용 · FR-28 |
 | BR-API-06 | 외부 클라이언트는 가족 데이터(`/v1/artworks…`, `/v1/gallery`)에 접근하지 못한다 | UC6, UC7, UC11, UC12 | Intent [부정적 영향] 외부 엔드포인트 남용 |
 | BR-API-07 | 'API활용' 메뉴는 엔드포인트·가이드라인·매뉴얼 3영역, 팀원 전용(보호자 화면에 없음) | UC11 | 추가 요구 R4 · spec FR-30 |
 | BR-API-08 | 엔드포인트 탭은 `/openapi.json`에서 생성해 실제 API·모델 버전과 어긋나지 않게 한다 | UC11 | 추가 요구 R4 · 공통 기준 §4 |
@@ -3505,8 +3506,8 @@ end
 | UC9 | 엔진 버전을 평가 그림으로 검증 | 모델 7종의 매니페스트·평가 묶음 재평가·승격·롤백으로 확장 |
 | 옛 UC10 (모델 API 변환) | 주액터가 시스템인 UC | 해체. 워커↔모델 호출과 응답·기록 분류 대응은 UC3(§7.3), 외부 모델 기능 호출은 UC12(§7.12)로 흡수 |
 | 새 UC10 | 없음 | 키워드로 작품 설명 초안을 만들고 승인한다(P0.5, UC5를 «extend») |
-| 새 UC12 | 없음 | 모델 기능 엔드포인트를 호출한다(P0.5, INC3 포함, UC11 EXT3가 포함) |
-| 공통·조건부 | INC1·INC2·EXT1~EXT3 | INC1~INC3 · EXT1~EXT3 · UC10 → UC5 «extend». EXT3는 UC12를 포함해 P0.5 |
+| 새 UC12 | 없음 | 모델 기능 엔드포인트를 호출한다(P0, caption은 P0.5, INC3 포함, UC11 EXT3가 포함) |
+| 공통·조건부 | INC1·INC2·EXT1~EXT3 | INC1~INC3 · EXT1~EXT3 · UC10 → UC5 «extend». EXT3는 UC12와 같은 구간(D17) |
 | 업무규칙 | 57개(12개 도메인) | 84개(16개 도메인) = UC 문서 80 + 통합 시 추가 4(BR-APR-06, BR-CAP-07, BR-EXH-07, BR-DEL-05) |
 | 다이어그램 | 23개 | 25개. UC 문서의 소스와 렌더 링크를 글자 그대로 옮겼다 |
 | 미해결 | 23건 | U1~U18(공통 번호) |
@@ -3526,16 +3527,17 @@ end
 | D9 | M7(3D)은 외부 엔드포인트에 열지 않는다(404) | UC12 | §2.4 · §7.12 E7 |
 | D10 | 3D 노출은 노출 설정으로 켠다(기본 꺼짐). GPU 확인(U2) 뒤 켠다. 저장된 GLB 감상에는 GPU가 필요 없다. 꺼져 있으면 3D 결과는 원본 액자로 보인다 | UC2, UC4, UC6 | §6 · §7.2 A9 · §7.3 A10 · §7.4 §1 표·A8 · §7.6 사전조건·A3·E7 · §8 BR-SRV-02 |
 | D11 | 신규 BR-APR-06. 결정은 작품당 1회 반영(중복 요청은 첫 결정 유지). "낮춘 결과로 걸기"로 2.5D를 새로 만드는 것은 재생성 금지에 걸리지 않는다. 처음 결과는 보관 | UC4 | §7.4 A1·E7 · §8 |
-| D12 | EXT3(시험 호출)은 UC12(P0.5)를 포함하므로 구간은 P0.5 | UC11 | §2.5 · §7.11 §1·A1 |
+| D12 | EXT3(시험 호출)은 UC12를 포함하므로 UC12와 같은 구간을 따른다. D17에 따라 P0에서는 네 기능, `caption`은 P0.5 | UC11 | §2.5 · §7.11 §1·A1 |
 | D13 | 엔드포인트 추가([추론], U8): `PATCH /v1/children/{id}`, `GET /v1/artworks`, `GET /v1/models/jobs/{job_id}`·`…/result`. 옛 `/v1/jobs…`는 쓰지 않는다 | UC1, UC3, UC12 | §2.4 엔드포인트 표 · §7.1 A1 · §7.3 기본흐름 1단계 · §7.12 기본흐름 6단계 |
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정. 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 | §7.2 A3 · §7.4 §1 · §7.8 지표 표 · §8 BR-OPS-02 |
 | D15 | 신규 미해결 U16(승인된 설명을 내리거나 교체하는 절차), U17('API활용' 메뉴 위치·관리 엔드포인트 조회 권한), U18(`invalid_input` 등 연동 오류 분류) | UC10, UC11, UC3 | §7.3 대응표 아래 · §7.5 A7 · §7.10 E3 · §7.11 §1.2·비고 · §7.12 E4 · §9.4 |
+| D17 | (2026-09-28 추가, 신지현 결정 · 이제민 조건부 승인 — 절충안) 외부 모델 기능 엔드포인트를 나눈다. P0: `segment`·`classify`·`relief`(외부 키)와 `pose`(팀 내부 키 전용), API 키, 요청 한도(U12 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건), 크기 제한, 입력 비보존, 승격된 활성 버전만, 낮은 우선순위 대기열. P0.5: `caption`과 외부 API 약관. 호출자는 팀 밖 외부 클라이언트까지. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다. Intent-Specify(DDBM)는 반영 대기. `classify`는 OpenCLIP 가중치 라이선스 확정 기록(A2) 전까지 비활성(BR-MDL-07). | UC11, UC12 | §2.4 · §7.11 · §7.12 · §8 BR-API-03~05 |
 
 ### 9.2 도출 결과
 
 | 항목 | 결과 |
 |---|---|
-| 유스케이스 | 12개(UC1~UC12). P0 10개(UC6은 P1 3D 대체흐름 포함), P0.5 2개(UC10, UC12) |
+| 유스케이스 | 12개(UC1~UC12). P0 11개(UC6은 P1 3D 대체흐름 포함, UC12는 caption만 P0.5), P0.5 1개(UC10) |
 | 공통·조건부 | «include» 3개(INC1 로그인·가족 접근 확인, INC2 팀원 로그인·역할 확인, INC3 API 키 인증·요청 한도 확인) · «extend» 3개(EXT1 실행 중 처리 취소, EXT2 다시 찍어 재접수, EXT3 평가 작품으로 시험 호출) + UC10 → UC5 «extend»(설명 초안 받기) |
 | 액터 | 7개 = Primary 5(보호자, 서비스 운영자, 평가 담당 팀원, 연동 개발 팀원, 외부 클라이언트) + Secondary 1(원본·결과 저장소) + 조건부 Secondary 1(과정 제공 LLM). 이해관계자(아이, 성장한 아이)는 액터로 두지 않음. 모델 M1~M7은 내부 구성요소 |
 | 모델 | 7종(M1~M7). M4는 규칙이며 모델이 아님. 서빙군 3종(CPU 비전 · GPU · LLM) |
@@ -3586,7 +3588,7 @@ end
 | FR-25 | UC3 | 서빙 3종 분리, UC8에서 관찰 |
 | FR-26 | UC8 | 모델별 지표 |
 | FR-27 | UC10 | P0.5 |
-| FR-28 | UC12 | P0.5 |
+| FR-28 | UC12 | P0 (caption은 P0.5) |
 | FR-29 | UC6 (P1 대체흐름) · UC2 확정값 `sculpture` | P1, GPU 확인 후(U2) |
 | FR-30 | UC11 · UC3 · UC12 | R3·R4 |
 | **FR-18 사용 관찰 기록** | **미전환** | 사람이 수행하는 검증 활동이라 시스템과 상호작용하는 액터 목표가 아니다. P0 검증 계획(관찰 기록 양식)으로 관리한다. 실제 아동 참여는 동의·수집 조건 확정 뒤에만 한다(Intent [미션]) |
@@ -3631,7 +3633,7 @@ end
 | U9 | 움직이는 작품·2.5D 결과의 서비스 파일 형식(GIF/MP4/깊이맵+셰이더 등) | UC3, UC4, UC6 | 중간. 저장·전시 화면 구현이 달라진다 |
 | U10 | 판정 제안 문구 확정과 제안 지연 시 화면 | UC2 | 중간. 현재 문구는 [추론] |
 | U11 | 설명 규칙 검사의 금지어·사건 판별 방식, 재생성 상한 | UC10 | 중간. 기억 왜곡 방지의 핵심이다. 상한 2회는 [추론] |
-| U12 | 외부 클라이언트 API 키 발급 주체·요청 한도 수치·약관 | UC12 | 낮음. P0.5이며 수요가 가설이다 |
+| U12 | 외부 클라이언트 API 키 발급 주체·요청 한도 수치(현재 예시값, 확정 아님)·약관 | UC12 | 중간. 발급 주체·한도는 P0 착수 전, 약관은 P0.5 착수 전(D17). 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건 |
 | U13 | 법정대리인 동의 절차(상용화 전) | UC1 · 전체 | P0 밖. 다만 실제 아동 참여 관찰의 전제다 |
 | U14 | 모델 파일 경로(팀 서버) | UC9, UC11 | 중간. R1이 명시를 요구했다. UC9 재현 때 확정한다 |
 | U15 | 백업 사본 보존·삭제 정책 | UC7 | P0 밖. 운영 전 결정 |
