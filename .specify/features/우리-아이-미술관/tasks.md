@@ -269,7 +269,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **독립 검증 기준**: 평가 미완료가 있으면 승격 버튼 비활성, 통과 뒤 승격 → 새 작업부터 새 버전, 롤백 즉시, 첫 버전 비활성 → 그 모델이 필요한 선택지가 확정 화면에서 비활성·대기 작업은 `model_not_ready`.
 
 - [ ] T113 [P] [US8] 평가·승격 시험: 해시 불일치·격리 미충족 거부(G21), 미완료·라이선스·계약 불일치 승격 거부(G22), 가족 사진 평가 항목 거부(G20), 비활성화 뒤 선택지 비활성·낮춤으로 우회 0건 — `api/tests/models-admin.test.ts` · 담당 B · 스킬 API · 근거 FR-24, Scenario 15, spec clarify(첫 버전 비활성화)
-- [ ] T114 [US8] 매니페스트 동기화 CLI를 만든다(`models/manifest.yaml` → `model_version` 후보) — `api/scripts/ops/manifest-sync.ts` · 담당 B · 스킬 DB · 근거 R-16
+- [x] T114 (A 도구로 대체 — `serving/ops/models.py register`가 `models/manifest.yaml`에서 `model_version` 후보를 등록, B CLI는 만들지 않음) 매니페스트 동기화 CLI — 담당 B·A · 스킬 DB · 근거 R-16
 - [ ] T115 [US8] 관리 API를 만든다: 모델 목록·버전·평가 요청(`stage_job origin=eval`, priority 50, 보완 S3)·평가 결과·승격(`v_promotion_eligibility`)·롤백·**비활성화**(활성 버전 → `retired`, `release_event.kind='deactivate'`는 보완 S9 — SD_03 개정 전에는 앱 감사 로그)·평가 항목 등록 — `api/src/modules/admin/models.ts` · `api/src/modules/admin/evalItems.ts` · 담당 B · 스킬 API · 근거 contracts `/v1/admin/*`, BR-MDL-03·04·07
 - [ ] T116 [US8] 확정 화면·확정 API가 비활성 모델의 선택지를 이유와 함께 막도록 연결한다(판정 모델 비활성이면 제안 없이 직접 확정) — `api/src/modules/artworks/confirm.ts` · `web/src/app/views/ConfirmView.vue` · 담당 B·C · 스킬 API, FD · 근거 spec clarify(첫 버전 비활성화), BR-FBK-04
 - [ ] T117 [US8] 평가 실행기를 만든다(같은 어댑터로 항목별 결과·시간·메모리, 인프라 소진은 평가 미완료) — `eval/runner.py` · `serving/workers/stages/eval.py` · 담당 A · 스킬 — · 근거 UC9 BF4, FR-17

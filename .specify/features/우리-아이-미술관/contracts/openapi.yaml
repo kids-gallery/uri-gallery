@@ -923,6 +923,15 @@ paths:
       tags: [관리]
       summary: 롤백 — 재평가 없이 즉시, 새 작업부터 (D5)
       security: [{ staffSession: [evaluator] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500, description: '사유 필수(SD_03 chk_re_rollback·chk_re_deactivate). 분류 코드나 짧은 문장 — 가족 정보 없음' }
       responses:
         '200':
           description: 롤백됨
@@ -939,8 +948,17 @@ paths:
       - $ref: '#/components/parameters/ModelId'
     post:
       tags: [관리]
-      summary: 활성 해제 [추론 — SD_01 §17 #2 해소안]. 해당 단계는 model_not_ready
+      summary: 비활성화(clarify 2026-09-28 — 롤백 후보 없는 첫 버전 문제) — 활성 버전을 retired로, release_event deactivate. 그 모델이 필요한 확정 선택지는 막힌다
       security: [{ staffSession: [evaluator] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500, description: '사유 필수(SD_03 chk_re_rollback·chk_re_deactivate). 분류 코드나 짧은 문장 — 가족 정보 없음' }
       responses:
         '200':
           description: 해제됨
