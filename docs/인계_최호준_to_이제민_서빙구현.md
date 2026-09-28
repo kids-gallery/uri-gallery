@@ -31,9 +31,10 @@
 | 1 | T014 `0100_impl_queue.sql` | S3의 `CHECK (origin <> 'eval' OR (artwork_id IS NULL AND evaluation_id IS NOT NULL))`는 **MariaDB가 거부한다**(ERROR 1901 — `artwork_id`가 `ON DELETE SET NULL` FK). `trg_stage_job_bi` 안의 `SIGNAL`로 옮긴다. 대역 파일에 동작하는 예시가 있다 | 2026-09-28 실측 |
 | 2 | `contracts/model-api.openapi.yaml` | `/internal/ready` 응답에 `models[]` 추가, `/internal/models`·`/internal/models/{id}/warmup`·`/internal/console` 경로 추가(형식: `docs/A_모델적재_화면요구.md` §2.2) | 적재 시간 화면 요구 |
 | 3 | T008 `ops/ecosystem.config.cjs` | 아래 §4 항목 | 진입점이 생겼다 |
-| 4 | llm-contract §1 호출자 상한 30초 | 공유 Ollama 규칙은 **클라이언트 타임아웃 300초 이상**(앞 사람 요청 대기 포함). llm-server→Ollama는 300초로 두었다. app-api→llm-server 30초는 유지하되, 30초에 끊기면 G15 선택지로 가는 것이 정상 동작임을 계약에 적어 달라 | 규칙 충돌 |
+| 4 | llm-contract §1 호출자 상한 30초 | 공유 Ollama 규칙(가이드 §1.3)은 **클라이언트 타임아웃 300초 이상**(앞 사람 요청 대기 포함). llm-server→Ollama는 300초로 두었다. app-api→llm-server 30초는 유지하되, 30초에 끊기면 G15 선택지로 가는 것이 정상 동작임을 계약에 적어 달라 | 규칙 충돌 |
 | 5 | research R-22 · llm-contract §3 · tasks T126 | M6 태그 `qwen3:4b` → **`qwen3:4b-instruct-2507-q4_K_M`**. 공유 서버의 `qwen3:4b`는 생각 전용 모델(Thinking-2507)과 같은 블롭이라 생각 과정을 끌 수 없다(`docs/A_모델재현기록.md`) | 실측 |
 | 6 | `api` 진행 응답·운영 경로 | `docs/A_모델적재_화면요구.md` §4 | 적재 중을 오류와 구별 |
+| 10 | llm-contract §1·§3, research R-22 | 공유 서버 가이드(`docs/Ollama 유저 가이드.md`) 반영: **`num_ctx` 2048 → 8192 고정**, M6 수동 웜업 없음(기동 때 1회), `/v1/ready`는 상주를 짐작으로 보고(`estimated`). `POST /v1/warmup`은 없앴다 | 공유 서버 규칙 |
 | 8 | `limits.yaml`·pm2 | M1(BiRefNet) CPU 추론 중 RSS 8.5GB — 팀 서버 RAM 확인(T068) 전에는 worker-cpu를 1개로 | 실측 |
 | 9 | 팀 서버 준비 | Homebrew ffmpeg가 깨져 있다(`libx265.215.dylib` 없음). 서빙은 `imageio-ffmpeg` 고정 바이너리를 쓰므로 영향 없음 — 다른 용도로 ffmpeg가 필요하면 `brew reinstall ffmpeg` | 실측 |
 | 7 | US5 이야기(T085·T090) | 공동 보호자 두 명이 같은 이야기를 동시에 고치는 충돌: `story`에 버전 컬럼(또는 `updated_at` 비교) + 409 `story_conflict`("다른 보호자가 먼저 고쳤어요") 작업이 tasks.md에 없다. spec 인계 문서 §2의 "이야기 동시 수정 충돌 안내"에 해당 | 누락 |

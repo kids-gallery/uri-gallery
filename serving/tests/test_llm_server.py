@@ -37,12 +37,13 @@ class FakeOllama:
                 self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
 
             def do_GET(self):
+                srv.requests.append((self.path, {}))
                 if self.path == "/api/version":
                     return self._send(200, {"version": "0.34.0"})
                 if self.path == "/api/tags":
                     return self._send(200, {"models": [{"name": oc_model()}]})
                 if self.path == "/api/ps":
-                    return self._send(200, {"models": [{"name": oc_model(), "expires_at": "x"}] if srv.loaded else []})
+                    return self._send(200, {"models": [{"name": oc_model(), "expires_at": "2026-09-28T16:28:12.585369123+09:00", "context_length": 8192}] if srv.loaded else []})
                 self._send(404, {})
 
             def do_POST(self):
@@ -95,7 +96,7 @@ def test_caption_ok_follows_shared_server_rules(llm):
     assert r["model"]["version"] == f"qwen3-4b-instruct-2507-q4_K_M@sha256:{DIGEST[:12]}"
     body = fake.chats()[0]
     assert body["think"] is False and body["stream"] is False and body["keep_alive"] == "5m"
-    assert body["options"]["num_ctx"] == 2048 and body["options"]["num_ctx"] <= 8192
+    assert body["options"]["num_ctx"] == 8192 and body["options"]["num_predict"] == 160   # 가이드 §1.3 고정값
     assert body["messages"][-1]["content"].endswith("/no_think")
     sent = json.dumps(body, ensure_ascii=False)
     assert "하늘" not in sent and "비밀" not in sent        # 허용 목록 밖 필드는 보내지 않는다(BR-CAP-01)
@@ -118,6 +119,9 @@ def test_errors_classified(llm):
     fake.chat_status = 404
     assert c.post("/v1/caption", json={"keywords": ["a"]}).json()["outcome"] == "model_not_ready"
     n = len(fake.chats())
+    assert c.post("/v1/caption", json={"keywords": ["a"]}).json()["outcome"] == "model_not_ready"
+    assert len(fake.chats()) == n                             # 404 뒤에는 같은 요청을 되풀이하지 않는다
+    appmod.state.reinventory_at = time.time() - 1             # 1분 지남 → 설치 목록 한 번 다시 확인
     fake.chat_status = 500
     assert c.post("/v1/caption", json={"keywords": ["a"]}).json()["outcome"] == "engine_down"
     assert len(fake.chats()) - n == 3                         # 5xx만 3회까지
@@ -128,23 +132,66 @@ def test_errors_classified(llm):
     assert c.post("/v1/caption", json={"words": "x"}).status_code == 422
 
 
-def test_ready_cold_loading_ready(llm):
+def test_preload_once_at_start_then_no_polling(llm):
+    """가이드 §1.7-6·10: 미리 올리기는 기동 때 1회, 그 뒤 /v1/ready는 Ollama를 두드리지 않는다."""
     fake, appmod, _ = llm
     fake.load_delay = 0.6
+    import os as _os
+    _os.environ["LLM_WARM_ON_START"] = "1"
+    try:
+        with TestClient(appmod.app) as c:
+            time.sleep(0.2)
+            m = c.get("/v1/ready").json()["model"]
+            assert m["state"] == "loading" and m["expectedLoadSeconds"] == 13.47 and m["remainingSeconds"] is not None
+            time.sleep(0.7)
+            before = list(fake.requests)
+            for _ in range(20):
+                r = c.get("/v1/ready").json()
+            m = r["model"]
+            assert m["state"] == "ready" and m["estimated"] and m["loadedUntil"] and m["lastLoadSeconds"] >= 0.5
+            polled = [p for p, _ in fake.requests[len(before):]]
+            assert polled == []                               # ps·tags·show·version 모두 0회
+            assert c.post("/v1/warmup").status_code in (404, 405)   # 수동 웜업 경로 없음
+    finally:
+        _os.environ["LLM_WARM_ON_START"] = "0"
+    gens = [b for p, b in fake.requests if p == "/api/generate"]
+    assert len(gens) == 1 and gens[0]["keep_alive"] == "5m" and gens[0]["options"]["num_ctx"] == 8192
+    startup = [p for p, _ in fake.requests if p in ("/api/ps", "/api/tags", "/api/show")]
+    assert sorted(startup) == ["/api/ps", "/api/show", "/api/tags"]   # 기동 때 한 번씩
+
+
+def test_estimated_cold_after_keep_alive(llm):
+    fake, appmod, _ = llm
     c = TestClient(appmod.app)
-    r = c.get("/v1/ready").json()
-    assert r["ollama"] and r["licenseConfirmed"] and r["activeVersion"].endswith(DIGEST[:12])
-    assert r["model"]["state"] == "cold" and r["model"]["expectedLoadSeconds"] == 13.47
-    assert c.post("/v1/warmup").status_code == 202
-    time.sleep(0.2)
-    appmod.state.checked_at = 0
+    assert c.get("/v1/ready").json()["model"]["state"] == "cold"
+    assert c.post("/v1/caption", json={"keywords": ["바다"]}).json()["outcome"] == "ok"
     m = c.get("/v1/ready").json()["model"]
-    assert m["state"] == "loading" and m["remainingSeconds"] is not None
-    time.sleep(0.7)
-    m = c.get("/v1/ready").json()["model"]
-    assert m["state"] == "ready" and m["lastLoadSeconds"] >= 0.5
-    warm = [b for p, b in fake.requests if p == "/api/generate"][0]
-    assert warm["keep_alive"] == "5m" and warm["options"]["num_ctx"] == 2048   # 실제 호출과 같은 ctx(재적재 방지)
+    assert m["state"] == "ready" and m["lastLoadSeconds"] == 2.9      # Ollama load_duration으로 적재 시간 기록
+    appmod.state.loaded_until = time.time() - 1                       # keep_alive 5분 지남
+    assert c.get("/v1/ready").json()["model"]["state"] == "cold"
+
+
+def test_health_at_most_once_a_minute(llm):
+    fake, appmod, _ = llm
+    c = TestClient(appmod.app)
+    c.get("/v1/ready")
+    n = sum(p == "/api/version" for p, _ in fake.requests)
+    for _ in range(10):
+        c.get("/v1/ready")
+    assert sum(p == "/api/version" for p, _ in fake.requests) == n
+    appmod.state.health_at -= 61
+    c.get("/v1/ready")
+    assert sum(p == "/api/version" for p, _ in fake.requests) == n + 1
+
+
+def test_client_forces_guide_constants(llm):
+    fake, appmod, _ = llm
+    import llm_server.ollama_client as oc
+    oc.chat([{"role": "user", "content": "x"}], options={"num_ctx": 131072, "num_predict": 99999})
+    b = fake.chats()[-1]
+    assert b["options"]["num_ctx"] == 8192 and b["options"]["num_predict"] == 1024 and b["think"] is False
+    fake.replies = ["생각 과정...</think>\n답이에요."]                  # 여는 태그 없이 새어 나온 경우(가이드 §1.4)
+    assert oc.chat([{"role": "user", "content": "x"}])["content"] == "답이에요."
 
 
 def test_license_or_digest_blocks(llm, monkeypatch):
@@ -165,7 +212,7 @@ def test_no_model_management_calls_in_runtime_code():
     for f in list((root / "llm_server").glob("*.py")) + list((root / "workers").rglob("*.py")) + list((root / "model_api").glob("*.py")):
         s = f.read_text()
         for bad in ("/api/pull", "/api/create", "/api/delete", "/api/push", "/api/copy", "ollama serve", "ollama stop",
-                    '"keep_alive": -1', "keep_alive=-1"):
+                    '"keep_alive": -1', "keep_alive=-1", '"keep_alive": 0', "/v1/chat/completions"):
             assert bad not in s, (f.name, bad)
 
 

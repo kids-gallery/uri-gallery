@@ -96,7 +96,7 @@ def cmd_check(args) -> int:
     want = (load_manifest()["models"].get("M6") or {}).get("weights_sha256")
     if oc.version() is None:
         print("Ollama 응답 없음 — 공유 서버 장애. 직접 복구하지 말고(ollama serve 금지) 관리자에게 알린다"); return 1
-    if not any(t.get("name") == oc.CHAT_MODEL for t in oc.tags()):
+    if oc.CHAT_MODEL not in oc.installed_models():
         print(f"{oc.CHAT_MODEL} 없음 — `python -m ops.models prepare M6` 절차를 따른다"); return 1
     got = oc.blob_digest()
     print(f"tag={oc.CHAT_MODEL} digest={got}\nmanifest={want}\n일치={got == want}")
@@ -110,7 +110,8 @@ def cmd_prepare(args) -> int:
   2) 없으면: ollama pull qwen3:4b            # 태그 명시, 2.5GB(10GB 한도 안)
   3) python -m ops.models check M6            # 블롭 다이제스트 = 매니페스트
   4) python -m ops.models measure M6 --write  # 적재 시간 → load.expected_seconds
-  금지: ollama rm·stop·create(접두사 없는 이름)·serve, keep_alive -1, :cloud 모델""")
+  금지: ollama rm·stop·create(접두사 없는 이름)·serve, keep_alive -1, :cloud 모델, qwen3:4b(사고 모드가 꺼지지 않음)
+  규칙: docs/Ollama 유저 가이드.md — num_ctx 8192 고정, keep_alive 5m, 동시 1건, /api/ps 폴링 금지""")
     else:
         print(f"""{args.model} 준비
   1) pip install -e '.[models]'   (torch 등, 별도 venv 권장)
@@ -127,13 +128,14 @@ def _measure_m6() -> dict:
         print("이미 메모리에 올라가 있어 적재 시간을 잴 수 없다(공유 서버에서 ollama stop 금지). "
               "keep_alive(5분)가 지나 내려간 뒤 다시 잰다. 응답 시간만 잰다.")
     else:
-        from llm_server import caption as c
-        out["cold_load_s"] = round(oc.warm(num_ctx=c.GEN_OPTIONS["num_ctx"]), 2)
+        out["cold_load_s"] = round(oc.preload(), 2)
     t = time.monotonic()
-    r = oc.chat([{"role": "user", "content": "한 단어로 대답해: 하늘 색은?"}], options={"num_ctx": 2048, "num_predict": 16})
+    r = oc.chat([{"role": "user", "content": "한 단어로 대답해: 하늘 색은?"}], options={"num_predict": 16})
     out["first_reply_s"] = round(time.monotonic() - t, 2)
     out["ollama_load_s"] = round(r["load_s"], 2)
     out["think_leak"] = "<think>" in r["content"]
+    ps = [p for p in oc.loaded() if p.get("name") == oc.CHAT_MODEL]
+    out["context_length"] = ps[0].get("context_length") if ps else None   # 가이드 §2.4: 의도한 8192인지
     return out
 
 
@@ -153,8 +155,10 @@ def cmd_measure(args) -> int:
             print("적재 시간을 재지 못해 매니페스트를 고치지 않는다"); return 1
         data = load_manifest()
         m = data["models"].setdefault(args.model, {})
-        m["load"] = {"expected_seconds": res["cold_load_s"], "measured_on": socket.gethostname(),
-                     "measured_at": dt.date.today().isoformat()}
+        load = dict(m.get("load") or {})     # observed_max_seconds·note 등 다른 값은 남긴다
+        load.update(expected_seconds=res["cold_load_s"], measured_on=socket.gethostname(),
+                    measured_at=dt.date.today().isoformat())
+        m["load"] = load
         m["config_hash"] = config_hash(args.model)
         _manifest_write(data)
         print(f"매니페스트 {args.model}.load.expected_seconds = {res['cold_load_s']}")

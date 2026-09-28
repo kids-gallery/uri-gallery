@@ -21,7 +21,8 @@ SYSTEM = ("너는 아이 그림에 붙일 설명을 쓴다. 규칙:\n"
 SHOTS = [({"keywords": ["집", "빨간색"], "ageAtMaking": 4}, "4살 때 그린 작품이에요. 빨간색으로 집을 그렸어요."),
          ({"keywords": ["강아지"], "words": "우리 강아지 산책", "ageAtMaking": 6},
           "6살 때 그린 강아지 그림이에요. 아이는 강아지와 산책한 것이라고 말했어요.")]
-GEN_OPTIONS = {"temperature": 0.3, "num_predict": 160, "num_ctx": 2048}   # llm-contract §3 [추론]
+# num_ctx는 클라이언트가 8192로 고정한다(공유 서버 규칙, llm-contract §3의 2048을 대체). 출력은 2~3문장이라 160 토큰
+GEN_OPTIONS = {"temperature": 0.3, "num_predict": 160}
 MAX_REGEN = 2
 
 

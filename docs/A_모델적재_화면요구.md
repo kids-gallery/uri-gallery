@@ -7,7 +7,7 @@
 
 | 모델 | 적재에 걸리는 시간 | 언제 다시 겪나 |
 |---|---|---|
-| M6 설명(Ollama) | 첫 적재 1~14초. 공유 서버가 붐비면 앞 사람 요청까지 기다린다(§7.4 "첫 요청 10~30초") | Ollama `keep_alive` 5분(공유 서버 규칙상 5분 초과 금지). **5분 동안 요청이 없으면 다음 요청이 다시 적재를 기다린다** |
+| M6 설명(Ollama) | 첫 적재 1.07초(디스크 캐시)~13.47초(첫 읽기). 공유 서버가 붐비면 앞 사람 요청까지 기다린다(가이드 §1.4 "첫 요청 10~30초") | Ollama `keep_alive` 5분(공유 서버 규칙상 5분 초과 금지). **5분 동안 요청이 없으면 다음 요청이 다시 적재를 기다린다.** 다른 사용자 모델 때문에 먼저 내려갈 수도 있다 |
 | M1·M2·M5(파이썬 워커) | 가중치 크기 99~605MB — 실측은 T070·T082에서 `ops.models measure`로 | 워커 기동·재시작 때마다 |
 | M3(TorchServe) | 1차 실측 RAM 3.1GB, 기동 수십 초 `[추론]` | TorchServe 재시작 때 |
 
@@ -22,7 +22,7 @@
 | `ready` | 올라가 있음 | 정상 |
 | `loading` | 올리는 중. `elapsedSeconds`, `remainingSeconds`(= 매니페스트 `expected_seconds` − 경과, 짐작) | 그 모델이 필요한 단계는 **점유하지 않고 기다림** |
 | `not_loaded` | 워커가 아직 올리지 않음(기동 직후 순서 대기) | 기다림 |
-| `cold` | (M6만) Ollama가 5분 뒤 내림 — 다음 요청이 적재를 겪음 | 요청은 받음. 첫 응답이 느림 |
+| `cold` | (M6만) 내려갔다고 **짐작** — 마지막 응답 뒤 5분 경과. 공유 서버 규칙상 `/api/ps`를 폴링하지 않아 실제와 다를 수 있다(`estimated: true`) | 요청은 받음. 첫 응답이 느릴 수 있음 |
 | `failed` | 적재 실패. 60초마다 다시 시도 | 점유해서 `model_not_ready`로 기록 → 10초·60초 재시도 → 소진 규칙(D1) |
 | `disabled` | 활성 버전 없음·라이선스 미확인(G25) | app-api가 작업을 만들지 않음, 확정 선택지를 이유와 함께 막음 |
 
@@ -32,9 +32,9 @@
 |---|---|---|
 | `GET /internal/ready` | app-api `/ready` | 계약 필드(`groups`·`runtimes`·`gpuEnabled`) + **`models[]`**(보완) |
 | `GET /internal/models` | app-api 운영 경로 → S11 | `models[]{modelId, activeVersion, execDevice, runtime, licenseConfirmed, workers, load{state, elapsedSeconds, remainingSeconds, expectedSeconds, lastLoadSeconds, expiresAt}, hint, queue}` |
-| `POST /internal/models/{id}/warmup` | S11 "지금 불러오기" | 202 + 그 모델의 현재 상태. 파이썬 모델은 워커에 신호, M6는 llm-server로 |
+| `POST /internal/models/{id}/warmup` | S11 "지금 불러오기" | 202 + 그 모델의 현재 상태(워커에 신호). **M6는 409 `m6_preload_at_start_only`** — 공유 Ollama는 기동 때 1회만 미리 올린다(가이드 §1.7-10) |
 | `GET /internal/console` | A 운영(임시) | 위 두 경로를 쓰는 단독 HTML 화면(2초 폴링). S11이 생기면 개발·장애 대응용으로만 남긴다 |
-| llm-server `GET /v1/ready` | model-api가 합침 | `model{state, loaded, expiresAt, expectedLoadSeconds, lastLoadSeconds, elapsedSeconds, remainingSeconds}`, `queue{inFlight, waiting}` |
+| llm-server `GET /v1/ready` | model-api가 합침 | `model{state, loaded, estimated, loadedUntil, expectedLoadSeconds, maxObservedLoadSeconds, lastLoadSeconds, contextLength, elapsedSeconds, remainingSeconds, overdue}`, `queue{inFlight, waiting}`. **Ollama를 조회하지 않는다**(폴링해도 공유 서버에 부하 없음) |
 
 `hint` 코드: `model_loading` · `model_cold` · `model_failed` · `model_disabled` · `null`(정상).
 
@@ -57,7 +57,7 @@ python -m ops.models status                     # 매니페스트·DB 활성 버
 | 화면 | 조건 | 문구 `[추론]` | 동작 |
 |---|---|---|---|
 | S4 진행 상세, S3 판정 대기 | 작업 `queued`이고 그 단계 모델 `hint=model_loading` | "그림을 볼 준비를 하고 있어요. 조금만 기다려 주세요." (남은 시간 있으면 "약 N초") | 폴링 계속. 진행 막대는 "대기" 단계에 머묾. 빨간 표시·오류 블록 금지 |
-| S7 설명 만들기 | llm `model.state = cold` 또는 `loading` | 버튼 아래 "처음 만들 때는 10~30초쯤 걸릴 수 있어요." | 버튼을 누른 뒤 스피너 + 경과 초. 30초(호출자 상한)를 넘기면 G15 선택지 |
+| S7 설명 만들기 | llm `model.state = cold` 또는 `loading` | 버튼 아래 "처음 만들 때는 조금 더 걸릴 수 있어요." (`maxObservedLoadSeconds`가 있으면 "최대 약 N초") | 버튼을 누른 뒤 스피너 + 경과 초. 30초(호출자 상한)를 넘기면 G15 선택지 |
 | S7 | `queue.waiting > 0` | "다른 설명을 먼저 만들고 있어요." | 같음 |
 | S3 확정 | `hint=model_disabled` | 기존 clarify 결정대로 그 선택지를 이유와 함께 막음 | — |
 
@@ -72,7 +72,7 @@ python -m ops.models status                     # 매니페스트·DB 활성 버
 | 활성 버전·장치 | `activeVersion` · `execDevice`/`runtime`(MPS 표기 포함) |
 | 적재 | 상태 배지 + `loading`이면 진행 막대(경과/예상) · 마지막 적재 초 · M6는 "내려갈 시각" |
 | 대기 | M6 `queue` · 그 밖은 `v_metrics_model.queue_backlog`(B) |
-| 동작 | "지금 불러오기"(`not_loaded`·`failed`·`cold`일 때만) → `POST …/warmup`, 결과는 폴링으로 |
+| 동작 | "지금 불러오기"(M1·M2·M3·M5·M7이 `not_loaded`·`failed`일 때만) → `POST …/warmup`, 결과는 폴링으로. M6에는 버튼을 두지 않고 "첫 요청 때 올라가요"라고 쓴다 |
 
 폴링 2초 `[추론]`, 화면이 안 보일 때(document.hidden) 멈춤. 참고 구현: `serving/model_api/console.html`.
 

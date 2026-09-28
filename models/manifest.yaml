@@ -67,18 +67,18 @@ models:
     ollama_tag: qwen3:4b-instruct-2507-q4_K_M
     variant: GGUF Q4_K_M (non-thinking)
     weights_sha256: 85e4a5b7b8ef0e48af0e8658f5aaab9c2324c76c1641493f4d1e25fce54b18b9
-    config_hash: 7984f243c0ae2fb9674b9412777bb0daff6e0b127a2f328ddc8b60a03b4d592e
+    config_hash: 960a7fe4ce21c29ba03c8a05c9d947363dd8e142bd0d92e6b479bdf3dc966298
     runtime: ollama-0.34.0-metal
     exec_device: gpu
     license_confirmed: false
     size_mb: 2497
     load:
-      expected_seconds: 1.09
+      expected_seconds: 1.07
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
       observed_max_seconds: 13.47
-      note: expected_seconds는 디스크 캐시가 있을 때. 같은 크기 모델의 디스크 첫 읽기 13.47초 — 화면은 둘 사이를
-        안내
+      note: expected_seconds는 디스크 캐시가 있을 때(num_ctx 8192). 같은 크기 모델의 디스크 첫 읽기 13.47초
+        — 화면은 둘 사이를 안내
     note: weights_sha256 = `ollama show <tag> --modelfile`의 FROM 블롭 다이제스트(Studio-B
       공유 Ollama v0.34.0). 공유 서버의 `qwen3:4b`는 Qwen3-4B-Thinking-2507과 같은 블롭(sha256:3e4cb141…)이라
       생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A_모델재현기록.md). 라이선스 Apache-2.0(모델 카드)이나

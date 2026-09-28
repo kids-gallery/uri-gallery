@@ -48,3 +48,5 @@ def test_disabled_model_and_warmup_flag(env):
     w.poll_warmup_requests(); time.sleep(0.2)
     assert w.board.get("M1").state == "ready"
     assert c.post("/internal/models/M9/warmup").status_code == 404
+    r = c.post("/internal/models/M6/warmup")
+    assert r.status_code == 409 and r.json()["code"] == "m6_preload_at_start_only"   # 공유 Ollama 규칙

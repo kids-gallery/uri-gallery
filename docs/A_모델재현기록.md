@@ -12,7 +12,8 @@
 | Ollama 태그 | **`qwen3:4b-instruct-2507-q4_K_M`** (Qwen3-4B-Instruct-2507, GGUF Q4_K_M, 2,497,280,480바이트) |
 | weights_sha256 | `85e4a5b7b8ef0e48af0e8658f5aaab9c2324c76c1641493f4d1e25fce54b18b9` (`ollama show --modelfile`의 FROM 블롭) |
 | config_hash | `ops.models`가 시스템 지시·예시·생성 옵션으로 계산(매니페스트) |
-| 호출 | `/api/chat`, `think:false`, 끝에 `/no_think`, `keep_alive "5m"`, `num_ctx 2048`, `temperature 0.3`, `num_predict 160`, 타임아웃 300초, 동시 1 |
+| 호출 | `/api/chat`, `think:false`, 끝에 `/no_think`, `keep_alive "5m"`, **`num_ctx 8192`(공유 서버 고정값)**, `temperature 0.3`, `num_predict 160`, 타임아웃 300초, 동시 1 |
+| 규칙 정본 | `docs/Ollama 유저 가이드.md`(원본 `/Users/Shared/ollama/ollama-user-guide.md`, 2026-09-28판) |
 | 응답 시간 | 적재된 상태 0.3~0.5초/건 |
 | 라이선스 | 모델 카드 Apache-2.0. **팀 확정 기록 전 `license_confirmed=false`**(U4) — llm-server는 `disabled` |
 
@@ -39,7 +40,19 @@
 | `qwen3:4b`(생각 모델) 첫 적재 | 13.47초(공유 서버, 디스크 캐시 없음) |
 | instruct 첫 요청의 `load_duration` | 1.1초(pull 직후, 디스크 캐시 있음) |
 | 웜업과 실제 호출의 `num_ctx`가 다를 때 | 첫 실제 호출에서 **다시 적재 2.9초** — 웜업도 `num_ctx 2048`로 맞췄다 |
-| instruct 콜드 적재 | `python -m ops.models measure M6 --write` 결과를 매니페스트 `load.expected_seconds`에 기록 |
+| instruct 콜드 적재(`num_ctx 8192`, 디스크 캐시 있음) | **1.07초** — 미리 올린 뒤 첫 호출 재적재 0초, `/api/ps` `context_length=8192` 확인(가이드 §2.4) |
+
+### 공유 서버 가이드 반영(2026-09-28판)
+
+| 가이드 | 구현 |
+|---|---|
+| §1.3 `num_ctx` 8192 고정 | `ollama_client`가 호출자 값을 무시하고 8192로 넣는다. llm-contract §3의 2048을 대체 |
+| §1.7-2 `num_predict` 기본 1024 | 기본 1024, 설명은 160으로 더 줄여 쓴다(상한만 강제) |
+| §1.7-5 동시 1건 | `ollama_client`의 프로세스 잠금(미리 올리기와 생성도 겹치지 않음) + llm-server 대기열 |
+| §1.7-6 `/api/ps`·`/api/tags` 폴링 금지, `/api/version` 1분 1회 이하 | 설치·다이제스트·상주 확인은 llm-server 기동 때 1회. 이후 상주 여부는 마지막 성공 응답 + 5분으로 **짐작**(`estimated: true`). 404가 나면 1분 뒤 설치 목록을 한 번 다시 본다 |
+| §1.7-10 미리 올리기는 기동 때 1회 | 운영 화면의 M6 "지금 불러오기" 제거(model-api 409 `m6_preload_at_start_only`) |
+| §1.2 `qwen3:4b` 사용하지 않음 | 이미 `qwen3:4b-instruct-2507-q4_K_M`로 바꿈(가이드 권장과 같음) |
+| §1.4 `</think>` 안전장치 | 여는 태그 없이 새어 나온 경우도 `</think>` 앞을 잘라 낸다 |
 
 ### 주의 — `localhost`가 아니라 `127.0.0.1`
 

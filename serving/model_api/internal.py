@@ -3,12 +3,12 @@
   GET  /internal/ready                     서빙군·런타임 준비(openapi 계약) + models[] 적재 상태(보완)
   GET  /internal/models                    모델별 활성 버전·장치·적재 상태(운영 S11 "모델 상태" 표)
   GET  /internal/console                   운영자용 적재 상태 화면(내부 콘솔)
-  POST /internal/models/{model_id}/warmup  지금 불러오기 — 워커에 적재 요청(파일 신호), M6는 llm-server로. 202
+  POST /internal/models/{model_id}/warmup  지금 불러오기 — 워커에 적재 요청(파일 신호). 202. M6는 409(공유 Ollama 규칙)
 
 적재 상태(model.load.state): disabled · not_loaded · loading · ready · failed (common.model_state).
 화면 문구 코드(hint):
   model_loading   "모델을 불러오는 중이에요(약 N초)" — 작업은 큐에서 기다린다. 보호자에게 오류로 보이지 않는다
-  model_cold      "처음 요청은 조금 더 걸려요" — M6가 내려가 있음(keep_alive 5분 경과)
+  model_cold      "처음 요청은 조금 더 걸려요" — M6가 내려갔다고 짐작(마지막 응답 뒤 keep_alive 5분 경과)
   model_failed    운영자에게만: 적재 실패, 대기 작업은 model_not_ready로 재시도
   model_disabled  활성 버전 없음·라이선스 미확인(G25) — 그 모델이 필요한 선택지를 막는다
 """
@@ -136,9 +136,10 @@ def warmup(model_id: str):
         raise HTTPException(404, "unknown_model")
     s = load_settings()
     if model_id == "M6":
-        r = _get_json(s.llm_server_url.rstrip("/") + "/v1/warmup", method="POST", timeout=10)
-        if r is None:
-            return JSONResponse({"code": "llm_server_down"}, status_code=503)
+        # 공유 Ollama: 미리 올리기는 llm-server 기동 때 1회만(가이드 §1.7-10). 그 뒤는 첫 요청이 올린다
+        return JSONResponse({"code": "m6_preload_at_start_only",
+                             "detail": "M6는 llm-server 기동 때 한 번만 미리 올린다. 내려가 있으면 첫 설명 요청이 올린다"},
+                            status_code=409)
     else:
         d = s.run_dir / "warmup"
         d.mkdir(parents=True, exist_ok=True)

@@ -1,15 +1,16 @@
-"""공유 Ollama 서버 클라이언트 — `docs/OLLAMA 설정 참조.md` §8.2 템플릿을 따른다(표준 라이브러리만).
+"""공유 Ollama 서버 클라이언트 — `docs/Ollama 유저 가이드.md`(원본 /Users/Shared/ollama/ollama-user-guide.md) §2.2 템플릿을 따른다.
 
-지키는 규칙(§7.3·§8.4):
-- URL·모델 이름은 환경 변수(OLLAMA_URL, OLLAMA_CHAT_MODEL)
-- 타임아웃 300초(앞 사람 요청을 기다리는 시간 포함), 연결 실패·시간 초과만 3초·6초 뒤 재시도, HTTP 오류는 재시도 안 함
-- keep_alive "5m"(영구 상주 -1 금지), num_ctx ≤ 8192
-- 동시 호출 1건 — 호출자(llm_server.app)가 세마포어로 막는다
-- qwen3 계열은 think:false + 프롬프트 끝 `/no_think`, 남은 <think> 블록은 지운다
-- 모델 태그는 `qwen3:4b-instruct-2507-q4_K_M`(생각 모드 없는 Qwen3-4B). 공유 서버의 `qwen3:4b`는
-  Qwen3-4B-Thinking-2507과 같은 블롭(sha256:3e4cb141…)이라 think:false·/no_think·빈 <think> 미리 채우기로도
-  생각 과정이 본문에 섞인다(2026-09-28 실측) — 쓰지 않는다
-- 런타임 코드에는 pull·create·rm·stop·serve 호출이 없다(모델 준비는 배포 전 1회 수동, ops/models.py 안내)
+가이드 규칙을 코드로 강제한다(표준 라이브러리만):
+- num_ctx 8192 고정(모든 요청·미리 올리기 포함). 다른 값은 받지 않는다 — 다르면 공용 모델이 다시 올라간다(§1.3, §1.7-1)
+- num_predict 기본 1024, 호출자가 더 줄일 수 있다(§1.7-2)
+- keep_alive "5m"(A등급 상한, -1·긴 상주 금지, §1.6)
+- 프로세스당 동시 요청 1건 — 이 모듈의 잠금(§1.7-5). llm_server.app의 대기열은 그 앞에서 순서만 센다
+- 연결 오류·시간 초과만 3초·6초 뒤 재시도, 4xx는 즉시 실패, 타임아웃 300초(§2.3)
+- think:false, 새어 나온 </think> 앞부분은 잘라낸다(§1.4). 모델은 `qwen3:4b-instruct-2507-q4_K_M`
+  (`qwen3:4b`는 사고 모드가 꺼지지 않아 가이드 §1.2 "사용하지 않는 모델")
+- /api/ps·/api/tags·/api/show는 폴링하지 않는다 — 기동 때와 운영 CLI에서만(§1.7-6). /api/version은 호출자가 1분에 1회 이하로
+- 런타임 코드에는 pull·create·rm·stop·serve·push, 공용 모델 keep_alive:0이 없다(§2.4)
+- 연결을 닫으면 서버도 생성을 멈춘다 — 호출자 취소에 쓴다(§1.7-9)
 """
 from __future__ import annotations
 
@@ -25,10 +26,12 @@ import urllib.parse
 # localhost 금지: IPv6 ::1은 공유 서버의 다른(설정만 있고 트래픽 없는) 인스턴스로 간다(참조 문서 §4 P7)
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 CHAT_MODEL = os.environ.get("OLLAMA_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M")
-TIMEOUT = 300
+NUM_CTX = 8192        # 고정값. 모두가 같은 값을 써야 올라가 있는 모델을 공유한다
+NUM_PREDICT = 1024    # 출력 길이 기본 상한
 KEEP_ALIVE = "5m"
-MAX_NUM_CTX = 8192
+TIMEOUT = 300
 _sleep = time.sleep          # 시험에서 바꿔 끼운다
+_lock = threading.Semaphore(1)   # 프로세스당 동시 요청 1건(미리 올리기와 생성이 겹치지 않게)
 _THINK = re.compile(r"<think>.*?</think>\s*", re.S)
 
 
@@ -100,11 +103,17 @@ def _request(method: str, path: str, payload: dict | None = None, retries: int =
     raise OllamaError("engine_down")
 
 
+def _strip_think(text: str) -> str:
+    text = _THINK.sub("", text)
+    return text.split("</think>", 1)[1] if "</think>" in text else text   # 여는 태그 없이 새어 나온 경우
+
+
 def chat(messages: list[dict], model: str = CHAT_MODEL, options: dict | None = None,
          call: _Call | None = None, json_mode: bool = False) -> dict:
     """{content, load_s, total_s} — load_s는 Ollama가 알려 준 적재 시간(이미 올라가 있었으면 0에 가깝다)."""
-    opts = {"num_ctx": 4096, **(options or {})}
-    opts["num_ctx"] = min(int(opts["num_ctx"]), MAX_NUM_CTX)
+    opts = {k: v for k, v in (options or {}).items() if k != "num_ctx"}
+    opts["num_ctx"] = NUM_CTX
+    opts["num_predict"] = min(int(opts.get("num_predict", NUM_PREDICT)), NUM_PREDICT)
     msgs = [dict(m) for m in messages]
     if model.startswith("qwen3") and msgs and msgs[-1]["role"] == "user" and not msgs[-1]["content"].rstrip().endswith("/no_think"):
         msgs[-1]["content"] = msgs[-1]["content"].rstrip() + " /no_think"
@@ -112,25 +121,32 @@ def chat(messages: list[dict], model: str = CHAT_MODEL, options: dict | None = N
             "keep_alive": KEEP_ALIVE, "options": opts}
     if json_mode:
         body["format"] = "json"
-    out = _request("POST", "/api/chat", body, call=call)
-    return {"content": _THINK.sub("", out.get("message", {}).get("content", "")).strip(),
+    with _lock:
+        out = _request("POST", "/api/chat", body, call=call)
+    return {"content": _strip_think(out.get("message", {}).get("content", "")).strip(),
             "load_s": (out.get("load_duration") or 0) / 1e9, "total_s": (out.get("total_duration") or 0) / 1e9}
 
 
-# ── 적재 상태(화면에 적재 시간을 보여 주기 위한 읽기 전용 조회) ─────────────────
-def version() -> str | None:
+# ── 서버 조회 — 폴링 금지(§1.7-6). 기동 때·운영 CLI에서만 부른다 ───────────────
+def health() -> str | None:
+    """서버 버전. 호출자가 1분에 1회 이하로 부른다."""
     try:
         return _request("GET", "/api/version", retries=1, timeout=3).get("version")
     except OllamaError:
         return None
 
 
-def tags() -> list[dict]:
-    return _request("GET", "/api/tags", retries=1, timeout=5).get("models", [])
+version = health
+
+
+def installed_models() -> list[str]:
+    """설치된 모델 이름(:cloud 제외)."""
+    return [m["name"] for m in _request("GET", "/api/tags", retries=1, timeout=5).get("models", [])
+            if not m["name"].endswith("cloud")]
 
 
 def loaded() -> list[dict]:
-    """/api/ps — 지금 메모리에 올라가 있는 모델과 내려갈 시각(expires_at)."""
+    """/api/ps — 메모리에 올라간 모델: name, context_length, expires_at."""
     return _request("GET", "/api/ps", retries=1, timeout=5).get("models", [])
 
 
@@ -141,12 +157,13 @@ def blob_digest(model: str = CHAT_MODEL) -> str | None:
     return m.group(1) if m else None
 
 
-def warm(model: str = CHAT_MODEL, num_ctx: int = 4096) -> float:
-    """모델을 메모리에 올린다(프롬프트 없는 generate = 적재만). 걸린 초를 돌려준다. keep_alive 5m 규칙 그대로.
+def preload(model: str = CHAT_MODEL) -> float:
+    """서비스 시작 때 1회만 미리 올린다(§1.6, §1.7-10). 걸린 초를 돌려준다.
 
-    num_ctx는 실제 호출과 같아야 한다 — 다르면 Ollama가 첫 실제 호출에서 모델을 다시 올린다(2026-09-28 실측 2.9초 재적재).
+    num_ctx는 실제 호출과 같은 8192 — 다르면 첫 실제 호출에서 다시 올라간다(2026-09-28 실측 2.9초 재적재).
     """
     t = time.monotonic()
-    _request("POST", "/api/generate", {"model": model, "keep_alive": KEEP_ALIVE, "stream": False,
-                                       "options": {"num_ctx": min(num_ctx, MAX_NUM_CTX)}})
+    with _lock:
+        _request("POST", "/api/generate", {"model": model, "keep_alive": KEEP_ALIVE, "stream": False,
+                                           "options": {"num_ctx": NUM_CTX}})
     return time.monotonic() - t
