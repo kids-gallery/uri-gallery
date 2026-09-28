@@ -704,7 +704,9 @@ CREATE TABLE IF NOT EXISTS gate_event (
   CONSTRAINT pk_gate_event PRIMARY KEY (event_id),
   CONSTRAINT fk_ge_gate FOREIGN KEY (gate_id) REFERENCES gate_catalog (gate_id),
   CONSTRAINT chk_ge_subject CHECK (subject_kind IN ('session','child','artwork','caption','stage_job',
-    'deletion','model_version','evaluation','eval_item','external_call')),
+    'deletion','model_version','evaluation','eval_item','external_call',
+    -- U1 확정 · G28 · G29 (이제민 보완 1)
+    'family_invite','guardian_account')),
   CONSTRAINT chk_ge_actor CHECK (actor_role IN ('guardian','operator','evaluator','integrator','external_client','system','anonymous')),
   CONSTRAINT chk_ge_release CHECK ((released_at IS NULL) = (release_action IS NULL)
     AND (released_at IS NULL) = (released_by_role IS NULL)),
@@ -1030,7 +1032,9 @@ SELECT g.event_id, g.subject_kind, g.subject_id FROM gate_event g
     OR (g.subject_kind = 'model_version' AND NOT EXISTS (SELECT 1 FROM model_version x WHERE x.version_id = g.subject_id))
     OR (g.subject_kind = 'evaluation'    AND NOT EXISTS (SELECT 1 FROM evaluation x WHERE x.evaluation_id = g.subject_id))
     OR (g.subject_kind = 'eval_item'     AND NOT EXISTS (SELECT 1 FROM eval_item x WHERE x.item_id = g.subject_id))
-    OR (g.subject_kind = 'external_call' AND NOT EXISTS (SELECT 1 FROM external_call_log x WHERE x.call_id = g.subject_id)));
+    OR (g.subject_kind = 'external_call' AND NOT EXISTS (SELECT 1 FROM external_call_log x WHERE x.call_id = g.subject_id))
+    OR (g.subject_kind = 'family_invite' AND NOT EXISTS (SELECT 1 FROM family_invite x WHERE x.invite_id = g.subject_id))
+    OR (g.subject_kind = 'guardian_account' AND NOT EXISTS (SELECT 1 FROM guardian_account x WHERE x.account_id = g.subject_id)));
 
 -- ---------------------------------------------------------------------
 -- 상수 시드 (재실행 가능)
