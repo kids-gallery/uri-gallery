@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>우리 아이 미술관 프로토타입</title>
+<meta name="description" content="SD_02 UI/UX 설계서의 S1~S12 화면을 스타일가이드 토큰으로 구현한 클릭 프로토타입">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400&family=Noto+Sans+KR:wght@300..700&display=swap" rel="stylesheet">
+<style>
+/* 토큰 — design/style-guide/DESIGN.md 값 그대로. 흑백 프레임 단일 테마(스타일가이드 결정) */
+:root{
+  --color-primary:#000; --color-on-primary:#fff; --color-ink:#000; --color-canvas:#fff;
+  --color-inverse-canvas:#000; --color-inverse-ink:#fff;
+  --color-hairline:#e6e6e6; --color-hairline-soft:#f1f1f1; --color-surface-soft:#f7f7f5;
+  --color-block-lime:#dceeb1; --color-block-lilac:#c5b0f4; --color-block-cream:#f4ecd6;
+  --color-block-pink:#efd4d4; --color-block-mint:#c8e6cd; --color-block-coral:#f3c9b6;
+  --color-block-navy:#1f1d3d; --color-accent-magenta:#ff3d8b; --color-semantic-success:#1ea64a;
+  --font-sans:"Inter","Pretendard Variable",Pretendard,"Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono",Menlo,"Noto Sans KR",monospace;
+  --r-xs:2px; --r-sm:6px; --r-md:8px; --r-lg:24px; --r-xl:32px; --r-pill:50px; --r-full:9999px;
+  --s-xxs:4px; --s-xs:8px; --s-sm:12px; --s-md:16px; --s-lg:24px; --s-xl:32px; --s-xxl:48px; --s-section:96px;
+  --elev-2:0 4px 16px rgba(0,0,0,.06); --elev-3:0 16px 48px rgba(0,0,0,.18);
+  --gutter:var(--s-xxl);
+  color-scheme:light;
+}
+@media (max-width:768px){:root{--gutter:var(--s-md)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-canvas);color:var(--color-ink);font:320 18px/1.45 var(--font-sans);letter-spacing:-.26px;overflow-x:hidden}
+h1,h2,h3,h4,p{margin:0}
+h1,h2,h3{text-wrap:balance}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+:focus-visible{outline:2px solid var(--color-ink);outline-offset:3px}
+.container{max-width:1280px;margin:0 auto;padding-inline:var(--gutter)}
+.mono{font-family:var(--font-mono)}
+.num{font-variant-numeric:tabular-nums}
+
+/* 타이포 역할 */
+.t-display{font:340 56px/1.08 var(--font-sans);letter-spacing:-.9px}
+.t-headline{font:540 26px/1.35 var(--font-sans);letter-spacing:-.26px}
+.t-card-title{font:700 22px/1.4 var(--font-sans);letter-spacing:0}
+.t-body-lg{font:330 20px/1.40 var(--font-sans);letter-spacing:-.14px}
+.t-body-sm{font:330 16px/1.45 var(--font-sans);letter-spacing:-.14px}
+.t-eyebrow{font:400 15px/1.3 var(--font-mono);letter-spacing:.54px;text-transform:uppercase}
+.t-caption{font:400 12px/1.2 var(--font-mono);letter-spacing:.6px;text-transform:uppercase}
+@media (max-width:560px){.t-display{font-size:38px;letter-spacing:-.5px}.t-headline{font-size:22px}}
+
+/* ---------- 프로토타입 바 (제품 UI 밖) ---------- */
+.proto{background:var(--color-inverse-canvas);color:var(--color-inverse-ink);font:330 14px/1.4 var(--font-sans)}
+.proto .container{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-block:8px}
+.proto label{display:flex;gap:8px;align-items:center}
+.proto select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:var(--r-pill);padding:4px 10px;max-width:100%}
+.proto .scen{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.proto .scen button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:var(--r-pill);padding:3px 10px;cursor:pointer;font-size:13px}
+.proto .scen button[aria-pressed="true"]{background:#fff;color:#000;border-color:#fff}
+.proto .reset{margin-left:auto;background:transparent;border:0;color:#fff;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:13px}
+
+/* ---------- C9 셸 헤더 ---------- */
+.shell{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--color-canvas);border-bottom:1px solid var(--color-hairline-soft)}
+.shell .container{min-height:60px;display:flex;align-items:center;gap:var(--s-md);flex-wrap:wrap;padding-block:8px}
+.wordmark{font:540 19px/1 var(--font-sans);letter-spacing:-.4px;white-space:nowrap;background:none;border:0;padding:0;cursor:pointer}
+.shell .who{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;border:1px solid var(--color-hairline);border-radius:var(--r-pill);padding:6px 10px;white-space:nowrap}
+.shell nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.shell nav button{background:var(--color-canvas);border:0;border-radius:var(--r-full);padding:8px 12px;font:330 16px/1.3 var(--font-sans);cursor:pointer}
+.shell nav button:hover{background:var(--color-surface-soft)}
+.shell nav button[aria-current="page"]{background:var(--color-primary);color:var(--color-on-primary)}
+
+main{padding-block:var(--s-xl) var(--s-section)}
+.page-head{display:grid;gap:var(--s-xs);margin-bottom:var(--s-lg)}
+.stack{display:grid;gap:var(--s-md)}
+.stack-lg{display:grid;gap:var(--s-lg)}
+.row-flex{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-lg)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-md)}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+@media (max-width:640px){.grid3{grid-template-columns:1fr}}
+
+/* ---------- 버튼 ---------- */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;min-height:44px;border-radius:var(--r-pill);font:480 18px/1.35 var(--font-sans);letter-spacing:-.1px;text-decoration:none;padding:9px 20px;text-align:center;transition:transform .12s ease}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--color-primary);color:var(--color-on-primary)}
+.btn-secondary{background:var(--color-canvas);color:var(--color-ink);box-shadow:inset 0 0 0 1px var(--color-hairline)}
+.btn-tertiary{background:transparent;color:var(--color-ink);padding:8px 10px;text-decoration:underline;text-underline-offset:4px}
+.btn-sm{min-height:36px;font-size:15px;padding:6px 14px}
+/* C3 이유 달린 비활성 버튼 */
+.btn[aria-disabled="true"]{background:var(--color-surface-soft);color:var(--color-ink);box-shadow:inset 0 0 0 1px var(--color-ink);cursor:not-allowed;flex-direction:column;gap:0;border-radius:var(--r-lg);padding:8px 18px;background-image:repeating-linear-gradient(135deg,transparent 0 8px,rgba(0,0,0,.05) 8px 9px)}
+.btn[aria-disabled="true"] .why{font:330 13px/1.35 var(--font-sans)}
+.btn[aria-disabled="true"]:active{transform:none}
+.btn[aria-disabled="true"]:hover::after,.btn[aria-disabled="true"]:focus-visible::after{content:attr(data-reason);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--color-inverse-canvas);color:var(--color-inverse-ink);font:330 14px/1.4 var(--font-sans);padding:6px 10px;border-radius:var(--r-sm);white-space:nowrap;box-shadow:var(--elev-2);z-index:5;pointer-events:none}
+
+/* ---------- C1 진행 레일 ---------- */
+.rail{border:1px solid var(--color-hairline);border-radius:var(--r-lg);padding:var(--s-md) var(--s-lg);margin-bottom:var(--s-lg);display:grid;gap:var(--s-sm)}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;gap:6px;align-items:center;overflow-x:auto;padding-bottom:2px}
+.rail li{display:flex;align-items:center;gap:6px;white-space:nowrap;font:330 15px/1.3 var(--font-sans)}
+.rail li+li::before{content:"";width:14px;height:1px;background:var(--color-ink);flex:none}
+.rail .dot{width:9px;height:9px;border-radius:var(--r-full);border:1.5px solid var(--color-ink);flex:none}
+.rail .done .dot{background:var(--color-ink)}
+.rail .cur{background:var(--color-primary);color:var(--color-on-primary);border-radius:var(--r-pill);padding:5px 12px;font-weight:540}
+.rail .cur .dot{border-color:#fff;background:#fff}
+.rail .stuck{background:var(--color-canvas);color:var(--color-ink);box-shadow:inset 0 0 0 2px var(--color-ink);border-radius:var(--r-pill);padding:5px 12px;font-weight:540}
+.rail .stuck .dot{border-radius:0;transform:rotate(45deg);background:var(--color-ink)}
+.rail .gate-id{font:400 11px/1 var(--font-mono);letter-spacing:.5px;border:1px solid currentColor;border-radius:var(--r-sm);padding:3px 5px}
+.rail .foot{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center;font:330 15px/1.4 var(--font-sans)}
+.rail.terminal{box-shadow:inset 0 0 0 2px var(--color-ink);border-color:var(--color-ink)}
+
+/* ---------- C2 차단 블록 ---------- */
+.gate{border:2.5px solid var(--color-ink);border-radius:var(--r-md);padding:var(--s-md) var(--s-lg);display:grid;gap:var(--s-sm);background:var(--color-canvas)}
+.gate.hold{border-style:dashed}
+.gate.final{background:var(--color-surface-soft)}
+.gate:focus{outline:3px solid var(--color-ink);outline-offset:3px}
+.gate-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:540 18px/1.35 var(--font-sans)}
+.gate-tag{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;background:var(--color-primary);color:var(--color-on-primary);border-radius:var(--r-sm);padding:5px 7px}
+.gate.hold .gate-tag{background:var(--color-canvas);color:var(--color-ink);box-shadow:inset 0 0 0 1px var(--color-ink)}
+.gate-code{font:400 12px/1 var(--font-mono);letter-spacing:.6px;border:1px solid var(--color-ink);border-radius:var(--r-sm);padding:4px 6px}
+.gate dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px var(--s-md);font:330 16px/1.45 var(--font-sans)}
+.gate dt{font:400 12px/1.8 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+.gate dd{margin:0}
+@media (max-width:480px){.gate dl{grid-template-columns:1fr;gap:2px}.gate dd{margin-bottom:8px}}
+
+/* C4 상태 배지 */
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--color-ink);border-radius:var(--r-pill);padding:5px 10px;font:400 12px/1 var(--font-mono);letter-spacing:.5px;white-space:nowrap;background:var(--color-canvas)}
+.badge .d{width:8px;height:8px;border-radius:var(--r-full);background:var(--color-ink);flex:none}
+.badge.quiet{border-color:var(--color-hairline)} .badge.quiet .d{background:transparent;border:1px solid var(--color-ink)}
+.badge.stuck{border-width:2px} .badge.stuck .d{border-radius:0;transform:rotate(45deg)}
+.badge.del .d{border-radius:0;background:transparent;border:1.5px solid var(--color-ink)}
+.badge.wait .d{background:transparent;border:1.5px dashed var(--color-ink)}
+
+/* 표 */
+.table-wrap{overflow-x:auto;border:1px solid var(--color-hairline);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;font:330 16px/1.45 var(--font-sans)}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--color-hairline-soft);vertical-align:middle}
+th{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;background:var(--color-surface-soft);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tr.clickable{cursor:pointer} tr.clickable:hover td{background:var(--color-surface-soft)}
+tr[aria-selected="true"] td{background:var(--color-surface-soft);font-weight:480}
+tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 0 var(--color-ink)}
+
+/* 카드·타일·입력 */
+.card{background:var(--color-canvas);border:1px solid var(--color-hairline);border-radius:var(--r-lg);padding:var(--s-lg)}
+.tile{background:var(--color-surface-soft);border-radius:var(--r-md);padding:var(--s-lg)}
+.cb{border-radius:var(--r-lg);padding:var(--s-xl)}
+.cb-cream{background:var(--color-block-cream)} .cb-lime{background:var(--color-block-lime)} .cb-coral{background:var(--color-block-coral)} .cb-mint{background:var(--color-block-mint)} .cb-lilac{background:var(--color-block-lilac)}
+@media (max-width:768px){.cb{padding:var(--s-lg) var(--s-md)}}
+.field{display:grid;gap:6px}
+.field label{font:330 17px/1.4 var(--font-sans)}
+.input,select.input{width:100%;background:var(--color-canvas);padding:11px 14px;min-height:48px;border:1px solid var(--color-hairline);border-radius:var(--r-md);font:320 18px/1.4 var(--font-sans)}
+.input:focus{outline:none;box-shadow:0 0 0 2px var(--color-ink)}
+.input.is-error{border-color:var(--color-ink);box-shadow:0 0 0 2px var(--color-ink)}
+.hint{font:330 15px/1.45 var(--font-sans)}
+.hint.err::before{content:"◆ ";font-size:11px}
+.note{border-left:2px solid var(--color-ink);padding:8px 14px;background:var(--color-surface-soft);border-radius:0 var(--r-md) var(--r-md) 0;font:330 16px/1.45 var(--font-sans)}
+.done-line{display:flex;gap:10px;align-items:center;border:1px solid var(--color-ink);border-radius:var(--r-md);padding:10px 14px;font:480 16px/1.4 var(--font-sans)}
+.done-line .ck{color:var(--color-semantic-success);font-weight:700}
+.sectitle{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-sm);flex-wrap:wrap}
+
+/* 작품 그림 */
+.art-fig{margin:0;aspect-ratio:4/3;max-width:100%;border-radius:var(--r-md);background:var(--color-canvas);display:grid;place-items:center;overflow:hidden;position:relative;border:1px solid var(--color-hairline)}
+.art-fig svg{width:76%;height:76%;overflow:visible}
+.art-fig .cap{position:absolute;left:10px;top:10px}
+.art-fig.fail{background:var(--color-surface-soft);border:2px dashed var(--color-ink)}
+.art-fig.fail p{padding:var(--s-md);text-align:center;font:330 16px/1.45 var(--font-sans)}
+.layer{transition:transform .25s ease-out}
+.playing .mover{animation:bob 1s ease-in-out 3}
+@keyframes bob{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(6px,-8px) rotate(3deg)}75%{transform:translate(-6px,-4px) rotate(-3deg)}}
+@media (prefers-reduced-motion:reduce){.playing .mover{animation:none}.layer{transition:none}}
+
+/* C3 선택 카드 (S3) */
+.opt{display:grid;gap:10px;text-align:left;border:1px solid var(--color-hairline);border-radius:var(--r-lg);background:var(--color-canvas);padding:var(--s-lg);cursor:pointer;min-height:150px;align-content:start}
+.opt:hover{border-color:var(--color-ink)}
+.opt[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--color-ink);border-color:var(--color-ink)}
+.opt .radio{width:22px;height:22px;border-radius:var(--r-full);border:1.5px solid var(--color-ink);display:grid;place-items:center}
+.opt[aria-checked="true"] .radio::after{content:"";width:12px;height:12px;border-radius:var(--r-full);background:var(--color-ink)}
+.opt b{font:700 20px/1.35 var(--font-sans)}
+
+/* C7 이야기 카드 · AI 표시 */
+.ai-mark{display:inline-block;font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;border:1px solid var(--color-ink);border-radius:var(--r-sm);padding:4px 6px}
+.quote{font:330 22px/1.4 var(--font-sans);letter-spacing:-.14px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--color-hairline);background:var(--color-canvas);border-radius:var(--r-pill);padding:8px 14px;font:480 16px/1.3 var(--font-sans);cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary)}
+
+/* C8 전시 조건 체크 */
+.cond{display:grid;gap:8px}
+.cond button{display:flex;gap:12px;align-items:center;text-align:left;background:var(--color-canvas);border:1px solid var(--color-hairline);border-radius:var(--r-md);padding:12px 14px;font:330 16px/1.4 var(--font-sans);cursor:pointer}
+.cond .box{width:22px;height:22px;border:1.5px solid var(--color-ink);border-radius:var(--r-xs);display:grid;place-items:center;flex:none;font-weight:700;font-size:15px}
+.cond .ok .box{background:var(--color-ink);color:#fff}
+.cond .ok{cursor:default}
+.cond .miss{border-color:var(--color-ink)}
+
+/* C10 모델 상태 칩 — 모양을 서로 다르게 */
+.mchip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--color-ink);border-radius:var(--r-pill);padding:5px 10px;font:400 12px/1 var(--font-mono);letter-spacing:.4px;white-space:nowrap}
+.mchip i{width:10px;height:10px;display:inline-block;flex:none}
+.mchip.ready i{border-radius:50%;background:var(--color-ink)}
+.mchip.notready i{border-radius:50%;border:1.5px solid var(--color-ink)}
+.mchip.off{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(0,0,0,.12) 5px 6px)} .mchip.off i{border:1.5px solid var(--color-ink);background:linear-gradient(135deg,transparent 45%,#000 45% 55%,transparent 55%)}
+.mchip.cpu i{border-radius:50%;border:1.5px solid var(--color-ink);background:linear-gradient(90deg,#000 50%,transparent 50%)}
+.mchip.hidden{border-style:dashed} .mchip.hidden i{border:1.5px dashed var(--color-ink)}
+.mchip.unknown i::before{content:"?";font:700 11px/10px var(--font-sans);display:block;text-align:center}
+
+/* 탭 */
+.tabs{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--color-hairline);border-radius:var(--r-pill);max-width:100%;overflow-x:auto}
+.tab{border:0;background:var(--color-canvas);padding:7px 16px;border-radius:var(--r-pill);font:480 16px/1.4 var(--font-sans);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--color-primary);color:var(--color-on-primary)}
+
+/* 가족 전시 */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--s-md)}
+.gal-item{background:var(--color-surface-soft);border-radius:var(--r-md);padding:var(--s-sm);display:grid;gap:8px;border:0;text-align:left;cursor:pointer}
+.gal-item:hover .art-fig{border-color:var(--color-ink)}
+.gal-item .title{font:700 18px/1.3 var(--font-sans)}
+.age-head{display:flex;align-items:baseline;gap:var(--s-md);margin:var(--s-lg) 0 var(--s-sm)}
+
+/* 대화상자 */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:var(--s-md);z-index:50}
+.dialog{background:var(--color-canvas);border-radius:var(--r-lg);box-shadow:var(--elev-3);padding:var(--s-xl);max-width:560px;width:100%;display:grid;gap:var(--s-md);max-height:90vh;overflow:auto}
+.dialog ul{margin:0;padding-left:1.1em;display:grid;gap:4px;font:330 16px/1.45 var(--font-sans)}
+
+pre.code{margin:0;background:var(--color-surface-soft);border-radius:var(--r-md);padding:var(--s-md);overflow-x:auto;font:400 13px/1.6 var(--font-mono);letter-spacing:0}
+code{font:400 .85em/1.4 var(--font-mono);background:var(--color-surface-soft);padding:1px 6px;border-radius:var(--r-sm);letter-spacing:0}
+.summary-row{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center;border:1px solid var(--color-hairline);border-radius:var(--r-lg);padding:var(--s-sm) var(--s-lg);margin-bottom:var(--s-lg);font:330 16px/1.4 var(--font-sans)}
+.summary-row .k{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase}
+.sep{width:1px;height:18px;background:var(--color-hairline)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--color-ink);border-right-color:transparent;border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+footer.proto-foot{border-top:1px solid var(--color-hairline-soft);padding-block:var(--s-lg);font:330 14px/1.5 var(--font-sans)}
+</style>
+</head>
+<body>
+
+<div class="proto" role="region" aria-label="프로토타입 조작">
+  <div class="container">
+    <strong style="font-weight:540">SD_02 프로토타입</strong>
+    <label for="proto-screen">화면
+      <select id="proto-screen"></select>
+    </label>
+    <div class="scen" id="proto-scen" aria-label="이 화면의 상태 보기"></div>
+    <button class="reset" id="proto-reset" type="button">예시 데이터 초기화</button>
+  </div>
+</div>
+<header class="shell" id="shell"></header>
+<main id="app" class="container" tabindex="-1"></main>
+<div id="live" class="sr-only" aria-live="polite"></div>
+<div id="modal-root"></div>
+<footer class="proto-foot container">
+  예시 데이터로 동작하는 화면 프로토타입이다. 서버 호출 없이 SD_02의 와이어프레임·상호작용·상태 전이를 흉내 낸다. 별칭·가족명·계정은 설계서 표기 규칙대로 가렸다.
+</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 예시 데이터 ================= */
+function seed(){
+  return {
+    role:'parent',
+    children:[{id:'c1',alias:'하*',count:6},{id:'c2',alias:'바*',count:2}],
+    arts:[
+      {id:'a1',title:'해와 집',child:'c1',status:'처리하지 못함',pick:'relief',result:null,art:'house',stage:'깊이 부조',
+        steps:[['분리 M1','완료',''],['판정 M2','완료','입체 부조가 어울려요'],['깊이 부조 M5','처리하지 못함','3번 다시 시도했어요']],story:{},caption:null},
+      {id:'a2',title:'강아지',child:'c1',status:'확인 대기',pick:'move',result:'relief',lowered:'움직임을 만들기 어려워 입체 부조로 바꿨어요',art:'dog',stage:'결과 도착',
+        steps:[['분리 M1','완료',''],['판정 M2','완료','움직일 수 있을 것 같아요'],['움직임 M3','낮춤','관절을 찾지 못해 입체 부조로 바꿨어요'],['깊이 부조 M5','완료','']],story:{title:'강아지와 산책',date:'2026-09-21',age:'6',words:'멍멍이가 웃어'},caption:null},
+      {id:'a3',title:'우리 가족',child:'c2',status:'처리 중',pick:'move',result:'move',art:'family',stage:'순서를 기다리는 중',
+        steps:[['분리 M1','완료',''],['판정 M2','완료','움직일 수 있을 것 같아요'],['움직임 M3','대기','순서를 기다리는 중']],story:{},caption:null},
+      {id:'a4',title:'무지개',child:'c1',status:'확정 대기',pick:null,result:null,art:'rainbow',stage:'고르러 가기',suggest:'움직이기보다 입체로 보면 좋을 것 같아요',
+        steps:[['분리 M1','완료',''],['판정 M2','완료','제안이 도착했어요']],story:{},caption:null},
+      {id:'a5',title:'바다에 간 날',child:'c1',status:'전시 중',pick:'move',result:'move',art:'sea',stage:'전시 중',
+        steps:[],story:{title:'바다에 간 날',date:'2026-03-02',age:'5',words:'파도가 나를 따라왔어'},caption:{text:'5살 때 파도와 해를 그린 바다 그림이에요.',src:'llm'}},
+      {id:'a6',title:'공룡',child:'c1',status:'전시 중',pick:'frame',result:'frame',art:'dino',stage:'전시 중',
+        steps:[],story:{title:'공룡 친구',date:'2025-11-14',age:'5',words:''},caption:null},
+      {id:'a8',title:'나비',child:'c1',status:'승인됨',pick:'move',result:'move',art:'rainbow',stage:'이야기 기다리는 중',
+        steps:[],story:{title:'나비 정원',date:'2026-09-10',age:'',words:''},caption:null},
+      {id:'a7',title:'점토 고양이',child:'c2',status:'전시 중',pick:'relief',result:'relief',art:'cat',stage:'전시 중',
+        steps:[],story:{title:'점토 고양이',date:'2026-08-30',age:'4',words:'야옹 하고 자'},caption:{text:'고양이가 몸을 둥글게 말고 자는 모습을 점토로 만들었어요.',src:'direct'}}
+    ],
+    sel:{s4:'a1',s3:'a4',s5:'a2',s6:'a8',s7:'a2',s8:null,s9:'a3'},
+    notice:{},
+    models:{m1:{active:'v1',rollback:null,cand:'v2',done:42,total:44}},
+    s12:{fn:'classify',item:'E-0012',res:null,busy:false},
+    s10tab:'model', s12tab:'ep', s8child:'c1'
+  };
+}
+var S=seed();
+var scen={};                 // 화면별 시나리오 선택
+var tmp={};                  // 화면 안 임시 입력
+
+var RAIL=['접수됨','판정 중','확정 대기','처리 중','확인 대기','승인됨','전시 중'];
+var JOURNEY=['아이 등록','작품 올리기','확정','결과 확인','이야기','전시'];
+var KIND={move:'움직임',relief:'2.5D 입체 부조',frame:'원본 액자'};
+
+var SCREENS=[
+  ['login','로그인','any'],
+  ['s4','S4 작품 목록 · 진행 (홈)','parent'],['s1','S1 아이 관리','parent'],['s2','S2 작품 올리기','parent'],
+  ['s3','S3 판정 제안 확정','parent'],['s5','S5 결과 확인','parent'],['s6','S6 이야기 쓰기','parent'],
+  ['s7','S7 설명 초안 받기 (P0.5)','parent'],['s8','S8 가족 전시','parent'],['s9','S9 삭제 확인 · 진행','parent'],
+  ['s10','S10 서비스 상태 · 지표','operator'],['s11','S11 모델 평가 · 승격','evaluator'],['s12','S12 API활용 메뉴','developer']
+];
+var SCENS={
+  s1:[['normal','기본'],['dup','G4 별칭 중복']],
+  s2:[['normal','기본'],['big','G5 용량 초과'],['g6','G6 접수 실패']],
+  s3:[['sug','제안 있음'],['wait','살펴보는 중'],['g7','G7 제안 없음']],
+  s4:[['normal','기본']],
+  s5:[['lowered','2.5D 낮춘 결과'],['move','움직임 결과'],['g9','G9 처리하지 못함'],['g10p','G10 미리보기 못 읽음'],['g10o','G10 원본 못 읽음']],
+  s6:[['approved','승인됨'],['pending','승인 전'],['future','G11 미래 날짜']],
+  s7:[['ok','기본'],['g13','G13 사용 조건 확인 중'],['g15','G15 AI 서버 응답 없음'],['g16','G16 기본 문장으로 바꿈']],
+  s8:[['list','전시 목록'],['g12','G12 주소로 연 미전시 작품'],['empty','전시 작품 없음']],
+  s9:[['artwork','작품 삭제'],['child','아이 삭제'],['g18','G18 삭제 시작 실패']],
+  s10:[['normal','기본'],['dberr','작업 DB 장애']],
+  s11:[['normal','기본']],
+  s12:[['normal','기본']]
+};
+
+/* ================= 도우미 ================= */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function $(q,r){return (r||document).querySelector(q);}
+function art(id){return S.arts.filter(function(a){return a.id===id;})[0];}
+function pick(id,def){return art(id)||art(def)||S.arts[0];}
+function child(id){return S.children.filter(function(c){return c.id===id;})[0]||{alias:'?'};}
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function announce(t){var l=$('#live');l.textContent='';setTimeout(function(){l.textContent=t;},30);}
+
+function svgArt(k){
+  var P={
+    house:'<g class="layer back"><circle cx="160" cy="32" r="16" fill="none" stroke="currentColor" stroke-width="4"/></g><g class="layer front mover"><path d="M40 130 V72 L100 28 L160 72 V130 Z" fill="none" stroke="currentColor" stroke-width="4"/><rect x="86" y="92" width="28" height="38" fill="none" stroke="currentColor" stroke-width="4"/></g>',
+    dog:'<g class="layer back"><path d="M0 138 H200" stroke="currentColor" stroke-width="3" fill="none"/><path d="M168 138 V96 M156 108 Q168 80 180 108" stroke="currentColor" stroke-width="3" fill="none"/></g><g class="layer front mover"><ellipse cx="90" cy="100" rx="44" ry="24" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="138" cy="76" r="18" fill="none" stroke="currentColor" stroke-width="4"/><path d="M128 62 L122 44 L136 58 M60 122 V138 M112 122 V138 M46 94 L28 80" stroke="currentColor" stroke-width="4" fill="none"/></g>',
+    family:'<g class="layer back"><path d="M0 140 H200" stroke="currentColor" stroke-width="3"/></g><g class="layer front mover"><circle cx="55" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="4"/><path d="M55 65 V110 M35 82 H75 M55 110 L40 138 M55 110 L70 138" stroke="currentColor" stroke-width="4" fill="none"/><circle cx="145" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="4"/><path d="M145 65 V110 M125 82 H165 M145 110 L130 138 M145 110 L160 138" stroke="currentColor" stroke-width="4" fill="none"/><circle cx="100" cy="80" r="11" fill="none" stroke="currentColor" stroke-width="4"/><path d="M100 91 V120 M86 102 H114 M100 120 L90 138 M100 120 L110 138" stroke="currentColor" stroke-width="4" fill="none"/></g>',
+    rainbow:'<g class="layer back"><path d="M20 130 A80 80 0 0 1 180 130" fill="none" stroke="currentColor" stroke-width="4"/><path d="M40 130 A60 60 0 0 1 160 130" fill="none" stroke="currentColor" stroke-width="4"/></g><g class="layer front mover"><path d="M60 130 A40 40 0 0 1 140 130" fill="none" stroke="currentColor" stroke-width="4"/><path d="M8 130 Q20 112 36 124 Q50 112 60 130 Z" fill="none" stroke="currentColor" stroke-width="3"/></g>',
+    sea:'<g class="layer back"><circle cx="150" cy="40" r="18" fill="none" stroke="currentColor" stroke-width="4"/></g><g class="layer front mover"><path d="M0 110 Q25 90 50 110 T100 110 T150 110 T200 110" fill="none" stroke="currentColor" stroke-width="4"/><path d="M0 132 Q25 112 50 132 T100 132 T150 132 T200 132" fill="none" stroke="currentColor" stroke-width="3"/></g>',
+    dino:'<g class="layer back"><path d="M0 140 H200" stroke="currentColor" stroke-width="3"/></g><g class="layer front mover"><path d="M30 120 Q40 80 90 84 Q120 40 150 44 Q170 46 168 60 Q160 70 140 66 Q130 90 130 120 M60 120 V140 M110 120 V140 M30 120 Q10 124 4 110" fill="none" stroke="currentColor" stroke-width="4"/><path d="M80 84 l6 -12 l6 12 l6 -12 l6 12" fill="none" stroke="currentColor" stroke-width="3"/></g>',
+    cat:'<g class="layer back"><ellipse cx="100" cy="140" rx="80" ry="6" fill="none" stroke="currentColor" stroke-width="2"/></g><g class="layer front mover"><ellipse cx="100" cy="100" rx="58" ry="36" fill="none" stroke="currentColor" stroke-width="4"/><path d="M60 72 L68 40 L84 64 M140 72 L132 40 L116 64" fill="none" stroke="currentColor" stroke-width="4"/><path d="M82 92 q6 4 12 0 M106 92 q6 4 12 0" fill="none" stroke="currentColor" stroke-width="3"/></g>'
+  };
+  return '<svg viewBox="0 0 200 150" role="img" aria-label="작품 그림 예시">'+(P[k]||P.house)+'</svg>';
+}
+function badge(st){
+  var cls={'접수됨':'quiet','판정 중':'wait','확정 대기':'','처리 중':'wait','확인 대기':'','승인됨':'','전시 중':'','처리하지 못함':'stuck','삭제 중':'del'}[st]||'';
+  return '<span class="badge '+cls+'"><span class="d"></span>'+esc(st)+(st==='처리하지 못함'?' · G9':'')+'</span>';
+}
+/* C1 */
+function rail(st,opt){
+  opt=opt||{};
+  if(st==='삭제 중'){
+    return '<section class="rail terminal" aria-label="진행"><ol><li class="stuck"><span class="dot"></span>삭제 중</li></ol><div class="foot">이 작품의 모든 조작이 잠겼어요 <span class="gate-code">BR-DEL-05</span></div></section>';
+  }
+  var steps=RAIL.slice(), cur=RAIL.indexOf(st), stuck=false;
+  if(st==='처리하지 못함'){steps[4]='처리하지 못함';cur=4;stuck=true;}
+  var li=steps.map(function(s,i){
+    var c=i<cur?'done':(i===cur?(stuck||opt.hold?'stuck':'cur'):'');
+    var extra='';
+    if(i===cur&&stuck) extra=' <span class="gate-id">G9</span>';
+    if(i===cur&&opt.wait) extra=' · 순서를 기다리는 중';
+    if(s==='전시 중'&&opt.g12) extra=' <span class="gate-id">G12</span>';
+    return '<li class="'+c+'"'+(i===cur?' aria-current="step"':'')+'><span class="dot"></span>'+esc(s)+extra+'</li>';
+  }).join('');
+  var foot='';
+  if(stuck) foot='<div class="foot">서버 문제로 결과를 만들지 못했어요 <button class="btn btn-tertiary btn-sm" data-act="focus-gate">막힌 자리 보기</button></div>';
+  else if(opt.wait) foot='<div class="foot">화면을 닫아도 계속돼요</div>';
+  else if(opt.foot) foot='<div class="foot">'+opt.foot+'</div>';
+  return '<section class="rail" aria-label="진행 단계"><ol>'+li+'</ol>'+foot+'</section>';
+}
+function journey(i){
+  return '<section class="rail" aria-label="보호자 여정"><ol>'+JOURNEY.map(function(s,k){
+    return '<li class="'+(k<i?'done':k===i?'cur':'')+'"'+(k===i?' aria-current="step"':'')+'><span class="dot"></span>'+s+'</li>';}).join('')+'</ol></section>';
+}
+/* C2 */
+function gate(o){
+  var kind=o.kind||'block';
+  var tag=kind==='hold'?'보류 '+o.g:kind==='final'?'종결':'막힘 '+o.g;
+  return '<section class="gate '+kind+'" id="'+(o.id||'gate')+'" tabindex="-1" role="alert" aria-labelledby="'+(o.id||'gate')+'-h">'+
+    '<p class="gate-head" id="'+(o.id||'gate')+'-h"><span class="gate-tag">'+esc(tag)+'</span>'+esc(o.title)+(o.e?' <span class="gate-code">'+esc(o.e)+'</span>':'')+'</p>'+
+    '<dl><dt>사유</dt><dd>'+esc(o.why)+'</dd><dt>해제 주체</dt><dd>'+esc(o.who)+'</dd><dt>다음 행동</dt><dd><div class="row-flex">'+(o.next||'')+'</div></dd></dl></section>';
+}
+/* C3 */
+function btn(label,act,o){
+  o=o||{};
+  var cls='btn '+(o.cls||'btn-primary')+(o.sm?' btn-sm':'');
+  if(o.off){
+    return '<button type="button" class="'+cls+'" aria-disabled="true" data-reason="'+esc(o.off)+'" data-act="disabled" data-gate="'+(o.gate||'gate')+'">'+esc(label)+'<span class="why">(비활성) - '+esc(o.off)+'</span></button>';
+  }
+  return '<button type="button" class="'+cls+'" data-act="'+act+'"'+(o.arg!=null?' data-arg="'+esc(o.arg)+'"':'')+'>'+esc(label)+'</button>';
+}
+function doneLine(t){return '<p class="done-line" role="status"><span class="ck" aria-hidden="true">✓</span>'+esc(t)+'</p>';}
+function head(eyebrow,title,sub){return '<div class="page-head"><p class="t-eyebrow">'+eyebrow+'</p><h1 class="t-display">'+esc(title)+'</h1>'+(sub?'<p class="t-body-lg" style="max-width:760px">'+sub+'</p>':'')+'</div>';}
+
+/* ================= 셸 헤더 C9 ================= */
+var ROLE={parent:'보호자',operator:'서비스 운영자',evaluator:'평가 담당',developer:'연동 개발'};
+function shell(cur){
+  var h=$('#shell');
+  if(cur==='login'){h.innerHTML='<div class="container"><span class="wordmark">우리 아이 미술관</span></div>';return;}
+  var nav;
+  if(S.role==='parent'){
+    nav=[['s4','작품 목록'],['s1','아이 관리'],['s2','작품 올리기'],['s8','가족 전시']];
+    h.innerHTML='<div class="container"><button class="wordmark" data-go="s4">우리 아이 미술관</button><span class="who">보호자 · 가족 하*네</span><nav aria-label="보호자 메뉴">'+
+      nav.map(function(n){return '<button data-go="'+n[0]+'"'+(cur===n[0]?' aria-current="page"':'')+'>'+n[1]+'</button>';}).join('')+'<button data-go="login">로그아웃</button></nav></div>';
+  } else {
+    var menus={operator:[['s10','상태 · 지표'],['s12','API활용']],evaluator:[['s11','모델 평가'],['s10','상태 · 지표']],developer:[['s12','API활용'],['s10','상태 · 지표'],['s11','모델 평가']]}[S.role];
+    h.innerHTML='<div class="container"><span class="wordmark">운영 화면</span><span class="who">역할: '+ROLE[S.role]+' · jo*@su*.kr</span><nav aria-label="운영 메뉴">'+
+      menus.map(function(n){return '<button data-go="'+n[0]+'"'+(cur===n[0]?' aria-current="page"':'')+'>'+n[1]+'</button>';}).join('')+'<button data-go="login">로그아웃</button></nav></div>';
+  }
+}
+
+/* ================= 화면 ================= */
+var R={};
+
+R.login=function(){
+  return head('로그인','우리 아이 미술관','보호자 앱과 운영 화면은 따로 들어간다. 운영 화면에는 가족 사진과 이야기로 가는 길이 없다.')+
+  '<div class="grid2">'+
+   '<form class="card stack" data-form="login-parent"><h2 class="t-card-title">보호자</h2>'+
+    '<div class="field"><label for="lg-mail">이메일</label><input id="lg-mail" class="input" value="ha*@ex*.com" autocomplete="off"></div>'+
+    '<div class="field"><label for="lg-pw">비밀번호</label><input id="lg-pw" class="input" type="password" value="example"></div>'+
+    '<button class="btn btn-primary" type="submit">가족 작품 보러 가기</button></form>'+
+   '<div class="card stack"><h2 class="t-card-title">팀원</h2><p class="t-body-sm">역할에 없는 메뉴는 헤더에 그리지 않는다(G1).</p>'+
+    '<div class="row-flex">'+btn('서비스 운영자','login-team',{cls:'btn-secondary',arg:'operator'})+btn('평가 담당','login-team',{cls:'btn-secondary',arg:'evaluator'})+btn('연동 개발','login-team',{cls:'btn-secondary',arg:'developer'})+'</div></div>'+
+  '</div>';
+};
+
+/* S4 */
+R.s4=function(){
+  var list=S.arts.filter(function(a){return a.status!=='삭제 중';});
+  var sel=list.filter(function(a){return a.id===S.sel.s4;})[0]||list[0];
+  var rows=list.map(function(a){
+    var stage=a.status==='확정 대기'?'<span style="text-decoration:underline;text-underline-offset:3px">고르러 가기</span>':esc(a.stage);
+    return '<tr class="clickable" tabindex="0" data-act="s4-open" data-arg="'+a.id+'"'+(a.id===sel.id?' aria-selected="true"':'')+'><td style="font-weight:540">'+esc(a.title)+'</td><td>'+esc(child(a.child).alias)+'</td><td>'+badge(a.status)+'</td><td>'+stage+'</td></tr>';
+  }).join('');
+  var n=S.notice.s4?doneLine(S.notice.s4):'';
+  var detail='';
+  if(sel){
+    var st=sel.steps.length?'<div class="table-wrap"><table><thead><tr><th>단계</th><th>상태</th><th>안내</th></tr></thead><tbody>'+
+      sel.steps.map(function(s){return '<tr><td>'+esc(s[0])+'</td><td>'+stepBadge(s[1])+'</td><td>'+(esc(s[2])||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="t-body-sm">단계 작업이 모두 끝난 작품이에요.</p>';
+    var low=sel.lowered?'<p class="note">낮춤 안내 · '+esc(sel.lowered)+'</p>':'';
+    var g='';
+    if(sel.status==='처리하지 못함') g=gate({g:'G9',title:'결과를 만들지 못했어요',why:'서버 문제로 입체 부조를 만들지 못했어요 - 낮춘 결과가 아니에요',who:'보호자 - 원본 액자로 걸기 또는 다시 찍기',next:btn('결과 확인으로','go-s5',{arg:sel.id})+btn('작품 삭제','go-s9',{cls:'btn-secondary',arg:sel.id})});
+    var nextBtn={'확정 대기':btn('고르러 가기','go-s3',{arg:sel.id}),'확인 대기':btn('결과 확인하기','go-s5',{arg:sel.id}),'승인됨':btn('이야기 쓰기','go-s6',{arg:sel.id}),'전시 중':btn('전시에서 보기','go-s8',{arg:sel.id,cls:'btn-secondary'})}[sel.status]||'';
+    detail='<section class="stack" style="margin-top:var(--s-xl)" aria-labelledby="s4-d"><div class="sectitle"><h2 class="t-headline" id="s4-d">'+esc(sel.title)+' · 단계별 진행</h2>'+badge(sel.status)+'</div>'+
+      (sel.status==='처리 중'?'<p class="t-body-sm">순서를 기다리는 중이에요. 화면을 닫아도 계속돼요.</p>':'')+st+low+g+
+      '<div class="row-flex">'+nextBtn+(sel.status!=='처리하지 못함'?btn('작품 삭제','go-s9',{cls:'btn-tertiary',arg:sel.id}):'')+'</div></section>';
+  }
+  return head('진입 홈 · S4','우리 가족 작품','올린 뒤 떠나도 처리는 계속돼요. 돌아오면 어디까지 왔는지 여기서 보여요.')+n+
+    '<div class="sectitle" style="margin-bottom:var(--s-sm)"><p class="t-body-sm">마지막 확인 <span class="mono num" id="s4-time">'+(tmp.s4time||'방금')+'</span></p><div class="row-flex">'+btn('새로고침','s4-refresh',{cls:'btn-secondary',sm:1})+btn('작품 올리기','go',{arg:'s2',sm:1,cls:'btn-secondary'})+'</div></div>'+
+    '<div class="table-wrap"><table><thead><tr><th>작품</th><th>아이</th><th>상태</th><th>현재 단계</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+detail;
+};
+function stepBadge(s){
+  var m={'완료':'','대기':'wait','진행 중':'wait','다시 시도 중':'wait','처리하지 못함':'stuck','낮춤':'quiet','취소':'del'};
+  return '<span class="badge '+(m[s]||'')+'"><span class="d"></span>'+esc(s)+'</span>';
+}
+
+/* S1 */
+R.s1=function(){
+  var sc=scen.s1||'normal';
+  if(tmp.s1alias==null) tmp.s1alias=sc==='dup'?'하*':'';
+  var rows=S.children.map(function(c){return '<tr><td style="font-weight:540">'+esc(c.alias)+'</td><td class="num">'+c.count+'</td><td><div class="row-flex">'+btn('별칭 고치기','s1-edit',{cls:'btn-secondary',sm:1,arg:c.id})+btn('아이 삭제','s1-del',{cls:'btn-tertiary',sm:1,arg:c.id})+'</div></td></tr>';}).join('');
+  return journey(0)+head('S1 · 설정','우리 아이')+
+   (S.notice.s1?doneLine(S.notice.s1):'')+
+   '<div class="grid2" style="align-items:start"><section class="stack"><h2 class="t-card-title">우리 아이 '+S.children.length+'명</h2><div class="table-wrap"><table><thead><tr><th>별칭</th><th>작품 수</th><th>조작</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
+   '<form class="card stack" data-form="s1"><h2 class="t-card-title">'+(tmp.s1edit?'별칭 고치기':'아이 추가')+' - 별칭만 받아요</h2>'+
+     '<div class="field"><label for="s1-alias">별칭</label><input id="s1-alias" class="input" value="'+esc(tmp.s1alias)+'" autocomplete="off" aria-describedby="s1-hint"><p class="hint" id="s1-hint">실명 대신 가족이 부르는 별칭을 적어 주세요. 실명 · 생년월일 · 출생연도는 받지 않아요.</p></div>'+
+     '<div id="s1-live" class="stack"></div></form></div>'+
+   '<div class="row-flex" style="margin-top:var(--s-xl)">'+(S.children.length?btn('작품 올리기로','go',{arg:'s2'}):btn('작품 올리기로','',{off:'아이를 먼저 등록해 주세요'}))+btn('작품 목록','go',{arg:'s4',cls:'btn-secondary'})+'</div>';
+};
+function s1live(){
+  var v=(tmp.s1alias||'').trim();
+  var dup=S.children.some(function(c){return c.alias===v&&c.id!==tmp.s1edit;});
+  var el=$('#s1-live'); if(!el) return;
+  var input=$('#s1-alias'); if(input) input.classList.toggle('is-error',dup);
+  if(!v) el.innerHTML='<div class="row-flex">'+btn('저장','',{off:'별칭을 적어 주세요',gate:'s1-alias'})+(tmp.s1edit?btn('취소','s1-cancel',{cls:'btn-secondary'}):'')+'</div>';
+  else if(dup) el.innerHTML=gate({id:'gate',g:'G4',title:'가족 안 별칭 중복',e:'E1',why:'이미 쓰는 별칭이에요',who:'보호자 - 다른 별칭 입력',next:btn('별칭 고치기','s1-fix',{cls:'btn-secondary'})+btn('저장','',{off:'다른 별칭을 적어 주세요'})});
+  else el.innerHTML='<div class="row-flex">'+btn('저장','s1-save')+(tmp.s1edit?btn('취소','s1-cancel',{cls:'btn-secondary'}):'')+'</div>';
+}
+
+/* S2 */
+var SAMPLES=[['IMG_2031.JPG','image/jpeg',4.2],['IMG_2044.HEIC','image/heic',26],['그림_스캔.GIF','image/gif',1.1]];
+R.s2=function(){
+  var sc=scen.s2||'normal';
+  if(!tmp.s2file){ tmp.s2file = sc==='big'?SAMPLES[1]:(sc==='g6'?SAMPLES[0]:null); }
+  if(!tmp.s2child) tmp.s2child=S.children[0]&&S.children[0].id;
+  var opts=S.children.map(function(c){return '<option value="'+c.id+'"'+(c.id===tmp.s2child?' selected':'')+'>'+esc(c.alias)+'</option>';}).join('');
+  return journey(1)+head('S2 · 입력','작품 올리기')+
+   (S.children.length?'':gate({g:'—',title:'아이가 없어요',why:'작품을 올리려면 아이를 먼저 등록해야 해요',who:'보호자 - 아이 관리',next:btn('아이 등록하러 가기','go',{arg:'s1'})}))+
+   '<div class="grid2" style="align-items:start"><div class="stack-lg">'+
+   '<div class="card stack"><h2 class="t-card-title">누구의 작품인가요</h2><div class="field"><label for="s2-child">아이</label><select id="s2-child" class="input">'+opts+'</select></div></div>'+
+   '<div class="card stack"><h2 class="t-card-title">사진</h2><p class="t-body-sm">JPEG · PNG · HEIC, 한 장 20MB 이하. 올리기 전에 이 화면에서 먼저 검사해요.</p>'+
+     '<div class="row-flex"><label class="btn btn-primary" for="s2-file" style="cursor:pointer">사진 찍기 · 앨범에서 고르기</label><input id="s2-file" type="file" accept="image/*" class="sr-only"></div>'+
+     '<p class="t-caption" style="margin-top:4px">예시 파일로 보기</p><div class="row-flex">'+SAMPLES.map(function(s,i){return '<button type="button" class="chip" data-act="s2-sample" data-arg="'+i+'" aria-pressed="'+(tmp.s2file&&tmp.s2file[0]===s[0])+'">'+s[0]+' · '+s[2]+'MB</button>';}).join('')+'</div>'+
+   '</div></div><div class="stack-lg" id="s2-live"></div></div>';
+};
+function s2live(){
+  var el=$('#s2-live'); if(!el) return;
+  var f=tmp.s2file, html='';
+  if(!f){ html='<div class="tile stack"><p class="t-body">사진을 고르면 미리보기가 여기 보여요.</p></div><div>'+btn('올리기','',{off:'사진을 골라 주세요'})+'</div>'; }
+  else{
+    var okType=/jpe?g|png|heic|heif/i.test(f[1]+f[0]);
+    var okSize=f[2]<=20;
+    html='<div class="stack"><figure class="art-fig">'+svgArt(tmp.s2art||'dog')+'<span class="cap badge quiet"><span class="d"></span>미리보기</span></figure><p class="t-body-sm mono">'+esc(f[0])+' · '+f[2]+'MB</p></div>';
+    if(!okType) html+=gate({g:'G5',title:'형식 확인',e:'E1',why:'JPEG · PNG · HEIC 사진만 올릴 수 있어요',who:'보호자 - 다른 사진 고르기',next:btn('다른 사진 고르기','s2-clear',{cls:'btn-secondary'})+btn('올리기','',{off:'JPEG · PNG · HEIC 사진을 골라 주세요'})});
+    else if(!okSize) html+=gate({g:'G5',title:'용량 초과',e:'E2',why:'사진이 20MB를 넘어요',who:'보호자 - 다른 사진 고르기',next:btn('다른 사진 고르기','s2-clear',{cls:'btn-secondary'})+btn('올리기','',{off:'20MB 이하 사진을 골라 주세요'})});
+    else if(tmp.s2g6) html+=gate({g:'G6',title:'접수되지 않았어요',e:'E4',why:'원본을 저장하지 못했어요. 목록에 작품이 생기지 않았어요',who:'보호자 - 다시 올리기',next:btn('다시 올리기','s2-up')});
+    else if(tmp.s2busy) html+='<div>'+btn('올리기','',{off:'보내는 중이에요'})+'</div><p class="t-body-sm"><span class="spin" aria-hidden="true"></span> 보내는 중…</p>';
+    else html+='<div>'+btn('올리기','s2-up')+'</div>';
+  }
+  html+='<div class="note">접수 완료되면 작품을 살펴보기 시작해요. 기다리지 않고 화면을 닫아도 계속돼요.</div>';
+  el.innerHTML=html;
+}
+
+/* S3 */
+R.s3=function(){
+  var a=pick(S.sel.s3,'a4');
+  var sc=scen.s3||'sug';
+  var sug='';
+  if(sc==='sug') sug='<p class="quote">'+esc(a.suggest||'움직일 수 있을 것 같아요')+'</p><p class="t-body-sm">제안일 뿐이에요. 다른 방식도 똑같이 고를 수 있어요.</p>';
+  else if(sc==='wait') sug='<p class="t-body-lg"><span class="spin" aria-hidden="true"></span> 작품을 살펴보는 중이에요</p><p class="t-body-sm">기다리지 않고 먼저 골라도 돼요.</p>';
+  else sug='<p class="t-body-lg" style="font-weight:540">제안을 준비하지 못했어요. 직접 골라 주세요</p>';
+  var chosen=tmp.s3pick||null;
+  var opts=[['move','움직임','그림 속 인물이 걷거나 손을 흔들어요'],['relief','2.5D 입체 부조','그림이 벽에서 살짝 튀어나와 보여요'],['frame','원본 액자','올린 그림 그대로 액자에 걸어요']];
+  return rail(sc==='wait'?'판정 중':'확정 대기')+head('S3 · 결정 · '+esc(a.title),'어떻게 걸까요')+
+   '<div class="grid2" style="align-items:start"><section class="stack"><h2 class="t-card-title">잘라 낸 작품</h2><figure class="art-fig">'+svgArt(a.art)+'</figure></section>'+
+   '<section class="tile stack"><p class="t-caption">제안 · 점수는 보여 주지 않아요</p>'+sug+'</section></div>'+
+   (sc==='g7'?'<div style="margin-top:var(--s-lg)">'+gate({g:'G7',title:'판정 단계 재시도 소진',e:'E6',why:'작품을 살펴보는 서버에 문제가 있었어요',who:'보호자 - 셋 중 하나를 직접 고르기',next:'<span class="t-body-sm">아래에서 고르면 확정할 수 있어요</span>'})+'</div>':'')+
+   '<section class="stack" style="margin-top:var(--s-xl)"><h2 class="t-headline">셋 모두 같은 무게예요</h2><div class="grid3" role="radiogroup" aria-label="전시 방식">'+
+    opts.map(function(o){return '<button type="button" class="opt" role="radio" aria-checked="'+(chosen===o[0])+'" data-act="s3-pick" data-arg="'+o[0]+'"><span class="radio"></span><b>'+o[1]+'</b><span class="t-body-sm">'+o[2]+'</span></button>';}).join('')+
+   '</div><p class="t-body-sm">3D 조각은 노출 설정 뒤에만 보여요 <span class="gate-code">G17</span></p>'+
+   '<div class="row-flex">'+(chosen?btn('확정하기','s3-confirm'):btn('확정하기','',{off:'하나를 골라 주세요'}))+btn('나중에 고르기','s3-later',{cls:'btn-secondary'})+'</div></section>';
+};
+
+/* S5 */
+R.s5=function(){
+  var sc=scen.s5||'lowered';
+  var a=curS5();
+  var kind=sc==='g9'?null:sc==='lowered'?'relief':sc==='move'?'move':(a.result||'relief');
+  tmp.s5kind=kind;
+  var dec=tmp.s5dec;
+  var st=sc==='g9'?'처리하지 못함':'확인 대기';
+  var orig=sc==='g10o'?'<figure class="art-fig fail"><p>원본을 읽을 수 없어요</p></figure>':'<figure class="art-fig">'+svgArt(a.art).replace('class="layer front mover"','class="front"')+'</figure>';
+  var res;
+  if(sc==='g9') res='<figure class="art-fig fail"><p>결과가 없어요</p></figure>';
+  else if(sc==='g10p') res='<figure class="art-fig fail"><p>지금은 미리보기를 불러올 수 없어요</p></figure>';
+  else res='<figure class="art-fig" id="s5-res" data-kind="'+kind+'">'+svgArt(a.art)+'<span class="cap badge quiet"><span class="d"></span>'+(tmp.s5play?(kind==='move'?'재생 중':'시차 켬'):'정지')+'</span></figure>';
+  var tog='';
+  if(sc!=='g9'&&sc!=='g10p'){
+    if(kind==='move') tog=btn(tmp.s5play?'정지':'움직임 재생','s5-toggle',{cls:'btn-secondary',sm:1});
+    else if(kind==='relief') tog=btn(tmp.s5play?'시차 효과 끄기':'시차 효과 켜기','s5-toggle',{cls:'btn-secondary',sm:1})+(tmp.s5play?'<span class="t-body-sm">그림 위에서 포인터를 움직여 보세요</span>':'');
+  }
+  var low=(sc==='lowered')?'<section class="tile stack"><p class="t-caption">낮춤 안내 · 숨기지 않아요</p><p class="t-body">움직임을 만들기 어려워 입체 부조로 바꿨어요</p></section>':'';
+  var choices='', g='';
+  var G='gate';
+  if(sc==='g9'){
+    g=gate({g:'G9',title:'결과를 만들지 못했어요',why:'서버 문제로 결과를 만들지 못했어요 - 낮춘 결과가 아니에요',who:'보호자 - 원본 액자로 걸기 또는 다시 찍기',next:'<span class="t-body-sm">아래 두 가지 중 고를 수 있어요</span>'});
+    choices=btn('좋아요','',{off:'결과가 없어요'})+btn('액자로 걸기','s5-frame',{cls:'btn-secondary'})+btn('다시 찍기','s5-retake',{cls:'btn-secondary'});
+  } else if(sc==='g10p'){
+    g=gate({g:'G10',title:'미리보기를 못 읽음',why:'결과 파일을 지금 불러올 수 없어요. 결과를 다시 만들지는 않아요',who:'보호자 - 잠시 후 다시 열기',next:btn('다시 불러오기','s5-reload',{cls:'btn-secondary'})});
+    choices=btn('좋아요','',{off:'잠시 후 다시 확인해 주세요'})+btn('액자로 걸기','',{off:'잠시 후 다시 확인해 주세요'})+btn('다시 찍기','',{off:'잠시 후 다시 확인해 주세요'});
+  } else if(sc==='g10o'){
+    g=gate({g:'G10',title:'원본을 못 읽음',e:'E1',why:'원본 사진을 읽을 수 없어요',who:'보호자 - 다시 찍기',next:btn('다시 찍기','s5-retake',{cls:'btn-secondary'})});
+    choices=btn('좋아요','s5-like')+btn('액자로 걸기','',{off:'원본을 읽을 수 없어요'})+btn('다시 찍기','s5-retake',{cls:'btn-secondary'});
+  } else if(kind==='frame'){
+    choices=btn('좋아요','s5-like')+btn('다시 찍기','s5-retake',{cls:'btn-secondary'});
+  } else if(kind==='move'){
+    choices=btn('좋아요','s5-like')+btn('낮춘 결과로 걸기','s5-lower',{cls:'btn-secondary'})+btn('액자로 걸기','s5-frame',{cls:'btn-secondary'})+btn('다시 찍기','s5-retake',{cls:'btn-secondary'});
+  } else {
+    choices=btn('좋아요','s5-like')+btn('액자로 걸기','s5-frame',{cls:'btn-secondary'})+btn('다시 찍기','s5-retake',{cls:'btn-secondary'});
+  }
+  return rail(st)+head('S5 · 결정 · '+esc(a.title),'결과 확인')+
+   '<div class="grid2"><section class="stack"><h2 class="t-card-title">원본</h2>'+orig+'<p class="t-body-sm">올린 그대로</p></section>'+
+   '<section class="stack"><h2 class="t-card-title">결과'+(kind?' - '+KIND[kind]:'')+'</h2>'+res+'<div class="row-flex">'+tog+'</div></section></div>'+
+   '<div class="stack-lg" style="margin-top:var(--s-lg)">'+low+g+
+   '<section class="stack"><h2 class="t-headline">어떻게 걸까요</h2><div class="row-flex">'+choices+'</div>'+
+   (kind==='relief'&&sc==='lowered'?'<p class="t-body-sm">2.5D 결과에서는 "낮춘 결과로 걸기"가 액자로 걸기와 같아서 따로 두지 않았어요.</p>':'')+'</section></div>';
+};
+
+/* S6 */
+R.s6=function(){
+  var sc=scen.s6||'actual';
+  var a=pick(S.sel.s6,'a8');
+  if(!tmp.s6){ tmp.s6={title:a.story.title||'',date:sc==='future'?'2099-10-03':(a.story.date||''),age:a.story.age||'',words:a.story.words||''}; }
+  var approved=isApproved(a);
+  var st=a.status==='전시 중'?'전시 중':(approved?'승인됨':'확인 대기');
+  var cap=a.caption?'<div class="card stack" style="border-radius:var(--r-md)">'+(a.caption.src!=='direct'?'<span class="ai-mark">AI 작성</span>':'<span class="t-caption">직접 쓴 설명</span>')+'<p class="t-body">'+esc(a.caption.text)+'</p><p class="t-body-sm">승인해서 고정된 설명이에요.</p></div>'
+    :'<p class="t-body-sm">아직 설명이 없어요. 설명은 전시 조건이 아니에요.</p><div>'+btn('키워드로 설명 초안 받기 · P0.5','go-s7',{cls:'btn-secondary',arg:a.id})+'</div>';
+  return rail(st,{g12:st!=='전시 중'})+head('S6 · 입력 · '+esc(a.title),'이야기 쓰기')+
+   (S.notice.s6?doneLine(S.notice.s6):'')+
+   '<div class="grid2" style="align-items:start"><form class="stack-lg" data-form="s6">'+
+    '<section class="card stack"><p class="t-caption">필수</p>'+
+     '<div class="field"><label for="s6-title">제목</label><input id="s6-title" class="input" value="'+esc(tmp.s6.title)+'"></div>'+
+     '<div class="field"><label for="s6-date">그린 날</label><input id="s6-date" class="input" type="date" value="'+esc(tmp.s6.date)+'"><p class="hint" id="s6-date-h"></p></div>'+
+     '<div class="field"><label for="s6-age">그때 나이 (만)</label><input id="s6-age" class="input num" inputmode="numeric" value="'+esc(tmp.s6.age)+'"><p class="hint" id="s6-age-h"></p></div>'+
+    '</section>'+
+    '<section class="card stack"><p class="t-caption">아이의 한마디 · 선택 · 적은 그대로 보여요</p><div class="field"><label for="s6-words" class="sr-only">아이의 한마디</label><textarea id="s6-words" class="input" rows="2">'+esc(tmp.s6.words)+'</textarea></div></section>'+
+    '<div id="s6-live" class="stack"></div>'+
+   '</form><div class="stack-lg">'+
+    '<section class="cb cb-lime stack"><p class="t-caption">전시 조건 · G12</p><div class="cond" id="s6-cond"></div><p class="t-body-sm">두 가지가 갖춰지면 전시에 걸려요.</p></section>'+
+    '<section class="stack"><p class="t-caption">작품 설명 · AI 작성 칸 · 한마디와 따로</p>'+cap+'</section>'+
+   '</div></div>';
+};
+function isApproved(a){return a.status==='승인됨'||a.status==='전시 중';}
+function s6check(){
+  var v=tmp.s6, errs={};
+  if(v.date&&v.date>today()) errs.date='그린 날은 오늘 이후일 수 없어요';
+  if(v.age!==''&&!(/^\d+$/.test(v.age)&&+v.age>=0&&+v.age<=18)) errs.age='만 나이 0~18 사이로 적어 주세요';
+  var filled=v.title.trim()&&v.date&&v.age!=='';
+  return {errs:errs,filled:!!filled};
+}
+function s6live(){
+  var el=$('#s6-live'); if(!el) return;
+  var a=pick(S.sel.s6,'a8');
+  var approved=isApproved(a);
+  var c=s6check();
+  $('#s6-date').classList.toggle('is-error',!!c.errs.date);
+  $('#s6-age').classList.toggle('is-error',!!c.errs.age);
+  $('#s6-date-h').textContent=c.errs.date||''; $('#s6-date-h').className='hint'+(c.errs.date?' err':'');
+  $('#s6-age-h').textContent=c.errs.age||''; $('#s6-age-h').className='hint'+(c.errs.age?' err':'');
+  var html='';
+  if(c.errs.date) html=gate({g:'G11',title:'그린 날이 미래',e:'E1',why:c.errs.date,who:'보호자 - 그린 날 고치기',next:btn('그린 날 고치기','s6-focus',{cls:'btn-secondary',arg:'s6-date'})+btn('저장','',{off:'그린 날을 고쳐 주세요'})});
+  else if(c.errs.age) html=gate({g:'G11',title:'나이 범위',e:'E2',why:c.errs.age,who:'보호자 - 나이 고치기',next:btn('나이 고치기','s6-focus',{cls:'btn-secondary',arg:'s6-age'})+btn('저장','',{off:'나이를 고쳐 주세요'})});
+  else html='<div class="row-flex">'+btn('저장','s6-save')+btn('작품 목록','go',{arg:'s4',cls:'btn-secondary'})+'</div>';
+  el.innerHTML=html;
+  var saved=a.story&&a.story.title&&a.story.date&&a.story.age!==undefined&&a.story.age!=='';
+  $('#s6-cond').innerHTML=
+    (approved?'<button type="button" class="ok"><span class="box">✓</span>결과 확인 완료</button>':'<button type="button" class="miss" data-act="go-s5" data-arg="'+a.id+'"><span class="box"></span>결과 확인 - 누르면 결과 확인으로</button>')+
+    (saved?'<button type="button" class="ok"><span class="box">✓</span>제목 · 그린 날 · 나이 저장</button>':'<button type="button" class="miss" data-act="s6-focus" data-arg="s6-title"><span class="box"></span>제목 · 그린 날 · 나이 저장</button>');
+}
+
+/* S7 */
+R.s7=function(){
+  var sc=scen.s7||'ok';
+  var a=pick(S.sel.s7,'a2');
+  if(!tmp.s7) tmp.s7={kw:'산책, 공원',tags:{'강아지':true,'해':false,'나무':true},draft:null,src:null,busy:false,n:0,direct:false};
+  var t=tmp.s7;
+  var tags=Object.keys(t.tags).map(function(k){return '<button type="button" class="chip" data-act="s7-tag" data-arg="'+k+'" aria-pressed="'+t.tags[k]+'">'+k+'</button>';}).join('');
+  return rail(a.status==='전시 중'?'전시 중':'승인됨',{foot:'설명은 전시 조건이 아니에요'})+head('S7 · P0.5 · '+esc(a.title),'설명 초안 받기')+
+   '<div class="grid2" style="align-items:start"><div class="stack-lg">'+
+    '<section class="card stack"><h2 class="t-card-title">키워드</h2><div class="field"><label for="s7-kw">쉼표로 나눠 적어요</label><input id="s7-kw" class="input" value="'+esc(t.kw)+'"'+(t.direct?' disabled':'')+'></div>'+
+     '<p class="t-caption">태그 후보 · 고른 것만 보내요</p><div class="row-flex">'+tags+'</div></section>'+
+    '<section class="tile stack"><p class="t-caption">AI에 보낼 입력 · 사진과 아이 이름은 보내지 않아요</p><div id="s7-preview"></div></section>'+
+   '</div><div class="stack-lg" id="s7-live"></div></div>'+
+   '<div class="row-flex" style="margin-top:var(--s-xl)">'+btn('이야기로 돌아가기','go-s6',{cls:'btn-secondary',arg:a.id})+'</div>';
+};
+function s7live(){
+  var el=$('#s7-live'); if(!el) return;
+  var sc=scen.s7||'ok', t=tmp.s7, a=pick(S.sel.s7,'a2');
+  var picked=Object.keys(t.tags).filter(function(k){return t.tags[k];});
+  var kws=t.kw.split(',').map(function(s){return s.trim();}).filter(Boolean);
+  $('#s7-preview').innerHTML='<dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font:330 16px/1.45 var(--font-sans)"><dt class="t-caption" style="line-height:1.8">키워드</dt><dd style="margin:0">'+(esc(kws.join(' · '))||'—')+'</dd><dt class="t-caption" style="line-height:1.8">고른 태그</dt><dd style="margin:0">'+(esc(picked.join(' · '))||'—')+'</dd><dt class="t-caption" style="line-height:1.8">한마디</dt><dd style="margin:0">'+esc(a.story.words||'—')+'</dd><dt class="t-caption" style="line-height:1.8">나이</dt><dd style="margin:0">'+esc(a.story.age||'—')+'</dd><dt class="t-caption" style="line-height:1.8">그린 날</dt><dd style="margin:0" class="num">'+esc((a.story.date||'').replace(/\d\d$/,'**')||'—')+'</dd></dl>';
+  var hasIn=kws.length||picked.length, html='';
+  if(sc==='g13'&&!t.draft){
+    html+=gate({g:'G13',title:'AI 초안 사용 조건 확인 중',why:'AI 초안 기능은 아직 사용 조건 확인 중이에요',who:'평가 담당 팀원 - 조건 확인 뒤 활성화',next:btn('기본 문장으로 받기','s7-template',{cls:'btn-secondary'})+btn('직접 쓰기','s7-direct',{cls:'btn-secondary'})+btn('AI 초안 만들기','',{off:'사용 조건 확인 중'})});
+  } else if(t.fail&&!t.draft){
+    html+=gate({g:'G15',title:'AI 초안 서버 응답 없음',e:'E1',why:'지금은 AI 초안을 만들 수 없어요',who:'보호자 - 셋 중 고르기',next:btn('기본 문장으로 받기','s7-template',{cls:'btn-secondary'})+btn('나중에 다시','go-s6',{cls:'btn-secondary',arg:a.id})+btn('직접 쓰기','s7-direct',{cls:'btn-secondary'})});
+  } else if(!t.draft&&!t.direct){
+    html+='<div class="row-flex">'+(t.busy?btn('초안 만들기','',{off:'쓰는 중이에요'}):hasIn?btn('AI 초안 만들기','s7-make'):btn('AI 초안 만들기','',{off:'키워드를 하나 이상 적거나 골라 주세요',gate:'s7-kw'}))+btn('직접 쓰기','s7-direct',{cls:'btn-tertiary'})+'</div>'+(t.busy?'<p class="t-body-sm"><span class="spin" aria-hidden="true"></span> 쓰는 중… 문장은 검사가 끝난 뒤 한 번에 보여요</p>':'');
+  }
+  var box='';
+  if(t.direct){
+    box='<section class="card stack"><p class="t-caption">직접 쓰기 · AI 작성 표시 없음</p><div class="field"><label for="s7-direct" class="sr-only">설명</label><textarea id="s7-direct" class="input" rows="3">'+esc(t.draft||'')+'</textarea></div><div class="row-flex">'+btn('승인','s7-approve')+'</div></section>';
+  } else if(t.draft){
+    box='<section class="card stack"><div class="row-flex"><span class="ai-mark">AI 작성</span><span class="t-caption">'+(t.src==='template'?'기본 문장':'초안 '+t.n+'회째')+'</span></div>'+
+      (t.src==='template'&&t.g16?'<p class="note">AI 초안이 입력에 없는 내용을 넣어 기본 문장으로 바꿨어요</p>':'')+
+      '<div class="field"><label for="s7-draft" class="sr-only">초안</label><textarea id="s7-draft" class="input" rows="3">'+esc(t.draft)+'</textarea></div>'+
+      '<div class="row-flex">'+btn('승인','s7-approve')+(t.src==='llm'?btn('다시 만들기','s7-make',{cls:'btn-secondary'}):btn('다시 만들기','',{off:'기본 문장은 다시 만들 수 없어요'}))+btn('버리고 직접 쓰기','s7-direct',{cls:'btn-tertiary'})+'</div></section>';
+  } else {
+    box='<section class="card stack"><p class="t-caption">초안 · AI 작성</p><p class="t-body">아직 초안이 없어요</p><div class="row-flex">'+btn('승인','',{off:'초안이 없어요'})+btn('다시 만들기','',{off:'초안이 없어요',cls:'btn-secondary'})+'</div></section>';
+  }
+  el.innerHTML=html+box;
+}
+
+/* S8 */
+R.s8=function(){
+  var sc=scen.s8||'list';
+  if(sc==='g12'){
+    return head('S8 · 가족 전시','가족 전시')+gate({g:'G12',title:'주소로 연 작품',e:'E3',why:'아직 전시되지 않은 작품이에요. 결과 확인과 제목·그린 날·나이가 갖춰지면 전시돼요',who:'보호자 - 결과 확인과 이야기 채우기',next:btn('작품 목록에서 열기','go',{arg:'s4'})+btn('전시로 보기','',{off:'아직 전시되지 않았어요'})});
+  }
+  var open=S.sel.s8&&art(S.sel.s8);
+  if(open) return s8detail(open);
+  var kids=S.children.map(function(c){return '<button class="tab" role="tab" aria-selected="'+(S.s8child===c.id)+'" data-act="s8-child" data-arg="'+c.id+'">'+esc(c.alias)+'</button>';}).join('');
+  var q=(tmp.s8q||'').trim();
+  var list=sc==='empty'?[]:S.arts.filter(function(a){return a.status==='전시 중'&&a.child===S.s8child&&(!q||(a.story.title||a.title).indexOf(q)>=0||(a.story.date||'').indexOf(q)>=0);});
+  var groups={};
+  list.forEach(function(a){(groups[a.story.age]=groups[a.story.age]||[]).push(a);});
+  var ages=Object.keys(groups).sort(function(x,y){return y-x;});
+  var body=ages.length?ages.map(function(g){
+    var items=groups[g].sort(function(x,y){return x.story.date<y.story.date?-1:1;});
+    return '<div class="age-head"><h2 class="t-eyebrow">'+g+'살</h2><span class="t-body-sm">'+items.length+'점</span></div><div class="gal">'+items.map(function(a){
+      return '<button type="button" class="gal-item" data-act="s8-open" data-arg="'+a.id+'"><figure class="art-fig">'+svgArt(a.art)+'</figure><span class="t-caption">'+esc(a.story.date)+' · '+KIND[a.result]+'</span><span class="title">'+esc(a.story.title)+'</span></button>';}).join('')+'</div>';
+  }).join(''):'<div class="tile stack" style="margin-top:var(--s-lg)"><p class="t-body-lg">아직 전시된 작품이 없어요</p><p class="t-body-sm">결과를 확인하고 이야기를 채우면 여기에 걸려요.</p><div>'+btn('작품 올리기','go',{arg:'s2'})+'</div></div>';
+  return head('S8 · 감상','가족 전시','나이별로 묶고, 묶음 안에서는 그린 날 순서로 걸어요. 자동으로 넘어가지 않아요.')+
+    '<div class="sectitle"><div class="tabs" role="tablist" aria-label="아이 고르기">'+kids+'</div><div class="field" style="min-width:min(280px,100%)"><label for="s8-q" class="sr-only">제목 · 그린 날 찾기</label><input id="s8-q" class="input" placeholder="제목 · 그린 날 찾기" value="'+esc(tmp.s8q||'')+'"></div></div>'+body;
+}
+function s8detail(a){
+  var showOrig=tmp.s8orig;
+  var tog=a.result==='move'?btn(tmp.s8play?'정지':'움직임 재생','s8-toggle',{cls:'btn-secondary',sm:1}):a.result==='relief'?btn(tmp.s8play?'시차 효과 끄기':'시차 효과 켜기','s8-toggle',{cls:'btn-secondary',sm:1}):'';
+  var cap=a.caption&&a.caption.src!=='direct'?'<div class="card stack" style="border-radius:var(--r-md)"><span class="ai-mark">AI 작성</span><p class="t-body">'+esc(a.caption.text)+'</p></div>':(a.caption?'<div class="card" style="border-radius:var(--r-md)"><p class="t-body">'+esc(a.caption.text)+'</p></div>':'');
+  return '<div style="margin-bottom:var(--s-md)">'+btn('← 목록으로','s8-back',{cls:'btn-tertiary'})+'</div>'+
+   '<section class="cb cb-cream"><div class="grid2" style="align-items:start">'+
+    '<div class="stack"><figure class="art-fig" id="s8-res" data-kind="'+(showOrig?'orig':a.result)+'">'+(showOrig?svgArt(a.art).replace('class="layer front mover"','class="front"'):svgArt(a.art))+'<span class="cap badge quiet"><span class="d"></span>'+(showOrig?'원본':tmp.s8play?'재생 중':'정지')+'</span></figure>'+
+     '<div class="row-flex">'+(showOrig?'':tog)+btn(showOrig?'작품으로 돌아가기':'원본 보기','s8-orig',{cls:'btn-secondary',sm:1})+'</div></div>'+
+    '<div class="stack"><p class="t-caption">'+esc(a.story.date)+' · '+esc(a.story.age)+'살 · '+KIND[a.result]+'</p><h2 class="t-headline">'+esc(a.story.title)+'</h2>'+
+     (a.story.words?'<p class="quote">“'+esc(a.story.words)+'”</p><p class="t-caption">아이의 한마디 · 입력한 그대로</p>':'')+cap+'</div>'+
+   '</div></section>';
+}
+
+/* S9 */
+R.s9=function(){
+  var sc=scen.s9||'artwork';
+  var a=tmp.s9a||pick(S.sel.s9,'a3');
+  var ph=tmp.s9||'confirm';
+  if(sc==='child'){
+    var c=S.children.filter(function(x){return x.id===tmp.s9child;})[0]||S.children[1]||S.children[0];
+    if(ph==='done') return head('S9 · 아이 삭제','삭제를 시작했어요')+doneLine('목록과 전시에서 곧바로 사라졌어요. 파일 삭제는 뒤에서 계속돼요.')+'<div style="margin-top:var(--s-lg)">'+btn('아이 관리로','go',{arg:'s1'})+'</div>';
+    return head('S9 · 아이 삭제',(c?c.alias:'')+' 삭제')+'<p class="t-body">대화상자가 열려 있어요.</p>';
+  }
+  if(ph==='confirm') return rail(a.status)+head('S9 · 삭제 · '+esc(a.title),'작품 삭제')+'<p class="t-body">대화상자가 열려 있어요. 취소하면 아무것도 바뀌지 않아요.</p>';
+  var g='';
+  if(ph==='g18') g=gate({g:'G18',title:'삭제를 시작하지 못함',e:'E5',why:'삭제되지 않았어요 - 아무것도 바뀌지 않았어요',who:'보호자 - 다시 요청',next:btn('다시 삭제하기','s9-retry')});
+  if(ph==='g18') return rail(a.status)+head('S9 · 삭제 · '+esc(a.title),'작품 삭제')+g;
+  var hold=ph==='hold'?gate({kind:'hold',g:'G19',title:'만들던 작업이 멈추기를 기다려요',why:''+(a.status==='처리 중'?'움직임':'결과')+'을 만들던 작업을 멈추는 중이에요',who:'시스템 - 멈춤 확인 또는 시간 상한',next:'<span class="t-body-sm">기다리지 않아도 돼요</span>'+btn('목록으로','go',{arg:'s4',cls:'btn-secondary'})}):doneLine('삭제했어요');
+  return rail('삭제 중')+head('S9 · 삭제 · '+esc(a.title),'삭제 중')+'<div class="stack-lg">'+hold+
+   '<section class="stack"><h2 class="t-card-title">이 작품의 조작</h2><div class="row-flex">'+btn('결과 확인','',{off:'삭제 중',gate:'gate',cls:'btn-secondary'})+btn('이야기 쓰기','',{off:'삭제 중',cls:'btn-secondary'})+btn('설명 초안','',{off:'삭제 중',cls:'btn-secondary'})+'</div></section>'+
+   (ph==='hold'?'':'<div>'+btn('목록으로','go',{arg:'s4'})+'</div>')+'</div>';
+};
+function s9dialog(){
+  var sc=scen.s9||'artwork';
+  var root=$('#modal-root');
+  var ph=tmp.s9||'confirm';
+  if(S.screen!=='s9'||ph!=='confirm'){root.innerHTML='';return;}
+  var body;
+  if(sc==='child'){
+    var c=S.children.filter(function(x){return x.id===tmp.s9child;})[0]||S.children[1]||S.children[0];
+    body='<h2 class="t-headline" id="dlg-h">'+esc(c.alias)+'을(를) 지울까요?</h2><p class="t-body"><b style="font-weight:540">작품 '+c.count+'점</b>이 함께 지워져요. 되돌릴 수 없어요.</p>';
+  } else {
+    var a=pick(S.sel.s9,'a3');
+    body='<h2 class="t-headline" id="dlg-h">「'+esc(a.title)+'」을 지울까요?</h2><p class="t-caption">되돌릴 수 없어요 · 지워지는 것</p>';
+  }
+  root.innerHTML='<div class="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-h">'+body+
+   '<ul><li>원본 사진 · 잘라 낸 그림 · 깊이 정보 · 결과물</li><li>이야기 · 작품 설명 · 임시 파일</li></ul>'+
+   '<p class="note">통계용 숫자만 남고 누구의 작품인지는 남지 않아요.</p>'+
+   '<div class="row-flex">'+btn('삭제','s9-go')+btn('취소','s9-cancel',{cls:'btn-secondary'})+'</div></div></div>';
+  setTimeout(function(){var b=root.querySelector('[data-act="s9-cancel"]');if(b)b.focus();},20);
+}
+
+/* S10 */
+var MODELS=[['M1 분리','BiRefNet','CPU 비전','ready','준비됨','—'],['M2 판정','OpenCLIP','CPU 비전','off','비활성 · 라이선스 확인 전','제안 없이 확정'],['M3 관절','Animated Drawings','CPU 비전','notready','미준비','움직임 불가 · 액자 경로는 동작'],['M4 규칙','규칙','CPU 비전','ready','준비됨','—'],['M5 깊이','Depth Anything V2 Small','GPU','cpu','CPU 실행','처리 시간 증가'],['M6 설명','Qwen3-4B · Ollama','LLM','off','비활성 · P0.5','—'],['M7 3D','TripoSR','GPU','hidden','비노출 · P1','—']];
+function mchip(k,t){return '<span class="mchip '+k+'"><i></i>'+esc(t)+'</span>';}
+R.s10=function(){
+  var sc=scen.s10||'normal';
+  var tab=S.s10tab;
+  var tabs=[['model','모델별'],['cause','원인 5분류'],['unreached','결과 미도달 추적']].map(function(t){return '<button class="tab" role="tab" aria-selected="'+(tab===t[0])+'" data-act="s10-tab" data-arg="'+t[0]+'">'+t[1]+'</button>';}).join('');
+  var tabBody;
+  if(tab==='model') tabBody='<div class="table-wrap"><table><thead><tr><th>모델</th><th>낮춤률</th><th>p95</th><th>재시도율</th><th>큐 적체</th><th>외부 호출 · 한도 초과</th></tr></thead><tbody>'+MODELS.map(function(m){return '<tr><td>'+m[0]+'</td><td>측정 전</td><td>측정 전</td><td>측정 전</td><td>측정 전</td><td>측정 전</td></tr>';}).join('')+'</tbody></table></div>';
+  else if(tab==='cause') tabBody='<div class="table-wrap"><table><thead><tr><th>원인</th><th>뜻</th><th>건수</th></tr></thead><tbody>'+[['보호자 선택','보호자가 처음부터 액자를 골랐어요'],['모델 낮춤','모델이 어려워 다른 결과로 바꿨어요'],['보호자 전환','결과를 보고 보호자가 바꿨어요'],['인프라 실패','서버 문제로 만들지 못했어요'],['결과 미도달','결과가 보호자에게 닿지 않았어요 · 목표 0']].map(function(r){return '<tr><td style="font-weight:540">'+r[0]+'</td><td>'+r[1]+'</td><td>측정 전</td></tr>';}).join('')+'</tbody></table></div><p class="t-body-sm">다섯 원인은 섞어 세지 않아요.</p>';
+  else tabBody='<div class="table-wrap"><table><thead><tr><th>단계 작업 번호</th><th>모델 버전</th><th>오류 분류</th><th>시도</th></tr></thead><tbody><tr><td class="mono">J-****1</td><td>M3 v*</td><td>엔진 다운</td><td class="num">3</td></tr></tbody></table></div><p class="t-body-sm">행을 눌러도 이미지는 열리지 않아요.</p>';
+  var metrics=[['첫 결과 승인율','첫 결과를 그대로 승인한 비율'],['판정 수정률','제안과 다르게 확정한 비율'],['결과 미도달 수','목표 0'],['삭제 미완료 수','끝내 지우지 못한 파일 수'],['설명 규칙 검사 실패율','P0.5']];
+  return '<div class="summary-row"><span class="k">생존</span><span>'+(sc==='dberr'?'응답함':'응답함')+'</span><span class="sep"></span><span class="k">준비</span><span>일부 모델 미준비</span><span class="sep"></span><label class="k" for="s10-period">기간</label><select id="s10-period" class="input" style="width:auto;min-height:36px;padding:4px 10px"><option>최근 7일</option><option>최근 30일</option><option>오늘</option></select></div>'+
+   head('S10 · 서비스 운영자','서비스 상태와 모델별 지표')+
+   '<section class="stack"><h2 class="t-headline">준비 - 모델별</h2><div class="table-wrap"><table><thead><tr><th>모델</th><th>구현</th><th>서빙군</th><th>상태</th><th>영향</th></tr></thead><tbody>'+
+    MODELS.map(function(m){return '<tr><td style="font-weight:540">'+m[0]+'</td><td>'+m[1]+'</td><td>'+m[2]+'</td><td>'+mchip(m[3],m[4])+'</td><td>'+m[5]+'</td></tr>';}).join('')+'</tbody></table></div>'+
+    '<p class="t-body-sm">칩 모양: '+mchip('ready','준비됨')+' '+mchip('notready','미준비')+' '+mchip('off','비활성')+' '+mchip('cpu','CPU 실행')+' '+mchip('hidden','비노출')+' '+mchip('unknown','확인 불가')+'</p></section>'+
+   '<section class="stack" style="margin-top:var(--s-xl)"><div class="sectitle"><h2 class="t-headline">지표</h2><span class="badge quiet"><span class="d"></span>정의와 검증 계획이며 실적 아님</span></div>'+
+    (sc==='dberr'?'<div class="note">작업 DB에 닿지 않아 지표를 계산하지 못했어요. 마지막 확인 값: 2026-09-28 09:40 · 갱신 불가</div>':
+    '<div class="grid3">'+metrics.map(function(m){return '<div class="tile stack"><p class="t-caption">'+m[0]+'</p><p class="t-headline">측정 전</p><p class="t-body-sm">'+m[1]+'</p></div>';}).join('')+'</div>')+'</section>'+
+   '<section class="stack" style="margin-top:var(--s-xl)"><div class="tabs" role="tablist" aria-label="상세 지표">'+tabs+'</div>'+tabBody+'</section>'+
+   '<section class="cb cb-coral stack" style="margin-top:var(--s-xl)"><p class="t-caption">구조적 차단</p><p class="t-body-lg">운영 화면에는 가족 사진과 이야기로 가는 경로가 없어요.</p><p class="t-body-sm">미도달 건도 단계 작업 번호 · 모델 버전 · 오류 분류 · 시도 횟수만 보여요.</p></section>';
+};
+
+/* S11 */
+R.s11=function(){
+  var m=S.models.m1;
+  var incomplete=m.total-m.done;
+  var rows=[['M1 BiRefNet',m.active,m.rollback||'없음',m.cand||'—','확인','일치'],['M2 OpenCLIP','없음','없음','v1','확인 전','일치'],['M3 Animated Drawings','v1','없음','—','확인','일치'],['M5 Depth Anything V2 Small','v1','없음','—','확인','일치'],['M6 Qwen3-4B (P0.5)','없음','없음','v1','확인 전','일치'],['M7 TripoSR (P1)','없음','없음','—','확인 전','—']];
+  var g22=incomplete>0?gate({g:'G22',title:'전체 재평가 미완료',e:'E6',why:'평가 미완료 항목 '+incomplete+'건이 있어 승격 근거가 되지 않아요',who:'평가 담당 - 미완료 항목 재평가',next:(m.busy?btn('미완료 항목 다시 평가','',{off:'평가 중이에요',cls:'btn-secondary'}):btn('미완료 항목 다시 평가','s11-reeval',{cls:'btn-secondary'}))+btn('승격','',{off:'미완료 '+incomplete+'건'})}):'';
+  var promote=m.cand&&incomplete===0?'<div class="row-flex">'+btn('후보 '+m.cand+' 승격','s11-promote')+'</div>':'';
+  var rb=m.rollback?'<section class="card stack"><h2 class="t-card-title">롤백</h2><p class="t-body-sm">직전 활성 '+m.rollback+'로 재평가 없이 되돌려요. S10 지표를 근거로 판단해요.</p><div>'+btn(m.rollback+'로 롤백','s11-rollback',{cls:'btn-secondary'})+'</div></section>'
+    :gate({id:'gate-rb',kind:'final',g:'E8',title:'롤백 - 해제 주체 없음',e:'E8',why:'첫 버전이라 되돌릴 후보가 없어요',who:'없음 - 다음 조치는 정해지지 않았어요(미해결)',next:btn('롤백','',{off:'롤백 후보 없음',gate:'gate-rb',cls:'btn-secondary'})});
+  return head('S11 · 평가 담당','모델 평가와 승격')+(S.notice.s11?doneLine(S.notice.s11):'')+
+   '<div class="table-wrap"><table><thead><tr><th>모델</th><th>활성</th><th>롤백 후보</th><th>후보</th><th>라이선스</th><th>해시</th></tr></thead><tbody>'+
+    rows.map(function(r,i){return '<tr'+(i===0?' aria-selected="true"':'')+'>'+r.map(function(c,j){return '<td'+(j===0?' style="font-weight:540"':'')+'>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'+
+   '<div class="grid2" style="margin-top:var(--s-xl);align-items:start"><div class="stack-lg">'+
+    (m.cand?'<section class="card stack"><h2 class="t-card-title">M1 후보 '+m.cand+' 평가</h2><p class="t-body-sm">평가 묶음: 사람 · 비인물 · 촬영 조건 · 입체 · 팀원 제작 작품만</p>'+
+     '<p class="t-body"><span class="num" style="font-weight:540">'+m.done+' / '+m.total+'</span> 완료'+(incomplete?' · 평가 미완료 '+incomplete+' · 인프라 소진':'')+'</p>'+
+     '<div class="row-flex">'+btn('평가 요청','s11-req',{cls:'btn-secondary',sm:1})+btn(tmp.s11rep?'보고서 닫기':'보고서 열기','s11-rep',{cls:'btn-secondary',sm:1})+btn('판단 기록','s11-judge',{cls:'btn-secondary',sm:1})+'</div>'+
+     (tmp.s11rep?'<div class="table-wrap"><table><thead><tr><th>항목</th><th>활성 v1</th><th>후보 v2</th></tr></thead><tbody><tr><td>불일치</td><td class="num">—</td><td class="num">3건</td></tr><tr><td>오인 후보</td><td class="num">—</td><td class="num">1건</td></tr><tr><td>처리 시간 p95</td><td class="num">2.1초</td><td class="num">1.8초</td></tr><tr><td>메모리</td><td class="num">1.2GB</td><td class="num">1.3GB</td></tr></tbody></table></div><p class="t-caption">예시 값</p>':'')+
+     (tmp.s11judge?'<p class="note">판단 기록: 오인 분류 1건 · 통과 · 근거 "입체 작품 경계가 더 매끈함" (예시)</p>':'')+
+     '</section>':'<p class="t-body">M1은 후보가 없어요.</p>')+
+    g22+promote+'</div><div>'+rb+'</div></div>';
+};
+
+/* S12 */
+var ENDPOINTS=[['보호자 앱','/v1/artworks','P0'],['보호자 앱','/v1/artworks/{id}/confirm','P0'],['보호자 앱','/v1/artworks/{id}/story','P0'],['보호자 앱','/v1/gallery','P0'],['운영','/live · /ready (모델별) · /metrics','P0'],['모델 기능','/v1/models/segment','P0'],['모델 기능','/v1/models/classify','P0'],['모델 기능','/v1/models/relief','P0'],['모델 기능','/v1/models/pose','P0 · 팀 내부 키'],['모델 기능','/v1/models/caption','P0.5 예정']];
+R.s12=function(){
+  var tab=S.s12tab;
+  var tabs=[['ep','엔드포인트'],['guide','가이드라인'],['manual','매뉴얼']].map(function(t){return '<button class="tab" role="tab" aria-selected="'+(tab===t[0])+'" data-act="s12-tab" data-arg="'+t[0]+'">'+t[1]+'</button>';}).join('');
+  var body;
+  if(tab==='ep') body='<div class="table-wrap"><table><thead><tr><th>묶음</th><th>경로</th><th>구간</th></tr></thead><tbody>'+ENDPOINTS.map(function(e){return '<tr><td>'+e[0]+'</td><td class="mono" style="font-size:14px">'+esc(e[1])+'</td><td>'+esc(e[2])+'</td></tr>';}).join('')+'</tbody></table></div>'+
+    '<div class="summary-row" style="margin:0"><span class="k">문서</span>v1<span class="sep"></span><span class="k">명세</span>v1<span class="sep"></span><span class="k">매니페스트</span>일치 '+btn('openapi.json 다시 읽기','s12-reload',{cls:'btn-tertiary',sm:1})+(tmp.s12read?'<span class="t-body-sm">마지막 확인 <span class="num">'+tmp.s12read+'</span></span>':'')+'</div>';
+  else if(tab==='guide') body='<div class="stack t-body"><p>외부 호출은 <code>X-API-Key</code> 헤더로 인증해요. 키는 internal/external 범위가 있고 <code>pose</code>는 팀 내부 키만 받아요.</p><p>오류는 RFC 9457 Problem Details에 <code>code</code>를 더해 돌려줘요. 401 · 403 · 413 · 422 · 429를 구분해요.</p><p>요청은 202로 접수되고, 결과는 작업 번호로 다시 읽어요.</p></div>';
+  else body='<div class="stack t-body"><p>장애 대응: 상태 · 지표 화면에서 서빙군별 준비 상태를 먼저 봐요. '+btn('상태 · 지표 보기','go',{arg:'s10',cls:'btn-tertiary',sm:1})+'</p><p>모델 교체 절차: 평가 → 판단 기록 → 승격 순서예요. '+btn('모델 평가 보기','go',{arg:'s11',cls:'btn-tertiary',sm:1})+'</p></div>';
+  var fns=['segment','classify','relief','pose'].map(function(f){return '<option'+(S.s12.fn===f?' selected':'')+'>'+f+'</option>';}).join('');
+  return head('S12 · '+ROLE[S.role],'API활용 메뉴')+'<div class="tabs" role="tablist" aria-label="API활용">'+tabs+'</div><div class="stack" style="margin-top:var(--s-md)">'+body+'</div>'+
+   '<section class="card stack" style="margin-top:var(--s-xl)"><h2 class="t-card-title">시험 호출</h2><div class="grid3">'+
+    '<div class="field"><label for="s12-fn">기능</label><select id="s12-fn" class="input">'+fns+'</select></div>'+
+    '<div class="field"><label for="s12-item">입력 · 평가 묶음 작품만</label><select id="s12-item" class="input"><option>E-0012</option><option>E-0031</option><option>E-0044</option></select></div>'+
+    '<div class="field"><label for="s12-key">키</label><select id="s12-key" class="input"><option>팀 시험 키 ****</option></select></div></div>'+
+    '<div id="s12-live" class="stack"></div></section>';
+};
+function s12live(){
+  var el=$('#s12-live'); if(!el) return;
+  var fn=S.s12.fn, html='';
+  if(fn==='classify') html=gate({g:'G25',title:'M2 비활성 - 라이선스 확인 전',why:'classify 모델이 아직 활성화되지 않았어요',who:'평가 담당 - 라이선스 확인 뒤 승격',next:btn('다른 기능 고르기','s12-other',{cls:'btn-secondary'})+btn('시험 호출','',{off:'모델 비활성'})});
+  else html='<div class="row-flex">'+(S.s12.busy?btn('시험 호출','',{off:'응답을 기다리는 중'}):btn('시험 호출','s12-call'))+'</div>';
+  var r=S.s12.res;
+  html+='<section class="stack"><p class="t-caption">응답 - H16 · 결과는 가족 저장소에 쓰지 않아요</p>'+(r?'<pre class="code">'+esc(JSON.stringify(r,null,2))+'</pre>':'<p class="t-body-sm">아직 호출하지 않았어요.</p>')+'</section>';
+  el.innerHTML=html;
+}
+
+/* ================= 라우팅 · 렌더 ================= */
+var ROLE_OF={s10:'operator',s11:'evaluator',s12:'developer'};
+function go(id,opts){
+  opts=opts||{};
+  if(!R[id]) id='s4';
+  if(id!=='login'){
+    var ALLOW={operator:['s10','s12'],evaluator:['s11','s10'],developer:['s12','s10','s11']};
+    if(ROLE_OF[id]){ if(!ALLOW[S.role]||ALLOW[S.role].indexOf(id)<0) S.role=ROLE_OF[id]; }
+    else S.role='parent';
+  }
+  if(S.screen!==id){ tmp={}; }
+  S.screen=id;
+  if(location.hash!=='#'+id){ try{history.replaceState(null,'','#'+id);}catch(e){} }
+  render(!opts.keepScroll);
+}
+function render(scroll){
+  var id=S.screen;
+  shell(id);
+  $('#app').innerHTML=R[id]();
+  if(id==='s1') s1live();
+  if(id==='s2') s2live();
+  if(id==='s6') s6live();
+  if(id==='s7') s7live();
+  if(id==='s12') s12live();
+  s9dialog();
+  protoBar();
+  if(scroll) window.scrollTo(0,0);
+}
+function protoBar(){
+  var sel=$('#proto-screen');
+  if(!sel.options.length) SCREENS.forEach(function(s){var o=document.createElement('option');o.value=s[0];o.textContent=s[1];sel.appendChild(o);});
+  sel.value=S.screen;
+  var list=SCENS[S.screen]||[], cur=scen[S.screen]||(list[0]&&list[0][0]);
+  $('#proto-scen').innerHTML=list.length>1?'<span>상태</span>'+list.map(function(s){return '<button type="button" data-scen="'+s[0]+'" aria-pressed="'+(cur===s[0])+'">'+s[1]+'</button>';}).join(''):'';
+}
+function focusGate(id){var g=document.getElementById(id||'gate')||document.querySelector('.gate');if(g){g.scrollIntoView({block:'center',behavior:'smooth'});g.focus({preventScroll:true});}}
+
+/* ================= 행동 ================= */
+var A={
+  go:function(a){go(a);},
+  disabled:function(a,el){ var g=el.getAttribute('data-gate'); var t=document.getElementById(g); if(t&&t.classList.contains('gate')) focusGate(g); else if(t) t.focus(); else focusGate(); announce(el.getAttribute('data-reason')); },
+  'focus-gate':function(){focusGate();},
+  'login-team':function(r){S.role=r;go({operator:'s10',evaluator:'s11',developer:'s12'}[r]);},
+  's4-open':function(id){
+    var a=art(id); S.sel.s4=id;
+    render(false);
+  },
+  's4-refresh':function(){var d=new Date();tmp.s4time=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);var a3=art('a3');if(a3&&a3.status==='처리 중'&&a3.stage==='순서를 기다리는 중'){a3.stage='움직임 만드는 중';a3.steps[2]=['움직임 M3','진행 중','움직임을 만드는 중'];}else if(a3&&a3.status==='처리 중'){a3.status='확인 대기';a3.stage='결과 도착';a3.steps[2]=['움직임 M3','완료',''];}render(false);announce('상태를 다시 읽었어요');},
+  'go-s3':function(id){S.sel.s3=id;scen.s3='sug';go('s3');},
+  'go-s5':function(id){S.sel.s5=id;var a=art(id);scen.s5=a.status==='처리하지 못함'?'g9':(a.lowered?'lowered':'actual');go('s5');},
+  'go-s6':function(id){S.sel.s6=id;scen.s6='actual';go('s6');},
+  'go-s7':function(id){S.sel.s7=id;scen.s7='ok';go('s7');},
+  'go-s8':function(id){S.sel.s8=id;scen.s8='list';var a=art(id);S.s8child=a.child;go('s8');},
+  'go-s9':function(id){S.sel.s9=id;scen.s9='artwork';go('s9');},
+  /* S1 */
+  's1-save':function(){
+    var v=tmp.s1alias.trim();
+    if(tmp.s1edit){var c=child(tmp.s1edit);c.alias=v;S.notice.s1='별칭을 고쳤어요';}
+    else{S.children.push({id:'c'+Date.now(),alias:v,count:0});S.notice.s1='「'+v+'」을(를) 등록했어요';}
+    tmp.s1alias='';tmp.s1edit=null;scen.s1='normal';render(false);},
+  's1-edit':function(id){tmp.s1edit=id;tmp.s1alias=child(id).alias;render(false);var i=$('#s1-alias');i.focus();i.select();},
+  's1-cancel':function(){tmp.s1edit=null;tmp.s1alias='';render(false);},
+  's1-fix':function(){var i=$('#s1-alias');i.focus();i.select();},
+  's1-del':function(id){scen.s9='child';go('s9');tmp.s9child=id;render(false);},
+  /* S2 */
+  's2-sample':function(i){tmp.s2file=SAMPLES[+i];tmp.s2g6=false;tmp.s2art=['dog','house','cat'][+i];s2live();$('#app').querySelectorAll('[data-act="s2-sample"]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-arg')===i);});},
+  's2-clear':function(){tmp.s2file=null;tmp.s2g6=false;s2live();$('#app').querySelectorAll('[data-act="s2-sample"]').forEach(function(b){b.setAttribute('aria-pressed','false');});var l=$('label[for="s2-file"]');if(l)l.focus();},
+  's2-up':function(){
+    tmp.s2busy=true;tmp.s2g6=false;s2live();
+    setTimeout(function(){
+      if(S.screen!=='s2')return;
+      tmp.s2busy=false;
+      if((scen.s2||'normal')==='g6'&&!tmp.s2retried){tmp.s2g6=true;tmp.s2retried=true;s2live();focusGate();return;}
+      var id='n'+Date.now();
+      var c=child(tmp.s2child); c.count++;
+      S.arts.unshift({id:id,title:'새 작품',child:tmp.s2child,status:'확정 대기',pick:null,result:null,art:tmp.s2art||'dog',stage:'고르러 가기',steps:[['분리 M1','완료',''],['판정 M2','진행 중','살펴보는 중']],story:{},caption:null});
+      S.sel.s3=id;scen.s3='wait';go('s3');announce('접수했어요. 작품을 살펴보기 시작했어요');
+      setTimeout(function(){if(S.screen==='s3'&&S.sel.s3===id&&scen.s3==='wait'){scen.s3='sug';art(id).suggest='움직일 수 있을 것 같아요';art(id).steps[1]=['판정 M2','완료','움직일 수 있을 것 같아요'];var p=tmp.s3pick;render(false);tmp.s3pick=p;}},2500);
+    },900);
+  },
+  /* S3 */
+  's3-pick':function(k){tmp.s3pick=k;render(false);},
+  's3-confirm':function(){var a=art(S.sel.s3);a.pick=tmp.s3pick;
+    if(tmp.s3pick==='frame'){a.status='확인 대기';a.result='frame';a.stage='결과 도착';}
+    else{a.status='처리 중';a.result=tmp.s3pick;a.stage='순서를 기다리는 중';a.steps=[['분리 M1','완료',''],['판정 M2','완료',a.suggest||'—'],[tmp.s3pick==='move'?'움직임 M3':'깊이 부조 M5','대기','순서를 기다리는 중']];}
+    S.notice.s4='「'+a.title+'」 만들기 시작했어요. 화면을 닫아도 계속돼요';S.sel.s4=a.id;go('s4');},
+  's3-later':function(){S.sel.s4=S.sel.s3;go('s4');},
+  /* S5 */
+  's5-toggle':function(){tmp.s5play=!tmp.s5play;render(false);if(tmp.s5play)startMotion('#s5-res','s5play');},
+  's5-reload':function(){scen.s5='lowered';render(false);},
+  's5-like':function(){decide('like');},
+  's5-frame':function(){decide('frame');},
+  's5-lower':function(){var a=curS5();a.status='처리 중';a.result='relief';a.stage='입체 부조를 새로 만드는 중';a.steps.push(['깊이 부조 M5','대기','입체 부조를 새로 만들어요']);S.notice.s4='「'+a.title+'」 입체 부조를 새로 만들어요. 처음 결과는 보관해요';S.sel.s4=a.id;go('s4');},
+  's5-retake':function(){
+    var a=curS5();
+    $('#modal-root').innerHTML='<div class="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rt-h"><h2 class="t-headline" id="rt-h">다시 찍을까요?</h2><p class="t-body">이전 작품「'+esc(a.title)+'」은 지워져요. 새 사진을 올리면 같은 아이로 이어서 올릴 수 있어요.</p><div class="row-flex">'+btn('다시 찍기','s5-retake-go',{arg:a.id})+btn('취소','modal-close',{cls:'btn-secondary'})+'</div></div></div>';
+    setTimeout(function(){$('#modal-root [data-act="modal-close"]').focus();},20);
+  },
+  's5-retake-go':function(id){var a=art(id);$('#modal-root').innerHTML='';S.arts=S.arts.filter(function(x){return x.id!==id;});scen.s2='normal';go('s2');tmp.s2child=a.child;render(false);announce('이전 작품 삭제를 시작했어요');},
+  'modal-close':function(){$('#modal-root').innerHTML='';},
+  /* S6 */
+  's6-focus':function(id){var i=document.getElementById(id);if(i)i.focus();},
+  's6-save':function(){
+    var a=pick(S.sel.s6,'a8'), c=s6check();
+    if(Object.keys(c.errs).length){focusGate();return;}
+    a.story={title:tmp.s6.title.trim(),date:tmp.s6.date,age:tmp.s6.age,words:tmp.s6.words};
+    if(isApproved(a)&&c.filled){a.status='전시 중';a.stage='전시 중';S.notice.s6='전시에 걸렸어요';}
+    else S.notice.s6='저장했어요. 빠진 조건을 채우면 전시돼요';
+    render(false);
+    if(a.status==='전시 중'){var n=$('.done-line');if(n)n.insertAdjacentHTML('beforeend',' '+btn('전시에서 보기','go-s8',{cls:'btn-tertiary',sm:1,arg:a.id}));}
+  },
+  /* S7 */
+  's7-tag':function(k){tmp.s7.tags[k]=!tmp.s7.tags[k];var b=$('[data-act="s7-tag"][data-arg="'+k+'"]');b.setAttribute('aria-pressed',tmp.s7.tags[k]);s7live();},
+  's7-make':function(){
+    var sc=scen.s7||'ok',t=tmp.s7;t.busy=true;t.draft=null;s7live();
+    setTimeout(function(){
+      if(S.screen!=='s7')return;t.busy=false;
+      if(sc==='g15'){t.fail=true;s7live();focusGate();return;}
+      var a=pick(S.sel.s7,'a2');
+      var picked=Object.keys(t.tags).filter(function(k){return t.tags[k];});
+      if(sc==='g16'){t.draft=a.story.age+'살 때 '+(picked.concat(t.kw.split(',').map(function(s){return s.trim();})).filter(Boolean).join(', '))+'을(를) 그렸어요.';t.src='template';t.g16=true;}
+      else{t.n++;t.draft=a.story.age+'살 때 '+t.kw.split(',')[0].trim()+' 나온 '+picked.join('와 ')+'를 그렸어요.'+(t.n>1?' 나무 아래 그늘이 시원해 보여요.':'');t.src='llm';}
+      s7live();
+    },1300);
+  },
+  's7-template':function(){var a=pick(S.sel.s7,'a2');tmp.s7.draft=a.story.age+'살 때 그린 「'+(a.story.title||a.title)+'」이에요.';tmp.s7.src='template';tmp.s7.fail=false;s7live();},
+  's7-direct':function(){tmp.s7.direct=true;tmp.s7.draft='';tmp.s7.src='direct';render(false);var d=$('#s7-direct');if(d)d.focus();},
+  's7-approve':function(){var a=pick(S.sel.s7,'a2');var ta=$('#s7-direct')||$('#s7-draft');var v=ta?ta.value.trim():'';if(!v){ta&&ta.focus();announce('설명을 적어 주세요');return;}
+    a.caption={text:v,src:tmp.s7.src};S.notice.s6=a.status==='전시 중'?'설명을 승인했어요. 전시에 곧바로 보여요':'설명을 승인했어요. 전시될 때 함께 보여요';S.sel.s6=a.id;go('s6');},
+  /* S8 */
+  's8-child':function(id){S.s8child=id;render(false);},
+  's8-open':function(id){S.sel.s8=id;tmp.s8play=false;tmp.s8orig=false;render(true);},
+  's8-back':function(){S.sel.s8=null;render(false);},
+  's8-toggle':function(){tmp.s8play=!tmp.s8play;render(false);if(tmp.s8play)startMotion('#s8-res','s8play');},
+  's8-orig':function(){tmp.s8orig=!tmp.s8orig;tmp.s8play=false;render(false);},
+  /* S9 */
+  's9-go':function(){
+    var sc=scen.s9||'artwork';
+    if(sc==='g18'&&!tmp.s9retry){tmp.s9='g18';render(false);focusGate();return;}
+    if(sc==='child'){var cid=tmp.s9child||(S.children[1]||S.children[0]).id;S.arts=S.arts.filter(function(a){return a.child!==cid;});S.children=S.children.filter(function(c){return c.id!==cid;});tmp.s9='done';render(false);return;}
+    var a=pick(S.sel.s9,'a3');a.status='삭제 중';a.stage='삭제 중';tmp.s9a=a;
+    if(S.sel.s4===a.id) S.sel.s4=null;
+    tmp.s9='hold';render(false);announce('삭제를 시작했어요');
+    setTimeout(function(){S.arts=S.arts.filter(function(x){return x.id!==a.id;});if(S.screen==='s9'&&tmp.s9==='hold'&&tmp.s9a===a){tmp.s9='deleted';render(false);announce('삭제했어요');}},3500);
+  },
+  's9-retry':function(){tmp.s9retry=true;tmp.s9='confirm';render(false);},
+  's9-cancel':function(){$('#modal-root').innerHTML='';tmp={};go(scen.s9==='child'?'s1':'s4');},
+  /* S10 */
+  's10-tab':function(t){S.s10tab=t;render(false);},
+  /* S11 */
+  's11-reeval':function(){var m=S.models.m1;if(m.busy||m.done>=m.total)return;m.busy=true;render(false);var iv=setInterval(function(){m.done=Math.min(m.done+1,m.total);if(m.done>=m.total){clearInterval(iv);m.busy=false;}if(S.screen==='s11')render(false);},900);},
+  's11-rep':function(){tmp.s11rep=!tmp.s11rep;render(false);},
+  's11-judge':function(){tmp.s11judge=true;render(false);},
+  's11-req':function(){S.notice.s11='해시 · 격리 확인 뒤 항목별 평가 작업을 등록했어요';render(false);},
+  's11-promote':function(){var m=S.models.m1;m.rollback=m.active;m.active=m.cand;m.cand=null;S.notice.s11='M1 '+m.active+'를 활성으로 올렸어요. '+m.rollback+'는 롤백 후보가 됐어요';render(false);},
+  's11-rollback':function(){var m=S.models.m1;m.cand=m.active;m.active=m.rollback;m.rollback=null;m.done=m.total;S.notice.s11='M1을 '+m.active+'로 되돌렸어요';render(false);},
+  /* S12 */
+  's12-tab':function(t){S.s12tab=t;render(false);},
+  's12-reload':function(){var d=new Date();tmp.s12read=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);render(false);},
+  's12-other':function(){S.s12.fn='segment';S.s12.res=null;render(false);$('#s12-fn').focus();},
+  's12-call':function(){
+    var fn=S.s12.fn, item=$('#s12-item').value;
+    S.s12.busy=true;S.s12.res={job_id:'job_7f3c',status:'queued'};s12live();
+    function show(){if(S.screen==='s12')s12live();}
+    setTimeout(function(){S.s12.res={job_id:'job_7f3c',status:'running'};show();},700);
+    setTimeout(function(){S.s12.busy=false;
+      var out={segment:{mask:'mask_E.png',cutout:'cutout_E.png'},relief:{depth:'depth16_E.png',cutout:'cutout_E.png'},pose:{joints:17}}[fn];
+      S.s12.res={job_id:'job_7f3c',status:'done',input:item,result:out,model:{id:{segment:'M1',relief:'M5',pose:'M3'}[fn],version:'v1'},elapsed_ms:{segment:1840,relief:2630,pose:3120}[fn],error_class:null,stored_to_family:false};show();},1800);
+  }
+};
+function curS5(){return (scen.s5||'lowered')==='g9'?pick('a1','a2'):pick(S.sel.s5,'a2');}
+function decide(kind){
+  var a=curS5(); if(!a) return;
+  a.status='승인됨'; a.result=kind==='frame'?'frame':(tmp.s5kind||a.result||'relief');
+  a.stage='승인됨'; a.lowered=null;
+  var filled=a.story&&a.story.title&&a.story.date&&a.story.age;
+  if(filled){a.status='전시 중';a.stage='전시 중';S.notice.s6='승인했어요. 이야기가 갖춰져 있어 전시에 걸렸어요';}
+  else S.notice.s6='승인했어요. 이야기를 채우면 전시돼요';
+  S.sel.s6=a.id; scen.s6='actual'; go('s6');
+}
+/* 재생·시차 — 누를 때만. 움직임은 3회 뒤 정지(자동 반복 없음) */
+function startMotion(sel,flag){
+  var fig=$(sel); if(!fig) return;
+  var kind=fig.getAttribute('data-kind');
+  if(kind==='move'){
+    fig.classList.add('playing');
+    var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(function(){ if(tmp[flag]){tmp[flag]=false;render(false);} }, reduce?600:3100);
+  } else if(kind==='relief'){
+    var back=fig.querySelector('.back'), front=fig.querySelector('.front');
+    fig.addEventListener('pointermove',function(e){
+      if(!tmp[flag]) return;
+      var r=fig.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+      if(back) back.style.transform='translate('+(x*-8)+'px,'+(y*-6)+'px)';
+      if(front) front.style.transform='translate('+(x*14)+'px,'+(y*10)+'px)';
+    });
+    if(front) front.style.transform='translate(6px,-4px)';
+  }
+}
+
+/* ================= 이벤트 ================= */
+document.addEventListener('click',function(e){
+  var g=e.target.closest('[data-go]'); if(g){go(g.getAttribute('data-go'));return;}
+  var s=e.target.closest('[data-scen]');
+  if(s){var sid=S.screen;scen[sid]=s.getAttribute('data-scen');tmp={};if(sid==='s8')S.sel.s8=null;
+    if(sid==='s6'){var tgt={approved:'a8',future:'a8',pending:'a2'}[scen.s6];if(art(tgt))S.sel.s6=tgt;}
+    render(false);return;}
+  var b=e.target.closest('[data-act]'); if(!b) return;
+  var act=b.getAttribute('data-act'); if(!act||!A[act]) return;
+  e.preventDefault();
+  A[act](b.getAttribute('data-arg'),b);
+});
+document.addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('tr[data-act]')){e.preventDefault();A[e.target.getAttribute('data-act')](e.target.getAttribute('data-arg'),e.target);}
+  if(e.key==='Escape'&&$('#modal-root').innerHTML){ if(S.screen==='s9'&&(tmp.s9||'confirm')==='confirm') A['s9-cancel'](); else $('#modal-root').innerHTML=''; }
+});
+document.addEventListener('input',function(e){
+  var id=e.target.id;
+  if(id==='s1-alias'){tmp.s1alias=e.target.value;s1live();}
+  else if(id==='s6-title'||id==='s6-date'||id==='s6-age'||id==='s6-words'){tmp.s6[id.slice(3)]=e.target.value;s6live();}
+  else if(id==='s7-kw'){tmp.s7.kw=e.target.value;s7live();}
+  else if(id==='s8-q'){tmp.s8q=e.target.value;var p=e.target.selectionStart;render(false);var q=$('#s8-q');q.focus();try{q.setSelectionRange(p,p);}catch(x){}}
+});
+document.addEventListener('change',function(e){
+  var id=e.target.id;
+  if(id==='proto-screen'){ scen={};go(e.target.value); }
+  else if(id==='s2-child'){tmp.s2child=e.target.value;}
+  else if(id==='s2-file'){var f=e.target.files[0];if(f){tmp.s2file=[f.name,f.type||'',Math.round(f.size/1048576*10)/10];tmp.s2g6=false;tmp.s2art='dog';s2live();}}
+  else if(id==='s12-fn'){S.s12.fn=e.target.value;S.s12.res=null;s12live();}
+});
+document.addEventListener('submit',function(e){
+  e.preventDefault();
+  var f=e.target.getAttribute('data-form');
+  if(f==='login-parent'){S.role='parent';go('s4');}
+  else if(f==='s1'){var b=$('#s1-live [data-act="s1-save"]');if(b)A['s1-save']();else focusGate();}
+  else if(f==='s6'){A['s6-save']();}
+});
+$('#proto-reset').addEventListener('click',function(){S=seed();scen={};tmp={};go(S.screen==='login'?'login':S.screen);});
+
+var start=(location.hash||'').replace('#','');
+S.screen='';
+go(R[start]?start:'s4');
+})();
+</script>
+</body>
+</html>

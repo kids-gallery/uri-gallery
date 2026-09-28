@@ -88,7 +88,7 @@
 | `not_delivered` | 결과 단계 재시도 소진(G9). 뒤에 `frame`을 골라도 유지, `in_approval_base=FALSE`(D2) |
 | NULL | 확정값(`animated`)대로 결과 도달 |
 
-`artwork_outcome.first_decision`과 `in_approval_base`가 첫 결과 승인율(`v_metrics_service`)의 원천이다.
+`artwork_outcome.first_decision`과 `in_approval_base`가 첫 결과 승인율(`v_metrics_service`)의 원천이다. 기간별 지표(FR-13)를 위해 `confirmed_at`(확정 때)·`first_decided_at`(첫 결정 때)을 앱이 UTC로 적는다(SD_03 §19 #18). 기간 없는 조회는 뷰, 기간 조회는 같은 식에 기간 조건을 더한다.
 
 ## 3. 쓰기 소유 (SD_04 모듈 경계 기준 1)
 
