@@ -53,7 +53,7 @@
 | `downgrade_cause` | `animated_to_relief` · `animated_to_frame`(마스크 없음) · `relief_to_frame` · `split_fail`(분리 품질 미달 → 액자) · `sculpture_to_relief` · `llm_to_template` |
 | `error_class` | `engine_down` · `timeout` · `storage` · `db` · `model_not_ready` |
 
-`downgrade_cause`와 `error_class`는 동시에 기입할 수 없다(`chk_sj_cause_exclusive`). 낮춘 단계는 첫 시도에서 끝난다(`chk_sj_downgrade_no_retry`). `frame_compose`만 `model_version_id`가 NULL이다.
+`downgrade_cause`와 `error_class`는 동시에 기입할 수 없다(`chk_sj_cause_exclusive`). 낮춘 작업은 다시 시도하지 않는다(`trg_stage_job_bu` — `done_downgraded`에서 상태·시도 수 변경 거부). 인프라 재시도 뒤 두 번째 시도에서 낮추는 것은 허용(SD_03 §19 #19). `frame_compose`만 `model_version_id`가 NULL이다.
 
 어댑터 응답 분류(contracts/stage-job.md §4)와의 1:1 대응(BR-API-02):
 

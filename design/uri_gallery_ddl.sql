@@ -387,8 +387,8 @@ CREATE TABLE IF NOT EXISTS stage_job (
     ('engine_down','timeout','storage','db','model_not_ready')),
   -- BR-FBK-04 · BR-API-02: 낮춤 원인과 오류 분류는 동시에 기입하지 않는다
   CONSTRAINT chk_sj_cause_exclusive CHECK (downgrade_cause IS NULL OR error_class IS NULL),
-  -- BR-PRC-02: 품질 미달(낮춤)은 재시도하지 않는다 — 낮춘 단계는 첫 시도에서 끝난다
-  CONSTRAINT chk_sj_downgrade_no_retry CHECK (downgrade_cause IS NULL OR attempt_count <= 1),
+  -- BR-PRC-02: 품질 미달(낮춤)은 재시도하지 않는다 → trg_stage_job_bu(낮춤으로 닫힌 작업은 다시 열지 않음).
+  --   옛 chk_sj_downgrade_no_retry(attempt_count <= 1)는 "인프라 재시도 뒤 두 번째 시도에서 낮춤"까지 막아 없앴다(§19 #19)
   -- BR-PRC-01: 액자 합성만 모델이 없다
   CONSTRAINT chk_sj_model_required CHECK (stage_kind = 'frame_compose' OR model_version_id IS NOT NULL),
   CONSTRAINT chk_sj_frame_no_model CHECK (stage_kind <> 'frame_compose' OR model_version_id IS NULL),
@@ -689,6 +689,8 @@ CREATE TABLE IF NOT EXISTS release_event (
 
 -- S3: 평가 작업 FK — evaluation·eval_item이 stage_job보다 뒤에 만들어져 여기서 붙인다(멱등: IF NOT EXISTS)
 -- 이탈 사유(추가): ADD FOREIGN KEY IF NOT EXISTS는 MariaDB 구문이다(표준에는 IF NOT EXISTS가 없음, 멱등 실행용)
+-- §19 #19: 이미 만든 DB에서 옛 제약을 걷어 낸다(멱등)
+ALTER TABLE stage_job DROP CONSTRAINT IF EXISTS chk_sj_downgrade_no_retry;
 ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_evaluation (evaluation_id)
   REFERENCES evaluation (evaluation_id);
 ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_eval_item (eval_item_id)
@@ -901,6 +903,14 @@ BEGIN
   -- G8: 확정값은 한 번만(처리 뒤 변경은 결정으로)
   IF OLD.confirmed_path IS NOT NULL AND NEW.confirmed_path <> OLD.confirmed_path THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G8 confirmed_path_fixed';
+  END IF;
+END//
+
+-- BR-PRC-02 (§19 #19): 낮춤으로 닫힌 작업은 다시 열지 않는다(재시도·상태 되돌림 금지)
+CREATE OR REPLACE TRIGGER trg_stage_job_bu BEFORE UPDATE ON stage_job FOR EACH ROW
+BEGIN
+  IF OLD.status = 'done_downgraded' AND (NEW.status <> 'done_downgraded' OR NEW.attempt_count <> OLD.attempt_count) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BR-PRC-02 no_retry_after_downgrade';
   END IF;
 END//
 

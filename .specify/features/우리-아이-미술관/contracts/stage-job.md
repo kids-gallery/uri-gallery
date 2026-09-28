@@ -74,7 +74,7 @@ class AdapterResult:
 | outcome | `status` | `error_class` | `downgrade_cause` | 다음 |
 |---|---|---|---|---|
 | `ok` | `done` | NULL | NULL | §5 |
-| `quality_below` | `done_downgraded` | NULL | §6 코드 | **재시도 없이** §6(BR-PRC-02, `chk_sj_downgrade_no_retry`) |
+| `quality_below` | `done_downgraded` | NULL | §6 코드 | **재시도 없이** §6(BR-PRC-02, `trg_stage_job_bu` — 인프라 재시도 뒤 시도에서 낮추는 것은 허용, SD_03 §19 #19) |
 | `engine_down`·`timeout`·`storage`·`db`·`model_not_ready` | `retry_wait`(attempt<3, available_at=+10s·+60s) · `failed`(attempt=3) | outcome | NULL | 소진 시 §4.3 |
 | `cancelled` | `cancelled` (+`stopped_at`) | NULL | NULL | 지표 제외(`v_metrics_model`), G19 해제 |
 

@@ -64,7 +64,7 @@
 | 승인 전 비전시 (BR-APR-01, BR-EXH-01) | PASS | 전시 판정은 `v_exhibit_gate` 한 곳, `/v1/gallery`는 `v_gallery`만 읽음, 계약 시험 |
 | 원본 불변 (BR-INT-04, BR-APR-03) | PASS | 파일 `O_EXCL`·0440, `trg_artwork_original_bu`, 액자는 원본 참조, `uq_rs_first` |
 | 결과는 늘 돌아온다 (BR-FBK-01~03) | PASS | stage-job.md §6 낮춤 체인, `frame_compose`는 모델 없이 동작(`chk_sj_frame_no_model`) |
-| 원인 분리 (BR-FBK-04, FR-5) | PASS | `artwork_outcome.result_cause` 5값, `chk_sj_cause_exclusive`, `chk_sj_downgrade_no_retry`, 장애 주입 시험 |
+| 원인 분리 (BR-FBK-04, FR-5) | PASS | `artwork_outcome.result_cause` 5값, `chk_sj_cause_exclusive`, `trg_stage_job_bu`(낮춘 작업 재개 금지, SD_03 §19 #19), 장애 주입 시험 |
 | 제안은 제안까지 (BR-SUG-01~05) | PASS | 응답 스키마에 점수 필드 없음(`judgment.person_score`는 비노출), 확정값으로만 경로, 기본 선택 없는 UI |
 | 최소 수집 (BR-CHD-01, BR-ACC-07, BR-CAP-01, BR-API-05) | PASS | 아이는 별칭만, 보호자는 이메일·비밀번호만(D18), 토큰·비밀번호·요청 한도 대상은 해시로만, 설명 입력 허용 목록, `external_job`에 내용 컬럼 없음 |
 | 가입 여부 비노출 (D18 결정 ④, FR-31·32) | PASS | signup·resend·recovery 항상 202, 토큰 오류 한 코드, 로그인 타이밍 균일화(R-24) |
