@@ -2,3 +2,15 @@
 .env.*
 !.env.example
 .DS_Store
+# Python (serving/)
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+# runtime
+serving/.run/
+*.log
+*.tmp
+*.swp
