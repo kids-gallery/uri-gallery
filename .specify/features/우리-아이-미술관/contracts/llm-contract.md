@@ -63,6 +63,7 @@ keywords와 tags가 모두 비면 app-api가 422(G14, "키워드를 하나 이�
   "ruleCheck": "pass",
   "ruleFailCount": 1,
   "lastFailClass": "fail_emotion",
+  "failClasses": ["fail_emotion"],
   "model": { "id": "M6", "version": "qwen3-4b-instruct-2507-q4_K_M@sha256:<블롭 다이제스트 앞 12자>" }
 }
 ```
@@ -71,6 +72,8 @@ keywords와 tags가 모두 비면 app-api가 422(G14, "키워드를 하나 이�
 |---|---|---|
 | `ok` + source `llm` | 검사 통과 초안 | `caption` INSERT(`pending_approval`, `ai_authored`=1) |
 | `ok` + source `template` | 재생성 상한 초과로 템플릿 | 같음, 설명 낮춤률 분자 |
+
+`failClasses`(2026-09-28 추가, B): 걸린 초안마다 분류 하나, 순서대로(길이 = `ruleFailCount`). app-api가 `caption_check_failure(job_id, failure_class)`를 걸린 초안마다 1행씩 쓰려면(SD_03, 규칙 검사 실패율 분자) 마지막 분류만으로는 부족하다. 값 `fail_event`·`fail_emotion`·`fail_development` → SD_03 `event`·`emotion`·`development`.
 | `engine_down`·`timeout`·`model_not_ready` | 인프라 | 짧은 재시도(최대 3회 시도, D1). 소진 시 503 `llm_unavailable` + 선택지 `template`·`later`·`direct`(G15). 결과 미도달·설명 낮춤률에 넣지 않음 |
 
 ## 5. 승인·고정 (BR-CAP-04, D6)
