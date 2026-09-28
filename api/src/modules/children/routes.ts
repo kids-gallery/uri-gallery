@@ -31,7 +31,9 @@ export function childrenRouter(db: Pool): Router {
   r.get('/v1/children', auth, async (req, res, next) => {
     try {
       const [rows] = await db.query(
-        `SELECT child_id, alias, artwork_count FROM v_child_artwork_count WHERE family_id = ? ORDER BY child_id`,
+        `SELECT v.child_id, v.alias, v.artwork_count FROM v_child_artwork_count v
+          WHERE v.family_id = ? AND NOT EXISTS (SELECT 1 FROM deletion_request d WHERE d.target_kind = 'child' AND d.child_id = v.child_id AND d.status NOT IN ('completed','incomplete'))
+          ORDER BY v.child_id`,
         [req.guardian!.familyId],
       );
       res.json((rows as { child_id: number; alias: string; artwork_count: number }[])

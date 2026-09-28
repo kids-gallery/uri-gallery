@@ -8,9 +8,10 @@ import { authRouter } from './modules/auth/routes.js';
 import { childrenRouter } from './modules/children/routes.js';
 import { artworksRouter } from './modules/artworks/routes.js';
 import { galleryRouter } from './modules/gallery/routes.js';
+import { deletionRouter } from './modules/deletion/routes.js';
 
 export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer }
 
 export function buildRouters(d: Deps): Router[] {
-  return [authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage), galleryRouter(d.db, d.cfg)];
+  return [authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage), galleryRouter(d.db, d.cfg), deletionRouter(d.db)];
 }
