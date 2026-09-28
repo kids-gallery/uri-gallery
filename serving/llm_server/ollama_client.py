@@ -23,7 +23,8 @@ import threading
 import time
 import urllib.parse
 
-# localhost 금지: IPv6 ::1은 공유 서버의 다른(설정만 있고 트래픽 없는) 인스턴스로 간다(참조 문서 §4 P7)
+# localhost 금지: localhost는 IPv6 ::1로 붙는데, 이 호스트에서는 ::1에 설정만 있고 요청을 받지 않는
+# 두 번째 Ollama 인스턴스가 떠 있다. 실제 공유 서버는 IPv4 127.0.0.1에만 있다(2026-09-28 실측)
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 CHAT_MODEL = os.environ.get("OLLAMA_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M")
 NUM_CTX = 8192        # 고정값. 모두가 같은 값을 써야 올라가 있는 모델을 공유한다
