@@ -16,3 +16,12 @@ contracts:
     - npx @redocly/cli@latest lint .specify/features/우리-아이-미술관/contracts/openapi.yaml .specify/features/우리-아이-미술관/contracts/model-api.openapi.yaml
     # 루트 사본과 정본이 같은지(T134)
     - diff -r -x README.md .specify/features/우리-아이-미술관/contracts contracts
+    # app-api /openapi.json과 model-api /v1/models/openapi.json은 이 계약 파일을 그대로 내보낸다(BR-API-08) — 사본 일치가 곧 명세 일치
+
+serving:
+  stage: check
+  image: python:3.11
+  script:
+    - cd serving && python -m venv .venv && .venv/bin/pip install -q --require-hashes -r requirements.lock
+    # 임시 MariaDB가 필요하다 — 러너에 mariadbd가 있을 때만. 실제 가중치 시험(test_real_m1·m5)은 제외
+    - if command -v mariadbd >/dev/null; then MARIADB_BIN=$(dirname $(command -v mariadbd)) .venv/bin/python -m pytest -q --ignore=tests/test_real_m1.py --ignore=tests/test_real_m5.py; else echo "skip serving db tests (no mariadbd)"; fi

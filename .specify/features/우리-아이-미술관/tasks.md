@@ -40,7 +40,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 ## Phase 1: Setup
 
-- [ ] T001 main이 계획 기준(`5a774f0`)인지 확인한다: `design/uri_gallery_ddl.sql`에 `guardian_account.email_norm`·`role`·`owner_family_id`, `auth_email_token`, `family_invite`, G26~G29, `gate_event.chk_ge_subject`의 `family_invite`·`guardian_account`가 있고 `uq_child_family_alias`·`uq_guardian_family`가 없는지 본다(D18·공동 보호자는 병합 완료, 확인만) — `design/` · `.specify/features/우리-아이-미술관/spec.md` · 담당 B · 스킬 — · 근거 D18, U1, data-model §1
+- [x] T001 (B 완료 2026-09-28 — `design/uri_gallery_ddl.sql`에 email_norm·owner_family_id·auth_email_token·family_invite·G26~G29 확인) main이 계획 기준(`5a774f0`)인지 확인한다: `design/uri_gallery_ddl.sql`에 `guardian_account.email_norm`·`role`·`owner_family_id`, `auth_email_token`, `family_invite`, G26~G29, `gate_event.chk_ge_subject`의 `family_invite`·`guardian_account`가 있고 `uq_child_family_alias`·`uq_guardian_family`가 없는지 본다(D18·공동 보호자는 병합 완료, 확인만) — `design/` · `.specify/features/우리-아이-미술관/spec.md` · 담당 B · 스킬 — · 근거 D18, U1, data-model §1
 - [ ] T002 (**일부** 2026-09-28 — `api`·`db`·`ops`·`models`·`serving`·`contracts` README 있음. `web`·`caption`·`eval`은 담당 C·A가 폴더를 만들 때 README 함께) 저장소 골격을 만든다: `web/`·`api/`·`db/migrations/`·`serving/`·`caption/`·`eval/`·`models/`·`contracts/`·`ops/`와 각 폴더 `README.md`(담당·경계 한 줄) — 루트 · 담당 B · 스킬 — · 근거 quickstart §1
 - [x] T003 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 앱 API 프로젝트를 초기화한다: Node 20(`.nvmrc`), Express 4 · TypeScript 5 · mysql2 3 · pino · zod · Vitest · Supertest, ESLint·Prettier, `npm run build|test|lint|db:migrate` 스크립트 — `api/package.json` · `api/tsconfig.json` · 담당 B · 스킬 API · 근거 R-01
 - [ ] T004 [P] 웹 프로젝트를 초기화한다: Vite 5 · Vue 3.4 · TypeScript · Pinia · Vue Router 4 · Vitest · Vue Test Utils · Playwright(390px·1440px 프로젝트 2개) — `web/package.json` · `web/vite.config.ts` · `web/playwright.config.ts` · 담당 C · 스킬 FD · 근거 R-01, R-19
@@ -318,7 +318,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 ## Final Phase: Polish & Cross-Cutting
 
-- [ ] T134 계약 정본과 루트 사본의 일치를 CI로 점검한다: `.specify/features/우리-아이-미술관/contracts/*`와 `contracts/*` 차이 0, Redocly lint 오류 0, app-api `/openapi.json`·model-api `/v1/models/openapi.json`이 계약과 일치(BR-API-08) — `.gitlab-ci.yml` · `contracts/` · 담당 B · 스킬 API · 근거 plan Phase 1, BR-API-08
+- [x] T134 (B 완료 2026-09-28 — `.gitlab-ci.yml` contracts(Redocly 오류 0·사본 diff)·api·serving 작업. 앱·모델 명세는 계약 파일을 그대로 내보냄) 계약 정본과 루트 사본의 일치를 CI로 점검한다: `.specify/features/우리-아이-미술관/contracts/*`와 `contracts/*` 차이 0, Redocly lint 오류 0, app-api `/openapi.json`·model-api `/v1/models/openapi.json`이 계약과 일치(BR-API-08) — `.gitlab-ci.yml` · `contracts/` · 담당 B · 스킬 API · 근거 plan Phase 1, BR-API-08
 - [x] T135 (2026-09-28 완료 — SD_03 §18-2, 검증 17/17) SD_03에 구현 보완 S1~S9(재시도 시각·우선순위·평가 작업·외부 점유·팀원 비밀번호·세션·요청 한도·장치 표기·비활성화 `release_event.kind='deactivate'`)와 `infra_failure` 결과 원인 정의를 역반영한다(DDL 검증 3종 재실행) — `design/uri_gallery_ddl.sql` · `design/SD_03_데이터베이스설계서_우리아이미술관.md` · 담당 B · 스킬 DB · 근거 data-model §6
 - [x] T136 (B 완료 2026-09-28; `docs/B_통합시험.md` — 성능 1차·웹 흐름은 팀 서버·C 화면 뒤) 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
 - [ ] T137 [P] 평가 묶음 1차 측정과 임계값 제안(U5)·시간 상한 교체(U6) — `docs/A_평가묶음_1차측정.md` · `serving/config/thresholds.yaml` · `serving/config/limits.yaml` · 담당 A · 스킬 — · 근거 FR-17, U5, U6
