@@ -13,10 +13,13 @@ import { familyRouter } from './modules/family/routes.js';
 import { opsRouter } from './modules/ops/routes.js';
 import { adminRouter } from './modules/admin/routes.js';
 import { ModelApi } from './modules/ops/modelApi.js';
+import { captionsRouter } from './modules/captions/routes.js';
+import { LlmServer, type LlmPort } from './modules/captions/llmServer.js';
 
-export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer; modelApi?: ModelApi }
+export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer; modelApi?: ModelApi; llm?: LlmPort; captionRetryDelaysMs?: number[] }
 
 export function buildRouters(d: Deps): Router[] {
   const modelApi = d.modelApi ?? new ModelApi(d.cfg.modelApiUrl);
-  return [opsRouter(d.db, d.cfg, modelApi), authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage, undefined, modelApi), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer), adminRouter(d.db, d.cfg, d.storage, d.cfg.manifestPath)];
+  return [opsRouter(d.db, d.cfg, modelApi), authRouter(d.db, d.cfg, d.mailer), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage, undefined, modelApi), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer), adminRouter(d.db, d.cfg, d.storage, d.cfg.manifestPath),
+    captionsRouter(d.db, d.cfg, d.llm ?? new LlmServer(d.cfg.llmServerUrl), d.captionRetryDelaysMs)];
 }

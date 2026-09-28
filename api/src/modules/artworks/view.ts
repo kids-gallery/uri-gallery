@@ -4,6 +4,7 @@ import type { Pool, PoolConnection } from 'mysql2/promise';
 import type { Config } from '../../config.js';
 import { signFileToken } from '../files/token.js';
 import { confirmChoices, sculptureExposed } from './models.js';
+import { captionView, currentCaption } from '../captions/routes.js';
 
 type Q = Pool | PoolConnection;
 const STAGE_STATUS: Record<string, string> = {
@@ -94,8 +95,9 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
       childWords: st?.utterance ?? null,
       updatedAt: st?.updated_at ? new Date(st.updated_at).toISOString() : null,
     },
-    caption: null,
-    tagCandidates: [] as string[],
+    // (P0.5) 설명·키워드 후보 — 후보는 판정 근거로 보이지 않는다(BR-SUG-02)
+    caption: cfg.captionEnabled ? await currentCaption(db, artworkId).then((c) => (c ? captionView(c) : null)) : null,
+    tagCandidates: cfg.captionEnabled ? (await all<{ label: string }>(db, `SELECT label FROM tag_candidate WHERE artwork_id = ? ORDER BY tag_id`, [artworkId])).map((x) => x.label) : [],
   };
 }
 
