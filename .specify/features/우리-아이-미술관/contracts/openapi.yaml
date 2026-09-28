@@ -539,6 +539,7 @@ paths:
       description: |
         부분 저장 허용. 승인됨 + 필수 3항목이 채워지면 `exhibited`로 전환.
         `exhibited` 작품의 필수 항목을 비우는 요청은 422. `childWords`는 받은 그대로 저장한다(트림·교정 없음).
+        공동 보호자 동시 수정: `baseUpdatedAt`이 저장된 `updatedAt`과 다르면 저장하지 않고 409 `story_conflict`("다른 보호자가 먼저 고쳤어요") — 화면은 최신 이야기를 다시 불러온다.
       security: [{ guardianSession: [] }]
       requestBody:
         required: true
@@ -728,6 +729,42 @@ paths:
                 items: { $ref: '#/components/schemas/UnreachedItem' }
         '403': { $ref: '#/components/responses/ForbiddenRole' }
 
+  /v1/ops/models:
+    get:
+      tags: [운영]
+      summary: 모델 적재 상태 (S11 "모델 상태" 표, A `A_모델적재_화면요구` §4) — model-api `/internal/models` 프록시
+      security: [{ staffSession: [operator, evaluator, integrator] }]
+      responses:
+        '200':
+          description: 모델별 활성 버전·장치·적재 상태(가족 데이터 없음)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items: { $ref: 'model-api.openapi.yaml#/components/schemas/ModelLoadStatus' }
+        '403': { $ref: '#/components/responses/ForbiddenRole' }
+  /v1/ops/models/{modelId}/warmup:
+    post:
+      tags: [운영]
+      summary: 지금 불러오기 (S11) — model-api `/internal/models/{id}/warmup` 프록시. gate_event 없음(운영 동작)
+      security: [{ staffSession: [operator, evaluator] }]
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string, enum: [M1, M2, M3, M5, M6, M7] } }
+      responses:
+        '202':
+          description: 적재 요청됨
+          content:
+            application/json:
+              schema: { $ref: 'model-api.openapi.yaml#/components/schemas/ModelLoadStatus' }
+        '403': { $ref: '#/components/responses/ForbiddenRole' }
+        '409':
+          description: M6는 기동 때 1회만 미리 올림 — code conflict, reason m6_preload_at_start_only
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
   /v1/admin/models:
     get:
       tags: [관리]
@@ -1073,7 +1110,7 @@ components:
           enum: [unauthorized, forbidden_role, not_found, conflict, invalid_input, payload_too_large, validation_failed, not_saved, llm_unavailable, token_invalid, email_unverified, rate_limited]
         reason:
           type: string
-          description: 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete)
+          description: 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, story_conflict, m6_preload_at_start_only, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete)
         gate: { type: string, description: 'SD_01 게이트 번호(예 G4). 화면 C2 차단 블록용', pattern: '^G[0-9]{1,2}$' }
         fields:
           type: array
@@ -1179,6 +1216,8 @@ components:
               status: { $ref: '#/components/schemas/StageStatus' }
               attempt: { type: integer, minimum: 0, maximum: 3 }
               downgraded: { type: boolean }
+              waitingForModel: { type: boolean, description: '이 단계 모델이 적재 중(hint=model_loading)이라 큐에서 기다림 — 오류 아님. 모델 이름·상태 원문은 싣지 않는다' }
+              etaSeconds: { type: [number, 'null'], description: '적재 남은 시간 짐작(있을 때만)' }
         result:
           oneOf:
             - type: 'null'
@@ -1210,6 +1249,7 @@ components:
     Story:
       type: object
       properties:
+        updatedAt: { type: [string, 'null'], format: date-time, readOnly: true, description: 'story.updated_at — 동시 수정 판정 기준' }
         title: { type: [string, 'null'], maxLength: 100 }
         madeOn: { type: [string, 'null'], format: date }
         ageAtMaking: { type: [integer, 'null'], minimum: 0, maximum: 18 }
@@ -1217,6 +1257,16 @@ components:
     StoryInput:
       allOf:
         - $ref: '#/components/schemas/Story'
+        - type: object
+          properties:
+            baseUpdatedAt:
+              type: [string, 'null']
+              format: date-time
+              description: '화면이 불러온 이야기의 updatedAt. 저장 시점 값과 다르면 409 story_conflict(공동 보호자 동시 수정, FR-9). 새 이야기면 null'
+    StoryUpdatedAt:
+      type: object
+      properties:
+        updatedAt: { type: [string, 'null'], format: date-time }
 
     CaptionRequest:
       type: object
@@ -1287,6 +1337,7 @@ components:
       required: [status]
       properties:
         status: { type: string, enum: [ready, not_ready] }
+        anyLoading: { type: boolean, description: '모델 적재 중이 하나라도 있음(오류 아님). 공개 응답에도 싣는다' }
         checks:
           type: object
           properties:

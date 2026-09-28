@@ -44,10 +44,10 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T002 저장소 골격을 만든다: `web/`·`api/`·`db/migrations/`·`serving/`·`caption/`·`eval/`·`models/`·`contracts/`·`ops/`와 각 폴더 `README.md`(담당·경계 한 줄) — 루트 · 담당 B · 스킬 — · 근거 quickstart §1
 - [ ] T003 [P] 앱 API 프로젝트를 초기화한다: Node 20(`.nvmrc`), Express 4 · TypeScript 5 · mysql2 3 · pino · zod · Vitest · Supertest, ESLint·Prettier, `npm run build|test|lint|db:migrate` 스크립트 — `api/package.json` · `api/tsconfig.json` · 담당 B · 스킬 API · 근거 R-01
 - [ ] T004 [P] 웹 프로젝트를 초기화한다: Vite 5 · Vue 3.4 · TypeScript · Pinia · Vue Router 4 · Vitest · Vue Test Utils · Playwright(390px·1440px 프로젝트 2개) — `web/package.json` · `web/vite.config.ts` · `web/playwright.config.ts` · 담당 C · 스킬 FD · 근거 R-01, R-19
-- [ ] T005 [P] 서빙 Python 프로젝트를 초기화한다: Python 3.11 venv, FastAPI · uvicorn · PyMySQL · structlog · pillow · pillow-heif · pytest, 해시 잠금 파일 — `serving/pyproject.toml` · `serving/requirements.lock` · 담당 A · 스킬 API · 근거 R-01, R-03, FR-30
+- [x] T005 (A 완료 — `a/model-serving`, main 병합 전) [P] 서빙 Python 프로젝트를 초기화한다: Python 3.11 venv, FastAPI · uvicorn · PyMySQL · structlog · pillow · pillow-heif · pytest, 해시 잠금 파일 — `serving/pyproject.toml` · `serving/requirements.lock` · 담당 A · 스킬 API · 근거 R-01, R-03, FR-30
 - [ ] T006 [P] 환경 변수 견본과 비밀 제외를 둔다: `DB_HOST`·`DB_PORT`·`DB_USER`·`DB_NAME`·`DB_PASSWORD`·`SESSION_SECRET`·`STORAGE_ROOT`·`MODEL_ROOT`·`MODEL_API_INTERNAL_URL`·`UAM_FAKE_MODELS`·`GPU_ENABLED`·`TORCHSERVE_URL`·`MAIL_SMTP_URL`·`MAIL_FROM`·`APP_BASE_URL`·`AUTH_HMAC_SECRET`, P0.5 `LLM_SERVER_URL`·`OLLAMA_URL`, `.gitignore`에 `.env` — `.env.example` · `.gitignore` · 담당 B · 스킬 — · 근거 R-21
 - [ ] T007 [P] 계약 정본을 루트로 복사하고 lint를 건다: `.specify/…/contracts/*` → `contracts/`, Redocly 설정, `npm run contracts:lint` — `contracts/` · `redocly.yaml` · 담당 B · 스킬 API · 근거 plan Phase 1
-- [ ] T008 [P] pm2 구성을 만든다: `app-api`(:3000) · `model-api`(:8100) · `worker-cpu` · `worker-gpu` · `sweeper`, `llm-server`(:8200, 큐 없는 동기 서버)는 P0.5 주석 처리, 모두 127.0.0.1. 로컬 부대 프로세스(Mailpit :1025/:8025, TorchServe :8080~8082 + Java 17) 기동 절차를 같은 파일 주석과 `ops/README.md`에 — `ops/ecosystem.config.cjs` · `ops/README.md` · 담당 B · 스킬 — · 근거 R-02, R-03, R-23
+- [ ] T008 [P] pm2 구성을 만든다: `app-api`(:3000) · `model-api`(:8100) · `worker-cpu` · `worker-gpu` · `sweeper`, `llm-server`(:8200, 큐 없는 동기 서버)는 P0.5 주석 처리, 모두 127.0.0.1. 서빙 진입점은 A 구현 기준(`serving/.venv/bin/python -m model_api.main` · `-m workers.main --group cpu_vision|gpu`(kill_timeout 10000) · `-m llm_server.main`, env `OLLAMA_URL=http://127.0.0.1:11434`·`OLLAMA_CHAT_MODEL=qwen3:4b-instruct-2507-q4_K_M`), worker-cpu는 T068 전까지 인스턴스 1개(M1 RSS 8.5GB). 로컬 부대 프로세스(Mailpit :1025/:8025, TorchServe :8080~8082 + Java 17) 기동 절차를 같은 파일 주석과 `ops/README.md`에 — `ops/ecosystem.config.cjs` · `ops/README.md` · 담당 B · 스킬 — · 근거 R-02, R-03, R-23
 - [ ] T009 [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :8100, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :3000, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
 - [ ] T010 [P] GitLab CI를 lint·타입 검사·단위 시험·계약 lint만 돌게 만든다(배포 없음) — `.gitlab-ci.yml` · 담당 B · 스킬 — · 근거 R-02
 - [ ] T011 [P] 디자인 토큰과 글꼴을 옮긴다: **`design/style-guide/스타일가이드_우리아이미술관.html`**(기준 파일)의 `:root` 변수·클래스를 그대로 옮기고, `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20
@@ -81,14 +81,14 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 ### 서빙 공통 (A)
 
-- [ ] T027 [P] Python DB·저장소 공통을 만든다(앱 API와 같은 경로 규칙) — `serving/common/db.py` · `serving/common/storage.py` · 담당 A · 스킬 API · 근거 R-06
-- [ ] T028 [P] structlog 허용 목록 로거를 만든다 — `serving/common/logging.py` · 담당 A · 스킬 — · 근거 BR-PRV-01, stage-job §10, FR-14
-- [ ] T029 어댑터 기반과 가짜 어댑터를 만든다: `AdapterResult`(outcome 8종), `FakeAdapter`(`UAM_FAKE_MODELS=1`, `stage=outcome` 쌍으로 장애 주입) — `serving/adapters/base.py` · `serving/adapters/fake.py` · 담당 A · 스킬 — · 근거 stage-job §4.1, R-19
-- [ ] T030 워커 실행기를 만든다: `SELECT … FOR UPDATE SKIP LOCKED`(serving_group·status·available_at·priority), 점유 60초·heartbeat 20초, 활성 버전 기록(활성 버전이 없으면 `model_not_ready` — 새 작업은 app-api가 만들지 않으므로 이미 대기 중이던 작업만 해당), 취소 감지, **결과 쓰기 직전 `deleting` 재확인**, 임시 파일 정리 — `serving/workers/runner.py` · 담당 A · 스킬 — · 근거 stage-job §3, G19, BR-PRC-05·08, FR-4, FR-11, FR-25
-- [ ] T031 응답 분류 기록을 만든다: outcome → `stage_job.status`·`error_class`·`downgrade_cause` 1:1, 인프라 재시도 10초·60초, 소진 D1(판정 → `exhausted`, 결과 단계 → `failed`+`not_delivered`) — `serving/workers/outcome.py` · 담당 A · 스킬 — · 근거 stage-job §4, BR-API-02, BR-PRC-03, G7, G9
-- [ ] T032 [P] 상한 설정 파일을 둔다: 시간 상한(움직임 렌더 600초만 원천, 나머지 `[추론]`)·동시 처리·GPU 유무, 품질 임계값은 U5 전 "명백한 실패"만 — `serving/config/limits.yaml` · `serving/config/thresholds.yaml` · 담당 A · 스킬 — · 근거 stage-job §8, U5, U6, FR-15, FR-25
+- [x] T027 (A 완료 — `a/model-serving`, main 병합 전) [P] Python DB·저장소 공통을 만든다(앱 API와 같은 경로 규칙) — `serving/common/db.py` · `serving/common/storage.py` · 담당 A · 스킬 API · 근거 R-06
+- [x] T028 (A 완료 — `a/model-serving`, main 병합 전) [P] structlog 허용 목록 로거를 만든다 — `serving/common/logging.py` · 담당 A · 스킬 — · 근거 BR-PRV-01, stage-job §10, FR-14
+- [x] T029 (A 완료 — `a/model-serving`, main 병합 전) 어댑터 기반과 가짜 어댑터를 만든다: `AdapterResult`(outcome 8종), `FakeAdapter`(`UAM_FAKE_MODELS=1`, `stage=outcome` 쌍으로 장애 주입) — `serving/adapters/base.py` · `serving/adapters/fake.py` · 담당 A · 스킬 — · 근거 stage-job §4.1, R-19
+- [x] T030 (A 완료 — `a/model-serving`, main 병합 전) 워커 실행기를 만든다: `SELECT … FOR UPDATE SKIP LOCKED`(serving_group·status·available_at·priority), 점유 60초·heartbeat 20초, 활성 버전 기록(활성 버전이 없으면 `model_not_ready` — 새 작업은 app-api가 만들지 않으므로 이미 대기 중이던 작업만 해당), 취소 감지, **결과 쓰기 직전 `deleting` 재확인**, 임시 파일 정리 — `serving/workers/runner.py` · 담당 A · 스킬 — · 근거 stage-job §3, G19, BR-PRC-05·08, FR-4, FR-11, FR-25
+- [x] T031 (A 완료 — `a/model-serving`, main 병합 전) 응답 분류 기록을 만든다: outcome → `stage_job.status`·`error_class`·`downgrade_cause` 1:1, 인프라 재시도 10초·60초, 소진 D1(판정 → `exhausted`, 결과 단계 → `failed`+`not_delivered`) — `serving/workers/outcome.py` · 담당 A · 스킬 — · 근거 stage-job §4, BR-API-02, BR-PRC-03, G7, G9
+- [x] T032 (A 완료 — `a/model-serving`, main 병합 전) [P] 상한 설정 파일을 둔다: 시간 상한(움직임 렌더 600초만 원천, 나머지 `[추론]`)·동시 처리·GPU 유무, 품질 임계값은 U5 전 "명백한 실패"만 — `serving/config/limits.yaml` · `serving/config/thresholds.yaml` · 담당 A · 스킬 — · 근거 stage-job §8, U5, U6, FR-15, FR-25
 - [ ] T033 sweeper 골격을 만든다: 점유 만료 이어받기(`deleting` 작품은 `cancelled`), 비정상 종료 임시 파일 정리(0.12) — `serving/workers/sweeper.py` · 담당 B · 스킬 — · 근거 BR-PRC-05, BR-PRC-08, stage-job §3, FR-11
-- [ ] T034 단계 작업 계약 시험을 가짜 어댑터로 만든다: 점유·이어받기·분류 8종·소진·취소·쓰기 직전 재확인 — `serving/tests/test_stage_job_contract.py` · 담당 A · 스킬 — · 근거 stage-job 전 항목
+- [x] T034 (A 완료 — `a/model-serving`, main 병합 전) 단계 작업 계약 시험을 가짜 어댑터로 만든다: 점유·이어받기·분류 8종·소진·취소·쓰기 직전 재확인 — `serving/tests/test_stage_job_contract.py` · 담당 A · 스킬 — · 근거 stage-job 전 항목
 
 ### 웹 공통 (C)
 
@@ -151,8 +151,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T061 [US2] 내구 접수를 만든다: tmp 쓰기+fsync → 트랜잭션(`artwork`+`stored_object(original)`+`artwork_original`+`stage_job(split)`+`stage_job(judge, available_at=먼 미래)`) → rename → 202, 실패 보상 삭제 — `api/src/modules/artworks/intake.ts` · 담당 B · 스킬 API, DB · 근거 R-14, data-model §4 접수, G6
 - [ ] T062 [US2] 작품 상세를 만든다: `GET /v1/artworks/{id}`(상태·컷아웃 토큰·제안 코드·`suggestion_state`·단계 진행, 점수 없음, 다른 가족 404) — `api/src/modules/artworks/detail.ts` · 담당 B · 스킬 API · 근거 FR-4, BR-SUG-02
 - [ ] T063 [US2] 확정을 만든다: `FOR UPDATE` → `artwork_outcome` INSERT → 경로별 `stage_job`(animate_render·depth_relief·frame_compose) → `processing`, 분리 실패+relief는 frame_compose — `api/src/modules/artworks/confirm.ts` · 담당 B · 스킬 API · 근거 data-model §4 확정, G8, G17, BR-PRC-01
-- [ ] T064 [US2] split 단계를 만든다: M1 마스크·컷아웃 저장, `judgment.split_ok`, 성공·낮춤·소진 모두 judge를 연다 — `serving/workers/stages/split.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-20
-- [ ] T065 [US2] judge 단계를 만든다: M2 종류·태그 → M3 관절 → M4 기하 규칙 → 제안 규칙, `tag_candidate`, `awaiting_confirm`, 소진 `exhausted` — `serving/workers/stages/judge.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 stage-job §5.1, FR-21, G7
+- [x] T064 (A 완료 — `a/model-serving`, main 병합 전) [US2] split 단계를 만든다: M1 마스크·컷아웃 저장, `judgment.split_ok`, 성공·낮춤·소진 모두 judge를 연다 — `serving/workers/stages/split.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-20
+- [x] T065 (A 완료 — `a/model-serving`, main 병합 전) [US2] judge 단계를 만든다: M2 종류·태그 → M3 관절 → M4 기하 규칙 → 제안 규칙, `tag_candidate`, `awaiting_confirm`, 소진 `exhausted` — `serving/workers/stages/judge.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 stage-job §5.1, FR-21, G7
 - [ ] T066 [P] [US2] S2 작품 올리기 화면을 만든다(아이 선택·사진·G5 차단 블록·"닫아도 계속돼요") — `web/src/app/views/UploadView.vue` · 담당 C · 스킬 FD, RL · 근거 S2
 - [ ] T067 [P] [US2] S3 판정 제안 확정 화면을 만든다: 선택지 셋 같은 무게·기본 선택 없음, 제안은 도착하면 문구로, G7 차단 블록, 3D는 노출 설정 뒤만, 폴링 — `web/src/app/views/ConfirmView.vue` · 담당 C · 스킬 FD, RL · 근거 S3, UX2, U10 clarify
 
@@ -160,9 +160,9 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [ ] T068 [P] [US2] 팀 서버 자원·GPU를 확인하고 기록한다(U2·U14) — `docs/A_팀서버_자원확인.md` · 담당 A · 스킬 — · 근거 plan 단계 3
 - [ ] T069 [P] [US2] 모델 라이선스 확정 기록을 만든다(OpenCLIP 가중치 A2, Qwen3, TRELLIS 제외, AGPL 예비 모델) — `docs/A_모델_라이선스_확정.md` · 담당 A · 스킬 — · 근거 U4, BR-MDL-07, D17
-- [ ] T070 [US2] M1 BiRefNet(`ZhengPeng7/BiRefNet`)·M2 OpenCLIP(`ViT-B-32` / `laion2b_s34b_b79k`)을 재현하고 HF 리비전·가중치 SHA-256·시간·메모리를 기록한다(M2는 A2 라이선스 기록 전 비활성) — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
-- [ ] T071 [US2] M1·M2 실제 어댑터를 만든다 — `serving/adapters/m1_birefnet.py` · `serving/adapters/m2_openclip.py` · 담당 A · 스킬 — · 근거 BR-MDL-02
-- [ ] T072 [US2] M3 관절 추출(렌더 없이)과 M4 규칙 실제 어댑터를 만든다 — `serving/adapters/m3_joints.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 FR-21
+- [x] T070 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1 BiRefNet(`ZhengPeng7/BiRefNet`)·M2 OpenCLIP(`ViT-B-32` / `laion2b_s34b_b79k`)을 재현하고 HF 리비전·가중치 SHA-256·시간·메모리를 기록한다(M2는 A2 라이선스 기록 전 비활성) — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
+- [x] T071 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1·M2 실제 어댑터를 만든다 — `serving/adapters/m1_birefnet.py` · `serving/adapters/m2_openclip.py` · 담당 A · 스킬 — · 근거 BR-MDL-02
+- [ ] T072 (A 부분 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤) [US2] M3 관절 추출(렌더 없이)과 M4 규칙 실제 어댑터를 만든다 — `serving/adapters/m3_joints.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 FR-21
 
 **Checkpoint**: US2 독립 검증 기준 통과(가짜 모델). US1과 함께 "가입 → 올리기 → 확정"이 이어진다.
 
@@ -173,14 +173,14 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 #### 시험
 
-- [ ] T073 [P] [US3] 낮춤 체인·재시도 장애 주입 시험: 5종 오류 × 결과 단계, 인프라가 낮춤으로 집계 0건 — `serving/tests/test_downgrade_chain.py` · 담당 A · 스킬 — · 근거 Scenario 4·5·6·7, FR-5, FR-23, BR-FBK-04
+- [x] T073 (A 완료 — `a/model-serving`, main 병합 전) [P] [US3] 낮춤 체인·재시도 장애 주입 시험: 5종 오류 × 결과 단계, 인프라가 낮춤으로 집계 0건 — `serving/tests/test_downgrade_chain.py` · 담당 A · 스킬 — · 근거 Scenario 4·5·6·7, FR-5, FR-23, BR-FBK-04
 - [ ] T074 [P] [US3] 목록·진행 API 시험: 가족 작품만, `display_status`, 단계 진행에 점수·객체 키 없음 — `api/tests/progress.test.ts` · 담당 B · 스킬 API · 근거 FR-4, UC3
 - [ ] T075 [P] [US3] 진행 확인 E2E(대기·다시 시도 중·낮춤 안내·처리하지 못함 블록) — `web/e2e/us3-progress.spec.ts` · 담당 C · 스킬 FD · 근거 S4
 
 #### 구현
 
-- [ ] T076 [US3] 결과 단계 핸들러를 만든다: `animate_render`(M3, 600초), `depth_relief`(M1 마스크+M5, GPU 없으면 cpu_vision), `frame_compose`(모델 없음·원본 참조) — `serving/workers/stages/results.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-5, FR-22, BR-SRV-02
-- [ ] T077 [US3] 낮춤 체인과 결과 기록을 만든다: 움직임→2.5D→액자, 마스크 없으면 액자, `result`(종류당 처음 1건), `artwork_outcome.result_kind`·`result_cause`, `awaiting_review` — `serving/workers/chain.py` · 담당 A · 스킬 — · 근거 stage-job §6, data-model §4 결과 저장·낮춤, BR-APR-03
+- [x] T076 (A 완료 — `a/model-serving`, main 병합 전) [US3] 결과 단계 핸들러를 만든다: `animate_render`(M3, 600초), `depth_relief`(M1 마스크+M5, GPU 없으면 cpu_vision), `frame_compose`(모델 없음·원본 참조) — `serving/workers/stages/results.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-5, FR-22, BR-SRV-02
+- [x] T077 (A 완료 — `a/model-serving`, main 병합 전) [US3] 낮춤 체인과 결과 기록을 만든다: 움직임→2.5D→액자, 마스크 없으면 액자, `result`(종류당 처음 1건), `artwork_outcome.result_kind`·`result_cause`, `awaiting_review` — `serving/workers/chain.py` · 담당 A · 스킬 — · 근거 stage-job §6, data-model §4 결과 저장·낮춤, BR-APR-03
 - [ ] T078 [US3] 작품 목록 API를 만든다: `GET /v1/artworks`(`v_artwork_display`, 현재 단계, 삭제 중 제외) — `api/src/modules/artworks/list.ts` · 담당 B · 스킬 API · 근거 FR-4, D13
 - [ ] T079 [P] [US3] C6 낮춤 안내 컴포넌트를 만든다(S4·S5 전용) — `web/src/components/DowngradeNote.vue` · 담당 C · 스킬 FD · 근거 UX3, BR-EXH-07
 - [ ] T080 [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7
@@ -188,8 +188,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 #### 실제 모델 (A)
 
 - [ ] T081 [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 venv + TorchServe 네이티브 127.0.0.1, 헤드리스 렌더, 체크섬 — `docs/A_모델재현기록.md` · `ops/torchserve/config.properties` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
-- [ ] T082 [US3] M5 Depth Anything V2 Small(`depth-anything/Depth-Anything-V2-Small-hf`)을 재현하고 CPU·MPS(`exec_device='gpu'`, runtime에 mps 표기)·GPU 시간을 잰다 — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
-- [ ] T083 [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
+- [x] T082 (A 완료 — `a/model-serving`, main 병합 전) [US3] M5 Depth Anything V2 Small(`depth-anything/Depth-Anything-V2-Small-hf`)을 재현하고 CPU·MPS(`exec_device='gpu'`, runtime에 mps 표기)·GPU 시간을 잰다 — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
+- [ ] T083 (A 부분 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤) [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
 
 **Checkpoint**: US3 독립 검증 기준 통과.
 
@@ -210,6 +210,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T088 [US4] 선택지 규칙 함수를 한 곳에 만든다(결과 종류·M1 마스크·상태 G9·G10) — `api/src/modules/artworks/decisionOptions.ts` · 담당 B · 스킬 API · 근거 SD_03 §2-3, BR-APR-02
 - [ ] T089 [US4] 결정 API를 만든다: `POST /v1/artworks/{id}/decision` 트랜잭션(data-model §4 결정), H6·H7·H8 — `api/src/modules/artworks/decision.ts` · 담당 B · 스킬 API · 근거 FR-6, G3, G10
 - [ ] T090 [US4] 이야기 API를 만든다: `PUT /v1/artworks/{id}/story` UPSERT, 트리거 거절 → 422 — `api/src/modules/artworks/story.ts` · 담당 B · 스킬 API · 근거 FR-7, G11
+- [ ] T142 [US4] 이야기 동시 수정 충돌을 막는다: `PUT /v1/artworks/{id}/story` 요청의 `baseUpdatedAt`이 `story.updated_at`과 다르면 저장하지 않고 409 `story_conflict`("다른 보호자가 먼저 고쳤어요"), S6은 최신 이야기를 다시 불러와 보여 준다. 두 보호자 동시 수정 시험 포함 — `api/src/modules/artworks/story.ts` · `api/tests/story-gallery.test.ts` · `web/src/app/views/StoryView.vue` · 담당 B·C · 스킬 API, FD · 근거 FR-9(이야기 동시 수정 충돌 안내, 1c460b0), U1 — **A 인계에서 발견한 누락, 번호는 끝번호 다음(T142)**
 - [ ] T091 [US4] 전시 API를 만든다: `GET /v1/gallery?child=`(`v_gallery`, 연령 묶음 → 제작일, 제목·제작일 찾기) — `api/src/modules/gallery/` · 담당 B · 스킬 API · 근거 FR-8, BR-EXH-02
 - [ ] T092 [P] [US4] C5 원본-결과 비교를 만든다(정지 우선, 재생·시차 토글, WebGL 시차, 형식 표시 불가 시 원본) — `web/src/components/SideBySide.vue` · `web/src/components/ParallaxRelief.vue` · 담당 C · 스킬 FD · 근거 UX4, R-07
 - [ ] T093 [P] [US4] C7 이야기 카드·C8 전시 조건 체크를 만든다(한마디와 AI 작성 칸 분리) — `web/src/components/StoryCard.vue` · `ExhibitCheck.vue` · 담당 C · 스킬 FD · 근거 UX5, UX1
@@ -253,8 +254,9 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **독립 검증 기준**: 장애 주입 뒤 지표에서 인프라 실패와 모델 낮춤이 따로 집계되고, 미도달 목록에 작품 번호·이미지가 없으며, 운영자 외 역할은 403.
 
 - [ ] T108 [P] [US7] 지표·준비 시험: 원인 5분류 분리, 라벨·응답에 식별 정보 0, `/ready` 모델별(미준비·비활성·CPU 실행·비노출 구분) — `api/tests/ops.test.ts` · 담당 B · 스킬 API · 근거 FR-12, FR-13, FR-26, Scenario 14, BR-OPS-04
-- [ ] T109 [US7] model-api 내부 준비 확인을 만든다(`GET /internal/ready`, 모델별 활성 버전·장치) — `serving/model_api/internal.py` · 담당 A · 스킬 API · 근거 FR-12
+- [x] T109 (A 완료 — `a/model-serving`, main 병합 전) [US7] model-api 내부 준비 확인을 만든다(`GET /internal/ready`, 모델별 활성 버전·장치) — `serving/model_api/internal.py` · 담당 A · 스킬 API · 근거 FR-12
 - [ ] T110 [US7] 운영 API를 만든다: `/ready`(DB·저장소·model-api), `/metrics`(prom-client, 뷰 기반, p95는 여기서만), `/v1/admin/metrics`, `/v1/admin/unreached` — `api/src/modules/ops/` · 담당 B · 스킬 API · 근거 R-17, SD_03 §2-3
+- [ ] T143 [US7] 모델 적재 상태를 붙인다(A `docs/A_모델적재_화면요구.md` §4): `/ready`에 `models[]` 요약(`anyLoading`, 공개 응답엔 버전·장치 없음), 운영 경로 `GET /v1/ops/models`·`POST /v1/ops/models/{id}/warmup`(model-api `/internal/models*` 프록시, M6는 409 `m6_preload_at_start_only`), 보호자 `GET /v1/artworks/{id}` 단계에 `waitingForModel`·`etaSeconds`만 — `api/src/modules/ops/models.ts` · `api/src/modules/artworks/detail.ts` · 담당 B · 스킬 API · 근거 FR-12, T109, contracts/openapi.yaml — **A 인계로 추가(T143)**
 - [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4
 - [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 C · 스킬 FD, RL · 근거 S10
 
@@ -295,7 +297,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **목표**: 보호자가 키워드·태그로 설명 초안을 받아 고치고 승인한다. 걸린 초안은 저장하지 않고, LLM 장애는 보호자가 고른다.
 **독립 검증 기준**: llm-contract.md 전 항목, Scenario 17, 입력에 이미지·별칭 없음, 규칙 검사 반복 실패 → 템플릿 낮춤, 승인 뒤 재생성 409.
 
-- [ ] T126 [P] [US10] M6 **Qwen3-4B**(`Qwen/Qwen3-4B`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b`, `think: false`)를 재현해 블롭 다이제스트를 매니페스트 `weights_sha256`에 기록하고, `llm-server`(127.0.0.1:8200, 큐 없는 동기 HTTP, `POST /v1/caption`·`GET /v1/ready`, 동시 1)를 만든다. Ollama는 실행기일 뿐이며 `llm-server`만 호출한다 — `serving/llm_server/` · `docs/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
+- [x] T126 (A 완료 — `a/model-serving`, main 병합 전) [P] [US10] M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`)를 재현해 블롭 다이제스트를 매니페스트 `weights_sha256`에 기록하고, `llm-server`(127.0.0.1:8200, 큐 없는 동기 HTTP, `POST /v1/caption`·`GET /v1/ready`, 동시 1)를 만든다. Ollama는 실행기일 뿐이며 `llm-server`만 호출한다 — `serving/llm_server/` · `docs/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
 - [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 C · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
 - [ ] T128 [US10] 설명 API를 만든다(`/captions`, 승인 고정, G13~G16): 호출 전 `stage_job(stage_kind='caption', origin='caption', status='running')`를 만들고 응답으로 닫는다(`done` / `done_downgraded`+`llm_to_template` / 인프라), 걸린 초안은 `caption_check_failure`만, 인프라 재시도 1초·3초 뒤 소진 시 template·later·direct 선택지(stage-job §11) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
 - [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7

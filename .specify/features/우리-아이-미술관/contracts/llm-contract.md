@@ -9,12 +9,12 @@
 ```
 웹(S7) ─POST /v1/artworks/{id}/captions─▶ app-api ─POST /v1/caption (동기)─▶ llm-server 127.0.0.1:8200
 외부(P0.5) ─POST /v1/models/caption─▶ model-api ─POST /v1/caption (동기 프록시)─┘   (caption 패키지 import)
-                                                                                     └─▶ Ollama 127.0.0.1:11434 (qwen3:4b)
+                                                                                     └─▶ Ollama 127.0.0.1:11434 (qwen3:4b-instruct-2507-q4_K_M)
 ```
 
 - **`llm-server`** = 서빙 3종 중 "LLM 서버"의 실행 프로세스(research R-18). Python venv + FastAPI + uvicorn, pm2 이름 `llm-server`, `127.0.0.1:8200` 내부 전용. **큐 워커가 아니다** — `stage_job`을 점유하지 않고 동기 요청만 받는다. P0에서는 띄우지 않는다.
-- 경로: `POST /v1/caption`(§2 입력 → §4 출력), `GET /v1/ready`(`{ollama: bool, activeVersion, licenseConfirmed}`).
-- 짧은 동기 요청(BR-SRV-01). 호출자 쪽 시간 상한 30초 `[추론 U6]`, `llm-server` 동시 처리 1건. 스트리밍은 쓰지 않는다(쓰게 되면 진행 표시에만, D7).
+- 경로: `POST /v1/caption`(§2 입력 → §4 출력), `GET /v1/ready`(`model{state, loaded, estimated, loadedUntil, expectedLoadSeconds, maxObservedLoadSeconds, lastLoadSeconds, contextLength, elapsedSeconds, remainingSeconds, overdue}`, `queue{inFlight, waiting}`). `/v1/ready`는 **Ollama를 조회하지 않고** 상주 여부를 짐작으로 보고한다(`estimated: true`, 공유 서버 규칙상 `/api/ps` 폴링 금지). 수동 웜업 경로(`POST /v1/warmup`)는 두지 않는다 — M6는 `llm-server` 기동 때 한 번만 미리 올린다(공유 Ollama 규칙).
+- 짧은 동기 요청(BR-SRV-01). **시간 상한 두 단계**: app-api → llm-server **30초**(보호자 화면 대기 상한 `[추론 U6]`), llm-server → Ollama **300초 이상**(공유 Ollama 규칙 — 앞 사람 요청 대기 포함). 따라서 공유 서버가 붐비면 app-api 쪽 30초가 먼저 끊기며, 이것은 **정상 동작**이다: app-api는 `timeout`으로 기록하고 재시도 뒤 G15 선택지(template / later / direct)로 간다. `llm-server` 동시 처리 1건. 스트리밍은 쓰지 않는다(쓰게 되면 진행 표시에만, D7).
 - 기록: app-api가 호출 전 `stage_job(stage='caption', serving_group='llm', state='running')`을 만들고 응답 `outcome`으로 닫는다(stage-job.md §2·§11). `llm-server`는 DB에 쓰지 않는다.
 - 외부 LLM API로 보내지 않는다(BR-CAP-05). 과정 제공 LLM(U3)은 데이터 처리 조건 확인 뒤 `LlmPort` 구현만 바꿔 쓴다.
 - Ollama는 `OLLAMA_HOST=127.0.0.1:11434`, 외부 포트 없음(BR-SRV-04).
@@ -46,7 +46,7 @@ keywords와 tags가 모두 비면 app-api가 422(G14, "키워드를 하나 이�
 ## 3. 처리 (caption 패키지)
 
 1. 프롬프트 조립: 시스템 지시(입력에 없는 사건·감정·발달 상태를 쓰지 말 것, 2~3문장, 해요체) + 입력 JSON. 프롬프트 원문 로그 금지.
-2. 생성: 모델 **Qwen3-4B**(`Qwen/Qwen3-4B`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b`, 매니페스트의 블롭 다이제스트와 일치할 때만 호출, research R-22). 호출 옵션 `think: false`, `temperature 0.3`, `num_predict 160`, `num_ctx 2048`, `stream: false` `[추론]`. thinking 모드를 켜면 추론 과정 문장이 응답에 섞이므로 끈다.
+2. 생성: 모델 **Qwen3-4B-Instruct-2507**(원천 `Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, 매니페스트의 블롭 다이제스트와 일치할 때만 호출, research R-22). 호출 옵션 `temperature 0.3`, `num_predict 160`, **`num_ctx 8192` 고정**(공유 Ollama 규칙 — 값이 요청마다 다르면 모델을 다시 올림), `stream: false` `[추론]`. 태그를 바꾼 이유(A 실측, `docs/A_모델재현기록.md`): 공유 서버의 `qwen3:4b`는 생각 전용 모델(Thinking-2507)과 같은 블롭이라 `think: false`로도 추론 문장이 섞였다. Instruct-2507은 생각 모드가 없어 `think` 옵션이 필요 없다.
 3. **규칙 검사(G16, BR-CAP-02)**: 결과 문장을 검사한다. 걸리는 분류는 `fail_event`(입력에 없는 사건) · `fail_emotion`(입력에 없는 감정) · `fail_development`(발달·재능 평가). 판별 방식(금지어 사전 + 입력 대조)은 `docs/C_설명규칙검사.md`에서 확정(U11).
 4. 걸리면 재생성. **재생성 상한 2회** `[추론 U11]` — 총 생성 3회까지. 모두 걸리면 템플릿으로 낮춘다(`llm_to_template`).
 5. 템플릿(기준선): `"{ageAtMaking}살 때 그린 작품이에요. {keywords·tags}을(를) 그렸어요."` `[추론]` — 없는 필드는 문장에서 뺀다.
@@ -63,7 +63,7 @@ keywords와 tags가 모두 비면 app-api가 422(G14, "키워드를 하나 이�
   "ruleCheck": "pass",
   "ruleFailCount": 1,
   "lastFailClass": "fail_emotion",
-  "model": { "id": "M6", "version": "qwen3-4b-q4_K_M@sha256:<블롭 다이제스트 앞 12자>" }
+  "model": { "id": "M6", "version": "qwen3-4b-instruct-2507-q4_K_M@sha256:<블롭 다이제스트 앞 12자>" }
 }
 ```
 
