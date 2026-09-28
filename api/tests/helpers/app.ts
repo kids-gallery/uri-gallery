@@ -21,6 +21,7 @@ export function testApp() {
   const cfg = loadConfig({
     DB_SOCKET: inject('DB_SOCKET'), DB_USER: 'root', DB_NAME: 'uam_test', SESSION_SECRET: 'test-session-secret',
     AUTH_HMAC_SECRET: 'test-hmac', STORAGE_ROOT: store, SECURE_COOKIES: 'false', APP_BASE_URL: 'http://app.test',
+    MODEL_MANIFEST: path.join(store, 'manifest.yaml'),
   } as NodeJS.ProcessEnv);
   const db = testPool();
   const storage = new LocalFsDriver(store);
