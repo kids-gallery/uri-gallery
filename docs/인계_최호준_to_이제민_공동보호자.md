@@ -41,3 +41,14 @@ A는 앞으로 tasks.md를 고치지 않는다. 고칠 일이 생기면 B에게 
 | 4 | SD_01 P1 공동 보호자 도면(판단에 맡김) | 표(1.I1·G29)만 고쳤고 도면 소스는 그대로다. 도면에 "만든 보호자·빈 자리 확인" 단계를 넣을지 결정 |
 
 끝나면 이 문서 아래에 처리 결과(커밋 번호)를 적어 주면 된다.
+
+## 4. 처리 결과 (B 이제민, 2026-09-28)
+
+| # | 처리 |
+|:--:|---|
+| 1 | `design/uri_gallery_ddl.sql`·SD_03: `guardian_account.co_family_id` + `uq_guardian_co_family`(가족당 공동 보호자 1명), `family_invite.pending_family_key` + `uq_invite_one_pending`(대기 초대 1건 `[추론]`), `trg_family_invite_bi`(초대는 만든 보호자만 `G29 invite_owner_only`, 자리 차면 `G29 co_guardian_full`), G29 이름 "보호자 관리 권한"(시드 + 멱등 UPDATE). 임시 MariaDB 12.0.2에서 실행·재실행·위반 거부 **24/24**(구현 보완 S1~S9 17건 포함, SD_03 §18-2) |
+| 2 | `contracts/openapi.yaml`(`.specify/…/contracts` 정본): `POST /v1/family/invites`에 403 `invite_owner_only`·409 `co_guardian_full`, "공동 보호자도 초대 가능 [추론]" 삭제. Redocly 오류 0 |
+| 3 | `tasks.md` US6: 목표·T102(시험)·T103(초대)·T107(화면) 반영 |
+| 4 | SD_01 P1 도면: 표(1.I1·G29)가 이미 규칙을 담고 있어 도면 소스는 바꾸지 않는다(B 판단) |
+
+커밋: 이 문서를 포함한 B 계획 커밋(`git log --grep "B 계획"`으로 확인).
