@@ -67,7 +67,12 @@ CREATE TABLE IF NOT EXISTS family (
 
 CREATE TABLE IF NOT EXISTS guardian_account (
   account_id           BIGINT    NOT NULL AUTO_INCREMENT,
-  family_id            BIGINT    NOT NULL,
+  -- U1 확정(공동 보호자): 나가거나 해제되면 NULL(가족 없음). 만든 보호자는 NULL일 수 없다
+  family_id            BIGINT    NULL,
+  -- U1 확정 · BR-ACC-09: owner = 가족 공간을 만든 보호자(가족당 1명), co = 공동 보호자(같은 권한, 해제만 불가)
+  role                 VARCHAR(8) NOT NULL DEFAULT 'owner',
+  -- 가족당 만든 보호자 1명. 이탈 사유 8) 부분 UNIQUE 대신 조건부 생성 컬럼 + UNIQUE
+  owner_family_id      BIGINT    GENERATED ALWAYS AS (CASE WHEN role = 'owner' THEN family_id END) STORED,
   -- D18 · BR-ACC-06: 로그인 아이디는 이메일. 따로 아이디 컬럼을 두지 않는다
   email                VARCHAR(254) NOT NULL,
   -- 대소문자 무시 유일(BR-ACC-06, G26). 이탈 사유 5) 생성 컬럼 STORED + UNIQUE
@@ -86,11 +91,40 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   CONSTRAINT uq_guardian_email UNIQUE (email_norm),
   CONSTRAINT chk_guardian_email_format CHECK (email LIKE '%_@_%._%'),
   CONSTRAINT fk_guardian_family FOREIGN KEY (family_id) REFERENCES family (family_id),
-  -- U1 미정: 보호자 1계정 가정. 공동 보호자가 정해지면 이 UNIQUE를 푼다
-  CONSTRAINT uq_guardian_family UNIQUE (family_id),
+  -- U1 확정: 한 가족에 여러 보호자. uq_guardian_family를 풀고 만든 보호자만 가족당 1명으로 제한한다
+  CONSTRAINT uq_guardian_owner_family UNIQUE (owner_family_id),
+  CONSTRAINT chk_guardian_role CHECK (role IN ('owner', 'co')),
+  -- 만든 보호자는 반드시 가족 공간이 있다(나가기는 공동 보호자만, G29)
+  CONSTRAINT chk_guardian_owner_family CHECK (role <> 'owner' OR family_id IS NOT NULL),
   -- BR-PRV-03: 보호자 계정만으로 법정대리인 확인 완료로 보지 않는다(U13 전까지 항상 FALSE)
   CONSTRAINT chk_guardian_legal_rep CHECK (legal_rep_confirmed = FALSE)
 );
+
+-- U1 확정 · UC15 · BR-ACC-09: 공동 보호자 초대. 초대받은 사람은 아직 계정이 없을 수 있어 계정이 아니라 이메일에 건다.
+-- 토큰은 해시만(BR-ACC-08). 인증 시각 규칙(DATETIME·UTC)을 따른다
+CREATE TABLE IF NOT EXISTS family_invite (
+  invite_id           BIGINT       NOT NULL AUTO_INCREMENT,
+  family_id           BIGINT       NOT NULL,
+  invited_by          BIGINT       NULL,
+  email               VARCHAR(254) NOT NULL,
+  email_norm          VARCHAR(254) GENERATED ALWAYS AS (LOWER(email)) STORED,
+  token_hash          CHAR(64)     NOT NULL,
+  expires_at          DATETIME     NOT NULL,
+  accepted_at         DATETIME     NULL DEFAULT NULL,
+  accepted_account    BIGINT       NULL,
+  revoked_at          DATETIME     NULL DEFAULT NULL,
+  created_at          DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  CONSTRAINT pk_family_invite PRIMARY KEY (invite_id),
+  CONSTRAINT fk_invite_family FOREIGN KEY (family_id) REFERENCES family (family_id) ON DELETE CASCADE,
+  CONSTRAINT fk_invite_by FOREIGN KEY (invited_by) REFERENCES guardian_account (account_id) ON DELETE SET NULL,
+  CONSTRAINT fk_invite_accepted FOREIGN KEY (accepted_account) REFERENCES guardian_account (account_id) ON DELETE SET NULL,
+  CONSTRAINT uq_invite_token_hash UNIQUE (token_hash),
+  CONSTRAINT chk_invite_email_format CHECK (email LIKE '%_@_%._%'),
+  -- 수락한 초대와 취소한 초대를 겹치지 않게 한다
+  CONSTRAINT chk_invite_accepted_or_revoked CHECK (accepted_at IS NULL OR revoked_at IS NULL)
+);
+-- 같은 가족·같은 이메일의 이전 초대를 찾아 무효로 만든다(재초대 시)
+CREATE INDEX IF NOT EXISTS ix_invite_family_email ON family_invite (family_id, email_norm);
 
 -- D18 · BR-ACC-08: 가입 확인(verify)·비밀번호 재설정(reset) 메일 링크 토큰.
 -- 토큰 원문은 저장하지 않고 해시만 둔다. 1회용(used_at)·유효 시간(expires_at)·재발급 시 무효(revoked_at)
@@ -1041,4 +1075,7 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G25','외부 기능 준비','safety','operator'),
  -- D18: 보호자 이메일 가입과 메일 링크
  ('G26','이메일 검사(가입)','input','guardian'),
- ('G27','메일 링크 토큰','input','guardian');
+ ('G27','메일 링크 토큰','input','guardian'),
+ -- U1 확정: 공동 보호자
+ ('G28','초대 수락','input','guardian'),
+ ('G29','보호자 해제 권한','access','guardian');

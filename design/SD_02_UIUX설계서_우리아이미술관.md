@@ -5,7 +5,7 @@
 
 > **문서 식별**: `design/SD_02_UIUX설계서_우리아이미술관.md`
 > **작성일**: 2026-09-28
-> **입력**: `design/SD_01_프로세스설계서_우리아이미술관.md`(개정 2, D17 반영본 — IPO · 게이트 맵 G0~G27 · 인계 계약 H1~H16) · `design/SD_01_프로세스통합.md` · `design/UC_00_개요_우리아이미술관.md` · `UC_01`~`UC_12` 전건(액터 · 기본흐름 · 대체·예외흐름 · 업무규칙 · UseCase Diagram) · 공통 기준 §11 통합 결정 D1~D17
+> **입력**: `design/SD_01_프로세스설계서_우리아이미술관.md`(개정 2, D17 반영본 — IPO · 게이트 맵 G0~G29 · 인계 계약 H1~H16) · `design/SD_01_프로세스통합.md` · `design/UC_00_개요_우리아이미술관.md` · `UC_01`~`UC_12` 전건(액터 · 기본흐름 · 대체·예외흐름 · 업무규칙 · UseCase Diagram) · 공통 기준 §11 통합 결정 D1~D17
 > **원천**: `Intent-Specify.md` [가치제안] 경험 원칙 · [부정적 영향] · spec v2.1 성공 기준. 원칙 역산의 근거로만 썼다.
 > **생성 프롬프트**: `분석설계 프롬프트 - UI_UX.md`
 > **표기**: `S` = 화면 · `C` = 공통 컴포넌트 · `UX` = 설계 원칙(프롬프트의 `U1~UN`에 해당. 이 프로젝트에서 `U`는 공통 미해결 번호라 겹치지 않게 `UX`로 썼다) · `P`/`G`/`H` = SD_01의 프로세스/게이트/인계 · `BF n` = UC 기본흐름 n단계 · `A`/`E` = UC 대체/예외흐름 · `[추론]` = 원천에 직접 없는 설계 판단
@@ -79,6 +79,7 @@
 |:--:|---|---|---|---|
 | S0 | 가입(이메일) | P1 (1.0) | 보호자(가입 전) | 입력 · 1회 |
 | S0b | 로그인 정보 찾기 | P1 (1.R1~1.R3) | 보호자(로그인 전) | 입력 · 드묾 |
+| S1b | 가족 보호자 관리 | P1 (1.I1~1.I4) | 보호자(만든·공동) | 설정 · 드묾 |
 | S1 | 아이 관리 | P1 (1.1~1.5) · P6 진입(아이 삭제) | 보호자 | 설정 · 드묾 |
 | S2 | 작품 올리기 | P2 (2.1~2.4) | 보호자 | 입력 · 비동기 경계 앞 |
 | S3 | 판정 제안 확정 | P2 (2.5~2.7) · P0-1 결과(H3) 표시 | 보호자 | 결정 |
@@ -477,6 +478,51 @@ salt
 | 메일 링크 → 저장 | `POST /v1/auth/recovery/reset`. 링크 무효면 400 `token_invalid`. 성공(204)하면 현재 세션을 포함해 모든 세션이 끊기고, "이메일과 새 비밀번호로 로그인해 주세요"와 함께 로그인 화면으로 | UC14 BF4~6 · E2 · E3 · E5 |
 
 상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
+
+
+**S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 권한은 같고 **해제 버튼만 만든 보호자에게 보인다**(G29).
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S1b 가족 보호자 관리 - 만든 보호자 화면
+salt
+{+
+{ 우리 아이 미술관 - 보호자 | 가족: 하*네 | [작품 목록] | [로그아웃] }
+..
+{^"우리 가족 보호자  2명"
+{# 보호자 | 역할 | 조작
+  ha*@ex*.com | 만든 보호자 | .
+  pa*@ex*.com | 공동 보호자 | [해제]
+}
+}
+{^"초대하기 - 이메일로 초대해요"
+  초대할 이메일 | "ma*@ex*.com    " | [초대 보내기]
+  공동 보호자는 아이 - 작품 - 이야기를 똑같이 관리해요
+  해제는 가족 공간을 만든 보호자만 할 수 있어요
+}
+{^"대기 중 초대  1건"
+  ma*@ex*.com | 7일 안에 수락 | [초대 취소]
+}
+}
+@enduml
+```
+
+**[「S1b 가족 보호자 관리 - 만든 보호자 화면」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNplUl9LwlAUf7-f4rDejATrIehJivoCPYbBKqnIaeiCwAQpixFCWa7UMib0zyhadEMf7AvtnH2Hzt20NHdfdu_9nd-_LZ4z9ay5Z6REbmc7vatndQPW9PWdzWxmL72xkEllsjCxNLMUW5wX5raZSsJybA08t0itD8BP6de6dHcOnizi4ytMAT6V8dIZuvHrVWxLkdNTpshPijxQw1VQskvUlIDvXbIcHlezv0MHfYU58O1aBEv3fLJCdxX_wgJ8aWOrmVAn2Lr1Ol3FdHOUgIKIRkV-VesLjHmEaXw51kR-YkSIrt9821EvLZcVBMCWHokn9yPR9YzBx2OBDiDKoN0RkPf5hWf1EdCKb0tybhOiwEu5khaWixzH67qclbNju0rNHmeAwZ2kRlVj8sHe-YMxo2YMafKjBaUEUKWMh5KpEzz-3w2eVgd1s3DYYuCA7B6P4EMPsFbx3LpChF8y9MJcYQrF0O-TyT2XuUpjzfAeAs9WjVUsugoogvBsUcWm-0o_G0DM-5AqqzFS5KyKSrZF1-eKB5vfQyGp80wn5bDReDK9wX_tDxYKeB4=)** — 클릭 시 브라우저로 연결됩니다.
+
+| 영역 | 내용 | 데이터 바인딩 | UX 의도 |
+|---|---|---|---|
+| 보호자 목록 | 이메일(가림) · 역할 · 해제(만든 보호자 화면에만) | 1.I1 · 1.I3 `GET /v1/family/members` | 같은 권한임을 먼저 보인다. 해제 버튼은 G29를 통과하는 사람에게만 |
+| 초대하기 | 이메일 하나 · 초대 보내기 · 같은 권한 안내 | 1.I1 Input | 응답은 항상 "초대 메일을 보냈어요"(가입 여부 비노출) |
+| 대기 중 초대 | 초대 이메일(가림) · 남은 기간 · 취소 | 1.I1 초대 토큰 상태 | UC15 A2 |
+| 공동 보호자 화면 | 해제 버튼 대신 [가족 공간에서 나가기] | 1.I4 | UC15 A5 · 만든 보호자에게는 나가기 버튼 없음(E5) |
+
+| 조작 | 동작 | 근거 |
+|---|---|---|
+| 초대 보내기 | `POST /v1/family/invites`(항상 202) | UC15 BF2~3 · E6 · E8 |
+| 초대 수락(메일 링크) | 로그인(없으면 S0 가입, 이메일 미리 채움) 뒤 `POST /v1/family/invites/accept`. 성공하면 S4로 이동. 400 `token_invalid` · 409 `already_in_family`는 안내 블록 | UC15 BF4~6 · A4 · E1~E3 |
+| 해제 | 확인 창("해제하면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요") 뒤 `DELETE /v1/family/members/{id}` | UC15 A3 · G29 |
+| 나가기 | 확인 창 뒤 `POST /v1/family/leave`. 나간 뒤에는 "새 가족 공간 만들기 / 받은 초대 수락" 화면 | UC15 A5 · A6 |
 
 ---
 
@@ -1287,7 +1333,7 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | 6 | 화면 갱신 방식(폴링/푸시)과 갱신 주기 (U8) | S3 · S4 · S9 · S12 | 중간. 레일·배지가 언제 바뀌는지가 여기서 정해진다 |
 | 7 | 제안 문구·낮춤 문구 확정 (U10) — 이 문서의 문구는 UC의 [추론 문구]를 옮긴 것 | S3 · S4 · S5 · S7 | 중간 |
 | 8 | 결과 파일 형식(U9) — 재생·시차 컨트롤의 모양 | S5 · S8 | 중간 |
-| 9 | 가족 계정 모델(U1) — 공동 보호자·감상 전용이면 보호자 화면을 역할별 뷰로 나눠야 한다 | S1~S9 | 높음 |
+| 9 | ~~가족 계정 모델(U1)~~ → 확정: 공동 보호자 초대, 같은 권한. 역할별 뷰는 나누지 않고 S1b의 해제 버튼만 만든 보호자에게 보인다 | S1b | 닫음 |
 | 10 | 입력 중 세션 만료 시 임시 보존 (UC5 E5) · 별칭 길이·허용 문자 (UC1 E2) · 키워드 개수·길이 (UC10 E6) | S1 · S6 · S7 | 낮음 |
 | 11 | 명암·움직임 줄이기 등 접근성 수치 — 원천에 없어 일반 기준을 [추론]으로 적었다 | 전 화면 | 낮음 |
 

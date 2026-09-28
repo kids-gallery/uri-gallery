@@ -1,5 +1,5 @@
 # UseCase 통합 명세 — 우리 아이 미술관 (P0 · P0.5 · P1)
-**우리 아이 미술관 · 개요 + UC1~UC14 통합본 · UML 2.5.1 표준 (UseCase Diagram + UseCase 기술 + Sequence Diagram)**
+**우리 아이 미술관 · 개요 + UC1~UC15 통합본 · UML 2.5.1 표준 (UseCase Diagram + UseCase 기술 + Sequence Diagram)**
 
 ---
 
@@ -23,7 +23,7 @@
 4. [Actor 카탈로그](#4-actor-카탈로그)
 5. [L1 UseCase Diagram](#5-l1-usecase-diagram)
 6. [시스템 경계 (하지 않는 것)](#6-시스템-경계-하지-않는-것)
-7. [유스케이스 상세](#7-유스케이스-상세) — 7.1 UC1 ~ 7.14 UC14
+7. [유스케이스 상세](#7-유스케이스-상세) — 7.1 UC1 ~ 7.15 UC15
 8. [업무규칙(Business Rules) 종합](#8-업무규칙business-rules-종합)
 9. [통합 기록·결론](#9-통합-기록결론)
 
@@ -85,6 +85,7 @@
 | F19 | 외부 모델 기능 엔드포인트 (P0 · caption은 P0.5) | `segment`·`classify`·`relief`(외부 키) · `pose`(팀 내부 키 전용) · `caption`(P0.5). API 키 인증·요청 한도·크기 제한·입력 비보존 | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 | UC12 |
 | F20 | 보호자 이메일 가입 | 이메일(로그인 아이디, 서비스 전체 유일)·비밀번호만으로 가입하고 확인 메일로 완료. 가입 여부는 화면에 드러내지 않는다(이미 가입된 주소엔 안내 메일). 가족 공간 생성. 이용자 중복은 이메일로 막는다 | D18 · spec FR-31 | UC13 |
 | F21 | 로그인 정보 찾기 | 가입한 이메일로 로그인 아이디와 비밀번호 재설정 링크를 보낸다. 가입 여부는 드러내지 않는다 | D18 · spec FR-32 | UC14 |
+| F22 | 공동 보호자 초대·관리 | 이메일 초대·수락으로 합류, 같은 권한. 해제는 만든 보호자만, 공동 보호자는 스스로 나가기. 나가도 작품은 남음 | spec FR-9 (U1 확정) | UC15 |
 | F20 | 사용 관찰 기록 | 보호자 역할 사용자의 막힌 지점 관찰 | spec FR-18 · Intent [미션] P0 경험 검증 | 미전환(§9.3) |
 | F21 | 추적성 | FR → UC → T → 검증 증거 연결 | spec FR-19 · Intent [핵심 활동] 8 | 미전환(§9.3) |
 
@@ -187,6 +188,7 @@ API 서버는 접수·상태·권한만 맡고 모델을 직접 import하지 않
 | 메서드 · 경로 | 용도 | UC |
 |---|---|:--:|
 | `POST /v1/auth/signup` · `POST /v1/auth/email/verify` · `POST /v1/auth/email/verify/resend` · `POST /v1/auth/login` · `POST /v1/auth/logout` · `POST /v1/auth/recovery` · `POST /v1/auth/recovery/reset` | 이메일 가입(항상 202) · 확인(204 / 400 token_invalid) · 확인 메일 재발송(항상 202) · 로그인(204 / 401 / 403 email_unverified) · 로그아웃 · 찾기 메일(항상 202) · 재설정(204 / 400 token_invalid) — 이제민 결정 ③ | UC13 · UC14 |
+| `POST /v1/family/invites` · `DELETE /v1/family/invites/{id}` · `POST /v1/family/invites/accept` · `GET /v1/family/members` · `DELETE /v1/family/members/{id}` · `POST /v1/family/leave` | 공동 보호자 초대(항상 202) · 취소 · 수락(204 / 400 token_invalid / 409 already_in_family) · 목록 · 해제(만든 보호자만, 아니면 403) · 나가기(만든 보호자는 409) — [추론, U8] | UC15 |
 | `POST /v1/children` · `GET /v1/children` | 아이 별칭 등록·조회 | UC1 |
 | `PATCH /v1/children/{id}` | 아이 별칭 수정 [통합 D13] | UC1 |
 | `POST /v1/artworks` | 사진 접수(202). 원본·작품 기록·작업 기록 저장 후 판정 단계 작업 등록 | UC2 |
@@ -247,6 +249,7 @@ API 서버를 쓰고 관리하는 데 필요한 정보를 **'API활용' 메뉴**
 | UC12 | 모델 기능 엔드포인트를 호출한다 | 외부 클라이언트(연동 앱) | P0 (caption은 P0.5) | Medium | spec FR-28 · Intent [핵심 이네이블러] 외부 사용 · [핵심 장벽] 외부 엔드포인트 | §7.12 | 신규 2026-09-28 |
 | UC13 | 보호자 이메일로 가입한다 | 보호자(가입 전) | P0 | High | D18 · spec FR-31 | §7.13 | 신규 2026-09-28 |
 | UC14 | 이메일로 로그인 정보를 찾는다 | 보호자(로그인 전) | P0 | High | D18 · spec FR-32 | §7.14 | 신규 2026-09-28 |
+| UC15 | 공동 보호자를 초대하고 관리한다 | 만든 보호자 · 공동 보호자 | P0 | High | spec FR-9(U1 확정) | §7.15 | 신규 2026-09-28 |
 
 **공통·조건부 유스케이스** (독립 문서 없이 기반 UC 문서에서 다룬다)
 
@@ -316,6 +319,7 @@ rectangle "우리 아이 미술관" {
   package "가족 경험" {
     usecase "UC13 보호자 이메일로 가입한다" as UC13
     usecase "UC14 이메일로 로그인\n정보를 찾는다" as UC14
+    usecase "UC15 공동 보호자를\n초대하고 관리한다" as UC15
     usecase "UC1 아이를 별칭으로 등록한다" as UC1
     usecase "UC2 작품 사진을 접수하고\n판정 제안을 확정한다" as UC2
     usecase "UC3 작품 처리 진행을 확인한다" as UC3
@@ -342,6 +346,8 @@ rectangle "우리 아이 미술관" {
 
 Parent --> UC13
 Parent --> UC14
+Parent --> UC15
+UC15 --> Mail
 Parent --> UC1
 Parent --> UC2
 Parent --> UC3
@@ -407,7 +413,7 @@ end note
 @enduml
 ```
 
-**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V1tPG1cQft9fMXJfQGoQa3NXhNICqSKR1lKL1AcktDGLsWLWyF7SVlUkAybi4gi7wWDARkYyASJQF3DxItE-8FP6uOfsf8jMXpzddcwDgtmZb86cb26HZxlVSqtLC0lYis2kltIzsflEcnYmLiWTcvqPmUlRyLxOKItSWlqAV1LsdTydWlJmx1LJVBq-eR55Lk5877HIzEuzqd8SShzmpGRGFpLynApqCtKJ-LwKs4m0HFMTKUVQE2pSBn6gsY8XwEs5Xm0A-1vn6zWjkYX_szswKcJURh6TMjKMJ6Q4Oe-K9sJDE6K9Pf3Wb7FbEKSYioGE2E3DLOv8qBACKQNRKS0rqqvjuQq7y_HNOp7X4OVl1-qnxYxrYm5vGFoW2FaDbd2Bmc_yQ9tm4o2UbPnZ09j2PhhahWkVr9G4_KZls6-z2yyYyw1WvcdL8V3d3NSnlS4HzEtX3-IFui3cWDLhDfOwwG70h6ZxrRk398BrWX50wt_lLdOf0USGp09t_6OjLggtea2ExhXj5h-YnHxJRx1rxlUDzZxT8OtXkOx8h1fvAa_C3x1DiyML8lJKJL0QgdImKXFMWahDzkLwpwCwiAUixdEK2eTHV2Bc_2vulW0dwFJGjlE-Q1NjYgRaKQN0ZEfDjitAyKM1s1RhW3YwZNwG7_OD8Mdo6ryKTCMd6JmdIIPaf2xzx-Omr82Ncw2yZjc5fnfJK7a_D1fsuOoPIggOAz8qmn-tA1-54KfoJodpKPL1slkqGze1acXMF5zc8NI6qc39En7weQ0HvUZaXq_LFs-nOXN3w0VXdR-6jZc-F2YXEd3Lhdkx8VqOb-H9tHO-VSWv-JWd6F9ctnHU3woIq7l0b-gaeaVfAYL6g8gBcKrAPtSCaQW-uuyDDQRhg-6BrFzA_HlSxFcukUwfetCPfvEj5rRVDNhLbgBFo-lSYSHJ0A-d-PUXLIetOrINvF5s8d88c3uQLBDz1lvnPFdnn9askfTQdJrfafVo79fqvhfMlTo_zLMPFSo0l1vLDaanse7UCjtFkzpmB_jmXTDvYm-b3zCwT2fsvW5lZvMEXe3t4Bnm9gWBN3WrFLDdbv38ieE2AiPwXfQFRYkZ1_nH6kMTnR3s8OtLIOh2LsBjpI0Ta8rSIMtacHT3FSaGwDOXsSZWK3w_O63Yt8BmdIY1NkDWLFa8lewJfyjoddilgV3nqOyob5zZfnHLq3m7v6cVOza7K4hh4_r8ocmO60y78h0w3Ea0SPSY-xV-cA44gNhGg-8V8CoQIJxoo_LD0sVU0zLAT-y0ToDd-w4NLYpt6Qg7m8Zb1nzv0izVAnkIt9VzxL27XWXObMNWxJnsFINb2HYS3wqCvTrhyZNRe_D65b6A7BfDfjEiWHOeBFoogjW2W5LPNOC33y8O-MXBQBC9Am5yRxjy_I1k0vp2pGEB1_QXjb17XTksUHTQ0zNqTQYYwe2XUGLJpVkZ1x_N-o6qSGdVX2dVf2fVQGfVYGcVDpaOuiFXFW5TDXdWieIjuhYhkYDOGqOko2hJJf-uysqsh0XiJaBwgidafBqrhm2NKHZWBeOzjqLMWq8mK0deqc8nDfikQZ805JOcKK331Ai0XlmCoKRU2XnhpubcNUHNie-3WmHE2VvAsI9Xl3FaoNbdLvUidjC-O88MmnhHRb63Rs8qfoRLIC_gVYGc2ye8SqlqaoGOsN8NdBPPKa33FHY8akM4VWjVc-09roQQTtuauVqFLgwv3P2IZ2u3UCY8rkPenUXR21vP3lb4mDj0nPCIa1r1UXHE3W265q6_yDiYB3mc13QJ_I52XT9Ep5wBB5biLsfWaGIFY_fyHvHzbg9O5JPoCIy9YLDP8C_8J-gzjBeyAQ==)** — 클릭 시 브라우저로 연결됩니다.
+**[「L1 전체 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9V1tPG1cQft9fMXJfiNRErI25KUJpSVJFIq2lFqkPSGhjNo4VZx3ZS9qqiuQkJuLiCLvBwYCNjGRCiEBdwI0XifaBn9LHPWf_Q2bOXrK7xnlAMDvzzZnzzZyZ4VZRVwr64pMcLKbn84uF-fSjbG5hPqPkcmrhj_kZWSo-zmpPlYLyBB4o6ceZQn5RW5jO5_IF-OZu4q585_uARfGRspD_Latl4KGSK6pSTn2og56HQjbzSIeFbEFN69m8JulZPacC3zbY-yPg9TJvdYH9bfLlttUtwf-lDZiRYbaoTitFFW5nlQw5H0oNw2UPUsM3kuK3fE2SlLSOgcTYWddumHy3GgOlCCmloGq6p-PlJjsv89UOntfljRee1U9Pi56Jvb5iGSVga122dg52pcR3HJs7z5Sc72fTYOtbYBlNZjSDRrfVZ77Nlsk-lcB-0WWtC7wUf2faq-acNuSCef3kW7zANYGbzmWDYe5U2Zl52bNODevsAni7xHf3-euKMP0ZTVS4edPxPzXlgdCSt-to3LTO_oGZmft01J5hnXTRzD0Fv16BZIcbvHUBeBX-eg98jgTkvpLNBSESpU3RMpiy2ICcxeBPCeApFoiSQStkk--dgHX6r73ZcHQAi0U1TfmMzU7LCfBTBujIiYbtNYGQu0t2vcnWnGDIuA8-Egbhj9UzeQuZRjrQM9tHBo3_2OpGwM1In5skIG2UFz8YBKKP7jKrlOx6wzprA14OLxwOKNnnySWEzmVnZX5-zJtOZG9P2F4rjI6C48B3a_Zfy8BfHvEDdFPGhNb4csOJYE6zK1U3y7y-TGp7q44fQl7jUa8J3-tpQ2TsoGy_W_HQLTOE7mN4xIM55Uj38mBOTLxd5mt4P-OQr7XIK35l--YXl31sJ_2A8F3ULyzTIK_0K0JQH7uj4NaTc6iAGVX-6kUINhqFjXkHskYVKyGQIv7yGMkMocfC6Hs_Yk79ssJX6QVQs3oeFQJJhmHonV9_wXJY6yDbwDs1n__eB-81kwVingdfDC932Mcl0dwue24bcZtGaviqFzQM9ssO36mwt00qNI9b4UaUsFsr7ABNOlTJfPU8mnd5uM9vHNjHD-yNKTKzuo-uNjfwDHv9iMCrpigFfCufwvzJ8T4CE_Bd6h5FiRk3-fvWZQ-dbW_w02Mg6Ho5wmOijxPRr6kllgQc3V3BxDgEOjzWxKsm3yrNac4t8DG6bR8fQMmuNYOVHAh_POp1wqOBnZap7OjduFPi6BNvVZz3Pac5sbm9Ahm2Tg8ve2yvw4yT0AETfUTLRI-91eTbh4CtjK10-WYVrwIRwok2Kj8sXUw1jRX8xA46BHh3MeBBy3JfOuLuzAqWNd88tuvtSB7iffWc8O7uVJnb2_ApYnd3i8ErbCeJzyXJGcJw_fqU08LD8khETkqiHZNE0yeiDYvxsJiQxDzxoWI8XO0ocmoyLI6GxbFIEMMSbgyuMB74G6mmNcGVJiRcB75onBnvyXGJooMbN6ZE34BJnLJZLZ1bXFBxzNIkGKhKDFaNDFYlB6tGB6vGBquw7QzUjXuqeJ9qYrBKlr-i8wlJRHSiyZKOoiWV-ruuagsBFomXiMINnmgJaUSFOxpZHqyKxieOosyK7UzkKCiNhKTRkDQWksZDkhul2Nsmwd_mJEnL66q7SecfekOEni7uie3qpDvVAFcXbIPYS1DrzZ5ODd837rcfLOqHuzW-uUTrG9_FEVGR8KpAzp0THuR1Pf-EjnC2CrpJ4BR_VcJ-gNoY9hxaBLjxBgdGDHtx237VgiEML37tK57F5KFMBFzHghONondmojPLcNXYCZzwFde0CKTkSW_ymYY3HBO3wd6uYDenS-B3tBv6ITXrtj8QivMyW6J-Fo09yHsizLvTVpFPoiPSFKPB3sK_8J-tz_lW4CI=)** — 클릭 시 브라우저로 연결됩니다.
 
 #### 다이어그램 쉽게 읽기 (유저 관점)
 
@@ -576,7 +582,7 @@ end note
 | **ID** | UC1 (spec FR-1) |
 | **유스케이스명** | 아이를 별칭으로 등록한다 |
 | **액터** | 주: 보호자 · 보조: 없음 |
-| **사전조건** | (1) 보호자가 로그인되어 있다(INC1, BR-ACC-02). (2) 보호자가 UC13에서 이메일로 가입하고 확인을 마쳐 가족 공간이 존재한다(BR-ACC-07, D18). 공동 보호자·감상 전용 여부(계정 모델)는 아직 미정이다 (U1) |
+| **사전조건** | (1) 보호자가 로그인되어 있다(INC1, BR-ACC-02). (2) 보호자가 UC13에서 이메일로 가입하고 확인을 마쳐 가족 공간이 존재한다(BR-ACC-07, D18). 공동 보호자는 UC15 초대로 합류해 같은 권한을 가진다(U1 확정) |
 | **사후조건** | (1) 가족 공간에 새 아이가 별칭으로 저장된다. (2) 아이는 시스템이 발급한 아이 ID로 구분된다. 별칭은 중복 검사를 하지 않는다(BR-CHD-02 개정, D18). (3) 실명·생년월일·출생연도는 어디에도 저장되지 않는다. (4) 새 아이가 작품 접수(UC2)의 아이 선택 목록에 나타난다. (5) 등록을 마쳐도 법정대리인 확인이 끝난 것으로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 별칭이 남지 않고 요청 번호와 분류 코드만 남는다 |
 | **기본흐름** | ↓ 별도 기본흐름표 |
 | **대체흐름** | A1. 별칭 수정 · A2. 추가 등록 · A3. 아이 없이 작품 접수 진입 · A4. 공동 보호자 등록 · A5. 같은 가족 안 같은 별칭 — ↓ 별도 대체흐름표 |
@@ -605,7 +611,7 @@ end note
 | A1 | 등록된 아이의 별칭을 고친다 | 보호자가 목록에서 아이를 골라 별칭을 수정한다. 형식 검사를 다시 거쳐 저장한다. 별칭 중복은 검사하지 않는다(BR-CHD-02 개정)(spec FR-1 "등록 후 수정할 수 있다"). 수정 엔드포인트는 `PATCH /v1/children/{id}`로 둔다 [통합 D13]. 이름·형식은 U8에서 확정 |
 | A2 | 두 번째 이후 아이를 등록한다 | 형제 등 추가 아이를 기본흐름 2~5단계로 등록한다. 등록 수 상한은 `자료 없음 — 확인 필요` (spec FR-1 "2명 이상") |
 | A3 | 등록된 아이가 없는 상태에서 작품 접수(UC2)를 시작한다 | [추론] 아이 등록 화면으로 먼저 안내하고, 등록을 마치면 UC2로 돌아간다 |
-| A4 | 공동 보호자가 아이를 등록하려 한다 | 계정 모델(U1)이 정해지기 전에는 가족 공간을 만든 보호자 계정만 등록·수정한다 [추론]. (a) 보호자 1계정 / (b) 공동 보호자 / (c) 관리 보호자 + 감상 전용 중 무엇으로 정하느냐에 따라 이 흐름을 고친다 |
+| A4 | 공동 보호자가 아이를 등록한다 | U1 확정(공동 보호자 초대, 같은 권한)에 따라 공동 보호자도 만든 보호자와 똑같이 등록·수정한다(UC15, BR-ACC-09) |
 | A5 | 같은 가족 안에 같은 별칭이 이미 있다 | 저장은 그대로 한다. 목록과 작품 접수의 아이 선택에서 헷갈리지 않게 "같은 별칭이 이미 있어요. 그대로 둘까요, 고칠까요?"를 안내한다 [추론]. 시스템은 아이를 아이 ID로 구분한다(BR-CHD-02 개정, D18) |
 
 #### 예외흐름 (Exception Flow)
@@ -3519,9 +3525,9 @@ end note
 | **유스케이스명** | 보호자 이메일로 가입한다 |
 | **액터** | 주: 보호자(가입 전) · 보조: 메일 발송 서비스 |
 | **사전조건** | (1) 로그인하지 않은 상태다. (2) 보호자가 메일을 받을 수 있는 이메일 주소를 갖고 있다. (3) 가입을 누구에게나 열지, 초대 등으로 제한할지는 `자료 없음 — 확인 필요` (U19) |
-| **사후조건** | (1) 보호자 계정이 이메일과 비밀번호 해시로 저장된다. 이메일은 서비스 전체에서 유일하다(대소문자 무시). (2) 그 계정의 가족 공간 1개가 함께 저장된다. 계정과 가족 공간은 둘 다 있거나 둘 다 없다. (3) 확인 링크를 누르면 계정이 "이메일 확인됨"이 되고 로그인 세션이 발급된다. (4) 실명·전화번호·아이 정보는 어디에도 저장되지 않는다. (5) 법정대리인 확인은 완료로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 이메일·비밀번호·토큰 원문이 남지 않고 요청 번호와 분류 코드만 남는다. (7) 이미 가입된 이메일로 가입을 시도하면 계정을 새로 만들지 않고, 화면 응답은 새 가입과 같으며, 그 주소로 안내 메일만 간다 |
+| **사후조건** | (1) 보호자 계정이 이메일과 비밀번호 해시로 저장된다. 이메일은 서비스 전체에서 유일하다(대소문자 무시). (2) 그 계정의 가족 공간 1개가 함께 저장되고 그 계정이 만든 보호자가 된다. 계정과 가족 공간은 둘 다 있거나 둘 다 없다. 초대 링크로 가입하면 새 가족 공간을 만들지 않고 초대한 가족의 공동 보호자가 된다(A4, UC15). (3) 확인 링크를 누르면 계정이 "이메일 확인됨"이 되고 로그인 세션이 발급된다. (4) 실명·전화번호·아이 정보는 어디에도 저장되지 않는다. (5) 법정대리인 확인은 완료로 기록하지 않는다(BR-PRV-03, U13). (6) 운영 로그에는 이메일·비밀번호·토큰 원문이 남지 않고 요청 번호와 분류 코드만 남는다. (7) 이미 가입된 이메일로 가입을 시도하면 계정을 새로 만들지 않고, 화면 응답은 새 가입과 같으며, 그 주소로 안내 메일만 간다 |
 | **기본흐름** | ↓ 별도 기본흐름표 |
-| **대체흐름** | A1. 확인 메일을 다시 받기 · A2. 이미 계정이 있음 · A3. 로그인한 상태에서 가입 화면 진입 — ↓ 별도 대체흐름표 |
+| **대체흐름** | A1. 확인 메일을 다시 받기 · A2. 이미 계정이 있음 · A3. 로그인한 상태에서 가입 화면 진입 · A4. 공동 보호자 초대 링크로 가입 — ↓ 별도 대체흐름표 |
 | **예외흐름** | E1. 이미 가입된 이메일(화면 비노출, 안내 메일) · E2. 이메일 형식 위반 · E3. 비밀번호 규칙 위반·확인 불일치 · E4. 동시 가입 경쟁 · E5. 작업 DB 저장 실패 · E6. 확인 메일 발송 실패 · E7. 확인 링크 만료·재사용 · E8. 가입 요청 과다 — ↓ 별도 예외흐름표 |
 | **포함/확장** | 없음. 로그인 전 행위라 INC1을 포함하지 않는다 |
 | **우선순위** | High — 모든 보호자 흐름(UC1~UC7, UC10)의 선행 조건이고, 이용자 중복을 막는 유일한 지점이다(D18) |
@@ -3548,6 +3554,7 @@ end note
 | A1 | 확인 메일을 받지 못했다 | 보호자가 "확인 메일 다시 받기"를 누른다. `POST /v1/auth/email/verify/resend`로 새 토큰을 만들고 이전 토큰은 무효로 한다. 재요청 간격 제한을 둔다 [추론] |
 | A2 | 이미 계정이 있는 보호자가 가입 화면에 왔다 | 화면에 늘 있는 "이미 가입하셨나요? 로그인" 링크로 로그인 화면으로 간다. 비밀번호를 잊었으면 UC14로 간다. 이 링크는 가입 여부와 관계없이 항상 보인다 |
 | A3 | 로그인한 상태에서 가입 화면을 연다 | 가입 양식을 보이지 않고 아이 관리 화면(UC1)으로 보낸다 [추론] |
+| A4 | 공동 보호자 초대 링크(UC15)로 가입한다 | 초대받은 이메일이 미리 채워진 양식으로 가입한다. **새 가족 공간을 만들지 않고** 초대한 가족의 공동 보호자가 된다. 초대 메일 수신으로 이메일 소유가 확인된 것으로 보고 확인 메일을 보내지 않는다 [추론] |
 
 #### 예외흐름 (Exception Flow)
 
@@ -3847,6 +3854,236 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 
 ---
 
+### 7.15 UC15 공동 보호자를 초대하고 관리한다
+
+#### 범위·개요
+
+한 가족 공간은 여러 보호자가 함께 쓴다(U1 확정). **가족 공간을 만든 보호자**는 다른 보호자를 **이메일로 초대**한다. 초대 메일의 링크를 누른 사람은 이메일로 가입하거나(UC13) 로그인해 초대를 수락하고, 그 가족 공간의 **공동 보호자**가 된다. 초대로 가입하면 새 가족 공간은 만들지 않는다.
+
+공동 보호자는 아이 등록·작품 접수·판정 확정·결과 결정·이야기·설명·삭제를 만든 보호자와 **똑같이** 할 수 있다. 권한 차이는 **해제** 하나다. 다른 보호자를 가족 공간에서 해제하는 것은 만든 보호자만 할 수 있고, 공동 보호자는 스스로 나갈 수만 있다. 나가거나 해제되면 그 계정은 즉시 가족 자료에 접근할 수 없지만, 그 사람이 올린 작품·이야기·설명은 가족 공간에 남는다. 두 보호자가 같은 작품에 결과 결정을 보내면 첫 결정만 반영된다(BR-APR-06).
+
+이 UC는 모델을 부르지 않는다. API 서버, 작업 DB, 메일 발송 서비스가 관여한다.
+
+| 항목 | 값 |
+|---|---|
+| 대상 시스템 | 우리 아이 미술관 (P0) |
+| 상위 프로세스 | 보호자 이메일 가입(UC13) → **공동 보호자 초대·수락(UC15)** → 아이 등록(UC1) 이후 흐름을 함께 쓴다 |
+| 원천 근거 | spec FR-9(U1 확정) · FR-31 · BR-APR-06 · D18 |
+| 핵심 UseCase | 1개 (UC15) + 공통 1개 (INC1) |
+| 주요 액터 | 가족 공간을 만든 보호자 · 공동 보호자(초대받은 사람) · 메일 발송 서비스(보조) |
+
+#### UseCase Diagram
+
+```plantuml
+@startuml uc_our_child_gallery_15
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+left to right direction
+title 우리 아이 미술관 — UC15 공동 보호자를 초대하고 관리한다
+
+actor "가족 공간을\n만든 보호자" as Owner
+actor "공동 보호자\n(초대받은 사람)" as Co
+actor "메일 발송 서비스" as Mail <<외부>>
+
+rectangle "우리 아이 미술관 (P0)" {
+  usecase "UC15 공동 보호자를 초대하고 관리한다" as UC15
+  usecase "INC1 로그인·가족 접근 확인" as INC1
+  usecase "UC13 보호자 이메일로 가입한다" as UC13
+}
+
+Owner --> UC15
+Co --> UC15
+UC15 ..> INC1 : <<include>>
+UC15 --> Mail
+Co --> UC13
+
+note right of UC15
+  초대: 만든 보호자·공동 보호자 모두 [추론]
+  수락: 초대받은 이메일로 로그인 또는 가입
+  해제: 만든 보호자만
+  나가기: 공동 보호자 스스로
+  나가도 작품은 가족 공간에 남는다
+end note
+note bottom of UC13
+  초대 링크로 가입하면
+  새 가족 공간을 만들지 않는다
+end note
+@enduml
+```
+
+**[「UC15 공동 보호자 UseCase Diagram」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqVVF1r2mAUvn9_xcHddBctE-mNFCmTFXaxj5tdrUPSGDU05h1JpIwxsM4N6YRqpyxuKhHc2g5hDl114G72U3aZ8-Y_7CRav8ouBrlI8j7Pec7znJPsmpZkWLmsBjk5wXNGQs6oWjKRljRNMV4kwtvMPFT155IhZeFAkg_TBs_pyTjXuAG39iJ74Xt3lxBmRkryI1VPQ0rSTIVpSsoCi4OhpjMWJFVDkS2V68xSLU0B8bGPX3og6kXRGgJ-G4uS4w7z8Cdfgyfx8Da4gx942gAcDD17LNoV_DwBMSxhOe_VbXfgAKGpgldv4rsuY5JsUVcht58Xne8-2e1T5eK-judlfO8s6oRAMuHRka4Yc86a0r6-MRXC_ifRyoMo9LBdvh0Q4_yahZc10ZoA9pvibQdEsYk_i-KkG6AeSKoGOzuiMcarfCzGmO9d0tPkO_Qv4xuP75DESwaQMxVZMgn6_zkE6j5tucz9h_EwYKfpjsaiNf49mmUknKo7moDXqNPbgOgD1_QjC2GgfqemqRb4RdpvVlUj7BVjQbSwuRmb9hHni_vAz9ZWLBCCKCWk6rKWSyoUUXDmI_3sllgRxnRuKbMt4qlrd9MIorA-XrK3Fhjg1wusVuCpuKphx3nmk0s2tn5FYXXMy_bmcQHaFTypzfwS16sPhdO8KUzPdIoFm5DuuB-9MTig7aCLKs9xeFoE0a56ZyW_gdXd_UCNFy5I2l9vRU-CH8M0iwNuWTw7CyMyD4NaOvaOe8vTsfFy6J-_LsH6lzE10BXn5Lx-sq6zS3f0Y_gLc2YVUA==)** — 클릭 시 브라우저로 연결됩니다.
+
+##### 다이어그램 쉽게 읽기 (유저 관점)
+
+- **누가 쓰나** — 가족 공간을 만든 보호자가 배우자 등 다른 보호자를 초대한다. 초대받은 사람은 링크를 눌러 합류한다. 메일 발송 서비스는 초대 메일을 보내는 외부 구성요소다.
+- **무슨 순서로** — 초대(이메일 입력) → 초대 메일 → 링크를 눌러 로그인 또는 가입 → 공동 보호자로 합류. 필요하면 만든 보호자가 해제하거나 공동 보호자가 스스로 나간다.
+- **«include» = 항상 함께** — 초대·해제·나가기는 로그인한 보호자의 일이라 INC1을 거친다. 수락은 초대 링크의 토큰으로 확인한다.
+- **«extend» = 특정 상황에서만** — 이 UC에는 확장 관계가 없다.
+- **Generalization(◁)** — 두 보호자 액터는 권한이 해제 하나만 다르다. 상속 대신 해제 흐름에만 조건을 걸었다.
+
+| 기호 | 의미 |
+|---|---|
+| 사람 모양(actor) | 시스템을 쓰는 사람 또는 외부 구성요소(`<<외부>>`) |
+| 타원(usecase) | 액터가 이루려는 목표 |
+| 사각형(rectangle) | 시스템 경계 |
+| 점선 `<<include>>` | 항상 함께 수행되는 하위 행위 |
+| 노트 | 규칙 보충 설명 |
+
+#### Actor
+
+| 구분 | 액터 | 이 UC에서의 역할 | 원천 근거 |
+|:--:|---|---|---|
+| Primary | 가족 공간을 만든 보호자 | 공동 보호자를 초대하고, 필요하면 해제한다 | spec FR-9 (U1 확정) |
+| Primary | 공동 보호자(초대받은 사람) | 초대를 수락해 합류하고, 원하면 스스로 나간다. 초대도 할 수 있다 [추론] | spec FR-9 (U1 확정) |
+| Secondary | 메일 발송 서비스 | 초대 메일을 보낸다. P0는 로컬 Mailpit + nodemailer | D18 · 이제민 결정 ⑤ |
+
+#### 관련 UseCase
+
+| UC ID | 유스케이스명 | 관계 | 원천 근거 |
+|:--:|---|---|---|
+| UC15 | 공동 보호자를 초대하고 관리한다 | 본 문서 | spec FR-9 (U1 확정) |
+| INC1 | 로그인·가족 접근 확인 | UC15가 «include»(초대·해제·나가기) | spec FR-9 |
+| UC13 | 보호자 이메일로 가입한다 | 초대받은 사람이 계정이 없으면 초대 링크로 가입(UC13 A4) | spec FR-31 |
+
+> **쉽게 말하면** — 엄마가 가족 공간을 만들었다면, 아빠의 이메일을 적어 초대합니다. 아빠는 메일의 링크를 눌러 가입(또는 로그인)하면 같은 아이들과 작품을 똑같이 관리할 수 있습니다. 다른 사람을 내보내는 것만은 가족 공간을 만든 엄마가 할 수 있고, 아빠는 스스로 나갈 수만 있습니다. 나가도 올린 작품은 그대로 남습니다.
+
+#### 유스케이스 기술
+
+| 속성 | 내용 |
+|---|---|
+| **ID** | UC15 (spec FR-9 U1 확정 · D18) |
+| **유스케이스명** | 공동 보호자를 초대하고 관리한다 |
+| **액터** | 주: 가족 공간을 만든 보호자, 공동 보호자 · 보조: 메일 발송 서비스 |
+| **사전조건** | (1) 초대하는 보호자가 로그인되어 있고 이메일 확인을 마쳤다(INC1, UC13). (2) 초대받는 사람이 메일을 받을 수 있는 이메일 주소를 갖고 있다 |
+| **사후조건** | (1) 초대를 수락한 계정은 그 가족 공간의 공동 보호자가 된다. (2) 한 계정은 한 가족 공간에만 속한다 [추론, U20]. (3) 가족 공간을 만든 보호자는 가족마다 한 명이다. (4) 해제되거나 나간 계정은 즉시 그 가족 자료에 접근할 수 없고, 그 계정의 세션에서 가족 접근이 끊긴다. (5) 나가거나 해제된 보호자가 올린 작품·이야기·설명은 가족 공간에 남는다. (6) 운영 로그에는 이메일·토큰 원문이 남지 않는다 |
+| **기본흐름** | ↓ 별도 기본흐름표 (초대 → 수락 기준) |
+| **대체흐름** | A1. 공동 보호자가 초대 · A2. 초대 취소 · A3. 만든 보호자가 해제 · A4. 초대받은 사람이 계정이 없음(초대 링크로 가입) · A5. 공동 보호자가 스스로 나가기 · A6. 나간 계정이 다시 로그인 — ↓ 별도 대체흐름표 |
+| **예외흐름** | E1. 초대 링크 만료·사용·무효 · E2. 초대받은 이메일과 로그인한 계정 이메일이 다름 · E3. 이미 다른 가족 공간에 속한 계정 · E4. 공동 보호자가 다른 보호자를 해제하려 함 · E5. 만든 보호자가 나가려 함 · E6. 이미 이 가족의 보호자 · E7. 메일 발송 실패 · E8. 초대 요청 과다 — ↓ 별도 예외흐름표 |
+| **포함/확장** | «include» INC1 로그인·가족 접근 확인(초대·해제·나가기) |
+| **우선순위** | High — U1 확정으로 P0 계정 모델이 되었다. 공동 감상·공동 관리가 서비스 가치(가족이 함께 본다)의 전제다 |
+| **사용빈도** | 가족당 초대 몇 회. 정량값은 `자료 없음 — 확인 필요` |
+| **업무규칙** | BR-ACC-09, BR-ACC-01, BR-ACC-04, BR-ACC-06, BR-ACC-08, BR-APR-06, BR-PRV-01 |
+| **특별 요구사항** | 초대 링크 토큰: 1회용·유효 시간(예시 7일 [추론, U19])·해시 저장. 같은 가족·같은 이메일로 다시 초대하면 이전 초대는 무효 [추론]. 초대 응답은 초대받은 이메일이 가입돼 있는지 드러내지 않는다(항상 202) [추론 — BR-ACC-08과 같은 원칙]. 초대 메일에는 초대한 보호자의 이메일 일부(가림)와 링크만 담고 아이 별칭·작품은 넣지 않는다 [추론]. 초대 요청에도 이메일별·IP별 요청 한도를 둔다. 초대 링크로 가입하면 초대 메일 수신으로 이메일 소유가 확인된 것으로 보고 따로 확인 메일을 보내지 않는다 [추론]. 엔드포인트 [추론, U8 — B 확인 필요]: `POST /v1/family/invites`(항상 202) · `DELETE /v1/family/invites/{id}`(204) · `POST /v1/family/invites/accept`(204 / 400 `token_invalid` / 409 `already_in_family`) · `GET /v1/family/members` · `DELETE /v1/family/members/{id}`(204 / 403 만든 보호자 아님) · `POST /v1/family/leave`(204 / 409 만든 보호자) |
+| **비고** | 원천 추적: spec FR-9 수용기준(초대·같은 권한·해제는 만든 보호자만·스스로 나가기·해제 즉시 접근 불가·나가도 작품 남음·첫 결정만 반영) · U1 확정(2026-09-28 clarify, "넷플릭스 계정 공유 방식") · FR-31 이메일 로그인(D18). 원천에 없는 판단: 공동 보호자도 초대 가능, 한 계정 한 가족, 초대 유효 7일, 초대로 가입 시 확인 메일 생략, 만든 보호자의 탈퇴·권한 이전 — U20 |
+
+#### 기본흐름 (Basic Flow)
+
+| 단계 | 액터 행위 | 시스템 행위 |
+|:--:|---|---|
+| 1 | 만든 보호자가 "가족 보호자 관리"를 연다 | INC1로 로그인과 가족 공간을 확인하고, 이 가족의 보호자 목록(만든 보호자·공동 보호자, 이메일 일부 가림)과 대기 중 초대를 보여 준다 |
+| 2 | 만든 보호자가 초대할 이메일을 입력하고 "초대"를 누른다 | `POST /v1/family/invites`. 형식·요청 한도를 확인하고, 1회용 초대 토큰(해시)을 만들고 같은 이메일의 이전 초대를 무효로 한다. 항상 202로 답한다 |
+| 3 | — | 메일 발송 서비스로 초대 링크 메일을 보낸다 |
+| 4 | 초대받은 사람이 메일의 링크를 누르고, 초대받은 이메일로 로그인한다 | `POST /v1/family/invites/accept`로 토큰(유효 시간·1회용)과 로그인 계정의 이메일이 초대받은 이메일과 같은지, 다른 가족에 속하지 않았는지 확인한다 |
+| 5 | — | 계정을 그 가족 공간의 공동 보호자로 연결하고, 초대 토큰을 쓴 것으로 표시한다 |
+| 6 | 공동 보호자가 가족 공간으로 들어간다 | "하*네 가족의 공동 보호자가 되었어요"를 보이고 작품 목록(S4)으로 보낸다. 만든 보호자의 보호자 목록에도 나타난다 |
+
+#### 대체흐름 (Alternative Flow)
+
+| ID | 분기 조건 | 흐름 |
+|:--:|---|---|
+| A1 | 공동 보호자가 다른 사람을 초대한다 | 기본흐름 1~6과 같다. 초대는 같은 권한에 속한다고 본다 [추론, U20] |
+| A2 | 초대를 보낸 보호자가 초대를 취소한다 | `DELETE /v1/family/invites/{id}`. 초대 토큰을 무효로 하고 목록에서 뺀다 |
+| A3 | 만든 보호자가 공동 보호자를 해제한다 | 확인 창("해제하면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요") 뒤 `DELETE /v1/family/members/{id}`. 그 계정의 가족 연결을 끊고 가족 접근 세션을 무효로 한다. 작품·이야기·설명은 남는다 |
+| A4 | 초대받은 사람이 계정이 없다 | 링크에서 "이메일로 가입"을 누른다. 초대받은 이메일이 미리 채워진 가입 양식(UC13)을 쓰고, 가입하면 **새 가족 공간을 만들지 않고** 초대한 가족의 공동 보호자가 된다. 초대 메일 수신으로 이메일 소유가 확인된 것으로 본다 [추론] |
+| A5 | 공동 보호자가 스스로 나간다 | 확인 창 뒤 `POST /v1/family/leave`. 가족 연결을 끊고 가족 접근 세션을 무효로 한다. 올린 작품은 남는다 |
+| A6 | 나가거나 해제된 계정이 다시 로그인한다 | 속한 가족이 없으므로 "새 가족 공간 만들기" 또는 "받은 초대 수락"만 할 수 있다 [추론, U20] |
+
+#### 예외흐름 (Exception Flow)
+
+| ID | 발생 조건 | 처리 | 근거 |
+|:--:|---|---|---|
+| E1 | 초대 링크가 만료됐거나, 이미 썼거나, 취소·재초대로 무효다 | 구분하지 않고 400 `token_invalid`. "초대 링크를 쓸 수 없어요. 초대한 분께 다시 요청해 주세요" | BR-ACC-08 · 이제민 결정 ③과 같은 규칙 |
+| E2 | 로그인한 계정의 이메일이 초대받은 이메일과 다르다 | 수락하지 않고 "초대받은 이메일로 로그인해 주세요"라고 안내한다 [추론] | BR-ACC-09 |
+| E3 | 로그인한 계정이 이미 다른 가족 공간에 속해 있다 | 409 `already_in_family`. "이미 다른 가족 공간에 있어요. 나간 뒤 수락할 수 있어요"(만든 보호자면 나갈 수 없음, U20) [추론] | BR-ACC-09 · U20 |
+| E4 | 공동 보호자가 다른 보호자를 해제하려 한다 | 403으로 거부한다. 공동 보호자 화면에는 해제 버튼을 두지 않는다 | spec FR-9 · BR-ACC-09 |
+| E5 | 만든 보호자가 나가려 한다 | 409로 거부한다. 만든 보호자의 탈퇴·권한 이전은 `자료 없음 — 확인 필요` (U20) | BR-ACC-09 · U20 |
+| E6 | 이미 이 가족의 보호자인 이메일을 초대한다 | 초대를 만들지 않는다. 응답은 202 그대로(가입 여부 비노출) [추론] | BR-ACC-08 |
+| E7 | 메일 발송 서비스가 실패한다 | 초대는 남기고 "다시 보내기"를 안내한다. 로그에는 분류 코드(메일)만 남긴다 | [추론] |
+| E8 | 짧은 시간에 초대를 너무 많이 보낸다 | 이메일별·IP별 요청 한도를 넘으면 메일을 보내지 않는다 | BR-ACC-08 · U19 |
+
+#### Sequence Diagram
+
+```plantuml
+@startuml seq_our_child_gallery_15
+skinparam backgroundColor #F3F1EB
+skinparam shadowing false
+title UC15 공동 보호자를 초대하고 관리한다 — Sequence
+
+actor "만든 보호자" as Owner
+actor "초대받은 사람" as Co
+participant "웹 화면" as UI
+participant "API 서버" as API
+database "작업 DB·큐" as DB
+participant "메일 발송 서비스" as Mail
+
+Owner -> UI : 1. 가족 보호자 관리 열기
+UI -> API : GET /v1/family/members (INC1)
+API --> UI : 보호자 목록(이메일 일부 가림) · 대기 중 초대
+
+Owner -> UI : 2. 초대할 이메일 입력 · 초대
+UI -> API : POST /v1/family/invites
+API -> API : 형식 · 이메일별 IP별 요청 한도 (E8)
+alt 이미 이 가족의 보호자
+  API -> API : 초대 만들지 않음 (E6)
+else 새 초대
+  API -> DB : 초대 토큰 해시 저장 · 같은 이메일 이전 초대 무효
+  API -> Mail : 3. 초대 링크 메일
+end
+API --> UI : 202 "초대 메일을 보냈어요" (모든 경우 같은 응답)
+
+Co -> UI : 4. 메일 링크 · 초대받은 이메일로 로그인 (없으면 가입, A4)
+UI -> API : POST /v1/family/invites/accept (토큰)
+API -> DB : 토큰 · 이메일 일치 · 소속 확인
+alt 만료 · 사용 · 무효
+  API --> UI : 400 token_invalid (E1)
+else 이메일 다름
+  API --> UI : 초대받은 이메일로 로그인 안내 (E2)
+else 다른 가족에 속함
+  API --> UI : 409 already_in_family (E3)
+else 수락 가능
+  API -> DB : 5. 공동 보호자로 연결 · 토큰 사용 표시
+  API --> UI : 204
+  UI --> Co : 6. 공동 보호자 합류 · 작품 목록으로
+end
+
+opt 해제 (A3, 만든 보호자만)
+  Owner -> UI : 공동 보호자 해제
+  UI -> API : DELETE /v1/family/members/{id}
+  alt 요청자가 만든 보호자 아님
+    API --> UI : 403 (E4)
+  else 만든 보호자
+    API -> DB : 가족 연결 끊기 · 가족 접근 세션 무효 · 작품은 유지
+    API --> UI : 204
+  end
+end
+opt 나가기 (A5, 공동 보호자)
+  Co -> UI : 가족 공간에서 나가기
+  UI -> API : POST /v1/family/leave
+  alt 만든 보호자
+    API --> UI : 409 (E5, U20)
+  else 공동 보호자
+    API -> DB : 가족 연결 끊기 · 세션 무효 · 작품은 유지
+    API --> UI : 204
+  end
+end
+@enduml
+```
+
+**[「UC15 공동 보호자 Sequence」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqlVl1vGlcQfd9fMXJeQHL4tKPGD1X8QSpLbWMp8TO6ho2z8hocWDuyqkrYWVvIECW0pmAHEKjGCRFVqb2pseS85Kf0ce_d_9C5d3dZPlzJUh8WtLszZ849c2bgUVYjGW17U4Ws_DKe3s7EEy8UNRlfJ6oqZ3bj4Vkpu6GktkiGbMIaSWysZ9LbqeRiWk1n4N7j6ONwbGEoIvuCJNOvlNQ6PCdqVpY0RVNlWF0Mz4J5-Zm-PQF6aVjVPmu8o-0bYEaeFnNWuWpeNsE0cvS8a5VrtHAG_-SO4an8cltOJWRJIgkNy03RD0X6a9ODmAKShSevUnLGjbABae89q-eA7XdpoyiCFtMSEtSUhLJFUhrGvb8G6-SYdgzxenV59PX8yjIwvUYvdPEab6Uk0cgaycqY2yixygEsLXy9svZsDksLo_m0c8zqN0B7NXbYEkjXOjs6E7E_EEWVJMEa7n-LpWEOwgEweznW-ss7myMHsIph9nsShmEw5zUH38WeQXAnHHxONhV1N7gpb67JmSz4ln9cDPslHnPfBfbg6KcObdV9rG445PCif-d4XXp-44evV4DKYSlgZyWnMeM0I4FBx5owhNQ4oM02R3DShsmuPHk6wlZJ7SianLVpukFWtcwKdYHgotJLHZZX-Cc7PWYXfwA3xlsdfLFv_BJRNRH5Z59_OdqxetU7rwQwUsFmBsJBZ-wDmqN8xOpFhHvgl2S0KrDXeZf_IHdpwUu1DpvWXg9pGKxQA9bMsYY4s9k7EWYbEtZgTX1QsWtYpx89SN5-BI0GPEp71l4X7GRJTiVHOxgJRVxbOzGsrvNz0td59puB4kyBj376yAfDvPjCTnseoxItfPZL0mJ60MGZALjetMsOmubOzED_Vg3wMq_6rN4HH6scstoNzosQu3EwDfMz_rs0OkgSCXlLA5-tn18altbRdLjv3JfsuiqeHRbZ4Ruc0zJSED3n7fu9KN7td9lpR7h2RODBQUMh0NIbciqOPIiqJLHTYbfTg1q4aei5Pp57F0FYOU_3DQSNOKAcqt13rVh5h-zfWOVbeD0EomZkktxFZnFbK4SJutzyVVr_IqbyqD1mxNnA5BJFUqzSMy-EiI6cjjZWqYZOHScQCc3go1X7CTpjDh5MwqLLO7RtN6FRsn7JO-uDW6BVEyaV0thUPgzNGvjmo9Mwvpzx3o-VRjfILYU4gsPItdJS7PvYs9gtOy74k5L8GYPF_Iu1gBio1URx7I9OC1UMndA_imrPcGZ228YSvQxHdGcvOyLTvSO-IsXY28-bJfMKTav32UHV8aInmzBQrYn7ZpKJ3QguJb-4mnS_iqgc3zc_Oz2hFec8NMoOAYwyezoaDn9lPIQxQcdnU5XJjuzo-N8KDHvWF0NGq5HQQLhxdncW7n9L9Qg_8A_Lv7GQEoA=)** — 클릭 시 브라우저로 연결됩니다.
+
+기본흐름 1~6단계는 시퀀스의 번호 붙은 주요 메시지 `1.`~`6.`과 1:1로 대응한다.
+
+#### UML 노트
+
+| 항목 | 적용 |
+|---|---|
+| 액터 | 만든 보호자와 공동 보호자는 모두 Primary다. 권한 차이가 해제 하나라 Generalization을 쓰지 않고 해제·나가기 흐름에 조건을 걸었다 |
+| «include» | 초대·해제·나가기는 INC1을 포함한다. 수락은 로그인 뒤 토큰으로 확인한다 |
+| UC 경계 | 초대·수락·해제·나가기는 모두 "가족 보호자 구성을 관리한다"는 한 목표라 한 UC로 두고 대체흐름으로 나눴다 |
+| Sequence | 초대 응답은 모든 경우 같은 202로 모이게 그렸다(가입 여부 비노출). 해제·나가기는 `opt`로 붙였다 |
+
+---
+
 ## 8. 업무규칙(Business Rules) 종합
 
 도메인 16개, 84개다. CHD 아이 · INT 접수 · SUG 판정 제안 · PRC 처리 · FBK 낮춤 · APR 승인 · STY 이야기 · CAP 설명 · EXH 전시 · DEL 삭제 · ACC 접근 · OPS 운영 · MDL 모델 · SRV 서빙 · API · PRV 개인정보. 규칙 문장은 재작성 공통 기준 §8의 요지를 따랐다. 80개는 UC 문서에 정의되어 있고, 근거 열은 그 규칙을 처음 정의한 UC 문서의 근거를 옮겼다. 적용 UC는 UC 문서 12건에서 그 ID가 실제로 나오는 문서를 모은 것이다(`BR-ACC-01`처럼 표의 적용 범위 열에만 나오는 경우도 포함). 통합 결정으로 보강한 규칙에는 `[통합 D#]`를 붙였다. 끝의 "통합 시 추가" 4개(BR-APR-06, BR-CAP-07, BR-EXH-07, BR-DEL-05)는 UC 문서에 없고 이 문서와 UC_00 §7.1에만 있다. 옛 `BR-ENG-01~05`는 `BR-MDL-*`로 옮겼다(ENG-01 → MDL-06, ENG-02 → MDL-01, ENG-03 → MDL-03, ENG-04 → MDL-04, ENG-05 → MDL-05).
@@ -3913,6 +4150,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | BR-ACC-06 | 보호자 로그인 아이디는 이메일이며 서비스 전체에서 유일(대소문자 무시). 이용자 중복은 이메일로 막고 별칭으로 막지 않는다. 따로 아이디를 만들지 않는다 | UC13, UC14 | D18 |
 | BR-ACC-07 | 가입 때는 이메일·비밀번호만 받는다(실명·전화번호·아이 정보 금지). 이메일은 로그인과 로그인 정보 찾기에만 쓴다. 가입과 함께 가족 공간 1개를 만들고 계정과 함께 저장한다. 비밀번호는 해시로만 저장한다 | UC13 | D18 · Intent [부정적 영향] 과잉 수집 |
 | BR-ACC-08 | 확인·재설정 메일 링크 토큰은 1회용·유효 시간 있음·재발급 시 이전 무효, DB에는 해시만. 가입과 로그인 정보 찾기 응답은 가입 여부를 드러내지 않는다(가입된 주소엔 안내 메일만). 가입·재발송·찾기 메일에 이메일별·IP별 요청 한도(예시: 같은 이메일 10분에 3회, 같은 IP 1시간에 20회 [추론]) | UC13, UC14 | D18 · 이제민 결정 ③④ |
+| BR-ACC-09 | 한 가족 공간은 만든 보호자 1명과 초대받은 공동 보호자 여러 명이 같은 권한으로 쓴다. 다른 보호자 해제는 만든 보호자만, 공동 보호자는 스스로 나가기만. 해제·나가기 즉시 가족 접근이 끊기고 올린 자료는 남는다. 초대는 초대받은 이메일로만 수락, 한 계정은 한 가족 공간에만 속한다 [추론] | UC15 (UC1~UC7, UC10 권한 전제) | spec FR-9 (U1 확정) |
 | BR-OPS-01 | 생존(`/live`)과 준비(`/ready`) 분리, 준비는 모델별로 표시 | UC8, UC11, UC12 | Intent [핵심 활동] 3 · [핵심 자원] 외부 사용 · FR-12 |
 | BR-OPS-02 | 지표 정의: 첫 결과 승인율(= 좋아요 / 결과가 도달한 작품의 첫 결정) · 판정 수정률(제안 전 직접 확정 건은 분모 제외) · 모델별 낮춤률 · 설명 규칙 검사 실패율(P0.5) · 모델별 처리 시간 p95 · 재시도율 · 큐 적체 · 결과 미도달 수(목표 0). 정의·검증 계획이며 실적 아님 [통합 D14] | UC2, UC4, UC7, UC8, UC10 | Intent [미션] 서빙 지표 · spec FR-26 |
 | BR-OPS-03 | 원인별 분리 집계(BR-FBK-04) | UC3, UC4, UC8 | Intent [미션] 서빙 지표 |
@@ -3937,7 +4175,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | BR-API-07 | 'API활용' 메뉴는 엔드포인트·가이드라인·매뉴얼 3영역, 팀원 전용(보호자 화면에 없음) | UC11 | 추가 요구 R4 · spec FR-30 |
 | BR-API-08 | 엔드포인트 탭은 `/openapi.json`에서 생성해 실제 API·모델 버전과 어긋나지 않게 한다 | UC11 | 추가 요구 R4 · 공통 기준 §4 |
 | BR-API-09 | 시험 호출에는 평가 묶음 작품만 쓴다 | UC9, UC11, UC12 | Intent [핵심 활동] 7 평가 묶음 · [부정적 영향] 아동 이미지 유출 |
-| BR-PRV-01 | 운영 로그에 이미지·객체 키·자유 입력·오류 원문 금지 | 전 UC (UC1~UC14) | spec FR-14 · Intent [부정적 영향] 아동 이미지 유출 |
+| BR-PRV-01 | 운영 로그에 이미지·객체 키·자유 입력·오류 원문 금지 | 전 UC (UC1~UC15) | spec FR-14 · Intent [부정적 영향] 아동 이미지 유출 |
 | BR-PRV-02 | 얼굴 인식·학습 재사용 금지. 가족 기록을 외부 업체·외부 모델 API로 자동 전달하지 않는다 | UC2, UC5, UC10, UC12 | Intent [부정적 영향] · [핵심 파트너] |
 | BR-PRV-03 | 보호자 계정만으로 법정대리인 확인이 끝났다고 보지 않는다 | UC1 | Intent [핵심 장벽] 상 — 아동 개인정보 · [부정적 영향] 동의 오판 |
 
@@ -3985,13 +4223,13 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | D14 | 첫 결과 승인율 = 좋아요 / 결과가 도달한 작품의 첫 결정. 판정 수정률 분모에서 제안 전 직접 확정 건은 뺀다 | UC2, UC4, UC8 | §7.2 A3 · §7.4 §1 · §7.8 지표 표 · §8 BR-OPS-02 |
 | D15 | 신규 미해결 U16(승인된 설명을 내리거나 교체하는 절차), U17('API활용' 메뉴 위치·관리 엔드포인트 조회 권한), U18(`invalid_input` 등 연동 오류 분류) | UC10, UC11, UC3 | §7.3 대응표 아래 · §7.5 A7 · §7.10 E3 · §7.11 §1.2·비고 · §7.12 E4 · §9.4 |
 | D17 | (2026-09-28 추가, 신지현 결정 · 이제민 조건부 승인 — 절충안) 외부 모델 기능 엔드포인트를 나눈다. P0: `segment`·`classify`·`relief`(외부 키)와 `pose`(팀 내부 키 전용), API 키, 요청 한도(U12 예시값: 키당 분당 30건 · 키당 하루 1,000건 · 키당 동시 진행 작업 2건), 크기 제한, 입력 비보존, 승격된 활성 버전만, 낮은 우선순위 대기열. P0.5: `caption`과 외부 API 약관. 호출자는 팀 밖 외부 클라이언트까지. 다만 팀 밖 클라이언트 키는 U12(한도·약관) 확정 뒤 발급하고, 그 전에는 팀·과정 내부 키만 발급한다. Intent-Specify(DDBM)는 반영 대기. `classify`는 OpenCLIP 가중치 라이선스 확정 기록(A2) 전까지 비활성(BR-MDL-07). | UC11, UC12 | §2.4 · §7.11 · §7.12 · §8 BR-API-03~05 |
-| D18 | (2026-09-28 추가, 신지현 결정) 이용자 중복은 별칭이 아니라 보호자 이메일 계정으로 막는다. 따로 아이디를 만들지 않고 이메일이 로그인 아이디다(서비스 전체 유일, 대소문자 무시). UC13 "보호자 이메일로 가입한다"(P0): 이메일·비밀번호만 받고, 확인 메일 링크로 가입을 끝내며, 가족 공간 1개를 함께 만든다. UC14 "이메일로 로그인 정보를 찾는다"(P0): 가입한 이메일로 로그인 아이디와 1회용 재설정 링크를 보내고, 응답은 가입 여부를 드러내지 않는다. 별칭은 중복 검사를 하지 않는 표시용 이름이다(같은 가족 안 같은 별칭은 저장 뒤 안내만, UC1 A5). BR-CHD-02 개정, BR-ACC-06·07·08 · FR-31 · FR-32 · U19 신설, SD_01 G26·G27 신설, 메일 발송 서비스 의존 추가. 비밀번호 규칙·링크 유효 시간·SMTP 제품은 예시값·미정 [추론]. 이제민 조건부 승인(2026-09-28): 가입 응답도 가입 여부 비노출(이미 가입된 주소엔 안내 메일만), 인증 엔드포인트 7개와 응답 코드 확정, P0 메일은 로컬 Mailpit + nodemailer, 비밀번호 재설정 시 password_changed_at 기준으로 현재 세션 포함 모든 세션 무효, 이메일별·IP별 요청 한도 | UC1, UC13, UC14 | §7.1 · §7.13 · §7.14 · §8 BR-ACC-06~08 · BR-CHD-02 |
+| D18 | (2026-09-28 추가, 신지현 결정) 이용자 중복은 별칭이 아니라 보호자 이메일 계정으로 막는다. 따로 아이디를 만들지 않고 이메일이 로그인 아이디다(서비스 전체 유일, 대소문자 무시). UC13 "보호자 이메일로 가입한다"(P0): 이메일·비밀번호만 받고, 확인 메일 링크로 가입을 끝내며, 가족 공간 1개를 함께 만든다. UC14 "이메일로 로그인 정보를 찾는다"(P0): 가입한 이메일로 로그인 아이디와 1회용 재설정 링크를 보내고, 응답은 가입 여부를 드러내지 않는다. 별칭은 중복 검사를 하지 않는 표시용 이름이다(같은 가족 안 같은 별칭은 저장 뒤 안내만, UC1 A5). BR-CHD-02 개정, BR-ACC-06·07·08 · FR-31 · FR-32 · U19 신설, SD_01 G26·G27 신설, 메일 발송 서비스 의존 추가. 비밀번호 규칙·링크 유효 시간·SMTP 제품은 예시값·미정 [추론]. 이제민 조건부 승인(2026-09-28): 가입 응답도 가입 여부 비노출(이미 가입된 주소엔 안내 메일만), 인증 엔드포인트 7개와 응답 코드 확정, P0 메일은 로컬 Mailpit + nodemailer, 비밀번호 재설정 시 password_changed_at 기준으로 현재 세션 포함 모든 세션 무효, 이메일별·IP별 요청 한도. U1 확정(공동 보호자 초대, 같은 권한) 반영: UC15 신설, BR-ACC-09, G28(초대 수락)·G29(보호자 해제), guardian_account.role·family_invite, uq_guardian_family 해제, U20 | UC1, UC13, UC14, UC15 | §7.1 · §7.13 · §7.14 · §8 BR-ACC-06~08 · BR-CHD-02 |
 
 ### 9.2 도출 결과
 
 | 항목 | 결과 |
 |---|---|
-| 유스케이스 | 14개(UC1~UC14). P0 13개(UC13·UC14 신규, D18)(UC6은 P1 3D 대체흐름 포함, UC12는 caption만 P0.5), P0.5 1개(UC10) |
+| 유스케이스 | 15개(UC1~UC15). P0 14개(UC13·UC14·UC15 신규)(UC6은 P1 3D 대체흐름 포함, UC12는 caption만 P0.5), P0.5 1개(UC10) |
 | 공통·조건부 | «include» 3개(INC1 로그인·가족 접근 확인, INC2 팀원 로그인·역할 확인, INC3 API 키 인증·요청 한도 확인) · «extend» 3개(EXT1 실행 중 처리 취소, EXT2 다시 찍어 재접수, EXT3 평가 작품으로 시험 호출) + UC10 → UC5 «extend»(설명 초안 받기) |
 | 액터 | 7개 = Primary 5(보호자, 서비스 운영자, 평가 담당 팀원, 연동 개발 팀원, 외부 클라이언트) + Secondary 1(원본·결과 저장소) + 조건부 Secondary 1(과정 제공 LLM). 이해관계자(아이, 성장한 아이)는 액터로 두지 않음. 모델 M1~M7은 내부 구성요소 |
 | 모델 | 7종(M1~M7). M4는 규칙이며 모델이 아님. 서빙군 3종(CPU 비전 · GPU · LLM) |
@@ -4016,6 +4254,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | UC12 | 모델 기능 엔드포인트를 호출한다 | §7.12 | 14/14 | E1~E7 (7) | UC + Seq |
 | UC13 | 보호자 이메일로 가입한다 | §7.13 | 14/14 | E1~E8 (8) | UC + Seq |
 | UC14 | 이메일로 로그인 정보를 찾는다 | §7.14 | 14/14 | E1~E6 (6) | UC + Seq |
+| UC15 | 공동 보호자를 초대하고 관리한다 | §7.15 | 14/14 | E1~E8 (8) | UC + Seq |
 
 ### 9.3 원천 커버리지
 
@@ -4029,7 +4268,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | FR-6 | UC4 | |
 | FR-7 | UC5 | |
 | FR-8 | UC6 | |
-| FR-9 | INC1(UC1~UC7, UC10) · INC2(UC8, UC9, UC11) · UC6 | 계정 모델은 미결(U1) |
+| FR-9 | INC1(UC1~UC7, UC10) · INC2(UC8, UC9, UC11) · UC6 · UC15 | 계정 모델은 미결(U1) |
 | FR-10 | UC7 | |
 | FR-11 | UC3 · UC7 | |
 | FR-12, FR-13 | UC8 | FR-13은 Intent [미션] 서빙 지표 전체 |
@@ -4080,14 +4319,14 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 
 | # | 항목 | 관련 UC | 영향 |
 |:--:|---|---|---|
-| U1 | 가족 접근 계정 모델(보호자 1계정 / 공동 보호자 / 감상 전용). 보호자 가입은 UC13(이메일)으로 정함(D18) | UC1, UC6, UC7, INC1 | 높음. 액터 추가, 초대·해제 UC 신설, 삭제 권한 규칙이 달라진다 |
+| U1 | ~~가족 접근 계정 모델~~ → 확정: 공동 보호자 초대, 같은 권한(2026-09-28 clarify). UC15로 반영. 보호자 가입은 UC13(이메일) | UC1, UC6, UC7, INC1 | 높음. 액터 추가, 초대·해제 UC 신설, 삭제 권한 규칙이 달라진다 |
 | U2 | 팀 서버 GPU 유무 — M5 속도, M7(P1) 가능 여부 | UC3, UC6, UC8, UC9 | 높음. 2.5D 처리 시간과 P1 노출 여부를 가른다 |
 | U3 | 과정 제공 LLM 엔드포인트 유무와 조건 — M6 실행 방식 | UC10 | 중간. 조건부 액터 추가 여부와 BR-CAP-05 적용 방식이 정해진다 |
 | U4 | 라이선스 확인: OpenCLIP 가중치 · Qwen3 · TRELLIS 의존성 · AGPL 예비 모델 채택 여부 | UC2, UC3, UC9, UC10, UC12 | 높음. BR-MDL-07에 따라 확인 전에는 활성화하지 않는다. OpenCLIP은 P0 판정 제안의 핵심이다 |
 | U5 | 모델별 품질 임계값(분리·판정·관절·깊이·설명 규칙 검사)과 승격 기준 — 평가 묶음 1차 측정 뒤 | UC2, UC3, UC9, UC10 | 높음. 낮춤 여부와 승격을 가르는 기준이다 |
 | U6 | 모델별 시간 상한·동시 처리 수·처리 시간(M3 외 미측정) | UC3, UC8 | 중간. BR-PRC-06·07, BR-SRV-03의 수치가 비어 있다 |
-| U7 | 보호자 앱 API 스택(Intent-Plan 후보 4종) 확정과 모델 서빙 계층(Python) 분리 여부 | UC1~UC14 | 중간. `/speckit.plan`의 첫 결정이다 |
-| U8 | 엔드포인트 이름·응답 형식·포트·인증 방식(현재 [추론]) | UC1~UC14 | 중간. OpenAPI로 확정한다 |
+| U7 | 보호자 앱 API 스택(Intent-Plan 후보 4종) 확정과 모델 서빙 계층(Python) 분리 여부 | UC1~UC15 | 중간. `/speckit.plan`의 첫 결정이다 |
+| U8 | 엔드포인트 이름·응답 형식·포트·인증 방식(현재 [추론]) | UC1~UC15 | 중간. OpenAPI로 확정한다 |
 | U9 | 움직이는 작품·2.5D 결과의 서비스 파일 형식(GIF/MP4/깊이맵+셰이더 등) | UC3, UC4, UC6 | 중간. 저장·전시 화면 구현이 달라진다 |
 | U10 | 판정 제안 문구 확정과 제안 지연 시 화면 | UC2 | 중간. 현재 문구는 [추론] |
 | U11 | 설명 규칙 검사의 금지어·사건 판별 방식, 재생성 상한 | UC10 | 중간. 기억 왜곡 방지의 핵심이다. 상한 2회는 [추론] |
@@ -4099,6 +4338,7 @@ UI --> Guardian : "이메일과 새 비밀번호로 로그인해 주세요" · �
 | U17 | 'API활용' 메뉴 위치와 연동 개발 팀원·운영자의 관리 엔드포인트(`/v1/admin/models`) 조회 권한 | UC9, UC11 | 낮음 |
 | U18 | 연동 오류(`invalid_input` 등)의 분류. Intent 오류 분류 5종(엔진 다운·시간 초과·저장소·DB·모델 미준비)에 없다 | UC3, UC12 | 낮음 |
 | U19 | 보호자 계정 세부: 비밀번호 규칙 · 확인·재설정 링크 유효 시간 · 메일 발송 서비스(SMTP) 선정과 발신 주소 · 탈퇴한 이메일로 재가입 허용 · 가입 공개 범위(누구나/초대) · 가입·찾기 요청 한도 · 메일 문구 | UC13, UC14 | 중간. 메일 발송 서비스가 정해져야 가입과 찾기가 실제로 동작한다 |
+| U20 | 공동 보호자 세부: 한 계정의 여러 가족 소속(현재 한 가족 [추론]) · 공동 보호자의 초대 권한(현재 허용 [추론]) · 만든 보호자의 탈퇴·권한 이전 · 초대 유효 기간(예시 7일) · 가족당 보호자 수 상한 · 나간 계정의 "가족 없음" 상태 처리 | UC15 | 중간. 만든 보호자가 떠나면 가족 공간 관리자가 없어진다 |
 
 ### 9.5 다음 단계 권고
 
