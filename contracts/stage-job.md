@@ -155,6 +155,20 @@ external:         { concurrency_per_group: 1 }         # [예시값 U12]
 
 외부 호출(UC12)은 같은 어댑터·활성 버전을 쓰되 `external_job`에서 점유한다(보완 S4의 `claimed_by`·`claim_expires_at`·`available_at`). 워커는 매 점유 주기에 **`stage_job`을 먼저** 보고, 비었고 외부 몫(서빙군별 1)이 남을 때만 `external_job`을 점유한다(D17). 입력·출력은 `STORAGE_ROOT/ext/{ext_job_id}/`에만, `result_temp_ref`로 가리키고 전달 뒤 NULL(`chk_ej_delivered`). `pose`는 M3 관절 + M4만(렌더 없음). 결과 분류 `result_class`는 `ok`·`quality_below`, 오류는 `error_class`(배타, `chk_ej_exclusive`).
 
+세부(2026-09-28 추가, B — T122 워커):
+
+| func | 모델(순서) | 서빙군 | 어댑터 단계 이름 | `result.json` 필드(ExtResult) |
+|---|---|---|---|---|
+| `segment` | M1 | `cpu_vision` | `split` | `segment{maskPng, cutoutPng}`(base64) |
+| `classify` | M2 | `cpu_vision` | `judge`(M2만) | `classify{kind, tags}` — 점수 없음 |
+| `pose` | M3 → M4 규칙 | `cpu_vision` | `judge`(M3만) | `pose{joints[{name,x,y}], geometryRulePassed}` |
+| `relief` | M1 → M5 | M5가 있는 서빙군(`GPU_ENABLED`면 `gpu`, 아니면 `cpu_vision`) | `split` → `depth_relief` | `relief{cutoutPng, depthPng16}` |
+
+- **점유**: 서빙군별 외부 동시 1건은 DB 이름 잠금 `GET_LOCK('uam_ext_{group}', 0)`으로 지킨다(작업 동안 유지, 끝나면 해제). 잠금을 못 얻거나 필요한 모델이 `ready`가 아니면 점유하지 않는다. `gpu` 워커의 `relief`는 M1을 필요할 때 올린다(미리 올리지 않음, [추론 U2]).
+- **분류**: `ok` → `status=done`, `result_class=ok`. `quality_below`(예: `relief`의 M1 분리 미달) → `done`, `result_class=quality_below`, 결과 필드 없이 `{}`. 인프라 5종 → 시도 3회 미만이면 `queued` + `available_at` 10초·60초 뒤, 3회째면 `failed` + `error_class`. 낮춤 체인은 타지 않는다(외부 결과는 요청한 기능 하나).
+- **파일**: 어댑터 임시 결과는 `ext/{ext_job_id}/work/`에 두고, `result.json`을 쓴 뒤 `work/`를 지운다. `result_temp_ref = ext/{ext_job_id}/result.json`. 입력은 전달(또는 만료) 때 폴더째 지운다.
+- **이어받기**: sweeper가 `running`이고 `claim_expires_at`이 지난 외부 작업을 `stage_job`과 같게 처리한다(3회 미만 `queued`, 3회째 `failed`·`engine_down`). heartbeat 20초마다 점유 연장.
+
 ## 10. 로그 필드 (BR-PRV-01)
 
 JSON 한 줄: `ts, level, worker, job_id, stage_kind, model_id, version_label, attempt_count, status, error_class, downgrade_cause, duration_ms`. 객체 키·파일 경로·별칭·제목·한마디·키워드·예외 원문은 넣지 않는다.
