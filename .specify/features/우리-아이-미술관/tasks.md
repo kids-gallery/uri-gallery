@@ -332,6 +332,13 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T148 (C 완료 2026-09-29 — `.gitlab-ci.yml` web 작업, DEPLOY rsync) [P] 웹 CI·배포 경로를 맞춘다: `.gitlab-ci.yml`에 `web` 작업(lint·type·Vitest), DEPLOY의 `web/dist`를 nginx `root /srv/uam/web/dist`로 복사하는 단계(지금은 빌드만 하고 옮기지 않음) — `.gitlab-ci.yml` · `ops/DEPLOY.md` · 담당 C(D21) · 스킬 — · 근거 R-19, T140
 - [ ] T150 [P] 화면 문구 정본을 만든다(D22 ⑦): SD_02 문구를 화면·게이트·reason·근거 BR로 모은 `docs/C_화면문구.md` 초안 → 신지현 검토로 U10 닫음 — `docs/C_화면문구.md` · 담당 C · 스킬 — · 근거 U10, R-20
 
+### RBAC 정리 (D24, 2026-09-29 최호준 요청)
+
+- [ ] T158 [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
+- [ ] T159 [P] 팀원 계정 관리 CLI를 넓힌다: `ops:staff add·grant·revoke·disable·enable·passwd·list`(정지·비밀번호 변경 시 그 팀원 세션 삭제, 원문 비밀번호는 표준 입력만) — `api/scripts/ops/staff.ts` · `ops/DEPLOY.md` §1 · 담당 A(최호준, 사용자 지시) · 스킬 — · 근거 D24 ③
+- [ ] T160 보호자 비밀번호 변경(로그인 상태) `POST /v1/auth/password` — 현재 비밀번호 확인·재설정과 같은 규칙·다른 기기 세션 무효·이 기기 새 세션·틀림은 로그인 실패 한도 — `api/src/modules/auth/routes.ts` · 시험 `api/tests/rbac.test.ts` · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24 ④, UC14 A5
+- [ ] T161 보호자 비밀번호 변경 화면(설정 메뉴에서, UC14 A5) — `web/src/app/views/*` · 담당 B(웹, 후속) · 스킬 FD · 근거 D24 ④
+
 ---
 
 ## Dependencies

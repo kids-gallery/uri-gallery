@@ -154,6 +154,28 @@ paths:
         '400': { $ref: '#/components/responses/TokenInvalid' }
         '422': { description: '새 비밀번호 규칙 위반·확인 불일치 — 토큰은 아직 쓴 것으로 보지 않는다(UC14 E3)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
         '503': { $ref: '#/components/responses/NotSaved' }
+  /v1/auth/password:
+    post:
+      tags: [인증]
+      summary: 로그인한 보호자의 비밀번호 변경 (UC14 A5, D24)
+      description: 현재 비밀번호를 확인하고 새 비밀번호(재설정과 같은 규칙)로 바꾼다. password_changed_at 갱신으로 다른 기기의 세션은 모두 무효가 되고, 지금 기기에는 새 세션 쿠키를 준다(로그인 유지). 현재 비밀번호가 틀리면 바꾸지 않고 로그인 실패와 같은 요청 한도를 센다.
+      security: [{ guardianSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, password, passwordConfirm]
+              properties:
+                currentPassword: { type: string }
+                password: { type: string, minLength: 8 }
+                passwordConfirm: { type: string }
+      responses:
+        '204': { description: 바뀜. 다른 기기 세션 무효, 이 기기는 새 `uam_sid` 쿠키 }
+        '422': { description: '새 비밀번호 규칙 위반·확인 불일치(invalid_fields) 또는 현재 비밀번호 틀림(reason current_password_mismatch)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '429': { description: 현재 비밀번호를 여러 번 틀림(로그인 실패와 같은 한도, reason login_attempts), content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '503': { $ref: '#/components/responses/NotSaved' }
   /v1/ops/auth/login:
     post:
       tags: [인증]
@@ -190,7 +212,9 @@ paths:
       tags: [인증]
       summary: 로그인한 팀원 상태 — 역할·가린 계정 (C9 운영 셸, 새로고침 뒤 복원, D21)
       description: 역할 목록으로 SD_02 §2-1 역할별 메뉴 표의 메뉴만 그린다.
-      security: [{ staffSession: [] }]
+      security: [{ staffSession: [operator, evaluator, integrator] }]
+      x-permission: staff.me   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
+      x-permission: staff.me
       responses:
         '200':
           description: 팀원 상태
@@ -817,6 +841,7 @@ paths:
       tags: [운영]
       summary: 서비스·모델별 지표 (UC8, S10, FR-13·26, BR-OPS-02~04) — 세 역할 읽기(D21, UC9 A1·UC11 A5)
       security: [{ staffSession: [operator, evaluator, integrator] }]
+      x-permission: metrics.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: from, in: query, required: false, schema: { type: string, format: date-time }, description: '없으면 전체 기간(SD_03 v_metrics_* 뷰). 서비스 지표는 artwork_outcome.confirmed_at·first_decided_at, 모델 지표는 stage_job.finished_at 기준(SD_03 §19 #18)' }
         - { name: to, in: query, required: false, schema: { type: string, format: date-time } }
@@ -832,6 +857,7 @@ paths:
       tags: [운영]
       summary: 결과 미도달 개별 목록 (FR-13, SD_01 7.7) — 단계 작업 번호·모델·오류 분류만
       security: [{ staffSession: [operator] }]
+      x-permission: unreached.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       responses:
         '200':
           description: 목록
@@ -847,6 +873,7 @@ paths:
       tags: [운영]
       summary: 모델 적재 상태 (S11 "모델 상태" 표, A `A_모델적재_화면요구` §4) — model-api `/internal/models` 프록시
       security: [{ staffSession: [operator, evaluator, integrator] }]
+      x-permission: models.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       responses:
         '200':
           description: 모델별 활성 버전·장치·적재 상태(가족 데이터 없음)
@@ -864,6 +891,7 @@ paths:
       tags: [운영]
       summary: 지금 불러오기 (S11) — model-api `/internal/models/{id}/warmup` 프록시. gate_event 없음(운영 동작)
       security: [{ staffSession: [operator, evaluator] }]
+      x-permission: models.warmup   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: modelId, in: path, required: true, schema: { type: string, enum: [M1, M2, M3, M5, M6, M7] } }
       responses:
@@ -883,6 +911,7 @@ paths:
       tags: [관리]
       summary: 매니페스트 조회 M1~M7 (UC9, S11, FR-24)
       security: [{ staffSession: [evaluator, operator, integrator] }]
+      x-permission: models.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       responses:
         '200':
           description: 모델과 버전
@@ -898,6 +927,7 @@ paths:
       tags: [관리]
       summary: 후보 버전 등록 — models/manifest.yaml의 항목을 DB로 (research R-16)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -918,6 +948,7 @@ paths:
       tags: [관리]
       summary: 평가 묶음 전체 실행 (UC9, FR-17, G20·G21)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -940,6 +971,7 @@ paths:
       tags: [관리]
       summary: 평가 진행·보고서 (UC9 8.4·8.5)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: runId, in: path, required: true, schema: { type: string } }
       responses:
@@ -952,6 +984,7 @@ paths:
       tags: [관리]
       summary: 판단 기록 — 통과/보류와 근거 (UC9 8.6)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: runId, in: path, required: true, schema: { type: string } }
       requestBody:
@@ -980,6 +1013,7 @@ paths:
       tags: [관리]
       summary: 승격 (UC9, BR-MDL-03·07, D5, G22) — 라이선스 확인 + 완료·통과 평가 필수
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -1005,6 +1039,7 @@ paths:
       tags: [관리]
       summary: 롤백 — 재평가 없이 즉시, 새 작업부터 (D5)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -1033,6 +1068,7 @@ paths:
       tags: [관리]
       summary: 비활성화(clarify 2026-09-28 — 롤백 후보 없는 첫 버전 문제) — 활성 버전을 retired로, release_event deactivate. 그 모델이 필요한 확정 선택지는 막힌다
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -1059,6 +1095,7 @@ paths:
       tags: [관리]
       summary: 평가 묶음 목록 (FR-17)
       security: [{ staffSession: [evaluator, integrator, operator] }]
+      x-permission: models.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       responses:
         '200':
           description: 평가 항목(시험 호출 선택용 포함)
@@ -1071,6 +1108,7 @@ paths:
       tags: [관리]
       summary: 평가 항목 등록 — 팀원 제작 작품만 (BR-MDL-04, G20)
       security: [{ staffSession: [evaluator] }]
+      x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -1098,6 +1136,7 @@ paths:
       tags: [운영]
       summary: "'API활용' 엔드포인트 탭 원천 — app-api + model-api 명세 4묶음과 활성 버전 대조 (UC11, BR-API-07·08, U17)"
       security: [{ staffSession: [operator, integrator] }]
+      x-permission: apiGuide.use   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       responses:
         '200':
           description: 합친 명세와 대조 결과. 모델 명세를 못 읽으면 마지막 확인 명세와 시각
@@ -1133,6 +1172,7 @@ paths:
         model-api `/v1/models/{function}`을 대신 호출한다. 가족 작품 ID는 받지 않는다. `evalItemId`는 사진이 있는 평가 묶음 항목이어야 한다 —
         없거나 설명 입력 항목이면 422 `not_eval_item`(G23). 시험 키가 설정되지 않았으면 503 `not_saved`/`test_key_missing`. model-api 거절(401·403·413·422·429·503)은 같은 상태와 코드로 전달한다.
       security: [{ staffSession: [operator, integrator] }]
+      x-permission: apiGuide.use   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
         content:
@@ -1155,6 +1195,7 @@ paths:
       tags: [운영]
       summary: 시험 호출 상태·결과(H16) — 결과 분류·모델 ID·버전·처리 시간·오류 분류
       security: [{ staffSession: [operator, integrator] }]
+      x-permission: apiGuide.use   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
       responses:
