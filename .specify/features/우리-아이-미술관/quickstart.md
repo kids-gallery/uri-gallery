@@ -190,7 +190,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:9541/v1/models
 
 ```bash
 cd api && npm test                 # Vitest + Supertest (로컬 MariaDB uam_test)
-cd web && npm test && npx playwright test   # 390px·1440px
+cd web && npm test && npx playwright test   # 390px·1440px — e2e/stack이 임시 MariaDB·app-api(9621)·Mailpit(1125/8125)을 따로 띄움, 웹 9613(WEB_PORT). 팀 DB·p1에 붙지 않음
 cd serving && pytest               # 어댑터·워커·장애 주입
 npx @redocly/cli lint .specify/features/우리-아이-미술관/contracts/*.yaml
 ```
