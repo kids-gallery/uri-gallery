@@ -229,7 +229,7 @@ export const ko = {
     readyTitle: '준비 - 모델별', colModel: '모델', colGroup: '서빙군', colState: '상태', colImpact: '영향',
     group: { cpu_vision: 'CPU 비전', gpu: 'GPU', llm: 'LLM', external: '외부' } as Record<string, string>,
     shortName: { M1: 'M1 분리', M2: 'M2 판정', M3: 'M3 움직임', M5: 'M5 깊이', M6: 'M6 설명', M7: 'M7 3D' } as Record<string, string>,
-    longName: { M1: 'M1 BiRefNet', M2: 'M2 OpenCLIP', M3: 'M3 Animated Drawings', M5: 'M5 Depth Anything', M6: 'M6 Qwen3-4B', M7: 'M7 TripoSR' } as Record<string, string>,
+    longName: { M4: 'M4 관절 기하 규칙', M1: 'M1 BiRefNet', M2: 'M2 OpenCLIP', M3: 'M3 Animated Drawings', M5: 'M5 Depth Anything', M6: 'M6 Qwen3-4B', M7: 'M7 TripoSR' } as Record<string, string>,
     impact: {
       M1: '잘라 내기 없이 원본으로', M2: '제안 없이 확정', M3: '움직임 - 액자 경로는 동작', M5: '입체 부조 - 액자 경로는 동작',
       M6: '설명 - 기본 문장·직접 쓰기', M7: '3D 비노출', cpu: '처리 시간 증가',
