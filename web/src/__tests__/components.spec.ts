@@ -7,6 +7,8 @@ import ReasonButton from '../components/ReasonButton.vue';
 import JourneyRail from '../components/JourneyRail.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import RoleHeader from '../components/RoleHeader.vue';
+import StoryCard from '../components/StoryCard.vue';
+import { ko } from '../copy/ko';
 import type { BlockNotice as Notice } from '../api/client';
 
 const notice = (o: Partial<Notice> = {}): Notice => ({ variant: 'block', gate: 'G11', summary: '저장하지 못했어요', reason: '그린 날은 오늘 이후일 수 없어요', releaser: '보호자 - 지금 이 화면', self: true, actions: ['그린 날 고치기'], fields: [], ...o });
@@ -97,5 +99,26 @@ describe('C4 StatusBadge · C9 RoleHeader', () => {
     expect(w.html()).not.toContain('/app');
     await w.find('button').trigger('click');
     expect(w.emitted('logout')).toHaveLength(1);
+  });
+});
+
+describe('C7 이야기 카드(T093)', () => {
+  const item = { id: '1', title: '해님', madeOn: '2026-09-01', ageAtMaking: 6, kind: 'frame', childWords: '해가 웃어', guardianNote: '밝은 색이 좋아요',
+    aiCaption: { body: '해를 그린 작품이에요.' } } as never;
+  it('한마디(원문) · 보호자 감상평 · AI 해설을 다른 칸에 둔다(UX5)', () => {
+    const w = mount(StoryCard, { props: { item, alias: '하늘', titleId: 't1' } });
+    expect(w.find('h1#t1').text()).toBe('해님');
+    expect(w.find('.wl-words').text()).toBe('해가 웃어');
+    const blocks = w.findAll('.wl-block');
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.text()).toContain('밝은 색이 좋아요');
+    expect(blocks[1]!.attributes('data-ai')).toBe('1');
+    expect(blocks[1]!.text()).toContain(ko.museum.commentary);
+    expect(blocks[1]!.text()).not.toContain('해가 웃어');
+    expect(w.find('.wl-desc').text()).not.toContain('해를 그린 작품이에요');
+  });
+  it('감상평·AI 해설이 없으면 칸도 없다', () => {
+    const w = mount(StoryCard, { props: { item: { ...(item as object), guardianNote: null, aiCaption: null } as never, alias: '하늘' } });
+    expect(w.findAll('.wl-block')).toHaveLength(0);
   });
 });

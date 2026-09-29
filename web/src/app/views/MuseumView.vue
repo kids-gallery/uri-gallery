@@ -13,6 +13,7 @@ import { api } from '@/api/client';
 import type { BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
 import ArtFrame from '@/components/ArtFrame.vue';
+import StoryCard from '@/components/StoryCard.vue';
 import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
@@ -55,8 +56,6 @@ const wallOf = (i: number) => `var(--museum-${WALLS[i % WALLS.length]})`;
 const roomIndexOf = (it: Item) => Math.max(0, rooms.value.findIndex((r) => r.items.some((x) => x.id === it.id)));
 
 function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
-const yearOf = (d: string) => d.slice(0, 4);
-const monthOf = (d: string) => Number(d.slice(5, 7));
 
 async function load() {
   if (!childId.value) return;
@@ -131,24 +130,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
         </div>
         <aside ref="labelEl" class="walllabel" tabindex="-1" aria-live="polite">
           <button class="wl-back" type="button" @click="back"><span aria-hidden="true">←</span> {{ ko.museum.back }}</button>
-          <p class="wl-eyebrow">{{ ko.museum.label }}</p>
-          <h1 id="wl-title" class="wl-title">{{ open.title }}</h1>
-          <p class="wl-artist">{{ ko.museum.artist(alias, open.ageAtMaking, yearOf(open.madeOn)) }}</p>
-          <p class="wl-kind">{{ ko.museum.kind[open.kind] }}</p>
-          <p class="wl-desc">
-            {{ ko.museum.intro(open.title, alias, open.ageAtMaking, yearOf(open.madeOn), monthOf(open.madeOn)) }}
-            <template v-if="open.childWords">{{ ko.museum.wordsBefore }}<span class="wl-words">{{ open.childWords }}</span>{{ ko.museum.wordsAfter }}</template>
-            <template v-if="ko.museum.kindLine[open.kind]">{{ ko.museum.kindLine[open.kind] }}</template>
-          </p>
-          <p v-if="open.backsideEstimated" class="wl-note">{{ ko.gallery.backside }}</p>
-          <div v-if="open.guardianNote" class="wl-block">
-            <p class="wl-h">{{ ko.museum.guardianNote }}</p>
-            <p class="wl-note-text">{{ open.guardianNote }}</p>
-          </div>
-          <div v-if="open.aiCaption?.body" class="wl-block">
-            <p class="wl-h">{{ ko.museum.commentary }}</p>
-            <p>{{ open.aiCaption.body }}</p>
-          </div>
+          <StoryCard :item="open" :alias="alias" title-id="wl-title" />
           <div v-if="open.kind !== 'frame'" class="wl-acts">
             <button v-if="open.kind === 'animated' && !showOriginal && open.primaryUrl && !reducedMotion()" class="btn btn-light" type="button" :aria-pressed="playing"
               @click="playing = !playing">{{ playing ? ko.museum.stop : ko.museum.play }}</button>
@@ -373,17 +355,6 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
   max-width:420px;width:100%;box-shadow:0 14px 30px rgba(0,0,0,.4),inset 0 0 0 4px var(--museum-marble-1),inset 0 0 0 5px var(--museum-gold-2)}
 .wl-back{justify-self:start;background:none;border:1px solid var(--museum-gold-3);border-radius:var(--r-pill);padding:6px 14px;font:540 15px/1 var(--font-sans);color:var(--museum-ink);cursor:pointer}
 .wl-back:hover{background:color-mix(in srgb,var(--museum-gold-1) 40%,transparent)}
-.wl-eyebrow{font:400 12px/1 var(--font-mono);letter-spacing:.6px;color:var(--museum-gold-3)}
-.wl-title{margin:0;font:600 26px/1.3 var(--font-sans)}
-.wl-title::before{content:"「"}.wl-title::after{content:"」"}
-.wl-artist{font:400 15px/1.4 var(--font-sans)}
-.wl-kind{font:400 13px/1.4 var(--font-mono);letter-spacing:.3px;border-top:1px solid var(--museum-gold-2);padding-top:var(--s-sm)}
-.wl-desc{font:330 17px/1.7 var(--font-sans)}
-.wl-words{font-weight:540}
-.wl-note{font:330 14px/1.45 var(--font-sans)}
-.wl-block{display:grid;gap:4px;border-top:1px solid var(--museum-gold-2);padding-top:var(--s-sm)}
-.wl-h{font:400 12px/1 var(--font-mono);letter-spacing:.6px;color:var(--museum-gold-3)}
-.wl-note-text{font:330 italic 16px/1.6 var(--font-sans)}
 .wl-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
 .btn-light{background:var(--museum-ink);color:var(--museum-marble-1);padding:8px 16px;font-size:16px}
 .viewing-floor{height:56px;transform:perspective(220px) rotateX(40deg);transform-origin:top;margin:0 -12%}
