@@ -1,4 +1,4 @@
-// 아이 API(T051, UC1, FR-1 v2.2, BR-CHD-01·02, G4). 별칭만 받는다. 중복 검사 없음 — 같으면 저장하고 aliasDuplicate로 안내(D18).
+// 아이 API(T051, UC1, FR-1 v2.2, BR-CHD-01·02, G4). 별칭만 받는다. 별칭은 앞뒤 공백 뺀 1~20자(D22, T149). 중복 검사 없음 — 같으면 저장하고 aliasDuplicate로 안내(D18).
 // 다른 가족 아이는 404로 존재를 숨긴다(G0). 삭제는 US5(deletion 모듈).
 import { Router } from 'express';
 import type { Pool } from 'mysql2/promise';
@@ -14,7 +14,7 @@ function cleanAlias(body: unknown): string {
   if (!r.success) throw new Problem('validation_failed', 'invalid_fields', 'G4');
   const alias = r.data.alias.trim();
   if (!alias) throw new Problem('validation_failed', 'alias_blank', 'G4', [{ name: 'alias', reason: 'blank' }]);
-  if ([...alias].length > 100) throw new Problem('validation_failed', 'alias_too_long', 'G4', [{ name: 'alias', reason: 'too_long' }]);
+  if ([...alias].length > 20) throw new Problem('validation_failed', 'alias_too_long', 'G4', [{ name: 'alias', reason: 'too_long' }]);
   return alias;
 }
 

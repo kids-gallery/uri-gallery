@@ -32,6 +32,14 @@ describe('아이 등록·조회·수정', () => {
     const [ge] = await t.db.query(`SELECT gate_id, reason_code FROM gate_event WHERE gate_id = 'G4'`);
     expect((ge as { reason_code: string }[]).map((g) => g.reason_code)).toContain('alias_blank');
   });
+  it('별칭은 앞뒤 공백 뺀 1~20자(D22, T149): 20자는 저장, 21자는 422 alias_too_long(G4)', async () => {
+    const a = await family('len@test.local');
+    const twenty = '가'.repeat(20);
+    expect((await a.post('/v1/children').send({ alias: `  ${twenty}  ` }).expect(201)).body.alias).toBe(twenty);
+    const r = await a.post('/v1/children').send({ alias: '가'.repeat(21) });
+    expect(r.status).toBe(422);
+    expect(r.body).toMatchObject({ reason: 'alias_too_long', gate: 'G4' });
+  });
   it('다른 가족의 아이는 목록에 없고 수정은 404(G0)', async () => {
     const a = await family('c@test.local');
     const b = await family('d@test.local');
