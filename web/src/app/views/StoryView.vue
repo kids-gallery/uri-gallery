@@ -17,13 +17,13 @@ import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, loadArtwork, railOf, resultImage, type ArtworkDetail } from '../artwork';
 import ArtFrame from '@/components/ArtFrame.vue';
 
-interface Form { title: string; madeOn: string; age: string; words: string }
+interface Form { title: string; madeOn: string; age: string; words: string; note: string }
 const route = useRoute();
 const router = useRouter();
 const id = String(route.params.id);
 const DRAFT = `uam.storyDraft.${id}`;
 const a = ref<ArtworkDetail | null>(null);
-const f = ref<Form>({ title: '', madeOn: '', age: '', words: '' });
+const f = ref<Form>({ title: '', madeOn: '', age: '', words: '', note: '' });
 const base = ref<string | null>(null);
 const busy = ref(false);
 const block = ref<Notice | null>(null);
@@ -36,7 +36,8 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const futureDate = computed(() => !!f.value.madeOn && f.value.madeOn > today());
 const badAge = computed(() => f.value.age !== '' && !(/^\d{1,2}$/.test(f.value.age) && Number(f.value.age) <= 18));
 const longTitle = computed(() => [...f.value.title].length > 100);
-const why = computed(() => (futureDate.value ? ko.story.fixDate : badAge.value ? ko.story.ageRange : longTitle.value ? ko.story.titleLong : busy.value ? ko.upload.sending : ''));
+const longNote = computed(() => [...f.value.note].length > 1000);
+const why = computed(() => (futureDate.value ? ko.story.fixDate : badAge.value ? ko.story.ageRange : longTitle.value ? ko.story.titleLong : longNote.value ? ko.story.noteLong : busy.value ? ko.upload.sending : ''));
 const rail = computed(() => (a.value ? railOf(a.value.state) : null));
 const reviewed = computed(() => a.value?.state === 'approved' || a.value?.state === 'exhibited');
 const storyDone = computed(() => !!(a.value?.story?.title && a.value.story.madeOn && a.value.story.ageAtMaking != null));
@@ -44,7 +45,7 @@ const storyDone = computed(() => !!(a.value?.story?.title && a.value.story.madeO
 function fill(d: ArtworkDetail) {
   a.value = d;
   const s = d.story ?? {};
-  f.value = { title: s.title ?? '', madeOn: s.madeOn ?? '', age: s.ageAtMaking == null ? '' : String(s.ageAtMaking), words: s.childWords ?? '' };
+  f.value = { title: s.title ?? '', madeOn: s.madeOn ?? '', age: s.ageAtMaking == null ? '' : String(s.ageAtMaking), words: s.childWords ?? '', note: s.guardianNote ?? '' };
   base.value = s.updatedAt ?? null;
 }
 const readDraft = (): Form | null => { try { const v = localStorage.getItem(DRAFT); return v ? JSON.parse(v) as Form : null; } catch { return null; } };
@@ -61,7 +62,8 @@ async function save() {
   const sent = { ...f.value };
   const body = {
     title: sent.title.trim() || null, madeOn: sent.madeOn || null,
-    ageAtMaking: sent.age === '' ? null : Number(sent.age), childWords: sent.words === '' ? null : sent.words, baseUpdatedAt: base.value,
+    ageAtMaking: sent.age === '' ? null : Number(sent.age), childWords: sent.words === '' ? null : sent.words,
+    guardianNote: sent.note === '' ? null : sent.note, baseUpdatedAt: base.value, // D24 보호자 감상평 — 원문 그대로
   };
   try {
     const d = await api.put<ArtworkDetail>(`/v1/artworks/${encodeURIComponent(id)}/story`, { body });
@@ -129,11 +131,17 @@ function dropDraft() { draft.value = null; clearDraft(); }
           <label for="st-words">{{ ko.story.words }}</label>
           <textarea id="st-words" v-model="f.words" class="input" rows="3" maxlength="2000"></textarea>
         </div>
+        <div class="field">
+          <label for="st-note">{{ ko.story.note }}</label>
+          <textarea id="st-note" v-model="f.note" class="input" :class="{ 'is-error': longNote }" rows="3" aria-describedby="st-note-h"></textarea>
+          <p id="st-note-h" class="hint">{{ ko.story.noteHint }}</p>
+        </div>
         <BlockNotice v-if="block" :notice="block" @action="onBlock" />
         <section v-if="mine" class="tile t-body-sm" aria-label="내가 적은 내용">
           <p><b>{{ ko.story.mine }}</b></p>
           <p>{{ ko.story.title }}: {{ mine.title }} · {{ ko.story.madeOn }}: {{ mine.madeOn }} · {{ ko.story.age }}: {{ mine.age }}</p>
           <p v-if="mine.words">{{ mine.words }}</p>
+          <p v-if="mine.note">{{ ko.story.note }}: {{ mine.note }}</p>
         </section>
         <div class="acts">
           <ReasonButton :label="ko.story.save" :disabled="!!why" :reason="why" @click="save"

@@ -41,8 +41,9 @@ watch(() => props.playing, (p) => {
 /* 위에서 비추는 조명(부채꼴) */
 .artframe.lit::before{content:"";position:absolute;top:-8px;left:50%;width:min(180%,100vw);height:calc(100% + 24px);transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(ellipse 50% 60% at 50% 0,rgba(255,255,255,.75),rgba(255,255,255,0) 70%)}
-.frame{position:relative;background:var(--color-ink);padding:6px;border-radius:2px;box-shadow:var(--elev-3),0 2px 0 rgba(0,0,0,.35)}
-.mat{background:var(--color-canvas);padding:14px;display:grid;place-items:center}
+/* 흑백 액자 — 테두리 두 겹(바깥 검정 + 안쪽 가는 회색 선) + 흰 매트 + 벽에 드리운 그림자 */
+.frame{position:relative;background:var(--color-ink);padding:7px;border-radius:2px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--color-canvas) 22%,var(--color-ink)),var(--elev-3),0 3px 0 rgba(0,0,0,.35)}
+.mat{background:var(--color-canvas);padding:14px;display:grid;place-items:center;box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
 .is-sm .mat{padding:10px}
 .is-lg .mat{padding:24px}
 .mat img,.mat video{display:block;height:var(--art-h,200px);width:auto;max-width:min(calc(100vw - 96px),var(--art-max-w,340px));object-fit:contain}

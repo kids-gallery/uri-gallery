@@ -36,7 +36,8 @@ const rooms = computed(() => g.value?.groups ?? []);
 const count = computed(() => rooms.value.reduce((n, r) => n + r.items.length, 0));
 
 const WALLS = ['cream', 'mint', 'lilac', 'pink', 'lime', 'coral'];
-const wallOf = (i: number) => `color-mix(in srgb,var(--color-block-${WALLS[i % WALLS.length]}) 55%,var(--color-canvas))`;
+// D24 ⑤ 전시실 예외: 토큰 파스텔을 석조 톤과 반씩 섞어 채도를 낮춘다(미술관 벽처럼 차분하게)
+const wallOf = (i: number) => `color-mix(in srgb,var(--color-block-${WALLS[i % WALLS.length]}) 50%,var(--stone))`;
 
 function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
 
@@ -93,6 +94,10 @@ async function goRoom(age: number) {
           <div v-if="open.childWords" class="wl-block">
             <p class="wl-h">{{ ko.museum.childWords }}</p>
             <p class="wl-words">{{ open.childWords }}</p>
+          </div>
+          <div v-if="open.guardianNote" class="wl-block">
+            <p class="wl-h">{{ ko.museum.guardianNote }}</p>
+            <p class="wl-note-text">{{ open.guardianNote }}</p>
           </div>
           <div v-if="open.aiCaption?.body" class="wl-block">
             <p class="wl-h">{{ ko.museum.commentary }}</p>
@@ -188,6 +193,11 @@ async function goRoom(age: number) {
   padding-bottom:var(--s-section);word-break:keep-all;overflow-x:clip;min-height:100vh}
 /* 로비 — 천장에서 끈 두 줄로 걸린 배너 */
 .lobby{padding:var(--s-xl) 0 var(--s-lg);position:relative}
+/* 입구 홀 기둥(홈 파인 기둥, 넓은 화면만) — 흰 선과 그림자 줄무늬 */
+.lobby-in{position:relative}
+@media (min-width:961px){.lobby-in::before,.lobby-in::after{content:"";position:absolute;top:-32px;bottom:-24px;width:56px;border-radius:6px 6px 0 0;
+  background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--color-canvas) 70%,var(--stone)) 0 8px,color-mix(in srgb,var(--color-ink) 10%,var(--stone)) 8px 11px);
+  box-shadow:var(--elev-2)}.lobby-in::before{left:var(--s-xl)}.lobby-in::after{right:var(--s-xl)}}
 .lobby::before{content:"";position:absolute;inset:0 0 auto;height:14px;background:linear-gradient(180deg,color-mix(in srgb,var(--color-ink) 18%,transparent),transparent)}
 .lobby-in{display:grid;gap:var(--s-md);justify-items:center;text-align:center}
 .banner{background:var(--color-block-lime);border-radius:0 0 var(--r-lg) var(--r-lg);padding:var(--s-xl) var(--s-xxl) var(--s-xxl);position:relative;box-shadow:var(--elev-3);max-width:720px;width:100%}
@@ -246,6 +256,7 @@ async function goRoom(age: number) {
 .wl-block{display:grid;gap:4px;border-top:1px solid rgba(255,255,255,.25);padding-top:var(--s-sm)}
 .wl-h{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase;opacity:.8}
 .wl-words{font:330 20px/1.45 var(--font-sans)}
+.wl-note-text{font:330 italic 17px/1.55 var(--font-sans);opacity:.95}
 .wl-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
 .btn-light{background:var(--color-inverse-ink);color:var(--color-ink);padding:8px 16px;font-size:16px}
 .btn-ghost{background:transparent;color:var(--color-inverse-ink);border:1px solid rgba(255,255,255,.5);padding:8px 16px;font-size:16px}

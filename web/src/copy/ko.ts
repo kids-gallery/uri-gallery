@@ -214,6 +214,8 @@ export const ko = {
     exhibitTitle: '전시 조건', condReview: '결과 확인 완료', condStory: '제목 - 그린 날 - 나이 저장', condNote: '두 가지가 갖춰지면 전시에 걸려요',
     fixDate: '그린 날을 고쳐 주세요', ageRange: '나이는 0살부터 18살까지예요', titleLong: '제목은 100자까지예요', // [추론] 나이·제목
     mine: '내가 적은 내용', // [추론]
+    // D24 보호자 감상평(docs/C_화면문구.md 전시실 홈 절)
+    note: '보호자 감상평 - 선택 - 적은 그대로 보여요', noteHint: '작품을 보고 느낀 점을 적어 주세요', noteLong: '감상평은 1000자까지예요', // [추론]
   },
   gallery: {
     child: '아이', search: '제목 - 그린 날 찾기', age: (n: number) => `${n}살`,
@@ -231,7 +233,7 @@ export const ko = {
     preparing: (n: number) => `전시 준비 중인 작품 ${n}점`, manage: '작품 관리', // [추론]
     kind: { animated: '움직이는 그림 - 누르면 움직여요', relief: '입체 부조', frame: '액자 작품', sculpture: '3D 조각' } as Record<string, string>, // [추론] 움직이는 그림·액자 작품
     play: '움직여 보기', stop: '멈추기', showOriginal: '원본 보기', showWork: '작품 보기', back: '전시실로', // [추론]
-    childWords: '아이의 한마디', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
+    childWords: '아이의 한마디', guardianNote: '보호자 감상평', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
   },
   /** S1b~S1d 공동 보호자(docs/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
