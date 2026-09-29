@@ -2,6 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 import { inject } from 'vitest';
+import * as OpenApiValidator from 'express-openapi-validator';
 import { loadConfig } from '../../src/config.js';
 import { createApp } from '../../src/app.js';
 import { buildRouters } from '../../src/routes.js';
@@ -23,9 +24,31 @@ export function fakeLlm() {
 
 /** 시험용 model-api — models를 바꿔 끼워 적재 상태를 흉내 낸다(null = 응답 없음). */
 export function fakeModelApi() {
-  const f = { list: null as unknown[] | null, warmStatus: 202, async models() { return f.list; }, async warmup(id: string) { return { status: id === 'M6' ? 409 : f.warmStatus, body: { modelId: id } }; } };
+  // 응답은 model-api 계약 ModelLoadStatus 모양으로 채운다(필수 modelId·licenseConfirmed·hint — T024 응답 검증)
+  const full = (m: Record<string, unknown>) => ({ activeVersion: null, execDevice: null, runtime: null, licenseConfirmed: false, load: null, hint: null, ...m });
+  const f = {
+    list: null as Record<string, unknown>[] | null, warmStatus: 202,
+    async models() { return f.list && f.list.map(full); },
+    async warmup(id: string) { return { status: id === 'M6' ? 409 : f.warmStatus, body: full({ modelId: id, load: { state: 'loading' }, hint: 'model_loading' }) }; },
+  };
   return f;
 }
+
+/** 계약(contracts/openapi.yaml)과 어긋난 응답 — 시험 모드 응답 검증(T024). 파일마다 비어 있어야 한다 */
+export const contractViolations: string[] = [];
+const SPEC = path.resolve(__dirname, '..', '..', '..', 'contracts', 'openapi.yaml');
+const responseValidator = () => OpenApiValidator.middleware({
+  apiSpec: SPEC, validateRequests: false, validateSecurity: false, fileUploader: false, ignoreUndocumented: true, validateApiSpec: false,
+  validateResponses: {
+    onError: (err, body, req) => {
+      // D21: 보호자·운영 경로 공통 오류(401, 403 forbidden_role, 409 no_family)는 계약 머리말에만 적는다
+      const b = body as { status?: number; reason?: string } | undefined;
+      if (/status code '(401|403)'/.test(err.message)) return;
+      if (/status code '409'/.test(err.message) && b?.reason === 'no_family') return;
+      contractViolations.push(`${req.method} ${req.path}: ${err.message}`);
+    },
+  },
+});
 
 export function testApp(env: Record<string, string> = {}) {
   const store = fs.mkdtempSync(path.join(os.tmpdir(), 'uams-'));
@@ -39,7 +62,7 @@ export function testApp(env: Record<string, string> = {}) {
   const mailer = memoryMailer();
   const modelApi = fakeModelApi();
   const llm = fakeLlm();
-  const express = createApp({ db, cfg, storage, routers: buildRouters({ db, cfg, storage, mailer, modelApi: modelApi as unknown as ModelApi, llm, captionRetryDelaysMs: [0, 0] }) });
+  const express = createApp({ db, cfg, storage, before: responseValidator(), routers: buildRouters({ db, cfg, storage, mailer, modelApi: modelApi as unknown as ModelApi, llm, captionRetryDelaysMs: [0, 0] }) });
   // 시험 파일마다 서버 하나를 띄워 계속 쓴다(요청마다 임시 서버를 여닫으면 드물게 연결이 끊긴다)
   const app = express.listen(0, '127.0.0.1');
   const close = async () => { await new Promise((r) => app.close(r)); await db.end(); };

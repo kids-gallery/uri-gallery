@@ -592,7 +592,11 @@ paths:
                 type: object
                 required: [artwork, alreadyDecided]
                 properties:
-                  artwork: { $ref: '#/components/schemas/ArtworkDetail' }
+                  artwork:
+                    description: '결정 뒤 작품. `retake`면 작품이 `deleting`이 되어 보호자에게 보이지 않으므로 null(EXT2) — 화면은 `retake.childId`로 새 접수'
+                    oneOf:
+                      - { $ref: '#/components/schemas/ArtworkDetail' }
+                      - { type: 'null' }
                   alreadyDecided: { type: boolean }
                   retake:
                     type: object
@@ -961,8 +965,14 @@ paths:
                 verdict: { type: string, enum: [pass, hold], description: SD_03 evaluation.verdict }
                 rationale: { type: string }
       responses:
-        '200': { description: 기록됨 }
+        '200':
+          description: 기록됨 — 갱신된 평가 기록(GET과 같은 모양)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvalRun' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /v1/admin/models/{modelId}/promote:
     parameters:
       - $ref: '#/components/parameters/ModelId'
@@ -1015,6 +1025,7 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /v1/admin/models/{modelId}/deactivate:
     parameters:
       - $ref: '#/components/parameters/ModelId'
@@ -1037,6 +1048,12 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ModelManifest' }
+        '409':
+          description: 활성 버전 없음 — reason `no_active_version`
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /v1/admin/eval-items:
     get:
       tags: [관리]
@@ -1069,7 +1086,11 @@ paths:
                 photo: { type: string, format: binary }
                 inputText: { type: string, description: '설명 입력 세트(category=caption_input일 때만)' }
       responses:
-        '201': { description: 등록됨 }
+        '201':
+          description: 등록됨 — 새 평가 항목 번호
+          content:
+            application/json:
+              schema: { type: object, required: [id], properties: { id: { type: string } } }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /v1/admin/api-guide/spec:
@@ -1572,11 +1593,11 @@ components:
       properties:
         version: { type: string }
         weightsSha256: { type: string, pattern: '^[a-f0-9]{64}$' }
-        runtime: { type: string }
-        imageDigest: { type: string, pattern: '^[a-f0-9]{64}$', description: '실행 환경 다이제스트(research R-03)' }
+        runtime: { type: [string, 'null'], description: 'SD_03 model_version.runtime(NULL 허용) — 조회 때 기록이 없으면 null' }
+        imageDigest: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$', description: '실행 환경 다이제스트(research R-03, SD_04 §9-2). 등록 요청에는 값이 있어야 한다(app-api 검사). 조회 때 SD_03 image_digest가 NULL인 버전(M4 규칙 파일 등)은 null' }
         configHash: { type: string, pattern: '^[a-f0-9]{64}$' }
-        device: { type: string, enum: [cpu, gpu], description: 'SD_03 exec_device. Apple Silicon MPS는 gpu + runtime에 mps 표기' }
-        filePath: { type: string }
+        device: { type: [string, 'null'], enum: [cpu, gpu, null], description: 'SD_03 exec_device. Apple Silicon MPS는 gpu + runtime에 mps 표기. 조회 때 기록이 없으면 null(등록 요청에는 필수)' }
+        filePath: { type: [string, 'null'], description: 'SD_03 model_version.model_path(R1·U14, NULL 허용) — 조회 때 기록이 없으면 null' }
         licenseRecord: { type: string }
     ModelVersion:
       allOf:

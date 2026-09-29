@@ -1310,7 +1310,8 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            artwork: components["schemas"]["ArtworkDetail"];
+                            /** @description 결정 뒤 작품. `retake`면 작품이 `deleting`이 되어 보호자에게 보이지 않으므로 null(EXT2) — 화면은 `retake.childId`로 새 접수 */
+                            artwork: components["schemas"]["ArtworkDetail"] | null;
                             alreadyDecided: boolean;
                             retake?: {
                                 childId?: string;
@@ -2138,14 +2139,18 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description 기록됨 */
+                /** @description 기록됨 — 갱신된 평가 기록(GET과 같은 모양) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["EvalRun"];
+                    };
                 };
+                404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         trace?: never;
@@ -2247,6 +2252,7 @@ export interface paths {
                         "application/problem+json": components["schemas"]["Problem"];
                     };
                 };
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -2294,6 +2300,16 @@ export interface paths {
                         "application/json": components["schemas"]["ModelManifest"];
                     };
                 };
+                /** @description 활성 버전 없음 — reason `no_active_version` */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -2360,12 +2376,16 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description 등록됨 */
+                /** @description 등록됨 — 새 평가 항목 번호 */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
                 };
                 422: components["responses"]["ValidationFailed"];
             };
@@ -2814,16 +2834,18 @@ export interface components {
         ModelVersionInput: {
             version: string;
             weightsSha256: string;
-            runtime: string;
-            /** @description 실행 환경 다이제스트(research R-03) */
-            imageDigest: string;
+            /** @description SD_03 model_version.runtime(NULL 허용) — 조회 때 기록이 없으면 null */
+            runtime: string | null;
+            /** @description 실행 환경 다이제스트(research R-03, SD_04 §9-2). 등록 요청에는 값이 있어야 한다(app-api 검사). 조회 때 SD_03 image_digest가 NULL인 버전(M4 규칙 파일 등)은 null */
+            imageDigest: string | null;
             configHash: string;
             /**
-             * @description SD_03 exec_device. Apple Silicon MPS는 gpu + runtime에 mps 표기
-             * @enum {string}
+             * @description SD_03 exec_device. Apple Silicon MPS는 gpu + runtime에 mps 표기. 조회 때 기록이 없으면 null(등록 요청에는 필수)
+             * @enum {string|null}
              */
-            device: "cpu" | "gpu";
-            filePath?: string;
+            device: "cpu" | "gpu" | null;
+            /** @description SD_03 model_version.model_path(R1·U14, NULL 허용) — 조회 때 기록이 없으면 null */
+            filePath?: string | null;
             licenseRecord?: string;
         };
         ModelVersion: components["schemas"]["ModelVersionInput"] & {

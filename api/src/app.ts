@@ -9,9 +9,13 @@ import { Problem, parseSignal } from './lib/problem.js';
 import type { StoragePort } from './storage/LocalFsDriver.js';
 import { filesRouter } from './modules/files/routes.js';
 
-export interface AppDeps { db: Pool; cfg: Config; storage: StoragePort; routers?: express.Router[] }
+export interface AppDeps {
+  db: Pool; cfg: Config; storage: StoragePort; routers?: express.Router[];
+  /** 라우터 앞에 끼우는 미들웨어 — 시험 모드의 응답 계약 검증(T024, R-19)만 쓴다. 운영 빌드는 비워 둔다 */
+  before?: express.RequestHandler[];
+}
 
-export function createApp({ db, cfg, storage, routers = [] }: AppDeps) {
+export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDeps) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 'loopback');
@@ -24,6 +28,7 @@ export function createApp({ db, cfg, storage, routers = [] }: AppDeps) {
   app.use(cookieParser());
   app.use(express.json({ limit: '64kb' }));
 
+  for (const m of before) app.use(m);
   app.use(filesRouter(db, cfg, storage));
   for (const r of routers) app.use(r);
 

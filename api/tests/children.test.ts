@@ -39,6 +39,12 @@ describe('아이 등록·조회·수정', () => {
     const r = await a.post('/v1/children').send({ alias: '가'.repeat(21) });
     expect(r.status).toBe(422);
     expect(r.body).toMatchObject({ reason: 'alias_too_long', gate: 'G4' });
+    // 수정 경로도 같은 규칙(같은 cleanAlias)
+    const id = (await a.get('/v1/children').expect(200)).body[0].id;
+    const p = await a.patch(`/v1/children/${id}`).send({ alias: '나'.repeat(21) });
+    expect(p.status).toBe(422);
+    expect(p.body).toMatchObject({ reason: 'alias_too_long', gate: 'G4' });
+    expect((await a.patch(`/v1/children/${id}`).send({ alias: ` ${'나'.repeat(20)} ` }).expect(200)).body.alias).toBe('나'.repeat(20));
   });
   it('다른 가족의 아이는 목록에 없고 수정은 404(G0)', async () => {
     const a = await family('c@test.local');

@@ -51,6 +51,15 @@ describe('삭제 진행 조회(T147, S9)', () => {
     expect((await f.a.get(`/v1/artworks/${id}/deletion`).expect(200)).body).toEqual({ state: 'done', gate: null });
     expect((await f.a.get('/v1/artworks/999999/deletion').expect(200)).body).toEqual({ state: 'done', gate: null });
   });
+  it('삭제 미완료(incomplete)도 진행 목록에서 빠져 done — 미완료 안내는 운영 경로 몫(S9, UC7)', async () => {
+    const f = await familyWithChild(t, 'dp3@test.local');
+    const id = (await upload(f.a, f.childId, await png()).expect(202)).body.id as string;
+    await f.a.delete(`/v1/artworks/${id}`).expect(202);
+    expect((await f.a.get(`/v1/artworks/${id}/deletion`).expect(200)).body.state).not.toBe('done');
+    // sweeper가 파일 삭제 재시도를 다 쓰면 하는 처리와 같게(sweeper/deletion.ts — 끝난 삭제는 연결을 끊는다, BR-DEL-02)
+    await t.db.query(`UPDATE deletion_request SET status = 'incomplete', artwork_id = NULL, child_id = NULL, completed_at = CURRENT_TIMESTAMP WHERE target_kind = 'artwork' AND artwork_id = ?`, [id]);
+    expect((await f.a.get(`/v1/artworks/${id}/deletion`).expect(200)).body).toEqual({ state: 'done', gate: null });
+  });
   it('아이: 작품 삭제가 남아 있으면 진행 중, 모두 끝나면 done', async () => {
     const f = await familyWithChild(t, 'dp2@test.local');
     await upload(f.a, f.childId, await png()).expect(202);

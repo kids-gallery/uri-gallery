@@ -10,7 +10,7 @@
 - `[US1]` — 해당 사용자 스토리 전용 작업
 - 같은 파일을 수정하는 작업에는 `[P]`를 붙이지 않는다 (순차 실행)
 - 각 작업은 파일 경로를 명시한다
-- **담당**: `A` 최호준(모델 서빙) · `B` 이제민(API·오케스트레이션) · `C` 신지현(보호자 경험·설명) — `docs/역할분담.md`
+- **담당**: `A` 최호준(모델 서빙) · `B` 이제민(API·오케스트레이션) · `C` 신지현(보호자 경험·설명) · `D` 이진우(점검 API·결정·통합, 2026-09-29 합류) — `docs/역할분담.md`
 - **스킬**(Intent-Tasks.md): `FD` Frontend Design · `RL` Responsive Layout · `API` API Development · `DB` Database Design · `AUTH` Authentication · `—` 해당 스킬 없음(모델 재현·문서)
 - **근거**: FR(spec) · UC · G(게이트, SD_01 §15) · BR(업무규칙) · R(research) · S/C(SD_02 화면/컴포넌트)
 - **시험 작업을 넣는다.** plan R-19(Vitest·Supertest·Playwright·pytest·계약 시험·장애 주입)와 SD_03 "DDL 검증 3종"이 시험을 명시적으로 요구한다. 스토리마다 시험 작업이 구현보다 앞선다.
@@ -75,7 +75,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T021 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 허용 목록 로거를 만든다(`request_id`·`route`·`status`·`code`·`stage`·`model_id`·`model_version`·`outcome`·`duration_ms`만) — `api/src/lib/logger.ts` · 담당 B · 스킬 API · 근거 BR-PRV-01, R-17, FR-14
 - [x] T022 (B 완료 2026-09-28 — `b/api`, main 병합 전) 세션을 만든다: `express-session` + `app_session` 저장소, 보호자 `uam_sid`/팀원 `uam_ops_sid` 쿠키 분리, `HttpOnly; Secure; SameSite=Lax`, 유휴 30분, `created_at < password_changed_at`이면 무효 — `api/src/auth/session.ts` · 담당 B · 스킬 AUTH · 근거 R-08, FR-32
 - [x] T023 (B 완료 2026-09-28 — `b/api`, main 병합 전) 가드를 만든다: `requireGuardian`(가족 ID는 세션에 캐시하지 않고 요청마다 `guardian_account.family_id`로 확인 — 해제·나가기 즉시 반영, 가족 없는 계정은 가족 경로 409 `no_family`, 다른 가족은 404), `requireStaff(role)`(G1), 외부 키는 app-api에서 거부 — `api/src/auth/guards.ts` · 담당 B · 스킬 AUTH · 근거 G0, G1, BR-ACC-01~05, BR-API-06
-- [x] T024 (B 완료 2026-09-28 — `b/api`, main 병합 전) 앱 부트스트랩을 만든다: 라우터 마운트, `/live`, 시험 모드 `express-openapi-validator` 응답 검증 — `api/src/app.ts` · `api/src/server.ts` · 담당 B · 스킬 API · 근거 FR-12, R-19
+- [x] T024 (응답 검증 보완 2026-09-29 이제민 — 빠져 있던 `express-openapi-validator` 응답 검증을 시험 도우미(`api/tests/helpers/app.ts`·`contract.ts`)에 넣고 어긋남 0건 강제, 드러난 계약 빈틈 정리; B 완료 2026-09-28 — `b/api`, main 병합 전) 앱 부트스트랩을 만든다: 라우터 마운트, `/live`, 시험 모드 `express-openapi-validator` 응답 검증 — `api/src/app.ts` · `api/src/server.ts` · 담당 B · 스킬 API · 근거 FR-12, R-19
 - [x] T025 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/storage/LocalFsDriver.ts`) [P] 저장소 포트와 로컬 드라이버를 만든다: `put/get/delete/exists/listByPrefix`, `family/`·`tmp/`·`ext/` 분리, 원본 `O_EXCL`+0440 — `api/src/storage/StoragePort.ts` · `api/src/storage/LocalFsDriver.ts` · 담당 B · 스킬 API · 근거 R-06, BR-INT-04
 - [x] T026 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 파일 읽기 토큰을 만든다: 짧게 유효한 서명 토큰 `GET /v1/files/{token}` → `X-Accel-Redirect`, 가족 확인 뒤에만 발급, 로그에 객체 키 없음 — `api/src/modules/files/` · 담당 B · 스킬 API, AUTH · 근거 SD_03 §17
 - [x] T146 (신지현 대행 완료 2026-09-29 — `c/web-prep`, `api/tests/web-prep.test.ts`·`ops.test.ts`) [P] 팀원 세션 API와 지표 역할을 맞춘다(D21): `GET /v1/ops/me`(역할·가린 계정)·`POST /v1/ops/auth/logout`(204), `GET /v1/admin/metrics`를 운영자·평가 담당·연동 개발 읽기로(미도달은 운영자 전용 유지), 계약 시험 — `api/src/modules/auth/routes.ts` · `api/src/modules/ops/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 §2-1 · C9, UC9 A1, UC11 A5
@@ -131,7 +131,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T052 (완료 2026-09-29 — Vitest 4건, E2E는 T044) [P] [US1] S0 가입·확인 화면을 만든다(이메일·비밀번호·확인만, 응답은 항상 같은 안내) — `web/src/app/views/SignupView.vue` · `VerifyView.vue` · 담당 C · 스킬 FD, RL · 근거 S0, FR-31 · **D21 보정(2026-09-29)**: G26 필드 사유·요청 한도 C2, G27 `token_invalid`, 확인 성공 뒤 S1 "이제 아이를 등록해 주세요", 초대 링크로 온 가입은 이메일 미리 채움(UC13 A4)
 - [x] T053 (완료 2026-09-29 — Vitest 6건, E2E는 T044) [P] [US1] 로그인·S0b 찾기·재설정 화면을 만든다 — `web/src/app/views/LoginView.vue` · `RecoveryView.vue` · `ResetView.vue` · 담당 C · 스킬 FD, RL · 근거 S0b, FR-32 · **D21 보정(2026-09-29)**: S0a 보호자 로그인(SD_02 §4-5 D21), 불일치는 한 문구, 메일 확인 전 계정 안내
 - [x] T054 (완료 2026-09-29 — Vitest 4건, E2E는 T044. **아이 삭제 버튼은 T101 DeleteDialog가 생기면 조작 칸에 잇는다**) [P] [US1] S1 아이 관리 화면을 만든다(별칭만, 실명·생년월일 칸 없음, 같은 별칭 안내, G4 차단 블록) — `web/src/app/views/ChildrenView.vue` · 담당 C · 스킬 FD, RL · 근거 S1, UX6 · **D22**: 별칭 앞뒤 공백 뺀 1~20자, 남은 글자 수 표시, 20자 초과 `alias_too_long`(G4)
-- [ ] T055 [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 C · 스킬 FD · 근거 G1 · **D21 보정(2026-09-29)**: S0o(SD_02 §4-5 D21), 로그아웃 `POST /v1/ops/auth/logout`
+- [ ] T055 [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 G1 · **D21 보정(2026-09-29)**: S0o(SD_02 §4-5 D21), 로그아웃 `POST /v1/ops/auth/logout`
 
 **Checkpoint**: US1 독립 검증 기준 통과.
 
@@ -261,8 +261,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T109 (A 완료 — `a/model-serving`, main 병합 전) [US7] model-api 내부 준비 확인을 만든다(`GET /internal/ready`, 모델별 활성 버전·장치) — `serving/model_api/internal.py` · 담당 A · 스킬 API · 근거 FR-12
 - [x] T110 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US7] 운영 API를 만든다: `/ready`(DB·저장소·model-api), `/metrics`(prom-client, 뷰 기반, p95는 여기서만), `/v1/admin/metrics`, `/v1/admin/unreached` — `api/src/modules/ops/` · 담당 B · 스킬 API · 근거 R-17, SD_03 §2-3
 - [x] T143 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/ops/routes.ts`·`artworks/view.ts`) [US7] 모델 적재 상태를 붙인다(A `docs/A_모델적재_화면요구.md` §4): `/ready`에 `models[]` 요약(`anyLoading`, 공개 응답엔 버전·장치 없음), 운영 경로 `GET /v1/ops/models`·`POST /v1/ops/models/{id}/warmup`(model-api `/internal/models*` 프록시, M6는 409 `m6_preload_at_start_only`), 보호자 `GET /v1/artworks/{id}` 단계에 `waitingForModel`·`etaSeconds`만 — `api/src/modules/ops/models.ts` · `api/src/modules/artworks/detail.ts` · 담당 B · 스킬 API · 근거 FR-12, T109, contracts/openapi.yaml — **A 인계로 추가(T143)**
-- [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4 · **D21 보정(2026-09-29)**: 상태 추가: 불러오는 중(`loading`, 경과·남은 시간, 1.5배 초과 문구)·적재 실패(`failed`)·내려감 짐작(`cold`, M6) — SD_02 C10·§3-5
-- [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 C · 스킬 FD, RL · 근거 S10 · **D21 보정(2026-09-29)**: 역할별: 미도달 추적 탭은 운영자에게만(§2-1)
+- [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 SD_02 §3-4 · **D21 보정(2026-09-29)**: 상태 추가: 불러오는 중(`loading`, 경과·남은 시간, 1.5배 초과 문구)·적재 실패(`failed`)·내려감 짐작(`cold`, M6) — SD_02 C10·§3-5
+- [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S10 · **D21 보정(2026-09-29)**: 역할별: 미도달 추적 탭은 운영자에게만(§2-1)
 
 **Checkpoint**: US7 독립 검증 기준 통과.
 
@@ -277,7 +277,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T116 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/models.ts`) [US8] 확정 화면·확정 API가 비활성 모델의 선택지를 이유와 함께 막도록 연결한다(판정 모델 비활성이면 제안 없이 직접 확정) — `api/src/modules/artworks/confirm.ts` · `web/src/app/views/ConfirmView.vue` · 담당 B·C · 스킬 API, FD · 근거 spec clarify(첫 버전 비활성화), BR-FBK-04
 - [x] T117 (A 완료 2026-09-29 — stage-job §12 설계 먼저, 워커 점유 순서 보호자→평가→외부, 모델별 result_path, timeout 재시도 없음, 처리 시간·메모리, 이어받기 incomplete 채움, `eval/runner.py run·report`, 시험 17건. M6(P0.5)·M7(P1) 평가는 해당 구간에서) [US8] 평가 실행기를 만든다(같은 어댑터로 항목별 결과·시간·메모리, 인프라 소진은 평가 미완료) — `eval/runner.py` · `serving/workers/stages/eval.py` · 담당 A · 스킬 — · 근거 UC9 BF4, FR-17
 - [ ] T118 (A 부분 2026-09-29 — `eval/items/manifest.yaml` 틀·구성 목표[추론]·등록 방법까지. 팀원 제작 작품 제작·등록이 남음) [P] [US8] 평가 묶음을 만든다(팀원 제작: 사람·비인물·촬영 조건·입체·설명 입력, 기대 경로) — `eval/items/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-17, BR-MDL-04
-- [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 C · 스킬 FD, RL · 근거 S11 · **D21 보정(2026-09-29)**: 모델 상태 표 2초 폴링(`GET /v1/ops/models`)·지금 불러오기(운영자·평가 담당만)·M6 "첫 요청 때 올라가요", 롤백 후보 없으면 비활성화(clarify), 운영자·연동 개발은 읽기 전용
+- [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S11 · **D21 보정(2026-09-29)**: 모델 상태 표 2초 폴링(`GET /v1/ops/models`)·지금 불러오기(운영자·평가 담당만)·M6 "첫 요청 때 올라가요", 롤백 후보 없으면 비활성화(clarify), 운영자·연동 개발은 읽기 전용
 
 **Checkpoint**: US8 독립 검증 기준 통과.
 
@@ -291,7 +291,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T122 (B가 A 몫까지 완료 2026-09-28 — model-api 등록·상태·결과 + 워커 `serving/workers/external.py` · sweeper 이어받기 · `serving/tests/test_external_worker.py`) (**model-api 쪽 B 완료** 2026-09-28 — 등록·상태·결과 1회 수령·만료, `b/api`. 워커 `serving/workers/external.py`는 A 남음) [US9] 외부 작업을 만든다: `POST /v1/models/{function}` → `external_job`(메타만, 입력은 `ext/{ext_job_id}/`, 점유 컬럼은 보완 S4), 상태 조회, 결과 1회 수령 후 삭제, 만료 정리, 서빙군별 외부 동시 1건·낮은 우선순위 — `serving/model_api/models.py` · `serving/workers/external.py` · 담당 A·B · 스킬 API · 근거 D8, D17, H16
 - [x] T123 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US9] 키 발급 운영 CLI를 만든다(`npm run ops:key -- issue --kind team_internal|course_internal|test`, 원문 1회 표시, `external`은 U12 확정 전 발급 금지) — `api/scripts/ops/key.ts` · 담당 B · 스킬 AUTH · 근거 R-09, D17
 - [x] T124 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US9] API활용 API를 만든다: 명세 조회(`/openapi.json` 기반)·시험 호출(평가 묶음 작품만, G23) — `api/src/modules/apiGuide/` · 담당 B · 스킬 API · 근거 R-11, BR-API-07~09, FR-30
-- [ ] T125 [US9] S12 API활용 메뉴 화면을 만든다(탭 3개, 버전 대조 경고, 시험 호출·G23·G25 차단) — `web/src/ops/views/ApiGuideView.vue` · 담당 C · 스킬 FD, RL · 근거 S12 · **D22**: 키 발급·폐기 화면 없음 — 매뉴얼 탭에 `npm run ops:key` 절차 안내
+- [ ] T125 [US9] S12 API활용 메뉴 화면을 만든다(탭 3개, 버전 대조 경고, 시험 호출·G23·G25 차단) — `web/src/ops/views/ApiGuideView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S12 · **D22**: 키 발급·폐기 화면 없음 — 매뉴얼 탭에 `npm run ops:key` 절차 안내
 
 **Checkpoint**: US9 독립 검증 기준 통과.
 
@@ -302,7 +302,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **독립 검증 기준**: llm-contract.md 전 항목, Scenario 17, 입력에 이미지·별칭 없음, 규칙 검사 반복 실패 → 템플릿 낮춤, 승인 뒤 재생성 409.
 
 - [x] T126 (A 완료 — `a/model-serving`, main 병합 전) [P] [US10] M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`)를 재현해 블롭 다이제스트를 매니페스트 `weights_sha256`에 기록하고, `llm-server`(127.0.0.1:8200, 큐 없는 동기 HTTP, `POST /v1/caption`·`GET /v1/ready`, 동시 1)를 만든다. Ollama는 실행기일 뿐이며 `llm-server`만 호출한다 — `serving/llm_server/` · `docs/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
-- [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 C · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
+- [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 D(4인 분담 2026-09-29) · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
 - [x] T128 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US10] 설명 API를 만든다(`/captions`, `GET /v1/captions/model-status`(S7 대기 요약 warming·maxWaitSeconds·busy, 모델 이름·원래 상태 없음), 승인 고정, G13~G16): 호출 전 `stage_job(stage_kind='caption', origin='caption', status='running')`를 만들고 응답으로 닫는다(`done` / `done_downgraded`+`llm_to_template` / 인프라), 걸린 초안은 `caption_check_failure`만, 인프라 재시도 1초·3초 뒤 소진 시 template·later·direct 선택지(stage-job §11) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
 - [x] T145 (B가 A 몫까지 완료 2026-09-28 — `serving/llm_server/app.py` · `test_llm_server.py`) [US10] `llm-server` `POST /v1/caption` 응답에 `failClasses`(걸린 초안마다 분류, 순서대로, 길이 = `ruleFailCount`)를 싣는다(llm-contract §4, 2026-09-28 추가) — app-api가 `caption_check_failure`를 초안마다 1행씩 쓰는 근거. 시험: 두 번 걸리고 세 번째 통과 → `failClasses` 2개 — `serving/llm_server/app.py` · `serving/tests/test_llm_server.py` · 담당 A · 스킬 API · 근거 SD_03 `caption_check_failure`, FR-26 설명 규칙 검사 실패율 — **B 구현 중 발견(T128)**
 - [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7 · **D21 보정(2026-09-29)**: 첫 생성 지연 안내(`GET /v1/captions/model-status`의 `warming`·`maxWaitSeconds`·`busy`) · **D22**: 입력 임시 저장 규칙은 T095와 같음
@@ -314,7 +314,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **독립 검증 기준**: Scenario 19, 노출 설정 꺼짐이면 3D 선택지·결과 비노출(액자로 표시), 평면 그림에 쓰지 않음.
 
 - [ ] T131 [P] [US11] M7 TripoSR을 재현하고 어댑터를 만든다(GLB) — `serving/adapters/m7_triposr.py` · 담당 A · 스킬 — · 근거 FR-29
-- [ ] T132 [US11] `sculpture` 단계·낮춤(3D→2.5D→액자)과 노출 설정 변경 경로를 만든다 — `serving/workers/stages/results.py` · `api/src/modules/admin/featureSetting.ts` · 담당 A·B · 스킬 API · 근거 D10, G17 · **D22**: 노출 설정은 서비스 운영자가 운영 CLI로 켠다(화면·API 없음) — `api/scripts/ops/feature.ts`로 대체
+- [ ] T132 [US11] `sculpture` 단계·낮춤(3D→2.5D→액자)과 노출 설정 변경 경로를 만든다 — `serving/workers/stages/results.py` · `api/src/modules/admin/featureSetting.ts` · 담당 A·D(4인 분담 2026-09-29) · 스킬 API · 근거 D10, G17 · **D22**: 노출 설정은 서비스 운영자가 운영 CLI로 켠다(화면·API 없음) — `api/scripts/ops/feature.ts`로 대체
 - [ ] T133 [US11] 3D 회전 보기를 만든다(`<model-viewer>`, "뒷면은 AI가 추정했어요", 원본 함께) — `web/src/components/SculptureViewer.vue` · 담당 C · 스킬 FD · 근거 BR-EXH-06
 
 ---
