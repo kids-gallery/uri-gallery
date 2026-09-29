@@ -1,4 +1,4 @@
-"""model-api(:8100) — 내부 경로(/internal, T109)와 외부 모델 기능 경로(/v1/models/*, UC12, T121·T122·T130)를 조립한다."""
+"""model-api(:9541) — 내부 경로(/internal, T109)와 외부 모델 기능 경로(/v1/models/*, UC12, T121·T122·T130)를 조립한다."""
 from fastapi import FastAPI
 
 from .external import router as external_router

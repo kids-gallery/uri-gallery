@@ -26,7 +26,7 @@
 |------|------|------|
 | 웹 프론트엔드 | Vue 3.4+ (Composition API) · TypeScript 5.x · Vite 5.x · Pinia 2.x · Vue Router 4. 화면 구현 기준은 `design/style-guide/스타일가이드_우리아이미술관.html`(사용자 지시) | Intent-Plan 웹스택, R-01, R-20 |
 | 보호자 앱 API | Node.js 20 LTS · Express 4.x · TypeScript 5.x · mysql2 3.x (SQL 직접, ORM 없음) | Intent-Plan, U7 닫음(R-01) |
-| 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :8100, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
+| 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :9541, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
 | 서빙 3종 실체 | CPU 비전 = `worker-cpu`(큐 워커) · GPU = `worker-gpu`(큐 워커, 모델 상주) · LLM = `llm-server`(내부 동기 HTTP :8200, 큐 없음, P0.5) | BR-SRV-01, SD_01 P4 4.4, R-18 |
 | 모델 | M1 BiRefNet `ZhengPeng7/BiRefNet` · M2 OpenCLIP `ViT-B-32`/`laion2b_s34b_b79k` · M3 Animated Drawings(`.mar` 2종, TorchServe 네이티브) · M4 기하 규칙 파일 · M5 `depth-anything/Depth-Anything-V2-Small-hf` · (P0.5) M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, Ollama `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`, 공유 Ollama) · (P1) M7 `stabilityai/TripoSR` | REF §2, D16, R-22 |
 | 저장소(DB) | 팀 MariaDB 12.0.2 `ABC10pioneer1` (utf8mb4). 스키마 정본 SD_03 `uri_gallery_ddl.sql`(D18·공동 보호자·구현 보완 S1~S9 포함, 테이블 35). 도메인 + 작업 큐(`FOR UPDATE SKIP LOCKED`) + 세션 | SD_03, data-model §6, R-04 |
@@ -87,12 +87,12 @@
                         ┌──────────────── 팀 서버 1대 (Docker 없음, pm2) ────────────────┐
  보호자 휴대폰 웹 ─┐     │                                                                │
  팀원 운영 화면 ──┼─HTTPS─▶ nginx ──┬─ /, /app/*, /ops/*  → web/dist (Vue SPA)             │
- 외부 클라이언트 ─┘     │           ├─ /v1/*, /live, /ready → app-api :3000 (Node/Express) │
-                        │           ├─ /v1/models/*         → model-api :8100 (FastAPI)    │
+ 외부 클라이언트 ─┘     │           ├─ /v1/*, /live, /ready → app-api :9521 (Node/Express) │
+                        │           ├─ /v1/models/*         → model-api :9541 (FastAPI)    │
                         │           └─ /_files/* (internal) ← X-Accel-Redirect             │
                         │                                                                │
                         │  app-api ──SQL──▶ MariaDB(팀 DB, SD_03): 도메인·stage_job 큐·세션 ◀──SQL── 워커
-                        │     │  ├─HTTP(127.0.0.1)─▶ model-api :8100 /internal/ready      │
+                        │     │  ├─HTTP(127.0.0.1)─▶ model-api :9541 /internal/ready      │
                         │     │  ├─HTTP 동기(127.0.0.1)─▶ llm-server :8200 /v1/caption (P0.5)
                         │     │  └─SMTP(127.0.0.1)─▶ Mailpit :1025 (가입·찾기 메일, P0)    │
                         │     └─▶ STORAGE_ROOT/family, tmp  ◀── 워커 읽기·쓰기             │

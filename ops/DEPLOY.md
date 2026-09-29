@@ -35,11 +35,11 @@ ssh <team-server> 'cd ~/project2610 && git pull --ff-only \
 ## 3. 배포 뒤 확인
 
 ```bash
-curl -s https://<도메인>/live                       # {"status":"live"}
-curl -s https://<도메인>/ready | jq                 # {"status":"ready","anyLoading":…} — 공개 응답엔 모델 상세 없음
+curl -s https://<도메인>:9501/live                       # {"status":"live"}
+curl -s https://<도메인>:9501/ready | jq                 # {"status":"ready","anyLoading":…} — 공개 응답엔 모델 상세 없음
 pm2 status                                          # app-api · model-api · worker-cpu · worker-gpu · sweeper online
-curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>/v1/models/segment -X POST   # 401 (키 없음 — 외부 경로 살아 있음)
-curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>/internal/ready              # 404 (nginx가 내부 경로를 내보내지 않음)
+curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>:9501/v1/models/segment -X POST   # 401 (키 없음 — 외부 경로 살아 있음)
+curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>:9501/internal/ready              # 404 (nginx가 내부 경로를 내보내지 않음)
 ```
 
 운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/A_모델적재_화면요구.md`).

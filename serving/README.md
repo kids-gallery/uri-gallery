@@ -13,7 +13,7 @@ UAM_REAL_MODELS=1 MODEL_ROOT=../models .venv/bin/python -m pytest -q tests/test_
 
 | 진입점 | 포트 |
 |---|---|
-| `python -m model_api.main` | 127.0.0.1:8100 — `/internal/ready`, `/internal/models`, `/internal/console` |
+| `python -m model_api.main` | 127.0.0.1:9541 — `/internal/ready`, `/internal/models`, `/internal/console` |
 | `python -m workers.main --group cpu_vision\|gpu` | — |
 | `python -m llm_server.main` (P0.5) | 127.0.0.1:8200 — `/v1/caption`, `/v1/ready`, `/v1/warmup` |
 | `python -m ops.models …` | 모델 준비·적재 시간 측정·버전 등록 |

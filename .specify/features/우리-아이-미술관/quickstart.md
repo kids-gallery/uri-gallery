@@ -47,9 +47,9 @@ DB_USER=
 DB_NAME=ABC10pioneer1
 DB_PASSWORD=        # 문서·커밋에 적지 않음
 
-APP_PORT=3000                      # app-api (127.0.0.1)
-MODEL_API_PORT=8100                # model-api (127.0.0.1)
-MODEL_API_INTERNAL_URL=http://127.0.0.1:8100
+APP_PORT=9521                      # app-api (127.0.0.1)
+MODEL_API_PORT=9541                # model-api (127.0.0.1)
+MODEL_API_INTERNAL_URL=http://127.0.0.1:9541
 SESSION_SECRET=                    # openssl rand -hex 32
 STORAGE_ROOT=/srv/uam/store        # 로컬 개발은 ./.data/store
 MODEL_ROOT=/srv/uam/models         # U14 — 팀 서버 확인 후
@@ -60,7 +60,7 @@ OLLAMA_URL=http://127.0.0.1:11434  # P0.5
 LLM_SERVER_URL=http://127.0.0.1:8200 # P0.5 llm-server
 MAIL_SMTP_URL=smtp://127.0.0.1:1025 # P0 Mailpit (U19 확정 시 교체)
 MAIL_FROM=no-reply@localhost       # U19
-APP_BASE_URL=http://127.0.0.1:5173 # 메일 링크 기준 주소
+APP_BASE_URL=http://127.0.0.1:9501 # 메일 링크 기준 주소
 AUTH_HMAC_SECRET=                  # 요청 한도용 이메일·IP 해시 키
 ```
 
@@ -75,16 +75,16 @@ cd api && npm ci && npm run db:migrate          # 재실행 안전
 mailpit &                                       # http://127.0.0.1:8025 에서 가입·찾기·초대 메일 확인
 
 # 앱 API
-npm run dev                                     # http://127.0.0.1:3000  (/live, /ready)
+npm run dev                                     # http://127.0.0.1:9521  (/live, /ready)
 
 # 웹
-cd ../web && npm ci && npm run dev              # http://127.0.0.1:5173  (/app, /ops)
+cd ../web && npm ci && npm run dev              # http://127.0.0.1:9501  (/app, /ops)
 
 # 모델 API·워커 (가짜 모델로 먼저)
 cd ../serving
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.lock --require-hashes
-UAM_FAKE_MODELS=1 uvicorn model_api.main:app --host 127.0.0.1 --port 8100
+UAM_FAKE_MODELS=1 uvicorn model_api.main:app --host 127.0.0.1 --port 9541
 UAM_FAKE_MODELS=1 python -m workers.run --group cpu
 UAM_FAKE_MODELS=1 python -m workers.run --group gpu
 ```
@@ -123,8 +123,8 @@ nginx(`ops/nginx.conf`) 핵심 라우팅:
 | 경로 | 대상 |
 |---|---|
 | `/` , `/app/*`, `/ops/*` | `web/dist` 정적 파일(SPA fallback) |
-| `/v1/models/*` | model-api `127.0.0.1:8100` |
-| `/v1/*`, `/live`, `/ready`, `/openapi.json` | app-api `127.0.0.1:3000` |
+| `/v1/models/*` | model-api `127.0.0.1:9541` |
+| `/v1/*`, `/live`, `/ready`, `/openapi.json` | app-api `127.0.0.1:9521` |
 | `/metrics` | app-api, 내부망 allow 목록만 |
 | `/_files/*` | `internal;` — app-api의 `X-Accel-Redirect`로만 |
 | TorchServe 8080~8082, Ollama 11434, llm-server 8200, `/internal/*` | 노출 안 함 |
@@ -136,7 +136,7 @@ nginx(`ops/nginx.conf`) 핵심 라우팅:
 `UAM_FAKE_MODELS=1`로 모델 없이 확인할 수 있다.
 
 ```bash
-BASE=http://127.0.0.1:3000
+BASE=http://127.0.0.1:9521
 curl -s $BASE/live                                        # {"status":"live"}
 curl -s $BASE/ready | jq                                   # db/queue/storage true, M1~M7 상태
 
@@ -178,11 +178,11 @@ UAM_FAKE_OUTCOMES="animate_render=quality_below" …
 
 ```bash
 KEY=$(cd api && npm run -s ops:key -- issue --kind team_internal)
-curl -s -X POST http://127.0.0.1:8100/v1/models/segment -H "X-API-Key: $KEY" -F image=@eval/samples/house_01.jpg
+curl -s -X POST http://127.0.0.1:9541/v1/models/segment -H "X-API-Key: $KEY" -F image=@eval/samples/house_01.jpg
 # 202 {"jobId":…,"status":"queued"}
-curl -s http://127.0.0.1:8100/v1/models/jobs/<jobId> -H "X-API-Key: $KEY"
-curl -s http://127.0.0.1:8100/v1/models/jobs/<jobId>/result -H "X-API-Key: $KEY"   # 1회, 재조회 404
-curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:8100/v1/models/segment -F image=@x.jpg   # 401
+curl -s http://127.0.0.1:9541/v1/models/jobs/<jobId> -H "X-API-Key: $KEY"
+curl -s http://127.0.0.1:9541/v1/models/jobs/<jobId>/result -H "X-API-Key: $KEY"   # 1회, 재조회 404
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:9541/v1/models/segment -F image=@x.jpg   # 401
 ```
 
 ## 6. 시험 실행

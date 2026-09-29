@@ -25,7 +25,7 @@ export interface Config {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
-    port: Number(env.APP_PORT ?? 3000),
+    port: Number(env.APP_PORT ?? 9521),
     db: {
       host: env.DB_HOST ?? '127.0.0.1',
       port: Number(env.DB_PORT ?? 3306),
@@ -36,11 +36,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     sessionSecret: env.SESSION_SECRET ?? '',
     storageRoot: env.STORAGE_ROOT ?? path.resolve('.data/store'),
-    modelApiUrl: env.MODEL_API_INTERNAL_URL ?? 'http://127.0.0.1:8100',
+    modelApiUrl: env.MODEL_API_INTERNAL_URL ?? 'http://127.0.0.1:9541',
     llmServerUrl: env.LLM_SERVER_URL ?? 'http://127.0.0.1:8200',
     mailSmtpUrl: env.MAIL_SMTP_URL ?? 'smtp://127.0.0.1:1025',
     mailFrom: env.MAIL_FROM ?? 'no-reply@localhost',
-    appBaseUrl: env.APP_BASE_URL ?? 'http://127.0.0.1:5173',
+    appBaseUrl: env.APP_BASE_URL ?? 'http://127.0.0.1:9501',
     authHmacSecret: env.AUTH_HMAC_SECRET ?? '',
     captionEnabled: bool(env.CAPTION_ENABLED), // P0에서는 꺼짐(llm-contract.md)
     gpuEnabled: bool(env.GPU_ENABLED), // U2 — 꺼져 있으면 M5는 cpu_vision(BR-SRV-02)
