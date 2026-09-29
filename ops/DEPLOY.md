@@ -17,7 +17,7 @@
 | Python 가상환경 | `cd serving && python3.11 -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.lock -r requirements-models.lock` | M3는 `.venv-m3` + TorchServe(A 문서) |
 | DB 스키마 | `cd api && npm ci && npm run build && npm run db:migrate` | `0001_sd03_baseline`(= `design/uri_gallery_ddl.sql`) 재실행 안전. **팀 DB에 시험을 돌리지 않는다**(시험은 임시 MariaDB) |
 | 팀원 계정 | `npm run ops:staff -- add --email <메일> --role operator[,evaluator,integrator]` (비밀번호는 표준 입력) | |
-| 모델 버전 | `cd serving && .venv/bin/python -m ops.models check <Mx>` → `register <Mx> --label … --apply` → 평가·승격은 운영 화면(S11) | G21·G22 |
+| 모델 버전 | `cd serving && .venv/bin/python -m ops.models check <Mx>` → `digest <Mx> --write`(실행 환경 다이제스트, R-03·SD_04 §9-2) → `register <Mx> --label …`이 출력한 JSON 본문으로 평가 담당이 `POST /v1/admin/models/<Mx>/versions`(G1) → 평가·승격은 운영 화면(S11). CLI는 DB에 쓰지 않는다 | G21·G22 |
 
 ## 2. 매번: 배포
 
@@ -80,4 +80,4 @@ Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p
 | `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A_모델재현기록.md` M3 절 |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
-| 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`로 켠다 |
+| 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`가 만든 본문으로 app-api에 후보를 등록하고 평가·승격한다(§1) |
