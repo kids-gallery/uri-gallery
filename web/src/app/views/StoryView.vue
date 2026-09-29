@@ -4,7 +4,7 @@
 // - 한마디는 적은 그대로 보낸다(트림 없음, BR-STY-03). 비우고 저장하면 지운다(A4).
 // - 동시 수정: 불러올 때의 updatedAt을 baseUpdatedAt으로 싣고, 409 story_conflict면 최신을 불러오고 내 입력은 옆에 남긴다.
 // - 세션 만료(§17 규칙 3): 이 기기 브라우저에만 임시 저장 → 다시 열면 "저장하지 못한 입력이 있어요". 저장 성공 때 지운다.
-// - P0에서는 설명 확장점(S7)을 숨긴다(T095, caption.enabled=false).
+// - 설명 확장점(S7, T129 CaptionPanel)은 GET /v1/captions/model-status가 응답할 때만 보인다 — P0(caption.enabled=false)에서는 404라 숨는다.
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
@@ -16,6 +16,7 @@ import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, loadArtwork, railOf, resultImage, type ArtworkDetail } from '../artwork';
 import ArtFrame from '@/components/ArtFrame.vue';
+import CaptionPanel from './CaptionPanel.vue';
 
 interface Form { title: string; madeOn: string; age: string; words: string; note: string }
 const route = useRoute();
@@ -149,6 +150,7 @@ function dropDraft() { draft.value = null; clearDraft(); }
         </div>
       </form>
       <ExhibitCheck v-if="rail.variant !== 'hold'" :reviewed="reviewed" :story-done="storyDone" />
+      <CaptionPanel :artwork="a" />
     </template>
   </main>
 </template>

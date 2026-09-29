@@ -222,6 +222,23 @@ export const ko = {
     // D25 보호자 감상평(docs/C_화면문구.md 전시실 홈 절)
     note: '보호자 감상평 - 선택 - 적은 그대로 보여요', noteHint: '작품을 보고 느낀 점을 적어 주세요', noteLong: '감상평은 1000자까지예요', // [추론]
   },
+  /** S7 설명 초안 받기(T129, P0.5, docs/C_화면문구.md §4 "S7 구현 문구", SD_02 §10). */
+  caption: {
+    title: '설명 초안 받기', notGate: '설명은 전시 조건이 아니에요', withExhibit: '전시될 때 함께 보여요',
+    keywords: '키워드', keywordsHint: '쉼표로 나눠 5개까지, 한 개에 20자까지', tags: '태그 후보', // [추론] 힌트
+    input: 'AI에 보낼 입력 - 사진과 아이 이름은 보내지 않아요',
+    inKeywords: '키워드', inTags: '고른 태그', inWords: '한마디', inAge: '나이', inDate: '그린 날', none: '없음', // [추론] 없음
+    warming: (n: number | null) => (n == null ? '처음 만들 때는 조금 더 걸릴 수 있어요' : `처음 만들 때는 조금 더 걸릴 수 있어요 (최대 약 ${n}초)`),
+    busy: '다른 설명을 먼저 만들고 있어요',
+    writing: (n: number) => `쓰는 중 - ${n}초`, // [추론]
+    draft: '초안 - AI 작성', noDraft: '아직 초안이 없어요', ai: 'AI 작성', direct: '직접 씀', edited: '고침', // [추론] 직접 씀·고침
+    g16: 'AI 초안이 입력에 없는 내용을 넣어 기본 문장으로 바꿨어요',
+    make: '초안 만들기', remake: '다시 만들기', toDirect: '버리고 직접 쓰기', approve: '승인', saveEdit: '고친 내용 저장', // [추론] 고친 내용 저장
+    directLabel: '작품 설명', save: '저장', cancel: '취소', // [추론]
+    template: '기본 문장으로 받기', later: '나중에', writeDirect: '직접 쓰기',
+    needDraft: '초안이 없어요', needKeywords: '키워드를 하나 이상 적거나 골라 주세요', writingNow: '쓰는 중이에요', needBody: '설명을 적어 주세요', // [추론] 뒤 둘
+    approvedExhibited: '전시에 함께 보여요', locked: '승인한 설명이에요 - 더 고칠 수 없어요', // [추론]
+  },
   gallery: {
     child: '아이', search: '제목 - 그린 날 찾기', age: (n: number) => `${n}살`,
     words: '아이의 한마디', aiCaption: '작품 설명 - AI 작성', backside: '뒷면은 AI가 추정했어요',
@@ -404,6 +421,9 @@ const P: Record<string, ProblemCopy> = {
   'G13:model_disabled': { variant: 'block', summary: 'AI 초안 준비 중', reason: 'AI 초안 기능은 아직 사용 조건 확인 중이에요', releaser: '평가 담당 팀원 - 조건 확인 뒤 활성화', self: false, actions: ['기본 문장으로 받기', '직접 쓰기'] },
   'G14:keywords_required': { variant: 'block', summary: '키워드 필요', reason: '키워드를 하나 이상 적거나 골라 주세요', releaser: SELF, self: true, actions: ['키워드 입력'] },
   'G14:tag_not_candidate': { variant: 'block', summary: '키워드 필요', reason: '키워드를 하나 이상 적거나 골라 주세요', releaser: SELF, self: true, actions: ['키워드 입력'] },
+  '-:caption_locked': { variant: 'final', summary: '승인한 설명 있음', reason: '이미 승인한 설명이 있어요', releaser: '없음', self: false, actions: ['새로 불러오기'] }, // [추론]
+  '-:caption_discarded': { variant: 'block', summary: '버린 초안', reason: '버린 초안이에요', releaser: '보호자 - 새 초안 만들기', self: true, actions: ['새로 불러오기'] }, // [추론]
+  '-:body_required': { variant: 'block', summary: '설명 필요', reason: '설명을 적어 주세요', releaser: SELF, self: true, actions: ['설명 입력'] }, // [추론]
   '-:llm_unavailable': { variant: 'block', summary: 'AI 초안 없음', reason: 'AI 초안을 지금 만들 수 없어요', releaser: '시스템', self: false, actions: ['기본 문장으로 받기', '나중에', '직접 쓰기'] }, // [추론]
   'G17:sculpture_not_exposed': { variant: 'block', summary: '3D 준비 전', reason: '3D 조각은 아직 쓸 수 없어요', releaser: '서비스 운영자 - 노출 설정(운영 CLI)', self: false, actions: ['다른 방식 고르기'] },
   'G18:deletion_not_saved': { variant: 'block', summary: '삭제되지 않았어요', reason: '삭제되지 않았어요 - 아무것도 바뀌지 않았어요', releaser: SELF, self: true, actions: ['다시 삭제하기'] },
