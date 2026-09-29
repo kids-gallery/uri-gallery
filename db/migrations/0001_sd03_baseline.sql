@@ -14,6 +14,8 @@
 -- 개정 (2026-09-28, B 구현 중 발견): 결정 frame(액자로 걸기)이면 v_gallery가 원본 액자로 보인다(결과 행을 만들지 않음, UC4 A2·A5)
 -- 개정 (2026-09-28, 1c460b0 사용자 결정 후속 — B): 가족당 공동 보호자 1명(uq_guardian_co_family), 대기 초대 1건
 --   (uq_invite_one_pending), 초대는 만든 보호자만·자리 차면 거부(trg_family_invite_bi), G29 이름 "보호자 관리 권한"
+-- 개정 (2026-09-29, 통합 결정 D20 — 모델 점검): model_check 신설(테이블 36), stage_job.origin 'check'·model_check_id,
+--   trg_model_check_bi(G30 점검 입력, 트리거 16), 점검 작업을 운영 뷰에서 뺌(BR-OPS-05), 게이트 G30 시드(31개)
 -- 개정 (2026-09-29, D25 — B 이제민): story.guardian_note(보호자 감상평, BR-STY-04) + 기존 DB용 ADD COLUMN IF NOT EXISTS, v_gallery에 싣는다
 --
 -- 표준 SQL을 기준으로 썼다. 검증 DBMS는 MariaDB 12.0.2다. 아래는 MariaDB 때문에
@@ -356,11 +358,13 @@ CREATE TABLE IF NOT EXISTS stage_job (
   claim_expires_at   TIMESTAMP    NULL,
   -- S1: 이 시각 전에는 점유하지 않는다(인프라 재시도 간격, split 뒤 judge 열기)
   available_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- S2: 작은 값이 먼저. 보호자 10 · 평가 50 (외부 호출은 external_job, D17)
+  -- S2: 작은 값이 먼저. 보호자 10 · 점검 30(D20) · 평가 50 (외부 호출은 external_job, D17)
   priority           SMALLINT     NOT NULL DEFAULT 10,
   -- S3: 평가 실행 작업(UC9 8.4)의 평가·항목 연결. FK는 evaluation 생성 뒤 ALTER로 붙인다(위상 순서)
   evaluation_id      BIGINT       NULL,
-  eval_item_id       BIGINT       NULL,
+  eval_item_id       BIGINT       NULL,     -- 평가 작업·점검 작업의 입력 항목
+  -- D20: 모델 점검 작업(SD_01 7.9 · H17)의 점검 연결. FK는 model_check 생성 뒤 ALTER로 붙인다
+  model_check_id     BIGINT       NULL,
   queued_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at         TIMESTAMP    NULL,
   finished_at        TIMESTAMP    NULL,
@@ -371,10 +375,13 @@ CREATE TABLE IF NOT EXISTS stage_job (
   CONSTRAINT fk_sj_version FOREIGN KEY (model_version_id) REFERENCES model_version (version_id),
   CONSTRAINT chk_sj_stage CHECK (stage_kind IN ('split','judge','animate_render','depth_relief',
     'frame_compose','caption','sculpture')),
-  CONSTRAINT chk_sj_origin CHECK (origin IN ('intake','confirm','use_lower','downgrade','caption','eval')),
+  CONSTRAINT chk_sj_origin CHECK (origin IN ('intake','confirm','use_lower','downgrade','caption','eval','check')),
   -- S3: 평가 작업은 가족 작품이 아니라 평가 묶음 항목을 다룬다(BR-MDL-04 · BR-API-09).
   --     "평가 작업에 작품 연결 없음"은 artwork_id가 SET NULL FK라 CHECK에 쓸 수 없어(이탈 사유 9) trg_stage_job_bi로 옮겼다
   CONSTRAINT chk_sj_eval_owner CHECK ((origin = 'eval') = (evaluation_id IS NOT NULL AND eval_item_id IS NOT NULL)),
+  -- D20 · BR-OPS-05: 점검 작업은 점검 기록 하나와 평가 묶음 항목 하나를 다룬다(가족 작품 연결 없음은 trg_stage_job_bi)
+  CONSTRAINT chk_sj_check_owner CHECK ((origin = 'check') = (model_check_id IS NOT NULL)
+    AND (origin <> 'check' OR (eval_item_id IS NOT NULL AND evaluation_id IS NULL))),
   CONSTRAINT chk_sj_serving CHECK (serving_group IN ('cpu_vision','gpu','llm')),
   CONSTRAINT chk_sj_status CHECK (status IN ('queued','running','done','done_downgraded',
     'retry_wait','failed','cancelled')),
@@ -665,6 +672,44 @@ CREATE TABLE IF NOT EXISTS eval_item_result (
   CONSTRAINT chk_eir_done_path CHECK (status <> 'done' OR result_path IS NOT NULL)
 );
 
+-- 모델 점검 (D20, SD_01 §10-4 · H17 · H18) — 평가 묶음 항목 한 장으로 모델 하나를 샘플 추론한 기록.
+-- 가족 데이터 없음, 출력 파일 참조 없음(BR-OPS-05). 동작만 판정하고 점수는 두지 않는다(BR-OPS-06)
+CREATE TABLE IF NOT EXISTS model_check (
+  check_id         BIGINT       NOT NULL AUTO_INCREMENT,
+  model_id         VARCHAR(2)   NOT NULL,
+  version_id       BIGINT       NOT NULL,
+  eval_item_id     BIGINT       NOT NULL,
+  requested_by     BIGINT       NOT NULL,
+  status           VARCHAR(8)   NOT NULL DEFAULT 'queued',
+  outcome          VARCHAR(16)  NULL,     -- ok · quality_below — 모델이 돈 결과 분류(기록만)
+  fail_reason      VARCHAR(16)  NULL,     -- 오류 분류 5종 · bad_output(출력 형식 불량)
+  processing_ms    INT          NULL,     -- 어댑터 실행 시간(적재 시간 제외)
+  memory_mb        INT          NULL,
+  requested_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  started_at       TIMESTAMP    NULL,
+  finished_at      TIMESTAMP    NULL,
+  -- 모델당 진행 중 점검 1건: 진행 중일 때만 model_id가 들어가는 생성 컬럼에 UNIQUE(이탈 사유 8)
+  inflight_model_key VARCHAR(2) GENERATED ALWAYS AS
+                     (CASE WHEN status IN ('queued','running') THEN model_id END) STORED,
+  CONSTRAINT pk_model_check PRIMARY KEY (check_id),
+  CONSTRAINT fk_mc_model FOREIGN KEY (model_id) REFERENCES model (model_id),
+  CONSTRAINT fk_mc_version FOREIGN KEY (version_id) REFERENCES model_version (version_id),
+  CONSTRAINT fk_mc_item FOREIGN KEY (eval_item_id) REFERENCES eval_item (item_id),
+  CONSTRAINT fk_mc_member FOREIGN KEY (requested_by) REFERENCES team_member (member_id),
+  CONSTRAINT uq_mc_one_inflight UNIQUE (inflight_model_key),
+  CONSTRAINT chk_mc_status CHECK (status IN ('queued','running','passed','failed')),
+  CONSTRAINT chk_mc_outcome CHECK (outcome IS NULL OR outcome IN ('ok','quality_below')),
+  CONSTRAINT chk_mc_fail CHECK (fail_reason IS NULL OR fail_reason IN
+    ('engine_down','timeout','storage','db','model_not_ready','bad_output')),
+  -- 통과 = 결과 분류 있고 실패 사유 없음 · 실패 = 실패 사유 있음 · 진행 중 = 둘 다 없음
+  CONSTRAINT chk_mc_result CHECK (
+       (status IN ('queued','running') AND outcome IS NULL AND fail_reason IS NULL)
+    OR (status = 'passed' AND outcome IS NOT NULL AND fail_reason IS NULL)
+    OR (status = 'failed' AND fail_reason IS NOT NULL)),
+  CONSTRAINT chk_mc_finished CHECK ((status IN ('passed','failed')) = (finished_at IS NOT NULL)),
+  CONSTRAINT chk_mc_times CHECK (finished_at IS NULL OR started_at IS NULL OR finished_at >= started_at)
+);
+
 -- 승격·롤백 이력 (H14) — BR-MDL-03 · D5
 CREATE TABLE IF NOT EXISTS release_event (
   event_id         BIGINT       NOT NULL AUTO_INCREMENT,
@@ -699,6 +744,16 @@ ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_evaluation (evaluation
   REFERENCES evaluation (evaluation_id);
 ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_eval_item (eval_item_id)
   REFERENCES eval_item (item_id);
+-- D20: 이미 만든 DB에 점검 작업을 들인다(멱등 — 제약은 지웠다가 다시 건다)
+ALTER TABLE stage_job ADD COLUMN IF NOT EXISTS model_check_id BIGINT NULL AFTER eval_item_id;
+ALTER TABLE stage_job DROP CONSTRAINT IF EXISTS chk_sj_origin;
+ALTER TABLE stage_job ADD CONSTRAINT chk_sj_origin CHECK (origin IN
+  ('intake','confirm','use_lower','downgrade','caption','eval','check'));
+ALTER TABLE stage_job DROP CONSTRAINT IF EXISTS chk_sj_check_owner;
+ALTER TABLE stage_job ADD CONSTRAINT chk_sj_check_owner CHECK ((origin = 'check') = (model_check_id IS NOT NULL)
+  AND (origin <> 'check' OR (eval_item_id IS NOT NULL AND evaluation_id IS NULL)));
+ALTER TABLE stage_job ADD FOREIGN KEY IF NOT EXISTS fk_sj_model_check (model_check_id)
+  REFERENCES model_check (check_id);
 
 -- ---------------------------------------------------------------------
 -- 영역 G 외부 호출·API
@@ -815,6 +870,8 @@ CREATE INDEX IF NOT EXISTS ix_ej_queue ON external_job (status, queued_at);
 -- S2: 점유 쿼리(SELECT … FOR UPDATE SKIP LOCKED)용
 CREATE INDEX IF NOT EXISTS ix_sj_claim ON stage_job (serving_group, status, available_at, priority, queued_at);
 CREATE INDEX IF NOT EXISTS ix_ej_claim ON external_job (status, available_at, queued_at);
+-- D20: 모델별 최근 점검(S11 · /ready lastCheck)과 보관 20건 정리
+CREATE INDEX IF NOT EXISTS ix_mc_model ON model_check (model_id, check_id);
 
 -- ---------------------------------------------------------------------
 -- 트리거 — CHECK로 표현할 수 없는 규칙(시점 의존 · 다중 행)
@@ -921,17 +978,21 @@ END//
 -- BR-MDL-07 · D17: 단계 작업·외부 작업은 활성 버전만 쓴다 / BR-DEL-05: 삭제 중 작품에 새 단계 작업 금지
 CREATE OR REPLACE TRIGGER trg_stage_job_bi BEFORE INSERT ON stage_job FOR EACH ROW
 BEGIN
-  -- S3: 평가 작업(origin='eval')은 평가 대상인 후보 버전을 돌린다. 단 라이선스 미확인 버전은 평가 작업도 거부(BR-MDL-07)
-  IF NEW.model_version_id IS NOT NULL AND NEW.origin <> 'eval' AND
+  -- S3: 평가 작업(origin='eval')은 평가 대상인 후보 버전을 돌린다. D20: 점검 작업(origin='check')도 같다(점검은 활성화가 아님)
+  IF NEW.model_version_id IS NOT NULL AND NEW.origin NOT IN ('eval','check') AND
      (SELECT release_state FROM model_version WHERE version_id = NEW.model_version_id) <> 'active' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BR-MDL-07 version_not_active';
   END IF;
   IF NEW.origin = 'eval' AND NEW.artwork_id IS NOT NULL THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G21 BR-MDL-04 eval_job_with_family_artwork';
   END IF;
-  IF NEW.model_version_id IS NOT NULL AND NEW.origin = 'eval' AND
+  IF NEW.model_version_id IS NOT NULL AND NEW.origin IN ('eval','check') AND
      (SELECT release_state FROM model_version WHERE version_id = NEW.model_version_id) = 'retired' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G21 eval_on_retired_version';
+  END IF;
+  -- D20 · BR-OPS-05: 점검 작업은 가족 작품을 다루지 않는다
+  IF NEW.origin = 'check' AND NEW.artwork_id IS NOT NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G30 BR-OPS-05 check_job_with_family_artwork';
   END IF;
   IF NEW.artwork_id IS NOT NULL AND (SELECT status FROM artwork WHERE artwork_id = NEW.artwork_id) = 'deleting' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BR-DEL-01 new_job_blocked';
@@ -983,6 +1044,27 @@ BEGIN
   IF NEW.object_id IS NOT NULL AND
      (SELECT owner_kind FROM stored_object WHERE object_id = NEW.object_id) <> 'eval_set' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G20 BR-MDL-04 family_object_not_allowed';
+  END IF;
+END//
+
+-- G30 · D20 · BR-OPS-05: 점검 입력은 그 모델의 폐기되지 않은 버전과, 모델에 맞는 종류의 평가 묶음 항목
+--   (M7은 입체, M6은 설명 입력, 그 밖은 사진 항목). M4는 규칙이라 점검하지 않는다
+CREATE OR REPLACE TRIGGER trg_model_check_bi BEFORE INSERT ON model_check FOR EACH ROW
+BEGIN
+  DECLARE vm VARCHAR(2); DECLARE vs VARCHAR(20); DECLARE ic VARCHAR(20);
+  SELECT model_id, release_state INTO vm, vs FROM model_version WHERE version_id = NEW.version_id;
+  IF vm <> NEW.model_id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G30 version_model_mismatch';
+  END IF;
+  IF vs = 'retired' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G30 version_retired';
+  END IF;
+  IF NEW.model_id = 'M4' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'D20 rule_not_checked';
+  END IF;
+  SELECT category INTO ic FROM eval_item WHERE item_id = NEW.eval_item_id;
+  IF (NEW.model_id = 'M6') <> (ic = 'caption_input') OR (NEW.model_id = 'M7' AND ic <> 'sculpture') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G30 BR-MDL-04 not_check_sample';
   END IF;
 END//
 
@@ -1111,7 +1193,7 @@ SELECT mv.model_id, mv.version_label, j.serving_group,
        SUM(CASE WHEN j.attempt_count > 1 THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) AS retry_rate,
        SUM(CASE WHEN j.status = 'queued' THEN 1 ELSE 0 END) AS queue_backlog
   FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
- WHERE j.status <> 'cancelled' AND j.origin <> 'eval'   -- S3: 평가 작업은 운영 지표에서 뺀다
+ WHERE j.status <> 'cancelled' AND j.origin NOT IN ('eval','check')   -- S3 · D20: 평가·점검 작업은 운영 지표에서 뺀다
  GROUP BY mv.model_id, mv.version_label, j.serving_group;
 
 -- S10 원인 5분류 (BR-OPS-03)
@@ -1123,7 +1205,7 @@ CREATE OR REPLACE VIEW v_not_delivered_trace AS
 SELECT j.job_id, mv.model_id, mv.version_label, j.error_class, j.attempt_count, j.finished_at
   FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
  WHERE j.status = 'failed' AND j.stage_kind IN ('animate_render','depth_relief','sculpture')
-   AND j.origin <> 'eval';   -- S3: 평가 작업의 소진은 결과 미도달이 아니다(UC9 E4 평가 미완료)
+   AND j.origin NOT IN ('eval','check');   -- S3 · D20: 평가·점검 작업의 실패는 결과 미도달이 아니다(UC9 E4 · BR-OPS-05)
 
 -- S10 외부 호출량·거부 수 (UC8 A5)
 CREATE OR REPLACE VIEW v_external_usage AS
@@ -1201,6 +1283,8 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G27','메일 링크 토큰','input','guardian'),
  -- U1 확정: 공동 보호자
  ('G28','초대 수락','input','guardian'),
- ('G29','보호자 관리 권한','access','guardian');
+ ('G29','보호자 관리 권한','access','guardian'),
+ -- D20: 모델 점검
+ ('G30','점검 입력','input','evaluator');
 -- 1c460b0: G29 이름 변경("보호자 해제 권한" → "보호자 관리 권한"). 이미 시드된 DB에도 적용(멱등)
 UPDATE gate_catalog SET gate_name = '보호자 관리 권한' WHERE gate_id = 'G29';

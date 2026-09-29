@@ -17,6 +17,7 @@ export interface Config {
   authHmacSecret: string;
   captionEnabled: boolean;
   gpuEnabled: boolean;
+  modelCheckEnabled: boolean;
   manifestPath: string;
   contractsDir: string;
   apiGuideTestKey: string | null;
@@ -44,6 +45,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     authHmacSecret: env.AUTH_HMAC_SECRET ?? '',
     captionEnabled: bool(env.CAPTION_ENABLED), // P0에서는 꺼짐(llm-contract.md)
     gpuEnabled: bool(env.GPU_ENABLED), // U2 — 꺼져 있으면 M5는 cpu_vision(BR-SRV-02)
+    modelCheckEnabled: bool(env.MODEL_CHECK_ENABLED), // D20 ⑨ — serving 점검 실행기(stage-job §13) 배포 뒤에만 켠다
     contractsDir: env.CONTRACTS_DIR ?? path.resolve('../contracts'), // 계약 사본(T134) — /openapi.json 원천
     apiGuideTestKey: env.API_GUIDE_TEST_KEY || null, // key_kind='test' 원문(ops:key issue --kind test), 로그 금지
     manifestPath: env.MODEL_MANIFEST ?? path.resolve('../models/manifest.yaml'), // A 소유(serving/common/config.py와 같은 변수)

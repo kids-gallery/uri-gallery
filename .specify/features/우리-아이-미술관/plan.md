@@ -29,7 +29,7 @@
 | 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :9541, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
 | 서빙 3종 실체 | CPU 비전 = `worker-cpu`(큐 워커) · GPU = `worker-gpu`(큐 워커, 모델 상주) · LLM = `llm-server`(내부 동기 HTTP :8200, 큐 없음, P0.5) | BR-SRV-01, SD_01 P4 4.4, R-18 |
 | 모델 | M1 BiRefNet `ZhengPeng7/BiRefNet` · M2 OpenCLIP `ViT-B-32`/`laion2b_s34b_b79k` · M3 Animated Drawings(`.mar` 2종, TorchServe 네이티브) · M4 기하 규칙 파일 · M5 `depth-anything/Depth-Anything-V2-Small-hf` · (P0.5) M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, Ollama `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`, 공유 Ollama) · (P1) M7 `stabilityai/TripoSR` | REF §2, D16, R-22 |
-| 저장소(DB) | 팀 MariaDB 12.0.2 `ABC10pioneer1` (utf8mb4). 스키마 정본 SD_03 `uri_gallery_ddl.sql`(D18·공동 보호자·구현 보완 S1~S9 포함, 테이블 35). 도메인 + 작업 큐(`FOR UPDATE SKIP LOCKED`) + 세션 | SD_03, data-model §6, R-04 |
+| 저장소(DB) | 팀 MariaDB 12.0.2 `ABC10pioneer1` (utf8mb4). 스키마 정본 SD_03 `uri_gallery_ddl.sql`(D18·공동 보호자·구현 보완 S1~S9·D20 모델 점검 포함, 테이블 36). 도메인 + 작업 큐(`FOR UPDATE SKIP LOCKED`) + 세션 | SD_03, data-model §6, R-04 |
 | 저장소(파일) | `StoragePort` 인터페이스 + 로컬 파일시스템 드라이버(`family/`·`tmp/`·`ext/` 분리), 참조는 SD_03 `stored_object`. S3 호환 드라이버 교체 가능 | R-06 |
 | 결과 파일 형식 | 움직임 MP4(H.264) · 2.5D 컷아웃 PNG + 깊이 PNG16(WebGL 시차) · 액자 = 원본 참조(새 파일 없음, `frame_compose` 작업) · P1 GLB | U9 닫음(R-07) |
 | 보호자 인증·가족 | 이메일이 로그인 아이디(D18), argon2id, 가입 확인·재설정 메일 링크(1회용·해시 저장·UTC), 인증 경로 7개, 재설정 시 모든 세션 무효, 이메일·IP 요청 한도. 공동 보호자 초대·수락·해제·나가기 경로 7개, 해제·나가기 시 그 계정 세션 즉시 삭제, 가족 소속은 요청마다 DB 확인 | FR-9·31·32, 결정 ③④⑥, R-24·R-25 |
@@ -141,7 +141,7 @@
 ## Phase 1: Design & Contracts
 
 **Output**:
-- [data-model.md](./data-model.md) — **SD_03 DDL을 정본으로** 한 구현 뷰: 테이블 35개(SD_03 33 + 보완 2)의 쓰기 소유, 상태·코드 대응표, 결과 원인 5분류 기록 규칙, 트랜잭션(가입·확인·재설정 포함), `gate_event` 기록 규칙, **SD_03 보완 S1~S9**, 파일 객체와 결과 형식, 마이그레이션 순서.
+- [data-model.md](./data-model.md) — **SD_03 DDL을 정본으로** 한 구현 뷰: 테이블 36개(SD_03 33 + 보완 2 + D20 `model_check`)의 쓰기 소유, 상태·코드 대응표, 결과 원인 5분류 기록 규칙, 트랜잭션(가입·확인·재설정 포함), `gate_event` 기록 규칙, **SD_03 보완 S1~S9**, 파일 객체와 결과 형식, 마이그레이션 순서.
 - [contracts/openapi.yaml](./contracts/openapi.yaml) — app-api 경로 43개(인증 7 + `/v1/me` + 가족 8 + 팀원 로그인 + 보호자 앱·운영·관리·API활용), SD_03 코드값 사용, Redocly lint 통과.
 - [contracts/model-api.openapi.yaml](./contracts/model-api.openapi.yaml) — `/v1/models/{segment|classify|pose|relief}`, `caption`(P0.5, `llm-server` 동기 프록시), 외부 작업 상태·결과 1회 수령, 키 종류 4개.
 - [contracts/stage-job.md](./contracts/stage-job.md) — 경계 계약 1(A↔B), SD_03 이름: 작업 종류 7개(`split`~`sculpture`, `frame_compose` 포함), 점유·이어받기, 응답 분류 ↔ status/error_class/downgrade_cause, 소진 처리, 제안 규칙, 낮춤 체인, 취소, 상한, LLM 동기 예외(§11).

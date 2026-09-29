@@ -28,7 +28,7 @@
 | 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :9541, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
 | 서빙 3종 실체 | CPU 비전 = `worker-cpu`(큐 워커) · GPU = `worker-gpu`(큐 워커, 모델 상주) · LLM = `llm-server`(내부 동기 HTTP :8200, 큐 없음, P0.5) | BR-SRV-01, SD_01 P4 4.4, R-18 |
 | 모델 | M1 BiRefNet `ZhengPeng7/BiRefNet` · M2 OpenCLIP `ViT-B-32`/`laion2b_s34b_b79k` · M3 Animated Drawings(`.mar` 2종, TorchServe 네이티브) · M4 기하 규칙 파일 · M5 `depth-anything/Depth-Anything-V2-Small-hf` · (P0.5) M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, Ollama `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`, 공유 Ollama) · (P1) M7 `stabilityai/TripoSR` | REF §2, D16, R-22 |
-| 저장소(DB) | 팀 MariaDB 12.0.2 `ABC10pioneer1` (utf8mb4). 스키마 정본 SD_03 `uri_gallery_ddl.sql`(D18·공동 보호자·구현 보완 S1~S9 포함, 테이블 35). 도메인 + 작업 큐(`FOR UPDATE SKIP LOCKED`) + 세션 | SD_03, data-model §6, R-04 |
+| 저장소(DB) | 팀 MariaDB 12.0.2 `ABC10pioneer1` (utf8mb4). 스키마 정본 SD_03 `uri_gallery_ddl.sql`(D18·공동 보호자·구현 보완 S1~S9·D20 모델 점검 포함, 테이블 36). 도메인 + 작업 큐(`FOR UPDATE SKIP LOCKED`) + 세션 | SD_03, data-model §6, R-04 |
 | 저장소(파일) | `StoragePort` 인터페이스 + 로컬 파일시스템 드라이버(`family/`·`tmp/`·`ext/` 분리), 참조는 SD_03 `stored_object`. S3 호환 드라이버 교체 가능 | R-06 |
 | 결과 파일 형식 | 움직임 MP4(H.264) · 2.5D 컷아웃 PNG + 깊이 PNG16(WebGL 시차) · 액자 = 원본 참조(새 파일 없음, `frame_compose` 작업) · P1 GLB | U9 닫음(R-07) |
 | 보호자 인증·가족 | 이메일이 로그인 아이디(D18), argon2id, 가입 확인·재설정 메일 링크(1회용·해시 저장·UTC), 인증 경로 7개, 재설정 시 모든 세션 무효, 이메일·IP 요청 한도. 공동 보호자 초대·수락·해제·나가기 경로 7개, 해제·나가기 시 그 계정 세션 즉시 삭제, 가족 소속은 요청마다 DB 확인 | FR-9·31·32, 결정 ③④⑥, R-24·R-25 |

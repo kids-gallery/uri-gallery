@@ -15,6 +15,7 @@
 > **개정 (2026-09-28, 모델 적재 상태 — A 서빙 구현 `763e90a` · B 계약 `fa57e57` · T109 · T143)**: 모델을 올리는 동안은 **오류가 아니다**. C10에 "불러오는 중"·"적재 실패"·"내려감 짐작(M6)"을 더하고, S3·S4에 "그림을 볼 준비를 하고 있어요", S7에 첫 생성 지연 안내(`GET /v1/captions/model-status`, `aa4e55d`), S11에 **모델 상태 표와 "지금 불러오기"**를 넣었다(근거 `docs/A_모델적재_화면요구.md` §3).
 > **개정 (2026-09-29, 웹 구현 전 점검 — 통합 결정 D21, 신지현)**: 구현 전 점검에서 드러난 빈틈을 채웠다. ① 로그인을 **S0a(보호자)**와 **S0o(팀원)** 두 화면으로 나눴다(쿠키·경로·셸이 다르다). ② **역할별 메뉴 표**(§2-1)를 정본으로 두었다 — 지표(S10)는 팀원 세 역할이 읽고 미도달 목록만 운영자 전용. ③ 운영 셸이 새로고침 뒤 역할을 되살리는 `GET /v1/ops/me`와 `POST /v1/ops/auth/logout`, S9 진행을 보는 `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion`을 바인딩했다. ④ S3의 **비활성 모델 선택지**(`unavailable[]`, 409 `model_disabled`), S6의 **동시 수정 충돌**(409 `story_conflict`), S11의 **비활성화**(clarify 확정)를 넣었다. ⑤ §16에 G26~G29를 더해 30개 전건으로 맞췄다. ⑥ 보류 블록은 점선 테두리로 통일하고, 상태 모양을 스타일가이드 토큰에 사상했다(§3-5).
 > **개정 (2026-09-29, 디자인 검토 — 통합 결정 D22, 신지현)**: §3-5 토큰 사상 확정, S0a·S0o 와이어프레임 추가, 운영 화면 헤더를 역할별 메뉴 표대로, §18 #1·#2·#3·#10 닫음(요청 채널 없음 · 키는 운영 CLI · 3D 노출은 운영 CLI · 별칭 1~20자 · 입력 중 세션 만료 시 브라우저 임시 저장). 문구 정본은 `docs/C_화면문구.md`(D22 ⑦).
+> **개정 (2026-09-29, 통합 결정 D20 — 모델 점검)**: S11 모델 상태 표에 **"점검" 동작과 "마지막 점검" 열**을 더했다(SD_01 §10-4 · 7.8~7.10 · G30). 점검은 평가 묶음 사진 한 장으로 모델 하나를 돌려 보는 것이고, 결과는 통과/실패와 처리 시간만 보인다(점수 없음). 역할별 메뉴 표에 "S11 점검" 행, §16에 G30을 더했다(게이트 31개).
 > **시각 기준**: 색·글꼴·간격·모서리·버튼·칩은 `design/style-guide/스타일가이드_우리아이미술관.html`(R-20)을 따른다. 보조: 같은 폴더의 `스타일가이드_메뉴얼_우리아이미술관.md`, 화면 흐름 참고: `design/prototype/우리아이미술관_프로토타입.html`. 스타일가이드와 이 문서가 다르면 **문구·동작은 이 문서**, 모양은 스타일가이드가 앞선다(제안 미리 선택 금지는 이 문서가 앞선다).
 
 ---
@@ -118,6 +119,7 @@
 | S10 결과 미도달 추적 탭(`/v1/admin/unreached`) | 읽기 | — (탭을 그리지 않음) | — (탭을 그리지 않음) |
 | S11 모델 평가(매니페스트·모델 상태 표) | 읽기 | 읽기·조작 | 읽기 |
 | S11 지금 불러오기 | 조작 | 조작 | — |
+| S11 모델 점검(D20) — 마지막 점검 열은 세 역할 모두 읽기 | 조작 | 조작 | — |
 | S11 평가 요청·판단·승격·롤백·비활성화 | — | 조작 | — |
 | S12 API활용(시험 호출 포함) | 읽기·시험 | — (메뉴를 그리지 않음) | 읽기·시험 |
 
@@ -997,7 +999,7 @@ salt
 | 좋아요 | `decision like`. 승인됨. 이야기가 비었으면 "이야기를 채우면 전시돼요"와 S6 | UC4 BF4 · BF5 |
 | 낮춘 결과로 걸기 | 2.5D가 없으면 "입체 부조를 새로 만들어요" 안내 뒤 S4로(처리 중). 처음 결과는 보관 | UC4 A1 · H6 |
 | 액자로 걸기 | 모델 없이 승인. 처리하지 못함에서도 가능 | UC4 A2 · A5 |
-| 다시 찍기 | 확인 대화상자("이전 작품은 지워져요" [추론]) → 결정 기록 → S2(아이 미리 선택) + 이전 작품은 S9 절차 | UC4 A6 · H7 · H8 |
+| 다시 찍기 | 확인 대화상자("지금 작품은 지워지고 새로 올려요", 2026-09-29 문구 검토 확정) → 결정 기록 → S2(아이 미리 선택) + 이전 작품은 S9 절차 | UC4 A6 · H7 · H8 |
 | 중복 누름 | 첫 결정만 반영, 이미 반영된 결정을 보여 줌 | UC4 E7 · BR-APR-06 |
 
 ### 8-4 상태 전이
@@ -1320,7 +1322,7 @@ salt
 |---|---|---|---|
 | 헤더 | 역할 · 계정(가림) · 역할별 메뉴 표(§2-1)의 메뉴 | 7.1 Output · `GET /v1/ops/me` | UX8 (C9) |
 | 요약 행 | 생존 · 준비 · 기간 | 7.2 · 7.3 Output | 운영 화면의 고정 레일 |
-| 준비 - 모델별 | 모델 · 서빙군 · 상태 칩 · 영향 경로 | 7.3 Output 모델별 준비·활성 버전 · H14 | UX8 (C10) |
+| 준비 - 모델별 | 모델 · 서빙군 · 상태 칩 · 영향 경로 · 마지막 점검(통과/실패·시각, D20 — 읽기만, 점검 실행은 S11) | 7.3 Output 모델별 준비·활성 버전 · H14 · H18 | UX8 (C10) |
 | 지표 | 첫 결과 승인율 · 판정 수정률 · 결과 미도달(목표 0) · 삭제 미완료 · 설명 규칙 검사 실패율(P0.5) — "정의와 검증 계획이며 실적 아님" | 7.4 Output (H13) | BR-OPS-02 |
 | 탭 | 모델별(낮춤률 · p95 · 재시도율 · 큐 적체 · 외부 호출량·한도 초과) · 원인 5분류 · 결과 미도달 추적(단계 작업 번호 기준, **운영자에게만 그림**) | 7.5 · 7.6 · 7.7 Output | UX3 · UX8 |
 | 구조적 차단 안내 | 가족 이미지·이야기로 가는 경로 없음 | — (BR-ACC-03) | UX8 |
@@ -1359,12 +1361,17 @@ salt
 }
 ..
 {^"모델 상태 - 2초마다 갱신 - 예시 값"
-{# 모델 | 장치 | 적재 | 대기 | 동작
-  M1 BiRefNet | CPU | 준비됨 - 마지막 적재 **초 | 0 | .
-  M3 Animated Drawings | CPU | 불러오는 중 42초 - 남은 약 20초 | 2 | .
-  M5 Depth Anything | MPS | 적재 실패 - 60초마다 다시 시도 | 1 | [지금 불러오기]
-  M6 Qwen3-4B | Ollama | 내려감 짐작 - 첫 요청 때 올라가요 | 0 | .
+{# 모델 | 장치 | 적재 | 대기 | 마지막 점검 | 동작
+  M1 BiRefNet | CPU | 준비됨 - 마지막 적재 **초 | 0 | 통과 - 1.*초 - **분 전 | [점검]
+  M3 Animated Drawings | CPU | 불러오는 중 42초 - 남은 약 20초 | 2 | 점검 중 | [점검 (비활성) - 점검 중이에요]
+  M5 Depth Anything | MPS | 적재 실패 - 60초마다 다시 시도 | 1 | 실패 - 모델 미준비 | [지금 불러오기] [점검]
+  M6 Qwen3-4B | Ollama | 내려감 짐작 - 첫 요청 때 올라가요 | 0 | P0.5부터 | .
 }
+}
+{^"막힘  G30 - 점검 입력"
+  사유: M7을 점검할 입체 작품 사진이 평가 묶음에 없어요
+  해제 주체: 평가 담당 - 평가 묶음에 입체 작품 등록
+  다음 행동: [평가 항목 등록] | [점검 (비활성) - 점검할 사진이 없어요]
 }
 ..
 {^"M1 후보 v2 평가"
@@ -1386,7 +1393,7 @@ salt
 @enduml
 ```
 
-**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VdFOG1cQffdXjMhLS2WKDUURTxRCqkpNQxv1KXKlbXETF2OQvTSqIJIh28jgjTCRTUxiu4vi1pAade2sEizRH9o7-w89s7u2MSQPK917fefMmTNnrudyupbVN1bTkdxKKrOuZbVV-kn7eeVBdm0js7ywll7L0o3bU7dji_MRPaWnk3QvFiP15kQ9Oydvf9e183yUJ97rud1TioZHpIqOKvZIvbcjOS2tRzY_i2wSv3S4uk3eUVmdOrRF_OLMq1izV2K26Ne18bncxvjEShab-_xk23tSi3Ir7x3UEvQ4MjER2bzRp7AFuBobHSzUcVPZHfJeGeqtwA8Wqn7BdYcNi_eacl5xuFiLEN2J0Xzq--Qv3yZ1HP8W8yk95bopu7gPXeG65GAg9KoSEqe768nMwjdfL12-PQyLDcPYMkZCp-jLTGpV05PLdCurPUplHuSupZ34QNag4h_HwooDPSB1nJ2CahVUsUmu3eGihTOuFlAb9s_HRkTixl-AkoW1zY22iGLm3XNbFvtH3Di4JsfC0g9yvZlXPUOVToCNXGiCau32QcbHwQCXJoX4xysMkNS7gvqzzdWm2isD9oCmhb_A7pxwHQ6q_EfxyQAw3gf8gm4l1_WHgP1dfwg4nN9Zujcsg4tNzxRuM5NDMfCJBvjUvnQg5ruohXILQxaoPSEZZui7R8nMVHR6HrfuptPaqiZkdxxlNV27RNwqQR1RtvsPDFzm7hmpigmh27CVuP9leSDB40GvoGVoPxgp8PcY0vWd3n6Hds8S77RVwxQNegZartoXkshpy5Twse12HNk3_uCu72czz6_AyKoJI3zec5RsApZbhne4OwtJ6XOaniY-MtRr89I0_nseHsUFsH7ulQ2wJ35qIhQA98OLQYEJEQzc3bcWGxDyhSNqyaFnllTxhLBVx_UEqhVbtna9RpXoq7gPbhnCFs25lpsWZ0QDFM21S1M_-N2rnKk3pxRH2RhXQBT40Om_LO77C7dj-wGlKpoJv-xxxQBhkRUTbYHo6wvkvvqeRK-nGLBDrLgFowf9MAizqPvq5dBOQYCvQkjpE3QteHw-HUkiBfS1CZ6k6CjD_rjT4s3LgojDVNcQBeuOtAeVqn1T_e2EXvI7hNBDJyg7pA6nYLb9sbIqkqiVHwhUDS4H_PCb27Wl3SGvKxWMvJ8Bx4Tv6blkZln-Iv4HrjwyPw==)** — 클릭 시 브라우저로 연결됩니다.
+**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVV1PG1cQffevGJGXlsqubQiteKIQUlUqDWnUJ-RKbnETF2OQbRpVEMmQDTJ4K0xqB0Nsd1GcLqRGXZstsSX6h_bO_ofO3Lv-wlTtg-Xdu_NxzpkzuzPpTDSV2VhN-NIr8eR6NBVdhe-i3688Tq1tJJfn1hJrKbhzf-J-aH7Wl4lnEjF4FAqBeHcmfmmDe7DnWFk8zgLud5zWOfi9IxB5W-Q7IN5bvnQ0kfFtfuTbBDyxsbwN7nFRnNuwBXh04ZaM6Rs5W_Dj2vhMemM8sJKimyV8vu0-r_jRzLqHlQg88wUCvs07XQhbVK6CWpMuxGldWE1wX2viksv3LkT1Gqs2agbu1_m8ZGO-4gNYCMFs_OvYD1_FMnT8U0hC2sWqzndhWbqEVe6BVKFT5pQwPFiPJee-_GJxMLqfFuqnoaENpU7AZ8n4ajQTW4Z7qejTePJxeqRt4JauivG3Yx5jpQdJHUY7J8ycyNfBsZqYN-gMyzniRvcvx4ZEwtpbKsUXxjbWGiyKnnXaFl-YOdJWmHv0rOC0snx0cIy1wxGF5ha_4Qr1rOhoonBG7QZzZd3xcQJFQUHmsfuXc3lNUaGAPPXTU3GlebosqW6Rf1dGtRNXOfFbA8t1sV-k3ocwGVbFxM4ZVsl5pb8hHFRdw5KgJMGRvSbwASFWPvmQReqFsC2OCnhSlDDuwr3YeuYJgfk584RAUIGFxUd90TBfd3WmPRXsS08_Vpx-4oB5yXF2Az39xZ9tpZqEZJLwuT4vmkJkSI0pePg0lpzwT85S-INEIroaZR12bGHUHasAaBZoOsyj9QftVBFbFyBKOs2-QU7nhTwpeiNYDAbuiqusq_GgA-SkZ9JI5p5bKwN8PhEcUKP2QhhvxwgA7jSwQmu58AlWNe8x7SlHYMumv0P3ZU5GmRoJ2FvfxhV5mOSUbn5lEwoqxstmkDxvrin35qr7b8kdaiJ-bYrTKpVhlWlB3Fd75M1pWPLy3NKFeHfuhUX-Y-CSQw91D2Skt2Dkdu-dQduvOrAeQxinuYSo6TzcDhVqiwZbHO0Gv9rw1HKaNt8rGrQEehZfEy2jwjNTtISps8ymRnSmyc_wMUxOAh5r4o0-oAmZRh2FuWC17RY1mi_grk6pVKArgrKAZE_YnUsDNRL8yJbGokNXL4j8GdAti3TDAmFZ3NCU6I2R3jA_NeiJkefeBMJEW6pay5Gq3c-B8_7aaVoyoVAm39Oy7mNJ-1_OGGnRQ3eLHUaCva1UCcoYCtKwMQY0JgJdbdR3xD-MsPuOhvlPBwXhHRQtjRWs2jweYioOdPG77XlJTmhgITzo5BR6Ict3mlHiRma2J1BZBSt89MxpWTxuD9cNBkMfPYUxIhd9JpZcpu_6PxnIK8M=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 14-2 영역별 설계
 
@@ -1394,9 +1401,10 @@ salt
 |---|---|---|---|
 | 헤더 | 역할 평가 담당 | 8.1 Output | UX8 |
 | 매니페스트 표 | 모델 · 활성 · 롤백 후보 · 후보 · 라이선스 · 해시 일치 (D16 채택 5종 + M7 P1) | 8.2 Output 매니페스트 | UX8 (C10) |
-| 모델 상태 표 | 모델 · 활성 버전 · 장치(`execDevice`/`runtime`, MPS 표기) · 적재(C10 칩, 불러오는 중이면 경과/예상 막대, 마지막 적재 초, M6는 내려갈 시각) · 대기(M6 `queue`, 그 밖은 `queue_backlog`) · 동작. 2초 폴링, 화면이 안 보이면 멈춤 [추론]. **운영자 · 평가 담당 · 연동 개발이 읽고, 지금 불러오기는 운영자 · 평가 담당만** | `GET /v1/ops/models`(T143 · T109) | UX8 (C10) · UX6 |
+| 모델 상태 표 | 모델 · 활성 버전 · 장치(`execDevice`/`runtime`, MPS 표기) · 적재(C10 칩, 불러오는 중이면 경과/예상 막대, 마지막 적재 초, M6는 내려갈 시각) · 대기(M6 `queue`, 그 밖은 `queue_backlog`) · **마지막 점검**(통과/실패 사유 · 처리 시간 · 끝난 지 얼마, 점검 중이면 "점검 중", 점수 없음 — D20) · 동작. 2초 폴링, 화면이 안 보이면 멈춤 [추론]. **운영자 · 평가 담당 · 연동 개발이 읽고, 지금 불러오기는 운영자 · 평가 담당만** | `GET /v1/ops/models`(T143 · T109) | UX8 (C10) · UX6 |
 | 평가 진행 | 평가 묶음 구성(팀원 제작만) · 완료/전체 · 평가 미완료 수. 새로 고친 뒤에도 버전의 가장 최근 평가 기록으로 이어 간다 | 8.3 · 8.4 Output · `GET /v1/admin/models`의 `versions[].latestEvalRunId` → `GET /v1/admin/eval-runs/{id}`(2026-09-29 계약 보완) | G20 · UX6 |
-| 차단 블록 | G20 항목 등록 · G21 착수(해시·격리) · G22 승격(미완료·라이선스·계약) | 8.3 · 8.7 Output | UX6 |
+| 차단 블록 | G20 항목 등록 · G21 착수(해시·격리) · G22 승격(미완료·라이선스·계약) · G30 점검 입력(맞는 평가 묶음 사진 없음 · 폐기 버전) | 8.3 · 8.7 · 7.8 Output | UX6 |
+| 모델 점검(D20) | 행의 [점검]은 모델 하나를 평가 묶음 사진 한 장으로 돌려 본다. 버전·사진은 고르지 않으면 서버가 정한다(활성, 없으면 가장 최근 후보). 평가 담당은 후보 버전 행에서도 점검할 수 있다(UC9 A7). 결과는 행의 "마지막 점검" 칸에 폴링으로 바뀐다. **점검 통과는 승격 근거가 아니다** — 승격 버튼의 조건(G22)과 섞지 않는다 | `POST /v1/ops/models/{id}/check` · `GET /v1/ops/model-checks/{id}` · `GET /v1/ops/model-checks`(최근) · 7.8~7.10 Output | UX6 · UX8 |
 | 롤백 · 비활성화 | 직전 활성 후보가 있으면 **롤백**. 없으면 롤백 버튼은 C3 "(비활성) - 되돌릴 후보가 없어요"이고 대신 **비활성화**를 준다(clarify 확정). 비활성은 "미준비"(장애)와 다른 칩(사선)으로 보이고, 새 버전 승격 때 다시 활성 | 8.8 Output · `POST /v1/admin/models/{id}/rollback` · `…/deactivate` | UX6 |
 | 역할 | 평가 담당만 조작. 운영자·연동 개발은 같은 화면을 읽기 전용으로 보고 조작 버튼을 그리지 않는다(지금 불러오기는 운영자도 조작) | §2-1 역할별 메뉴 표 | UX8 |
 
@@ -1405,6 +1413,7 @@ salt
 | 조작 | 동작 | 근거 |
 |---|---|---|
 | 지금 불러오기 | M1 · M2 · M3 · M5 · M7이 `미준비`·`적재 실패`일 때만 보인다. `POST /v1/ops/models/{id}/warmup`(202) 뒤 결과는 폴링으로 본다. M6에는 버튼 없이 "첫 요청 때 올라가요"(공유 Ollama는 기동 때 1회만 미리 올림, 요청하면 409 `m6_preload_at_start_only`). 연동 개발 역할에는 버튼을 그리지 않는다(C9) | T143 · A §3.2 |
+| 점검 | M1 · M2 · M3 · M5 · M7 행에만 보인다(M4 규칙은 없음, M6은 P0.5부터). `POST /v1/ops/models/{id}/check`(202) 뒤 3→6→10초 폴링(R-12), 끝나면 "마지막 점검" 칸을 바꾼다. 점검 중이면 C3 "(비활성) - 점검 중이에요"(409 `check_in_progress`). 맞는 평가 묶음 사진이 없으면 C2 G30(해제 주체 평가 담당). serving 점검 실행기가 아직 없으면 503 `check_runner_missing` → C2 "점검을 아직 쓸 수 없어요". 연동 개발 역할에는 버튼을 그리지 않는다 | UC8 A8 · E7 · UC9 A7 · D20 |
 | 평가 요청 | 해시·격리 확인 뒤 항목별 작업 등록(202) | UC9 BF3 |
 | 보고서 열기 | 불일치 · 오인 후보 · 시간 · 메모리를 활성 버전과 나란히 | UC9 BF5 |
 | 판단 기록 | 오인 분류 · 통과 판단 · 근거 | UC9 BF6 · A2(보류) |
@@ -1414,7 +1423,7 @@ salt
 
 ### 14-4 상태 전이
 
-모델 상태: `미준비`/`적재 실패` → (지금 불러오기) → `불러오는 중` → `준비됨` 또는 `적재 실패`(60초마다 재시도) · M6 `준비됨` → (5분 요청 없음) → `내려감 짐작` → (첫 요청) → `불러오는 중`. 평가: `목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` · `활성`(후보 없음) → (비활성화) → `비활성` → (새 버전 승격) → `활성`.
+모델 상태: `미준비`/`적재 실패` → (지금 불러오기) → `불러오는 중` → `준비됨` 또는 `적재 실패`(60초마다 재시도) · M6 `준비됨` → (5분 요청 없음) → `내려감 짐작` → (첫 요청) → `불러오는 중`. 모델 점검(D20): `점검 없음`/`통과`/`실패` → (점검) → `점검 대기` → `점검 중` → `통과` 또는 `실패`(오류 분류·출력 형식 불량) · `점검 대기`가 15분 넘으면 `실패`(모델 미준비) · (점검) → `차단(G30)`. 평가: `목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` · `활성`(후보 없음) → (비활성화) → `비활성` → (새 버전 승격) → `활성`.
 
 ---
 
@@ -1487,7 +1496,7 @@ salt
 
 ## 16. 게이트 맵 → 화면 표현 사상
 
-SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하나 이상의 버튼을 비활성화한다.
+SD_01 §15의 게이트 **31개 전건**(G0~G30)이다. 모든 게이트가 하나 이상의 버튼을 비활성화한다.
 
 | 게이트 | 화면 | UI 표현 | 비활성화 대상 | 해제 액션 |
 |:--:|---|---|---|---|
@@ -1520,6 +1529,7 @@ SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하�
 | G26 이메일 검사(가입) | S0 | 형식·비밀번호 규칙은 필드 옆 사유 + C2. 이미 가입된 주소도 새 가입과 같은 "메일함을 확인해 주세요"(가입 여부 비노출). 요청 한도는 C2 | 가입하기 | 보호자: 값 고치기 · 로그인(S0a) · 찾기(S0b) |
 | G27 메일 링크 토큰 | S0(확인) · S0b(재설정) | 400 `token_invalid` → C2 "링크를 쓸 수 없어요"(만료·사용·무효 구분 없음) | 확인 완료 표시 · 새 비밀번호 저장 | 보호자: 메일 다시 받기 |
 | G28 초대 수락 | S1c | 400 `token_invalid` · 403 `forbidden_role`/`invite_email_mismatch` · 409 `already_in_family` → C2 | 수락하기 | 초대받은 사람: 올바른 이메일로 다시 로그인 · 다른 가족에서 나오기 · 새 초대 받기 |
+| G30 점검 입력 (D20) | S11 | C2 "점검할 평가 묶음 사진이 없어요"(M7이면 "입체 작품 사진") · 폐기 버전 C2. 해제 주체 평가 담당을 이름으로 밝힘 | 해당 모델 행의 점검 | 평가 담당: 평가 묶음 항목 등록(G20). 운영자는 다른 버전·사진 고르기 |
 | G29 보호자 관리 권한 | S1b | 초대·해제 버튼은 만든 보호자에게만 그림. 두 명 찬 뒤 초대는 C3 "보호자는 두 명까지예요"(409 `co_guardian_full`). 만든 보호자의 나가기는 C3 | 초대하기 · 해제 · (만든 보호자) 나가기 | 만든 보호자: 공동 보호자 해제. 만든 보호자의 탈퇴·이전은 U20 |
 
 **사상 규칙**

@@ -2062,6 +2062,185 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ops/models/{modelId}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 모델 점검 요청 (D20, FR-33, UC8 A8·UC9 A7, G30) — 평가 묶음 항목 한 장으로 샘플 추론
+         * @description 모델 하나를 평가 묶음 항목 한 장으로 돌려 동작(오류 없음·출력 형식·처리 시간)만 확인한다. 품질 점수 없음, 재시도 없음(BR-OPS-06).
+         *     `versionId`가 없으면 활성 버전, 없으면 가장 최근의 폐기 아닌 버전. 라이선스 확인 전·후보 버전도 점검한다(활성화가 아님).
+         *     `evalItemId`가 없으면 서버가 고른다(M3는 사람 항목 우선, M7은 입체 항목, 그 밖은 사진 항목).
+         *     점검 작업은 `stage_job` `origin='check'`·우선순위 30으로 들어가고 지표·결과 미도달에 넣지 않는다(BR-OPS-05). gate_event는 G30 거절만.
+         *     serving 점검 실행기가 배포되기 전(app-api `MODEL_CHECK_ENABLED` 꺼짐)에는 503 `not_saved`/`check_runner_missing`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    modelId: "M1" | "M2" | "M3" | "M4" | "M5" | "M6" | "M7";
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        versionId?: string;
+                        evalItemId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description 점검 접수(status queued). 결과는 /v1/ops/model-checks/{checkId} */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ModelCheck"];
+                    };
+                };
+                403: components["responses"]["ForbiddenRole"];
+                /** @description 없는 버전(그 모델의 것이 아님 포함) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /**
+                 * @description conflict — reason `check_in_progress`(같은 모델 점검 진행 중) · `rule_not_checked`(M4) · `m6_check_p05`(M6, P0.5 전) ·
+                 *     `no_version`(버전 없음) · `version_retired`(G30) · `no_check_sample`(맞는 평가 묶음 항목 없음, G30)
+                 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description validation_failed — reason `not_check_sample`(평가 묶음 항목이 아니거나 모델에 맞지 않는 종류, G30) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description not_saved — reason `check_runner_missing`(serving 점검 실행기 배포 전) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ops/model-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 모델별 최근 점검 (D20, S11 "마지막 점검" 열) — 모델마다 가장 최근 1건 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 점검한 적이 있는 모델만 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            checks: components["schemas"]["ModelCheck"][];
+                        };
+                    };
+                };
+                403: components["responses"]["ForbiddenRole"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ops/model-checks/{checkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 점검 상태·결과 (D20, 폴링 3→6→10초). 15분 넘게 시작 못 한 점검은 이 조회에서 failed·model_not_ready로 닫힌다 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    checkId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 점검 기록 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ModelCheck"];
+                    };
+                };
+                403: components["responses"]["ForbiddenRole"];
+                /** @description 없음(보관 20건 밖으로 지워진 점검 포함) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/models": {
         parameters: {
             query?: never;
@@ -2663,7 +2842,7 @@ export interface components {
             status: number;
             /** @enum {string} */
             code: "unauthorized" | "forbidden_role" | "not_found" | "conflict" | "invalid_input" | "payload_too_large" | "validation_failed" | "not_saved" | "llm_unavailable" | "token_invalid" | "email_unverified" | "rate_limited";
-            /** @description 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, story_conflict, m6_preload_at_start_only, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete) */
+            /** @description 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, story_conflict, m6_preload_at_start_only, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete, check_in_progress, not_check_sample, no_check_sample, version_retired, rule_not_checked, m6_check_p05, check_runner_missing) */
             reason?: string;
             /** @description SD_01 게이트 번호(예 G4). 화면 C2 차단 블록용 */
             gate?: string;
@@ -2888,7 +3067,46 @@ export interface components {
                 servingGroup?: "cpu_vision" | "gpu" | "llm";
                 state?: components["schemas"]["ModelReadiness"];
                 activeVersion?: string | null;
+                /** @description 팀원 세션일 때만. 이 모델의 가장 최근 점검(D20). 준비 확인이 점검을 일으키지는 않는다 */
+                lastCheck?: {
+                    /** @enum {string} */
+                    status?: "queued" | "running" | "passed" | "failed";
+                    failReason?: string | null;
+                    /** Format: date-time */
+                    finishedAt?: string | null;
+                } | null;
             }[];
+        };
+        /** @description 모델 점검 기록(D20, SD_03 model_check). 점수·객체 키·출력 파일 없음(BR-OPS-05·06) */
+        ModelCheck: {
+            id: string;
+            modelId: string;
+            versionId: string;
+            versionLabel: string;
+            /** @enum {string} */
+            releaseState?: "candidate" | "active" | "rollback_candidate" | "retired";
+            evalItemId: string;
+            /**
+             * @description passed = 오류 없이 끝나고 출력 형식이 맞음
+             * @enum {string}
+             */
+            status: "queued" | "running" | "passed" | "failed";
+            /**
+             * @description 모델이 낸 결과 분류(기록만). quality_below도 통과
+             * @enum {string|null}
+             */
+            outcome?: "ok" | "quality_below" | null;
+            /** @enum {string|null} */
+            failReason?: "engine_down" | "timeout" | "storage" | "db" | "model_not_ready" | "bad_output" | null;
+            /** @description 어댑터 실행 시간(적재 시간 제외) */
+            processingMs?: number | null;
+            memoryMb?: number | null;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            startedAt?: string | null;
+            /** Format: date-time */
+            finishedAt?: string | null;
         };
         /** @description 정의와 검증 계획이며 실적 아님. 식별 정보 없음(BR-OPS-04) */
         Metrics: {

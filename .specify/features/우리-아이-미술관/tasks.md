@@ -334,6 +334,17 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T162 (이제민 완료 2026-09-29, D25 — 시안 브랜치 c/museum-home → main; 시험 web·E2E) [US4] 홈을 미술관 전시실로(D25, SD_02 §17-2): S0w 입장(첫 방문만) · 홈 "{별칭}의 미술관"(평면 안내도·N세관·흑백 액자·명패·월 라벨) · 빈 액자 걸이 · 전시 확정 때 걸리는 애니메이션 · 작품 목록은 "작품 관리"(`/app/works`) · S8은 홈으로 합침 — `web/src/app/views/MuseumView.vue` · `WelcomeView.vue` · `web/src/components/ArtFrame.vue` · 담당 B(이제민, 신지현 위임) · 스킬 FD, RL · 근거 D25
 - [x] T163 (이제민 완료 2026-09-29, D25; 시험 api `review-story-gallery`·`captions`) [US4] 보호자 감상평(D25, BR-STY-04): SD_03 `story.guardian_note`(+기존 DB `ADD COLUMN IF NOT EXISTS`, `v_gallery`), 계약 `Story.guardianNote`·`GalleryItem.guardianNote`, app-api 이야기 저장·상세·전시, S6 선택 칸, 월 라벨 표시. AI 설명 입력(BR-CAP-01)·로그에 넣지 않음 — `design/uri_gallery_ddl.sql` · `api/src/modules/artworks/story.ts` · `web/src/app/views/StoryView.vue` · 담당 B(이제민) · 스킬 DB, API, FD · 근거 D25, UC_05·UC_06 개정
 
+
+### D20 모델 점검(점검 API) — 2026-09-29 추가 (FR-33, UC8 A8·E7, UC9 A7, G30)
+
+- [x] T151 (D 완료 2026-09-29) 점검 API 설계를 설계서에 먼저 반영한다: REF D20·BR-OPS-05·06, UC_08 A8·E7, UC_09 A7, UC_ALL·UC_00, SD_01 §10-4(7.8~7.10·H17·H18·G30·도면 P7-2), SD_02 S11(점검·마지막 점검·G30), SD_03 `model_check`·§18-3, SD_04 §8 서빙 쪽 모양(큐 방식), spec FR-33, plan·data-model, stage-job §13 — `design/*` · `.specify/features/우리-아이-미술관/*` · 담당 D · 근거 D20
+- [x] T152 (D 완료 2026-09-29) 계약: `POST /v1/ops/models/{modelId}/check`·`GET /v1/ops/model-checks`·`GET /v1/ops/model-checks/{checkId}`, `ModelCheck`, `/ready` `lastCheck`, reason 코드 7개(원본·사본, Redocly 오류 0) — `contracts/openapi.yaml` · 담당 D · 근거 D20 ③④⑦
+- [x] T153 (D 완료 2026-09-29) DDL: `model_check`(테이블 36)·`stage_job.origin='check'`·`model_check_id`·`chk_sj_check_owner`·`trg_model_check_bi`(G30, 트리거 16)·운영 뷰 제외·G30 시드, 기준 마이그레이션 복사, 기존 DB 올리기 확인 — `design/uri_gallery_ddl.sql` · `db/migrations/0001_sd03_baseline.sql` · `db/tests/ddl.verify.test.ts`(20/20) · 담당 D · 근거 SD_03 §18-3
+- [x] T154 (D 완료 2026-09-29) app-api: 점검 경로 3개(역할·G30·진행 중 1건·버전·항목 선택·15분 대기 닫기·모델당 20건), `/ready` `lastCheck`, 지표에서 점검 작업 제외, sweeper가 점유 만료 점검을 재시도 없이 닫음, `MODEL_CHECK_ENABLED`(기본 꺼짐 → 503 `check_runner_missing`) — `api/src/modules/ops/modelCheck.ts` · `api/src/modules/ops/routes.ts` · `api/src/sweeper/takeover.ts` · `api/tests/model-check.test.ts`(12) · 담당 D · 근거 SD_01 7.8~7.10
+- [ ] T155 serving 점검 실행기: 보호자 점유 조건을 `origin NOT IN ('eval','check')`로, 점유 순서 보호자 → 점검 → 평가, 모델 어댑터 한 번 실행(M3 관절까지·M5 깊이까지), 출력 형식 확인(SD_01 §10-4 표), `model_check` 결과·처리 시간·메모리 기록, 임시 파일 삭제, `priority.check: 30`. 배포 뒤 app-api `MODEL_CHECK_ENABLED=true` — `serving/workers/runner.py` · `serving/workers/stages/check.py` · `serving/config/limits.yaml` · `serving/tests/` · 담당 A · 근거 stage-job §13, SD_04 §8
+- [ ] T156 (P0.5) M6 점검: app-api가 설명 입력 항목으로 llm-server `/v1/caption`을 동기 호출해 `model_check`에 기록(`m6_check_p05` 해제) — `api/src/modules/ops/modelCheck.ts` · 담당 D · 근거 D20 ⑧, stage-job §11
+- [ ] T157 [P] S11 화면: 모델 상태 표에 "마지막 점검" 열(`GET /v1/ops/model-checks`)·[점검] 버튼(운영자·평가 담당, M1·M2·M3·M5·M7), 폴링 3→6→10초, 409 `check_in_progress` C3, G30 C2(해제 주체 평가 담당), 503 `check_runner_missing` C2, S10 준비 표에 `lastCheck` 읽기 — `web/src/ops/views/*` · `web/src/copy/ko.ts` · 담당 B · 근거 SD_02 §14 · §16 G30
+
 ### RBAC 정리 (D24, 2026-09-29 최호준 요청)
 
 - [x] T158 (A 완료 2026-09-29 — 라우트 19개 requirePerm, 계약 x-permission, 시험 rbac 14건. D20 점검 경로 2개는 점검 기능 커밋 때 전환) [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
@@ -408,4 +419,5 @@ Phase 2 Foundational ── DB(T013~T018) ─┬─ 앱 API 공통(T019~T026)
 | US11 3D(P1) | 3 |
 | Final Phase | 8 |
 | D21·D22 추가(T146~T150) | 5 |
+| D20 모델 점검(T151~T157) | 7 |
 | **합계** | **141 + T142~T145 + 5** |

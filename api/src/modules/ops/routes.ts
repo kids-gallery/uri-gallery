@@ -8,6 +8,7 @@ import { requirePerm } from '../../auth/policy.js';
 import { STAFF_COOKIE, loadSession } from '../../auth/session.js';
 import { Problem } from '../../lib/problem.js';
 import type { ModelApi } from './modelApi.js';
+import { latestChecks } from './modelCheck.js';
 
 const MODELS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7'];
 const all = async <T>(db: Pool, sql: string, p: unknown[] = []) => (await db.query(sql, p))[0] as T[];
@@ -44,6 +45,12 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
       }
       return { modelId: id, servingGroup: id === 'M5' && !cfg.gpuEnabled ? 'cpu_vision' : group, state, activeVersion: active?.version_label ?? null };
     });
+    // D20 ⑦: 팀원 세션이면 모델별 마지막 점검만 곁들인다(준비 확인이 점검을 일으키지 않음)
+    const last = checks.db ? await latestChecks(db).catch(() => []) : [];
+    for (const m of models) {
+      const c = last.find((x) => x.modelId === m.modelId);
+      (m as Record<string, unknown>).lastCheck = c ? { status: c.status, failReason: c.failReason, finishedAt: c.finishedAt } : null;
+    }
     return { status, anyLoading, checks, models };
   }
 
@@ -78,12 +85,12 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
               SUM(CASE WHEN j.downgrade_cause IS NOT NULL THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) downgrade_rate,
               SUM(CASE WHEN j.attempt_count > 1 THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) retry_rate
          FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
-        WHERE j.status <> 'cancelled' AND j.origin <> 'eval' ${pf}
+        WHERE j.status <> 'cancelled' AND j.origin NOT IN ('eval','check') ${pf}
         GROUP BY mv.model_id, mv.version_label, j.serving_group`, pp);
     const durs = await all<{ model_id: string; version_label: string; ms: number }>(db,
       `SELECT mv.model_id, mv.version_label, TIMESTAMPDIFF(MICROSECOND, j.started_at, j.finished_at) / 1000 ms
          FROM stage_job j JOIN model_version mv ON mv.version_id = j.model_version_id
-        WHERE j.status IN ('done','done_downgraded') AND j.origin <> 'eval' AND j.started_at IS NOT NULL AND j.finished_at IS NOT NULL ${pf}`, pp);
+        WHERE j.status IN ('done','done_downgraded') AND j.origin NOT IN ('eval','check') AND j.started_at IS NOT NULL AND j.finished_at IS NOT NULL ${pf}`, pp);
     const p95 = (m: string, v: string) => {
       const xs = durs.filter((d) => d.model_id === m && d.version_label === v).map((d) => Number(d.ms)).sort((a, b) => a - b);
       return xs.length ? Math.round(xs[Math.min(xs.length - 1, Math.ceil(xs.length * 0.95) - 1)]) : null; // p95는 앱에서만(SD_03 주석)
@@ -92,7 +99,7 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
       ? `SELECT result_cause, COUNT(*) n FROM artwork_outcome WHERE result_cause IS NOT NULL AND confirmed_at BETWEEN ? AND ? GROUP BY result_cause`
       : `SELECT result_cause, n FROM v_cause_breakdown`, period ? [f, t] : []);
     const infra = await all<{ error_class: string; n: number }>(db,
-      `SELECT j.error_class, COUNT(*) n FROM stage_job j WHERE j.error_class IS NOT NULL AND j.status <> 'cancelled' AND j.origin <> 'eval' ${pf} GROUP BY j.error_class`, pp);
+      `SELECT j.error_class, COUNT(*) n FROM stage_job j WHERE j.error_class IS NOT NULL AND j.status <> 'cancelled' AND j.origin NOT IN ('eval','check') ${pf} GROUP BY j.error_class`, pp);
     const queues = await all<{ serving_group: string; waiting: number; oldest: number | null }>(db,
       `SELECT serving_group, COUNT(*) waiting, TIMESTAMPDIFF(SECOND, MIN(queued_at), CURRENT_TIMESTAMP) oldest
          FROM stage_job WHERE status IN ('queued','retry_wait') AND available_at <= UTC_TIMESTAMP() GROUP BY serving_group`);

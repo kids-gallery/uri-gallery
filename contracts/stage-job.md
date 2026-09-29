@@ -137,7 +137,7 @@ else:                                                   suggestion = frame
 # [추론] 기본값. 원천 확정값은 animate_render.timeout_s 뿐(BR-PRC-06).
 retry:            { max_attempts: 3, backoff_s: [10, 60] }
 claim:            { seconds: 60, heartbeat_s: 20 }
-priority:         { guardian: 10, eval: 50 }
+priority:         { guardian: 10, check: 30, eval: 50 }   # check = D20 모델 점검
 stages:
   split:          { timeout_s: 60,  concurrency: 1 }   # M1 CPU 추론 RSS 8.5GB(A 실측) — T068 전까지 1
   judge:          { timeout_s: 120, concurrency: 1 }
@@ -208,3 +208,25 @@ app-api(G21)가 평가 요청마다 `evaluation` 1행과 항목마다 `stage_job
 - **측정**: `processing_ms` = 어댑터 실행 시간(모델 적재 시간 제외). `memory_mb` = 실행 중 워커 프로세스와 그 하위 프로세스의 RSS 합의 최댓값(0.5초 간격 표본) — TorchServe(M3)·Ollama(M6)처럼 워커 밖 런타임의 메모리는 포함하지 않는다. `score` = 어댑터 점수(기록만, BR-PRC-04).
 - **이어받기**: sweeper가 점유 만료 평가 작업을 `failed`로 닫으면 `eval_item_result`가 없다. 워커의 평가 실행기가 주기마다 "끝났는데 결과가 없는 평가 작업"에 `incomplete`를 채운다(sweeper는 가족 흐름만 다룬다).
 - **보고**: `eval/runner.py report <evaluation_id>`가 SD_01 8.5 보고서(기대 경로 일치율, 불일치·오인 후보 목록, 처리 시간 p50·p95·최대, 메모리 최대, 미완료·시간 초과 수)를 만든다. `eval/runner.py run`은 pm2 없이 평가 작업만 처리하는 일회성 워커다.
+
+## 13. 점검 작업(`origin='check'`) 실행 (D20, SD_01 §10-4 7.8~7.10, SD_04 §8) — 2026-09-29 추가
+
+app-api(G30)가 점검 요청마다 `model_check` 1행과 `stage_job` 1행(`origin='check'`, `artwork_id` NULL, `model_check_id`, `eval_item_id`, `model_version_id`=점검 대상 버전, `priority` 30)을 한 트랜잭션에 등록한다. 워커의 점검 실행기가 처리해 `model_check`에 결과를 쓴다. 가족 데이터는 건드리지 않는다(BR-OPS-05).
+
+- **점유 순서**: 보호자 작업(`origin NOT IN ('eval','check')`) → **점검 작업** → 평가 작업 → 외부 작업. 지금 보호자 점유 조건 `origin <> 'eval'`(`workers/runner.py`)은 점검 작업을 보호자 작업으로 잡으므로 **점검 실행기와 함께 바꾼다**. 그 전에는 app-api가 `MODEL_CHECK_ENABLED` 꺼짐으로 점검 등록을 막는다(503 `check_runner_missing`).
+- **단계와 서빙군**: 평가와 같은 대응 — M1 `split`·M2 `judge`·M3 `animate_render`는 `cpu_vision`, M5 `depth_relief`는 `gpu`(GPU 없으면 `cpu_vision`), M7 `sculpture`는 `gpu`. M4는 없음(규칙), M6은 P0.5에 llm-server 동기 호출로 따로 한다(큐 없음, §11).
+- **실행**: 그 모델의 어댑터만 한 번. 입력은 `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`)의 파일. M2는 M2 분류만, M3는 관절 추정까지(렌더 제외), M5는 깊이 추정까지(부조 합성 제외) `[추론]`. 모델이 적재 중이면 평가와 같이 기다린다(오류 아님) — 15분 안에 시작되지 않으면 app-api가 조회 때 `failed`·`model_not_ready`로 닫고 작업을 `cancelled`로 둔다.
+- **판정(재시도 없음)**:
+
+  | 어댑터 결과 | 출력 형식 확인 | `model_check` | `stage_job` |
+  |---|---|---|---|
+  | `ok`·`quality_below` | 통과 | `status='passed'`, `outcome`=그 값 | `done` |
+  | `ok`·`quality_below` | 불량 | `status='failed'`, `fail_reason='bad_output'`, `outcome`=그 값 | `failed`(`error_class` NULL) |
+  | 인프라 5종 | — | `status='failed'`, `fail_reason`=그 분류 | `failed`, `error_class`=그 분류 |
+
+  출력 형식 기준은 SD_01 §10-4 표(M1 마스크 크기·전경 · M2 제안 값 · M3 관절 개수 · M5 깊이 크기·값 분산 · M7 GLB 다시 읽기·면 수). 점수는 쓰지 않는다(BR-OPS-06).
+- **측정**: `processing_ms`·`memory_mb`는 §12 평가와 같은 방식(적재 시간 제외, 워커 밖 런타임 메모리 제외). `started_at`은 점유 때, `finished_at`은 판정 때.
+- **정리**: 출력 파일은 `tmp/{job_id}/`에만 두고 판정 뒤 지운다. `stored_object`·`result`에 쓰지 않는다.
+- **이어받기**: 점유 만료 점검 작업은 다시 돌리지 않는다. sweeper(`api/src/sweeper/takeover.ts`)가 `stage_job`과 `model_check`를 함께 `failed`·`engine_down`으로 닫는다.
+- **로그**: 허용 목록(모델 ID·버전·단계·결과 분류·처리 시간)만. 객체 키·파일 경로를 남기지 않는다(BR-PRV-01).
+

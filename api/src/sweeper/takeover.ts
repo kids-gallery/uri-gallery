@@ -41,6 +41,15 @@ export async function takeOver(db: Pool): Promise<number> {
                                  stopped_at = CURRENT_TIMESTAMP, claimed_by = NULL WHERE job_id = ?`, [j.job_id]);
         return;
       }
+      if (j.origin === 'check') {
+        // D20 · stage-job §13: 점검은 재시도하지 않는다 — 점유가 만료된 점검은 engine_down 실패로 닫는다
+        await conn.query(`UPDATE stage_job SET status = 'failed', error_class = 'engine_down', claimed_by = NULL, claim_expires_at = NULL,
+                                 finished_at = UTC_TIMESTAMP() WHERE job_id = ?`, [j.job_id]);
+        await conn.query(`UPDATE model_check c JOIN stage_job s ON s.model_check_id = c.check_id
+                             SET c.status = 'failed', c.fail_reason = 'engine_down', c.finished_at = CURRENT_TIMESTAMP
+                           WHERE s.job_id = ? AND c.status IN ('queued','running')`, [j.job_id]);
+        return;
+      }
       if (j.attempt_count < 3) {
         await conn.query(`UPDATE stage_job SET status = 'retry_wait', error_class = 'engine_down', claimed_by = NULL, claim_expires_at = NULL,
                                  available_at = UTC_TIMESTAMP() WHERE job_id = ?`, [j.job_id]);

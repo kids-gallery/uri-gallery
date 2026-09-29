@@ -204,7 +204,7 @@ export const ko = {
     decision: { like: '좋아요', use_lower: '낮춘 결과로 걸기', frame: '액자로 걸기', retake: '다시 찍기' } as Record<string, string>,
     unavailable: { needs_result: '결과가 없어요', original_unreadable: '원본을 읽을 수 없어요', model_disabled: '지금은 이 방식을 쓸 수 없어요' } as Record<string, string>,
     retakeTitle: '다시 찍을까요?', // [추론]
-    retakeBody: '이전 작품은 지워져요', cancel: '취소',
+    retakeBody: '지금 작품은 지워지고 새로 올려요', cancel: '취소',
     afterApprove: '이야기를 채우면 전시돼요', afterLower: '입체 부조를 새로 만들어요',
   },
   story: {
@@ -341,8 +341,8 @@ const P: Record<string, ProblemCopy> = {
   '-:not_found': { variant: 'final', summary: '찾을 수 없어요', reason: '찾을 수 없어요', releaser: '없음', self: false, actions: ['목록으로'] },
   'G0:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
   '-:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
-  '-:email_unverified': { variant: 'block', summary: '메일 확인 전이에요', reason: '메일 확인을 아직 하지 않았어요', releaser: '보호자', self: true, actions: ['확인 메일 다시 받기'] }, // [추론]
-  '-:login_attempts': { variant: 'hold', summary: '잠시 뒤 다시', reason: '로그인 시도가 많아요. 잠시 뒤 다시 해 주세요', releaser: '시스템 - 시간이 지나면 풀림', self: false, actions: ['로그인 정보를 잊었어요'] }, // [추론]
+  '-:email_unverified': { variant: 'block', summary: '메일 확인 전이에요', reason: '메일 확인을 아직 하지 않았어요', releaser: '보호자', self: true, actions: ['확인 메일 다시 받기'] },
+  '-:login_attempts': { variant: 'hold', summary: '잠시 기다려 주세요', reason: '로그인 시도가 많아요. 잠시 뒤 다시 해 주세요', releaser: '시스템 - 시간이 지나면 풀림', self: false, actions: ['로그인 정보를 잊었어요'] }, // [추론]
   'G1:role_missing': { variant: 'block', summary: '역할 없음', reason: '이 화면을 볼 역할이 없어요', releaser: '서비스 운영자 - 운영 CLI로 역할 부여', self: false, actions: ['다른 계정으로 로그인'] },
   'G1:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: '팀원 - 지금 이 화면', self: true, actions: ['다시 입력하기'] },
   'G3:child_not_saved': { variant: 'block', summary: '저장되지 않았어요', reason: '저장되지 않았어요', releaser: SELF, self: true, actions: ['다시 저장'] },
@@ -353,23 +353,23 @@ const P: Record<string, ProblemCopy> = {
   'G5:format': { variant: 'block', summary: '올릴 수 없는 사진', reason: '이 사진은 올릴 수 없어요 - 형식을 확인해 주세요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
   'G5:unreadable': { variant: 'block', summary: '올릴 수 없는 사진', reason: '이 사진은 읽을 수 없어요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
   'G5:missing_photo': { variant: 'block', summary: '사진 없음', reason: '사진을 골라 주세요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
-  'G5:over_20mb': { variant: 'block', summary: '용량 초과', reason: '사진이 20MB보다 커요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론]
+  'G5:over_20mb': { variant: 'block', summary: '용량 초과', reason: '사진이 20MB보다 커요', releaser: SELF, self: true, actions: ['20MB 이하 사진 고르기'] },
   'G6:intake_failed': { variant: 'block', summary: '접수되지 않았어요', reason: '접수되지 않았어요, 다시 올려 주세요', releaser: SELF, self: true, actions: ['다시 올리기'] },
   'G8:already_processing': { variant: 'block', summary: '확정할 수 없어요', reason: '이미 만들기 시작했어요', releaser: '보호자 - 결과 확인에서 결정', self: false, actions: ['결과 확인으로'] },
   'G8:deleting': { variant: 'final', summary: '삭제 중', reason: '삭제 중이에요', releaser: '없음', self: false, actions: ['목록으로'] },
   'G8:model_disabled': { variant: 'block', summary: '쓸 수 없는 방식', reason: '지금은 이 방식을 쓸 수 없어요', releaser: '평가 담당 팀원 - 새 버전 승격', self: false, actions: ['다른 방식 고르기'] },
-  'G10:decision_not_allowed_in_state': { variant: 'block', summary: '결정할 수 없어요', reason: '지금은 이 결정을 할 수 없어요', releaser: '보호자', self: false, actions: ['목록으로'] }, // [추론]
+  'G10:decision_not_allowed_in_state': { variant: 'block', summary: '결정할 수 없어요', reason: '작품 상태가 이미 바뀌었어요', releaser: '없음 - 목록에서 다시 열기', self: false, actions: ['목록으로'] },
   'G10:deleting': { variant: 'final', summary: '삭제 중', reason: '삭제 중인 작품이에요', releaser: '없음', self: false, actions: ['목록으로'] },
   'G11:made_on_in_future': { variant: 'block', summary: '저장하지 못했어요', reason: '그린 날은 오늘 이후일 수 없어요', releaser: SELF, self: true, actions: ['그린 날 고치기'] },
-  'G11:title_blank': { variant: 'block', summary: '저장하지 못했어요', reason: '제목·그린 날·나이를 확인해 주세요', releaser: SELF, self: true, actions: ['값 고치기'] }, // [추론]
-  'G11:invalid_fields': { variant: 'block', summary: '저장하지 못했어요', reason: '제목·그린 날·나이를 확인해 주세요', releaser: SELF, self: true, actions: ['값 고치기'] }, // [추론]
+  'G11:title_blank': { variant: 'block', summary: '저장하지 못했어요', reason: '제목을 적어 주세요', releaser: SELF, self: true, actions: ['값 고치기'] },
+  'G11:invalid_fields': { variant: 'block', summary: '저장하지 못했어요', reason: '제목·그린 날·나이를 확인해 주세요', releaser: SELF, self: true, actions: ['값 고치기'] },
   'G11:story_conflict': { variant: 'block', summary: '먼저 고친 내용이 있어요', reason: '다른 보호자가 먼저 고쳤어요', releaser: SELF, self: true, actions: ['최신 내용 불러오기'] },
   'G11:artwork_deleting': { variant: 'final', summary: '삭제 중', reason: '삭제 중인 작품이에요', releaser: '없음', self: false, actions: ['목록으로'] },
   'G13:model_disabled': { variant: 'block', summary: 'AI 초안 준비 중', reason: 'AI 초안 기능은 아직 사용 조건 확인 중이에요', releaser: '평가 담당 팀원 - 조건 확인 뒤 활성화', self: false, actions: ['기본 문장으로 받기', '직접 쓰기'] },
   'G14:keywords_required': { variant: 'block', summary: '키워드 필요', reason: '키워드를 하나 이상 적거나 골라 주세요', releaser: SELF, self: true, actions: ['키워드 입력'] },
   'G14:tag_not_candidate': { variant: 'block', summary: '키워드 필요', reason: '키워드를 하나 이상 적거나 골라 주세요', releaser: SELF, self: true, actions: ['키워드 입력'] },
   '-:llm_unavailable': { variant: 'block', summary: 'AI 초안 없음', reason: 'AI 초안을 지금 만들 수 없어요', releaser: '시스템', self: false, actions: ['기본 문장으로 받기', '나중에', '직접 쓰기'] }, // [추론]
-  'G17:sculpture_not_exposed': { variant: 'block', summary: '3D 준비 전', reason: '3D 조각은 아직 열리지 않았어요', releaser: '서비스 운영자 - 노출 설정(운영 CLI)', self: false, actions: ['다른 방식 고르기'] }, // [추론]
+  'G17:sculpture_not_exposed': { variant: 'block', summary: '3D 준비 전', reason: '3D 조각은 아직 쓸 수 없어요', releaser: '서비스 운영자 - 노출 설정(운영 CLI)', self: false, actions: ['다른 방식 고르기'] },
   'G18:deletion_not_saved': { variant: 'block', summary: '삭제되지 않았어요', reason: '삭제되지 않았어요 - 아무것도 바뀌지 않았어요', releaser: SELF, self: true, actions: ['다시 삭제하기'] },
   'G19:waiting_stop': { variant: 'hold', summary: '멈춤 대기', reason: '만들던 작업이 멈추기를 기다리는 중이에요', releaser: '시스템 - 멈춤 확인 또는 시간 상한', self: false, actions: ['목록으로'] },
   'G20:maker_or_fields': { variant: 'block', summary: '등록할 수 없어요', reason: '팀원이 만든 작품만 등록할 수 있어요', releaser: '평가 담당 - 지금 이 화면', self: true, actions: ['조건 채워 다시 등록'] },
@@ -393,7 +393,7 @@ const P: Record<string, ProblemCopy> = {
   'G29:family_owner_cannot_leave': { variant: 'final', summary: '나갈 수 없어요', reason: '가족 공간을 만든 보호자는 나갈 수 없어요', releaser: '없음(U20)', self: false, actions: [] }, // [추론]
 };
 
-const FALLBACK: ProblemCopy = { variant: 'block', summary: '저장되지 않았어요', reason: '저장되지 않았어요. 잠시 뒤 다시 해 주세요', releaser: '보호자', self: true, actions: ['다시 하기'] }; // [추론]
+const FALLBACK: ProblemCopy = { variant: 'block', summary: '마치지 못했어요', reason: '잠시 뒤 다시 해 주세요', releaser: '보호자', self: true, actions: ['다시 하기'] }; // 사전에 없는 사유 전부(fail.generic과 같은 문장)
 
 /** gate+reason 으로 문구를 찾는다. 순서: `G:reason` → `-:reason` → `-:code` → 기본(docs §3 마지막 줄). */
 export function problemCopy(p: { gate?: string | null; reason?: string | null; code?: string | null }): ProblemCopy {
