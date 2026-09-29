@@ -2,6 +2,9 @@
 // tick이 false를 돌려주면(더 기다릴 상태가 아니면) 멈춘다. 오류는 멈추지 않고 다음 주기에 다시 부른다(§17 — 화면은 마지막 값 유지).
 import { getCurrentScope, onScopeDispose, ref } from 'vue';
 
+/** 움직임 줄이기 설정(SD_02 §17) — 재생 토글은 켜져도 정지 화면을 유지한다 */
+export const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export const POLL_STEPS_MS = [3000, 6000, 10000] as const;
 
 export function usePolling(tick: () => Promise<boolean>, steps: readonly number[] = POLL_STEPS_MS) {

@@ -84,7 +84,7 @@ async function call() {
         <span v-if="guide?.stale" class="t-body-sm">{{ ko.apiGuide.stale(when(guide.fetchedAt)) }}</span>
         <button class="btn btn-secondary btn-sm" type="button" @click="loadGuide">{{ ko.apiGuide.reload }}</button>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.apiGuide.tabs.endpoints">
         <table class="plain">
           <thead><tr><th>{{ ko.apiGuide.colGroup }}</th><th>{{ ko.apiGuide.colPath }}</th><th>{{ ko.apiGuide.colTier }}</th></tr></thead>
           <tbody><tr v-for="r in rows" :key="r.group + r.path"><td>{{ r.group }}</td><td class="mono">{{ r.path }}</td><td>{{ r.tier }}</td></tr></tbody>
@@ -103,7 +103,7 @@ async function call() {
             </select></label>
         </div>
         <div><ReasonButton :label="ko.apiGuide.call" :disabled="!!why" :reason="why" @click="call" /></div>
-        <div v-if="job" class="table-wrap" aria-live="polite">
+        <div v-if="job" class="table-wrap" tabindex="0" role="region" :aria-label="ko.apiGuide.call" aria-live="polite">
           <table class="plain">
             <thead><tr><th>{{ ko.apiGuide.colState }}</th><th>{{ ko.apiGuide.colOutcome }}</th><th>{{ ko.apiGuide.colModel }}</th><th>{{ ko.apiGuide.colTime }}</th></tr></thead>
             <tbody><tr>

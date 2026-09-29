@@ -83,7 +83,7 @@ watch(period, () => void tick());
 
     <section class="stack-sm" aria-labelledby="st-ready">
       <h2 id="st-ready" class="t-card-title">{{ ko.ops.readyTitle }}</h2>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.readyTitle">
         <table class="plain">
           <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colGroup }}</th><th>{{ ko.ops.colState }}</th><th>{{ ko.ops.colImpact }}</th></tr></thead>
           <tbody>
@@ -100,7 +100,7 @@ watch(period, () => void tick());
 
     <section v-if="metrics" class="stack-sm" aria-labelledby="st-metrics">
       <h2 id="st-metrics" class="t-card-title">{{ ko.ops.metricsTitle }}</h2>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.metricsTitle">
         <table class="plain">
           <tbody>
             <tr><th scope="row">{{ ko.ops.firstApproval }}</th><td class="num">{{ rate(metrics.service?.firstApprovalRate) }}</td></tr>
@@ -118,7 +118,7 @@ watch(period, () => void tick());
       </div>
 
       <div v-if="tab === 'models'" class="stack-sm" role="tabpanel">
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.tabs.models">
           <table class="plain">
             <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colVersion }}</th><th>{{ ko.ops.colAttempts }}</th><th>{{ ko.ops.colDowngrade }}</th><th>{{ ko.ops.colP95 }}</th><th>{{ ko.ops.colRetry }}</th></tr></thead>
             <tbody>
@@ -130,7 +130,7 @@ watch(period, () => void tick());
             </tbody>
           </table>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.colWaiting">
           <table class="plain">
             <thead><tr><th>{{ ko.ops.colGroup }}</th><th>{{ ko.ops.colWaiting }}</th><th>{{ ko.ops.colOldest }}</th></tr></thead>
             <tbody>
@@ -141,7 +141,7 @@ watch(period, () => void tick());
             </tbody>
           </table>
         </div>
-        <div v-if="(metrics.external ?? []).length" class="table-wrap">
+        <div v-if="(metrics.external ?? []).length" class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.colCalls">
           <table class="plain">
             <thead><tr><th>{{ ko.ops.colFunction }}</th><th>{{ ko.ops.colCalls }}</th><th>{{ ko.ops.colRejected }}</th></tr></thead>
             <tbody><tr v-for="(x, i) in metrics.external" :key="i"><td>{{ x.function }}</td><td class="num">{{ x.calls ?? 0 }}</td><td class="num">{{ x.rejected ?? 0 }}</td></tr></tbody>
@@ -149,7 +149,7 @@ watch(period, () => void tick());
         </div>
       </div>
 
-      <div v-else-if="tab === 'causes'" class="table-wrap" role="tabpanel">
+      <div v-else-if="tab === 'causes'" class="table-wrap" tabindex="0" :aria-label="ko.ops.tabs.causes" role="tabpanel">
         <table class="plain">
           <tbody>
             <tr><th scope="row">{{ ko.ops.causes.guardianChoice }}</th><td class="num">{{ metrics.causes?.guardianChoice ?? 0 }}</td></tr>
@@ -163,7 +163,7 @@ watch(period, () => void tick());
       </div>
 
       <div v-else-if="tab === 'unreached' && isOperator" class="stack-sm" role="tabpanel">
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.tabs.unreached">
           <table class="plain">
             <thead><tr><th>{{ ko.ops.colJob }}</th><th>{{ ko.ops.colModelVersion }}</th><th>{{ ko.ops.colErrorClass }}</th><th>{{ ko.ops.colAttempts }}</th></tr></thead>
             <tbody>

@@ -58,7 +58,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <NoticeBlock v-if="started" :title="ko.confirm.started"><p>{{ ko.rail.leaveOk }}</p></NoticeBlock>
       <h1 class="t-headline">{{ ko.list.detailTitle(a.story?.title || ko.list.untitled) }}</h1>
 
-      <div v-if="a.stages.length" class="table-wrap">
+      <div v-if="a.stages.length" class="table-wrap" tabindex="0" role="region" :aria-label="ko.list.progress">
         <table class="plain">
           <thead><tr><th>{{ ko.list.colStep }}</th><th>{{ ko.list.colStepState }}</th><th>{{ ko.list.colNote }}</th></tr></thead>
           <tbody>

@@ -79,7 +79,7 @@ function fixDup() { if (dup.value) startEdit(dup.value); }
     <section class="stack" aria-labelledby="ch-list">
       <h1 id="ch-list" class="t-headline">{{ children ? ko.child.count(children.length) : ko.child.title }}</h1>
       <p v-if="children && !children.length" class="t-body-sm">{{ ko.child.empty }}</p>
-      <div v-else-if="children" class="table-wrap">
+      <div v-else-if="children" class="table-wrap" tabindex="0" role="region" :aria-label="ko.child.title">
         <table class="plain">
           <thead><tr><th>{{ ko.child.colAlias }}</th><th>{{ ko.child.colArtworks }}</th><th>{{ ko.child.colActions }}</th></tr></thead>
           <tbody>

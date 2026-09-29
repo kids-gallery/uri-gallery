@@ -104,7 +104,7 @@ const candidates = (m: Manifest) => byState(m, 'candidate');
     <BlockNotice v-if="block" :notice="block" @action="block = null" />
 
     <!-- 매니페스트 -->
-    <div v-if="manifest" class="table-wrap">
+    <div v-if="manifest" class="table-wrap" tabindex="0" role="region" :aria-label="ko.shell.menu.models">
       <table class="plain">
         <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colActive }}</th><th>{{ ko.ops.colRollback }}</th><th>{{ ko.ops.colCandidate }}</th><th>{{ ko.ops.colLicense }}</th><th>{{ ko.ops.colHash }}</th></tr></thead>
         <tbody>
@@ -123,7 +123,7 @@ const candidates = (m: Manifest) => byState(m, 'candidate');
     <!-- 모델 상태 -->
     <section class="stack-sm" aria-labelledby="md-state">
       <h2 id="md-state" class="t-card-title">{{ ko.ops.statusTitle }}</h2>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.statusTitle">
         <table class="plain">
           <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colDevice }}</th><th>{{ ko.ops.colLoad }}</th><th>{{ ko.ops.colQueue }}</th><th>{{ ko.ops.colAction }}</th></tr></thead>
           <tbody>
@@ -157,7 +157,7 @@ const candidates = (m: Manifest) => byState(m, 'candidate');
             @click="reportOpen = reportOpen === v.latestEvalRunId ? null : v.latestEvalRunId!">{{ ko.ops.report }}</button>
         </div>
 
-        <div v-if="reportOpen && reportOpen === v.latestEvalRunId && runs[reportOpen]" class="table-wrap">
+        <div v-if="reportOpen && reportOpen === v.latestEvalRunId && runs[reportOpen]" class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.colItem">
           <table class="plain">
             <thead><tr><th>{{ ko.ops.colItem }}</th><th>{{ ko.ops.colStatus }}</th><th>{{ ko.ops.colExpected }}</th><th>{{ ko.ops.colActual }}</th><th>{{ ko.ops.colDowngradeReason }}</th><th>{{ ko.ops.colMisclass }}</th><th>{{ ko.ops.colTime }}</th></tr></thead>
             <tbody>

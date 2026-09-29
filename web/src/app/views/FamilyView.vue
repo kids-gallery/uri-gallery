@@ -62,7 +62,7 @@ async function confirm() {
     <BlockNotice v-if="block" :notice="block" @action="load" />
     <section v-if="members" class="stack-sm" aria-labelledby="fm-t">
       <h1 id="fm-t" class="t-headline">{{ ko.family.title(members.length) }}</h1>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.family.colMember">
         <table class="plain">
           <thead><tr><th>{{ ko.family.colMember }}</th><th>{{ ko.family.colRole }}</th><th>{{ ko.family.colActions }}</th></tr></thead>
           <tbody>

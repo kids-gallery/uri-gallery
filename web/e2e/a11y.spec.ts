@@ -56,17 +56,19 @@ test('보호자 화면 한 바퀴 — 키보드로 확정, 비활성 사유 낭�
   await page.getByLabel(ko.story.age).fill('5');
   await page.getByRole('button', { name: ko.story.save, exact: true }).click();
   await expect(page.getByText(ko.story.exhibited)).toBeVisible();
-  await page.goto('/app/gallery');
-  await check(page, 'S8 전시');
   await page.goto('/app');
-  await check(page, 'S4 목록');
+  await check(page, '홈 전시실(D24)');
+  await page.getByRole('button', { name: '파란 집' }).click();
+  await check(page, '작품 앞 월 라벨');
+  await page.goto('/app/works');
+  await check(page, 'S4 작품 관리');
   await page.goto('/app/family');
   await check(page, 'S1b 가족 보호자');
 });
 
 // 움직임 줄이기(SD_02 §17 · 1550행): 설정이 켜지면 전환 효과를 끄고, 재생·시차·회전 토글이 켜져도 정지 화면 + 원본을 먼저.
-// 2026-09-29 현재 web/src 어디에도 prefers-reduced-motion 처리가 없다(.btn transition 포함) — 구현 쪽(이제민1)에 알림. 구현되면 fixme를 뗀다.
-test.fixme('움직임 줄이기 설정이면 버튼 전환 효과가 없다', async ({ page }) => {
+// 구현: web/src/styles/motion.css(전역) · SideBySide·MuseumView 재생 토글 숨김(2026-09-29 이제민1).
+test('움직임 줄이기 설정이면 버튼 전환 효과가 없다', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/app/login');
   const d = await page.getByRole('button', { name: ko.auth.login, exact: true }).evaluate((e) => getComputedStyle(e).transitionDuration);

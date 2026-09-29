@@ -5,6 +5,7 @@
 // 2.5D 시차(WebGL)는 아직 없다 — 모델이 켜진 뒤 붙인다(T092 남은 몫). 그때까지 2.5D는 잘라 낸 그림 정지 화면.
 import { ref, watch } from 'vue';
 import { ko } from '@/copy/ko';
+import { reducedMotion } from '@/composables/usePolling';
 
 const props = withDefaults(defineProps<{
   originalUrl: string | null; still: string | null; video?: string | null; resultLabel: string; showOriginal?: boolean;
@@ -46,7 +47,8 @@ function toggle() {
           {{ ko.fail.file }} <button class="btn btn-tertiary" type="button" @click="emit('reload')">{{ ko.fail.fileRetry }}</button>
         </div>
       </div>
-      <button v-if="video && !broken.result" class="btn btn-secondary" type="button" :aria-pressed="playing" @click="toggle">
+      <!-- 움직임 줄이기면 재생 토글 없이 정지 화면 + 원본(§17) -->
+      <button v-if="video && !broken.result && !reducedMotion()" class="btn btn-secondary" type="button" :aria-pressed="playing" @click="toggle">
         {{ playing ? ko.review.pause : ko.review.play }}
       </button>
     </figure>

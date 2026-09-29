@@ -33,7 +33,7 @@ test('올리면 바로 확정 화면, 기본 선택 없음, 나중에 고르기 
 
   // 나중에 고르기 → 목록, 다시 들어오면 여전히 기본 선택 없음
   await page.getByRole('link', { name: ko.confirm.later }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/app\/works$/); // 나중에 고르기 → 작품 관리(D24)
   await page.goto(confirmUrl);
   await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
 

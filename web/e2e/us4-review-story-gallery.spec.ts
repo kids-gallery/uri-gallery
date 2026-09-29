@@ -40,13 +40,14 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
   await expect(page.getByText(ko.story.exhibited)).toBeVisible();
   await noScoreNoToast(page);
 
-  // S8 전시: 나이 묶음 안에 보이고, 열면 정지 화면(액자는 원본 토글 없음)
+  // 전시 = 홈 전시실(D24): N세관 안에 걸리고, 열면 월 라벨과 정지 화면(액자는 원본·재생 토글 없음)
   await page.getByRole('link', { name: ko.list.toGallery }).click();
-  await expect(page).toHaveURL(/\/app\/gallery$/);
-  const group = page.getByRole('region', { name: ko.gallery.age(6) });
-  await expect(group.getByText('빨간 해')).toBeVisible();
-  await group.getByRole('button', { name: /빨간 해/ }).click();
-  await expect(page.getByRole('button', { name: ko.gallery.toList })).toBeVisible();
+  await expect(page).toHaveURL(/\/app(\?|$)/);
+  const room = page.getByRole('region', { name: ko.museum.room(6) });
+  await expect(room.getByText('빨간 해')).toBeVisible();
+  await room.getByRole('button', { name: '빨간 해' }).click();
+  await expect(page.getByRole('button', { name: ko.museum.back })).toBeVisible();
+  await expect(page.locator('.wl-kind')).toHaveText(ko.museum.kind.frame!);
   await expect(page.locator('button[aria-pressed]')).toHaveCount(0);
   await noScoreNoToast(page);
 });

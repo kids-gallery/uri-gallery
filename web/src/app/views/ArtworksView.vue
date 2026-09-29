@@ -49,7 +49,7 @@ onMounted(first);
       <RouterLink v-if="!children.length" class="btn btn-secondary" to="/app/children">{{ ko.shell.appMenu.children }}</RouterLink>
     </section>
 
-    <div v-else-if="items" class="table-wrap">
+    <div v-else-if="items" class="table-wrap" tabindex="0" role="region" :aria-label="ko.shell.appMenu.artworks">
       <table class="plain">
         <thead>
           <tr><th>{{ ko.list.colTitle }}</th><th>{{ ko.list.colChild }}</th><th>{{ ko.list.colState }}</th><th>{{ ko.list.colStage }}</th></tr>

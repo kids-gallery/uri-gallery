@@ -13,6 +13,7 @@ import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, type ArtworkSummary } from '../artwork';
+import { reducedMotion } from '@/composables/usePolling';
 
 type Child = components['schemas']['Child'];
 type Gallery = components['schemas']['Gallery'];
@@ -104,7 +105,7 @@ async function goRoom(age: number) {
             <p>{{ open.aiCaption.body }}</p>
           </div>
           <div class="wl-acts">
-            <button v-if="open.kind === 'animated' && !showOriginal && open.primaryUrl" class="btn btn-light" type="button" :aria-pressed="playing"
+            <button v-if="open.kind === 'animated' && !showOriginal && open.primaryUrl && !reducedMotion()" class="btn btn-light" type="button" :aria-pressed="playing"
               @click="playing = !playing">{{ playing ? ko.museum.stop : ko.museum.play }}</button>
             <button v-if="open.kind !== 'frame'" class="btn btn-light" type="button" :aria-pressed="showOriginal"
               @click="showOriginal = !showOriginal; playing = false">{{ showOriginal ? ko.museum.showWork : ko.museum.showOriginal }}</button>
