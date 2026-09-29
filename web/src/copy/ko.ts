@@ -151,6 +151,76 @@ export const ko = {
     keep: '그대로 두기',
     cancel: '취소',
   },
+  /** S2~S8 구현 문구(docs/C_화면문구.md §4 "S2~S8 구현 문구", 2026-09-29 이제민 — 신지현 위임). */
+  kind: { animated: '움직임', relief: '2.5D 입체 부조', frame: '원본 액자', sculpture: '3D 조각' } as Record<string, string>,
+  /** 낮춤 안내(C6)에 쓰는 결과 이름 — 앞 결과를 만들지 못해 뒤 결과로 바꿨다 */
+  downgrade: {
+    animated_to_relief: ['움직임', '입체 부조'], animated_to_frame: ['움직임', '원본 액자'], relief_to_frame: ['입체 부조', '원본 액자'],
+    split_fail: ['입체 부조', '원본 액자'], sculpture_to_relief: ['3D 조각', '입체 부조'],
+  } as Record<string, readonly [string, string]>,
+  downgradeNote: (from: string, to: string) => `${from}를 만들지 못해 ${to}로 바꿨어요. 원본 액자로 걸 수도 있어요`,
+  stageName: {
+    split: '분리', judge: '판정', animate_render: '움직임 만들기', depth_relief: '깊이 부조', frame_compose: '액자', sculpture: '3D 조각', caption: '설명',
+  } as Record<string, string>,
+  stageStatus: { waiting: '대기', running: '진행 중', done: '완료', retrying: '다시 시도 중', failed: '처리하지 못함', cancelled: '취소' } as Record<string, string>,
+  list: {
+    colTitle: '작품', colChild: '아이', colState: '상태', colStage: '현재 단계',
+    untitled: '제목 없음', // [추론]
+    toConfirm: '고르러 가기', toReview: '결과 확인으로', toStory: '이야기 쓰기', toGallery: '전시 보기', // [추론] 이야기 쓰기·전시 보기
+    empty: '아직 올린 작품이 없어요', // [추론]
+    detailTitle: (t: string) => `${t} - 단계별 진행`,
+    progress: '단계별 진행',
+    colStep: '단계', colStepState: '상태', colNote: '안내',
+    retried: (n: number) => `${n}번 다시 시도했어요`,
+    backToList: '작품 목록',
+  },
+  notDelivered: {
+    summary: '결과를 만들지 못했어요',
+    reason: (what: string) => `서버 문제로 ${what}를 만들지 못했어요 - 낮춘 결과가 아니에요`,
+    releaser: '보호자 - 원본 액자로 걸기 또는 다시 찍기',
+  },
+  upload: {
+    whose: '누구의 작품인가요', child: '아이', photo: '사진',
+    camera: '사진 찍기', album: '앨범에서 고르기', rule: 'JPEG - PNG - HEIC  한 장 20MB 이하',
+    submit: '올리기',
+    afterTitle: '올린 뒤', after1: '접수 완료되면 작품을 살펴보기 시작해요', after2: '기다리지 않고 화면을 닫아도 계속돼요',
+    needChild: '아이를 골라 주세요', // [추론]
+    needPhoto: '사진을 골라 주세요',
+    tooBig: '20MB 이하 사진을 골라 주세요',
+    sending: '올리는 중이에요', // [추론]
+  },
+  confirm: {
+    cutout: '잘라 낸 작품', originalFallback: '원본 사진 - 액자 권장',
+    suggestionTitle: '제안', judging: '살펴보는 중', noSuggestion: '제안을 준비하지 못했어요 - 직접 골라 주세요',
+    suggestion: { animated: '움직일 수 있을 것 같아요', relief: '입체 부조로 만들어 볼까요?', frame: '원본 액자로 걸어 볼까요?' } as Record<string, string>, // U10 [추론 — UC 문구]
+    howTitle: '어떻게 걸까요', submit: '확정하기', pickOne: '하나를 골라 주세요', later: '나중에 고르기',
+    started: '만들기 시작했어요',
+    g7Reason: '작품을 살펴보는 서버에 문제가 있었어요', g7Releaser: '보호자 - 셋 중 하나를 직접 고르기', g7Next: '아래에서 고르면 확정할 수 있어요',
+  },
+  review: {
+    original: '원본', originalSub: '올린 그대로', result: (k: string) => `결과 - ${k}`,
+    play: '재생', pause: '정지', showOriginal: '원본 보기', showResult: '결과 보기', // [추론]
+    decision: { like: '좋아요', use_lower: '낮춘 결과로 걸기', frame: '액자로 걸기', retake: '다시 찍기' } as Record<string, string>,
+    unavailable: { needs_result: '결과가 없어요', original_unreadable: '원본을 읽을 수 없어요', model_disabled: '지금은 이 방식을 쓸 수 없어요' } as Record<string, string>,
+    retakeTitle: '다시 찍을까요?', // [추론]
+    retakeBody: '이전 작품은 지워져요', cancel: '취소',
+    afterApprove: '이야기를 채우면 전시돼요', afterLower: '입체 부조를 새로 만들어요',
+  },
+  story: {
+    required: '필수', title: '제목', madeOn: '그린 날', age: '그때 나이',
+    words: '아이의 한마디 - 선택 - 적은 그대로 보여요',
+    save: '저장', saved: '저장했어요', // [추론] 저장했어요
+    exhibited: '전시에 걸렸어요',
+    exhibitTitle: '전시 조건', condReview: '결과 확인 완료', condStory: '제목 - 그린 날 - 나이 저장', condNote: '두 가지가 갖춰지면 전시에 걸려요',
+    fixDate: '그린 날을 고쳐 주세요', ageRange: '나이는 0살부터 18살까지예요', titleLong: '제목은 100자까지예요', // [추론] 나이·제목
+    mine: '내가 적은 내용', // [추론]
+  },
+  gallery: {
+    child: '아이', search: '제목 - 그린 날 찾기', age: (n: number) => `${n}살`,
+    words: '아이의 한마디', aiCaption: '작품 설명 - AI 작성', backside: '뒷면은 AI가 추정했어요',
+    empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
+    toList: '목록으로', toUpload: '작품 올리기',
+  },
   shell: {
     appName: '우리 아이 미술관',
     opsName: '운영 화면',

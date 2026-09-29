@@ -131,7 +131,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T052 (완료 2026-09-29 — Vitest 4건, E2E는 T044) [P] [US1] S0 가입·확인 화면을 만든다(이메일·비밀번호·확인만, 응답은 항상 같은 안내) — `web/src/app/views/SignupView.vue` · `VerifyView.vue` · 담당 C · 스킬 FD, RL · 근거 S0, FR-31 · **D21 보정(2026-09-29)**: G26 필드 사유·요청 한도 C2, G27 `token_invalid`, 확인 성공 뒤 S1 "이제 아이를 등록해 주세요", 초대 링크로 온 가입은 이메일 미리 채움(UC13 A4)
 - [x] T053 (완료 2026-09-29 — Vitest 6건, E2E는 T044) [P] [US1] 로그인·S0b 찾기·재설정 화면을 만든다 — `web/src/app/views/LoginView.vue` · `RecoveryView.vue` · `ResetView.vue` · 담당 C · 스킬 FD, RL · 근거 S0b, FR-32 · **D21 보정(2026-09-29)**: S0a 보호자 로그인(SD_02 §4-5 D21), 불일치는 한 문구, 메일 확인 전 계정 안내
 - [x] T054 (완료 2026-09-29 — Vitest 4건, E2E는 T044. **아이 삭제 버튼은 T101 DeleteDialog가 생기면 조작 칸에 잇는다**) [P] [US1] S1 아이 관리 화면을 만든다(별칭만, 실명·생년월일 칸 없음, 같은 별칭 안내, G4 차단 블록) — `web/src/app/views/ChildrenView.vue` · 담당 C · 스킬 FD, RL · 근거 S1, UX6 · **D22**: 별칭 앞뒤 공백 뺀 1~20자, 남은 글자 수 표시, 20자 초과 `alias_too_long`(G4)
-- [ ] T055 [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 G1 · **D21 보정(2026-09-29)**: S0o(SD_02 §4-5 D21), 로그아웃 `POST /v1/ops/auth/logout`
+- [x] T055 (이제민 완료 2026-09-29 — 신지현 위임, `web/src/ops/views/OpsLoginView.vue`; 시험 `web/src/__tests__/g1-screens.spec.ts`) [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 G1 · **D21 보정(2026-09-29)**: S0o(SD_02 §4-5 D21), 로그아웃 `POST /v1/ops/auth/logout`
 
 **Checkpoint**: US1 독립 검증 기준 통과.
 
@@ -155,8 +155,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T063 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/routes.ts`) [US2] 확정을 만든다: `FOR UPDATE` → `artwork_outcome` INSERT → 경로별 `stage_job`(animate_render·depth_relief·frame_compose) → `processing`, 분리 실패+relief는 frame_compose — `api/src/modules/artworks/confirm.ts` · 담당 B · 스킬 API · 근거 data-model §4 확정, G8, G17, BR-PRC-01
 - [x] T064 (A 완료 — `a/model-serving`, main 병합 전) [US2] split 단계를 만든다: M1 마스크·컷아웃 저장, `judgment.split_ok`, 성공·낮춤·소진 모두 judge를 연다 — `serving/workers/stages/split.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-20
 - [x] T065 (A 완료 — `a/model-serving`, main 병합 전) [US2] judge 단계를 만든다: M2 종류·태그 → M3 관절 → M4 기하 규칙 → 제안 규칙, `tag_candidate`, `awaiting_confirm`, 소진 `exhausted` — `serving/workers/stages/judge.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 stage-job §5.1, FR-21, G7
-- [ ] T066 [P] [US2] S2 작품 올리기 화면을 만든다(아이 선택·사진·G5 차단 블록·"닫아도 계속돼요") — `web/src/app/views/UploadView.vue` · 담당 C · 스킬 FD, RL · 근거 S2 · **D21 보정(2026-09-29)**: 접수 202 뒤 S3로 이동
-- [ ] T067 [P] [US2] S3 판정 제안 확정 화면을 만든다: 선택지 셋 같은 무게·기본 선택 없음, 제안은 도착하면 문구로, G7 차단 블록, 3D는 노출 설정 뒤만, 폴링 — `web/src/app/views/ConfirmView.vue` · 담당 C · 스킬 FD, RL · 근거 S3, UX2, U10 clarify · **D21 보정(2026-09-29)**: "나중에 고르기"(S4로), 모델 적재 대기 "그림을 볼 준비를 하고 있어요"(`waitingForModel`·`etaSeconds`, 오류 색 없음), 비활성 모델 선택지 C3(`unavailable[]`)·409 `model_disabled` 처리 — T116의 C 몫
+- [x] T066 (이제민 완료 2026-09-29 — 신지현 위임, `UploadView.vue`; 시험 `web/src/__tests__/g1-screens.spec.ts`) [P] [US2] S2 작품 올리기 화면을 만든다(아이 선택·사진·G5 차단 블록·"닫아도 계속돼요") — `web/src/app/views/UploadView.vue` · 담당 C · 스킬 FD, RL · 근거 S2 · **D21 보정(2026-09-29)**: 접수 202 뒤 S3로 이동
+- [x] T067 (이제민 완료 2026-09-29 — 신지현 위임, `ConfirmView.vue` — 판정 모델 비활성이면 G7 블록 없음(SD_02 §6-2 보정); 시험 `web/src/__tests__/g1-screens.spec.ts`) [P] [US2] S3 판정 제안 확정 화면을 만든다: 선택지 셋 같은 무게·기본 선택 없음, 제안은 도착하면 문구로, G7 차단 블록, 3D는 노출 설정 뒤만, 폴링 — `web/src/app/views/ConfirmView.vue` · 담당 C · 스킬 FD, RL · 근거 S3, UX2, U10 clarify · **D21 보정(2026-09-29)**: "나중에 고르기"(S4로), 모델 적재 대기 "그림을 볼 준비를 하고 있어요"(`waitingForModel`·`etaSeconds`, 오류 색 없음), 비활성 모델 선택지 C3(`unavailable[]`)·409 `model_disabled` 처리 — T116의 C 몫
 
 #### 실제 모델 (A — 가짜 흐름과 병행, 스토리 완료에는 가짜로 충분)
 
@@ -185,8 +185,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T077 (A 완료 — `a/model-serving`, main 병합 전) [US3] 낮춤 체인과 결과 기록을 만든다: 움직임→2.5D→액자, 마스크 없으면 액자, `result`(종류당 처음 1건), `artwork_outcome.result_kind`·`result_cause`, `awaiting_review` — `serving/workers/chain.py` · 담당 A · 스킬 — · 근거 stage-job §6, data-model §4 결과 저장·낮춤, BR-APR-03
 - [x] T144 (B가 A 몫까지 완료 2026-09-28 — `serving/workers/records.py` open_confirmed · `serving/tests/test_confirm_before_judge.py`) [US3] 판정 전 확정 순서를 지킨다(stage-job §2 "판정 전 확정의 순서", main 52b1d09): 워커가 `judge`를 닫을 때(성공·품질 미달·소진 모두) 같은 작품의 잠긴 `origin='confirm'` 결과 작업을 `available_at=UTC_TIMESTAMP()`로 열고, `relief` 확정인데 `split_ok`가 TRUE가 아니면 `depth_relief`를 `done_downgraded`·`split_fail`로 닫고 `frame_compose`를 등록한다. 시험: 판정 중 확정 → 판정 완료 뒤에만 결과 작업 실행 — `serving/workers/stages/judge.py` · `serving/tests/test_confirm_before_judge.py` · 담당 A · 스킬 — · 근거 BR-SUG-05, stage-job §2·§6 — **B 구현 중 발견(2026-09-28), A 세션 연결이 끊겨 작업으로 등록**
 - [x] T078 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/view.ts`) [US3] 작품 목록 API를 만든다: `GET /v1/artworks`(`v_artwork_display`, 현재 단계, 삭제 중 제외) — `api/src/modules/artworks/list.ts` · 담당 B · 스킬 API · 근거 FR-4, D13
-- [ ] T079 [P] [US3] C6 낮춤 안내 컴포넌트를 만든다(S4·S5 전용) — `web/src/components/DowngradeNote.vue` · 담당 C · 스킬 FD · 근거 UX3, BR-EXH-07
-- [ ] T080 [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7 · **D21 보정(2026-09-29)**: 모델 적재 대기 문구(`waitingForModel`·`etaSeconds`), 목록 갱신은 `updatedAt`이 아니라 `state`로
+- [x] T079 (이제민 완료 2026-09-29 — 신지현 위임, `DowngradeNote.vue`; 시험 `web/src/__tests__/g1-screens.spec.ts`) [P] [US3] C6 낮춤 안내 컴포넌트를 만든다(S4·S5 전용) — `web/src/components/DowngradeNote.vue` · 담당 C · 스킬 FD · 근거 UX3, BR-EXH-07
+- [x] T080 (이제민 완료 2026-09-29 — 신지현 위임, `ArtworksView.vue`·`ArtworkDetailView.vue`; 시험 `web/src/__tests__/g1-screens.spec.ts`) [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7 · **D21 보정(2026-09-29)**: 모델 적재 대기 문구(`waitingForModel`·`etaSeconds`), 목록 갱신은 `updatedAt`이 아니라 `state`로
 
 #### 실제 모델 (A)
 
@@ -215,11 +215,11 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T090 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US4] 이야기 API를 만든다: `PUT /v1/artworks/{id}/story` UPSERT, 트리거 거절 → 422 — `api/src/modules/artworks/story.ts` · 담당 B · 스킬 API · 근거 FR-7, G11
 - [x] T142 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US4] 이야기 동시 수정 충돌을 막는다: `PUT /v1/artworks/{id}/story` 요청의 `baseUpdatedAt`이 `story.updated_at`과 다르면 저장하지 않고 409 `story_conflict`("다른 보호자가 먼저 고쳤어요"), S6은 최신 이야기를 다시 불러와 보여 준다. 두 보호자 동시 수정 시험 포함 — `api/src/modules/artworks/story.ts` · `api/tests/story-gallery.test.ts` · `web/src/app/views/StoryView.vue` · 담당 B·C · 스킬 API, FD · 근거 FR-9(이야기 동시 수정 충돌 안내, 1c460b0), U1 — **A 인계에서 발견한 누락, 번호는 끝번호 다음(T142)**
 - [x] T091 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US4] 전시 API를 만든다: `GET /v1/gallery?child=`(`v_gallery`, 연령 묶음 → 제작일, 제목·제작일 찾기) — `api/src/modules/gallery/` · 담당 B · 스킬 API · 근거 FR-8, BR-EXH-02
-- [ ] T092 [P] [US4] C5 원본-결과 비교를 만든다(정지 우선, 재생·시차 토글, WebGL 시차, 형식 표시 불가 시 원본) — `web/src/components/SideBySide.vue` · `web/src/components/ParallaxRelief.vue` · 담당 C · 스킬 FD · 근거 UX4, R-07
-- [ ] T093 [P] [US4] C7 이야기 카드·C8 전시 조건 체크를 만든다(한마디와 AI 작성 칸 분리) — `web/src/components/StoryCard.vue` · `ExhibitCheck.vue` · 담당 C · 스킬 FD · 근거 UX5, UX1
-- [ ] T094 [US4] S5 결과 확인 화면을 만든다(선택지는 API가 준 것만, G9·G10 차단 블록, 다시 찍기 확인 창) — `web/src/app/views/ReviewView.vue` · 담당 C · 스킬 FD, RL · 근거 S5
-- [ ] T095 [US4] S6 이야기 쓰기 화면을 만든다(부분 저장, G11 차단, P0에서는 설명 확장점 숨김) — `web/src/app/views/StoryView.vue` · 담당 C · 스킬 FD, RL · 근거 S6 · **D21 보정(2026-09-29)**: 동시 수정 409 `story_conflict` C2 + 최신 내용 불러오기(`baseUpdatedAt`) — T142의 C 몫 · **D22**: 세션 만료 시 입력을 이 기기 브라우저에만 임시 저장하고 다시 로그인하면 "저장하지 못한 입력이 있어요"로 복원(저장 성공·로그아웃 때 지움, 서버 저장 없음) — T129도 같은 규칙
-- [ ] T096 [US4] S8 가족 전시 화면을 만든다(아이별·연령 묶음, 동등 크기, 자동 넘김 없음) — `web/src/app/views/GalleryView.vue` · 담당 C · 스킬 FD, RL · 근거 S8, BR-EXH-03·04 · **D21 보정(2026-09-29)**: 제목·그린 날 찾기, G12 직접 주소·G17·G0 C2, 빈 전시와 "작품 올리기"
+- [ ] T092 (**일부** 2026-09-29 이제민 — C5 `SideBySide.vue` 정지 우선·재생 토글·원본 나란히·파일 실패 표시까지. **WebGL 시차는 남음**(2.5D 결과는 모델이 켜진 뒤)) [P] [US4] C5 원본-결과 비교를 만든다(정지 우선, 재생·시차 토글, WebGL 시차, 형식 표시 불가 시 원본) — `web/src/components/SideBySide.vue` · `web/src/components/ParallaxRelief.vue` · 담당 C · 스킬 FD · 근거 UX4, R-07
+- [ ] T093 (**일부** 2026-09-29 이제민 — C8 `ExhibitCheck.vue`만. C7은 별도 컴포넌트 없이 S8 상세에서 한마디 먼저·AI 칸 분리로 구현 — `StoryCard.vue` 분리는 남음) [P] [US4] C7 이야기 카드·C8 전시 조건 체크를 만든다(한마디와 AI 작성 칸 분리) — `web/src/components/StoryCard.vue` · `ExhibitCheck.vue` · 담당 C · 스킬 FD · 근거 UX5, UX1
+- [x] T094 (이제민 완료 2026-09-29 — 신지현 위임, `ReviewView.vue` — retake 응답 artwork null 처리; 시험 `web/src/__tests__/g1-screens.spec.ts`) [US4] S5 결과 확인 화면을 만든다(선택지는 API가 준 것만, G9·G10 차단 블록, 다시 찍기 확인 창) — `web/src/app/views/ReviewView.vue` · 담당 C · 스킬 FD, RL · 근거 S5
+- [x] T095 (이제민 완료 2026-09-29 — 신지현 위임, `StoryView.vue` — 세션 만료 임시 저장(§17-3) 포함, P0 설명 확장점 숨김; 시험 `web/src/__tests__/g1-screens.spec.ts`) [US4] S6 이야기 쓰기 화면을 만든다(부분 저장, G11 차단, P0에서는 설명 확장점 숨김) — `web/src/app/views/StoryView.vue` · 담당 C · 스킬 FD, RL · 근거 S6 · **D21 보정(2026-09-29)**: 동시 수정 409 `story_conflict` C2 + 최신 내용 불러오기(`baseUpdatedAt`) — T142의 C 몫 · **D22**: 세션 만료 시 입력을 이 기기 브라우저에만 임시 저장하고 다시 로그인하면 "저장하지 못한 입력이 있어요"로 복원(저장 성공·로그아웃 때 지움, 서버 저장 없음) — T129도 같은 규칙
+- [x] T096 (이제민 완료 2026-09-29 — 신지현 위임, `GalleryView.vue`; 시험 `web/src/__tests__/g1-screens.spec.ts`) [US4] S8 가족 전시 화면을 만든다(아이별·연령 묶음, 동등 크기, 자동 넘김 없음) — `web/src/app/views/GalleryView.vue` · 담당 C · 스킬 FD, RL · 근거 S8, BR-EXH-03·04 · **D21 보정(2026-09-29)**: 제목·그린 날 찾기, G12 직접 주소·G17·G0 C2, 빈 전시와 "작품 올리기"
 
 **Checkpoint**: US1~US4로 "가입 → 올리기 → 확정 → 결과 → 이야기 → 전시"가 가짜 모델로 끝까지 돈다(**MVP**).
 
