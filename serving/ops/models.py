@@ -173,7 +173,7 @@ DIGEST_FILES = {
     "M1": ("serving/requirements.lock", "serving/requirements-models.lock"),
     "M2": ("serving/requirements.lock", "serving/requirements-models.lock"),
     "M5": ("serving/requirements.lock", "serving/requirements-models.lock"),
-    "M7": ("serving/requirements.lock", "serving/requirements-models.lock"),
+    "M7": ("serving/requirements.lock", "serving/requirements-m7.lock"),   # 전용 환경 .venv-m7(research R-22)
     "M6": ("serving/requirements.lock",),
 }
 

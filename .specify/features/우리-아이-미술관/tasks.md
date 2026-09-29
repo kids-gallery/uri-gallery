@@ -313,8 +313,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **착수 조건**: U2 팀 서버 GPU 확인 + U4 TRELLIS 제외 확인 + 노출 설정을 켜는 주체 결정(SD_01 §17 #3).
 **독립 검증 기준**: Scenario 19, 노출 설정 꺼짐이면 3D 선택지·결과 비노출(액자로 표시), 평면 그림에 쓰지 않음.
 
-- [ ] T131 [P] [US11] M7 TripoSR을 재현하고 어댑터를 만든다(GLB) — `serving/adapters/m7_triposr.py` · 담당 A · 스킬 — · 근거 FR-29
-- [ ] T132 [US11] `sculpture` 단계·낮춤(3D→2.5D→액자)과 노출 설정 변경 경로를 만든다 — `serving/workers/stages/results.py` · `api/src/modules/admin/featureSetting.ts` · 담당 A·D(4인 분담 2026-09-29) · 스킬 API · 근거 D10, G17 · **D22**: 노출 설정은 서비스 운영자가 운영 CLI로 켠다(화면·API 없음) — `api/scripts/ops/feature.ts`로 대체
+- [X] T131 (A 완료 2026-09-29 — 전용 환경 `serving/.venv-m7`(`requirements-m7.lock`) 하위 프로세스 `m7_run.py`, 어댑터 `m7_triposr.py`, 가중치 `models/m7/`(SHA-256 일치), MPS 보완 2건, 합성 컷아웃 실측 10.3초·GLB 면 108,712, 매니페스트 M7 `license_confirmed: false` — 라이선스 팀 확정 전 활성화 금지, 시험 `test_m7_adapter.py` 6건) [P] [US11] M7 TripoSR을 재현하고 어댑터를 만든다(GLB) — `serving/adapters/m7_triposr.py` · 담당 A · 스킬 — · 근거 FR-29
+- [ ] T132 (serving 쪽 확인 2026-09-29 A — `sculpture` 결과 GLB·3D→2.5D 낮춤은 기존 `results.py`·`chain.py`로 동작, 시험 `test_downgrade_chain.py::test_sculpture_ok_and_downgrade_to_relief`. 남은 것: D의 노출 설정 운영 CLI) [US11] `sculpture` 단계·낮춤(3D→2.5D→액자)과 노출 설정 변경 경로를 만든다 — `serving/workers/stages/results.py` · `api/src/modules/admin/featureSetting.ts` · 담당 A·D(4인 분담 2026-09-29) · 스킬 API · 근거 D10, G17 · **D22**: 노출 설정은 서비스 운영자가 운영 CLI로 켠다(화면·API 없음) — `api/scripts/ops/feature.ts`로 대체
 - [ ] T133 [US11] 3D 회전 보기를 만든다(`<model-viewer>`, "뒷면은 AI가 추정했어요", 원본 함께) — `web/src/components/SculptureViewer.vue` · 담당 C · 스킬 FD · 근거 BR-EXH-06
 
 ---

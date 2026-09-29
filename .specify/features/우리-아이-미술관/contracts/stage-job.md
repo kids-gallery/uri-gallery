@@ -215,7 +215,7 @@ app-api(G30)가 점검 요청마다 `model_check` 1행과 `stage_job` 1행(`orig
 
 - **점유 순서**: 보호자 작업(`origin NOT IN ('eval','check')`) → **점검 작업** → 평가 작업 → 외부 작업. 지금 보호자 점유 조건 `origin <> 'eval'`(`workers/runner.py`)은 점검 작업을 보호자 작업으로 잡으므로 **점검 실행기와 함께 바꾼다**. 그 전에는 app-api가 `MODEL_CHECK_ENABLED` 꺼짐으로 점검 등록을 막는다(503 `check_runner_missing`).
 - **단계와 서빙군**: 평가와 같은 대응 — M1 `split`·M2 `judge`·M3 `animate_render`는 `cpu_vision`, M5 `depth_relief`는 `gpu`(GPU 없으면 `cpu_vision`), M7 `sculpture`는 `gpu`. M4는 없음(규칙), M6은 P0.5에 llm-server 동기 호출로 따로 한다(큐 없음, §11).
-- **실행**: 그 모델의 어댑터만 한 번. 입력은 `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`)의 파일. M2는 M2 분류만(어댑터 단계 `judge`), M3는 관절 추정까지(어댑터 단계 `judge` — 렌더 제외), M5는 깊이 추정까지(부조 합성 제외 — M1을 거치지 않고 점검 그림 전체를 불투명 컷아웃으로 넣는다). 대상 모델이 이 워커에서 `disabled`·`failed`면 기다리지 않고 `model_not_ready`로 닫는다. 점검 버전의 가중치·설정 해시가 매니페스트와 다르면 `model_not_ready`(평가와 같음). M7은 어댑터(T131) 전까지 `model_not_ready`. (2026-09-29 A 확정, T155) 모델이 적재 중이면 평가와 같이 기다린다(오류 아님) — 15분 안에 시작되지 않으면 app-api가 조회 때 `failed`·`model_not_ready`로 닫고 작업을 `cancelled`로 둔다.
+- **실행**: 그 모델의 어댑터만 한 번. 입력은 `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`)의 파일. M2는 M2 분류만(어댑터 단계 `judge`), M3는 관절 추정까지(어댑터 단계 `judge` — 렌더 제외), M5는 깊이 추정까지(부조 합성 제외 — M1을 거치지 않고 점검 그림 전체를 불투명 컷아웃으로 넣는다). 대상 모델이 이 워커에서 `disabled`·`failed`면 기다리지 않고 `model_not_ready`로 닫는다. 점검 버전의 가중치·설정 해시가 매니페스트와 다르면 `model_not_ready`(평가와 같음). M7은 GPU 서빙군 전용 환경 하위 프로세스(T131). (2026-09-29 A 확정, T155) 모델이 적재 중이면 평가와 같이 기다린다(오류 아님) — 15분 안에 시작되지 않으면 app-api가 조회 때 `failed`·`model_not_ready`로 닫고 작업을 `cancelled`로 둔다.
 - **판정(재시도 없음)**:
 
   | 어댑터 결과 | 출력 형식 확인 | `model_check` | `stage_job` |

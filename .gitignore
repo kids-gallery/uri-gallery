@@ -20,4 +20,6 @@ api/dist/
 .data/
 # M3 (R-03)
 serving/.venv-m3/
+serving/.venv-m7/
 models/m3/
+models/m7/

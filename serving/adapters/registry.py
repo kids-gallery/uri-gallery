@@ -24,6 +24,7 @@ _REAL = {
     "M2": "adapters.m2_openclip:OpenClipAdapter",
     "M3": "adapters.m3_render:AnimatedDrawingsAdapter",
     "M5": "adapters.m5_depth:DepthAnythingAdapter",
+    "M7": "adapters.m7_triposr:TripoSRAdapter",   # P1 — 전용 환경 하위 프로세스(research R-22)
 }
 
 

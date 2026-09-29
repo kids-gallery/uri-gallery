@@ -224,8 +224,9 @@
   | M3 | `drawn_humanoid_detector.mar` + `drawn_humanoid_pose_estimator.mar` | 327MB + 375MB = 702MB | TorchServe(네이티브) | RAM 약 3.1GB(1차 실측) |
   | M5 | `depth-anything/Depth-Anything-V2-Small-hf` `model.safetensors` | 99MB | PyTorch(`worker-gpu`) | 미측정 |
   | M6 | Ollama `qwen3:4b-instruct-2507-q4_K_M` | 2.5GB | Ollama | 적재 1.07초(디스크 캐시)~13.47초(첫 읽기), `num_ctx 8192`(A 실측, `docs/A_모델재현기록.md`) |
-  | M7 | `stabilityai/TripoSR` `model.ckpt` | 1,677MB | PyTorch(`worker-gpu`) | 미측정 |
+  | M7 | `stabilityai/TripoSR` `model.ckpt` | 1,677MB | PyTorch(`worker-gpu`가 전용 환경 하위 프로세스로) | 최대 RSS 3.8GB·통합 메모리 약 8.3GB(MPS, D 시험 `docs/D_M7_TripoSR_시험기록.md`) |
 
+  - **M7 실행 환경(2026-09-29 A 결정, T131)**: TripoSR는 `numpy<2`·`transformers 4.35`·`trimesh 4.0.5`·`torchmcubes`(소스 빌드)가 필요해 `serving/.venv`(numpy 2.4)와 같이 쓸 수 없다. 그래서 M3 AD 렌더(R-03)와 같이 **전용 환경 `serving/.venv-m7`(Python 3.11, 잠금 `serving/requirements-m7.lock`)에서 작업마다 하위 프로세스**(`serving/adapters/m7_run.py`)로 적재 → 추론 → 메시 추출 → GLB 내보내기 → GLB 다시 읽기를 한다. 적재 약 3초가 작업마다 더해진다(한 건 약 10초, `sculpture.timeout_s` 600 안). 가중치·설정은 `$MODEL_ROOT/m7/TripoSR/`(`model.ckpt`·`config.yaml`, 리비전 `5b521936`), 이미지 인코더 설정(`facebook/dino-vitb16` config 12KB)은 HF 캐시 형태로 `$MODEL_ROOT/m7/hf/`에 두고 `HF_HUB_OFFLINE=1`로 적재, 공식 코드는 `$MODEL_ROOT/m7/TripoSR-src/`(커밋 `107cefd`, 고치지 않음). MPS 보완 2건(연산 대체 · 메시 추출 입력 CPU 넘김)은 `m7_run.py`에서 한다. 배경 제거는 rembg 대신 M1 컷아웃을 쓰고(SD_01 0.7), `tsr.utils`가 부르는 `rembg`는 빈 모듈로 대신해 u2net·onnxruntime을 설치하지 않는다. 품질 미달 기준(U5)이 없어 면이 없을 때만 `quality_below`. 라이선스 팀 확정 전이라 매니페스트 `license_confirmed: false`(활성화 금지).
   - 합계: P0(M1·M2·M3·M5) 약 1.85GB, P0.5까지 약 4.35GB, P1까지 약 6.0GB.
   - Ollama에 올라가는 건 M6 하나다. Ollama는 LLM 전용이라 M1·M2·M5·M7은 파이썬 워커가 직접 불러오고, M3는 TorchServe가 불러온다.
   - M6는 반드시 4비트 태그를 쓴다. 같은 4B라도 Q8_0은 4.3~4.4GB, FP16은 8.1GB다.

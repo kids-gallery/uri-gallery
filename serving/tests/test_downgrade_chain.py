@@ -101,3 +101,27 @@ def test_first_result_kept(env):
     env.job(a, "depth_relief", origin="confirm")
     w.run_once()
     assert env.one("SELECT COUNT(*) n FROM result WHERE artwork_id=%s AND result_kind='relief'", a)["n"] == 1   # uq_rs_first
+
+
+def test_sculpture_ok_and_downgrade_to_relief(env):
+    """T132 serving 쪽(P1): 3D 결과는 GLB, 품질 미달이면 2.5D로 낮춘다(D10). 가짜 M7로(GPU 서빙군)."""
+    m7 = env.version("M7")
+    env.cur.execute("INSERT INTO feature_setting (setting_key, enabled) VALUES ('sculpture_exposure', TRUE) "
+                    "ON DUPLICATE KEY UPDATE enabled = TRUE")                  # G17 — 노출 설정이 켜진 뒤에만 3D 확정
+    a = env.artwork()
+    _with_mask(env, a)
+    env.confirmed(a, "sculpture")
+    env.job(a, "sculpture", origin="confirm", group="gpu", version_id=m7)
+    assert make_worker(group="gpu").run_once() == "done"
+    r = env.one("SELECT r.result_kind, so.object_kind FROM result r JOIN stored_object so ON so.object_id=r.object_id WHERE r.artwork_id=%s", a)
+    assert (r["result_kind"], r["object_kind"]) == ("sculpture", "result_glb")
+
+    b = env.artwork()
+    _with_mask(env, b)
+    env.confirmed(b, "sculpture")
+    env.job(b, "sculpture", origin="confirm", group="gpu", version_id=m7)
+    assert make_worker({"sculpture": ("quality_below", None)}, group="gpu").run_once() == "done_downgraded"
+    nxt = env.one("SELECT stage_kind, origin FROM stage_job WHERE artwork_id=%s AND origin='downgrade'", b)
+    assert (nxt["stage_kind"], nxt["origin"]) == ("depth_relief", "downgrade")
+    assert env.one("SELECT downgrade_cause FROM stage_job WHERE artwork_id=%s AND stage_kind='sculpture'", b)["downgrade_cause"] == "sculpture_to_relief"
+    env.cur.execute("DELETE FROM feature_setting")

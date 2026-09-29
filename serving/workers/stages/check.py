@@ -63,9 +63,9 @@ def output_ok(model_id: str, res: AdapterResult, input_size: tuple[int, int] | N
                 lo, hi = d.convert("I").getextrema()
                 return d.size == input_size and lo != hi
         if model_id == "M7":
-            # GLB 머리글(glTF)만 본다. 면 수 확인은 M7 어댑터(T131)와 함께 넣는다
+            # GLB 머리글(glTF) + 전용 환경이 다시 읽은 면 수(m7_run.py가 알려 준다)
             with open(res.outputs["result_glb"], "rb") as f:
-                return f.read(4) == b"glTF"
+                return f.read(4) == b"glTF" and res.values.get("reload_faces", 1) > 0
     except (KeyError, OSError, ValueError, TypeError, json.JSONDecodeError):
         return False
     return False
