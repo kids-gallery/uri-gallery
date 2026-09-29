@@ -156,7 +156,7 @@ class Worker:
             cur.execute(f"""SELECT * FROM stage_job
                              WHERE serving_group = %s AND status IN ('queued','retry_wait')
                                AND available_at <= UTC_TIMESTAMP() AND stage_kind IN ({ph})
-                               AND origin <> 'eval'   -- 평가 작업은 평가 실행기(stages/eval.py, stage-job §12)가 맡는다
+                               AND origin NOT IN ('eval','check')   -- 평가·점검 작업은 각 실행기(stages/eval.py §12·check.py §13)가 맡는다
                              ORDER BY priority, queued_at LIMIT 1 FOR UPDATE SKIP LOCKED""",
                         (self.group, *stages))
             job = cur.fetchone()
@@ -331,7 +331,11 @@ class Worker:
     def run_once(self):
         got = self.claim()
         if got is None:
-            # 보호자 작업이 없을 때만 평가 작업(stage-job §12) → 외부 작업(§9, D17 낮은 우선순위)
+            # 보호자 작업이 없을 때만 점검 작업(stage-job §13, D20) → 평가 작업(§12) → 외부 작업(§9, D17 낮은 우선순위)
+            from .stages.check import CheckRunner
+            got = CheckRunner(self).run_once()
+            if got is not None:
+                return got
             from .stages.eval import EvalRunner
             got = EvalRunner(self).run_once()
             if got is not None:

@@ -215,7 +215,7 @@ app-api(G30)가 점검 요청마다 `model_check` 1행과 `stage_job` 1행(`orig
 
 - **점유 순서**: 보호자 작업(`origin NOT IN ('eval','check')`) → **점검 작업** → 평가 작업 → 외부 작업. 지금 보호자 점유 조건 `origin <> 'eval'`(`workers/runner.py`)은 점검 작업을 보호자 작업으로 잡으므로 **점검 실행기와 함께 바꾼다**. 그 전에는 app-api가 `MODEL_CHECK_ENABLED` 꺼짐으로 점검 등록을 막는다(503 `check_runner_missing`).
 - **단계와 서빙군**: 평가와 같은 대응 — M1 `split`·M2 `judge`·M3 `animate_render`는 `cpu_vision`, M5 `depth_relief`는 `gpu`(GPU 없으면 `cpu_vision`), M7 `sculpture`는 `gpu`. M4는 없음(규칙), M6은 P0.5에 llm-server 동기 호출로 따로 한다(큐 없음, §11).
-- **실행**: 그 모델의 어댑터만 한 번. 입력은 `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`)의 파일. M2는 M2 분류만, M3는 관절 추정까지(렌더 제외), M5는 깊이 추정까지(부조 합성 제외) `[추론]`. 모델이 적재 중이면 평가와 같이 기다린다(오류 아님) — 15분 안에 시작되지 않으면 app-api가 조회 때 `failed`·`model_not_ready`로 닫고 작업을 `cancelled`로 둔다.
+- **실행**: 그 모델의 어댑터만 한 번. 입력은 `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`)의 파일. M2는 M2 분류만(어댑터 단계 `judge`), M3는 관절 추정까지(어댑터 단계 `judge` — 렌더 제외), M5는 깊이 추정까지(부조 합성 제외 — M1을 거치지 않고 점검 그림 전체를 불투명 컷아웃으로 넣는다). 대상 모델이 이 워커에서 `disabled`·`failed`면 기다리지 않고 `model_not_ready`로 닫는다. 점검 버전의 가중치·설정 해시가 매니페스트와 다르면 `model_not_ready`(평가와 같음). M7은 어댑터(T131) 전까지 `model_not_ready`. (2026-09-29 A 확정, T155) 모델이 적재 중이면 평가와 같이 기다린다(오류 아님) — 15분 안에 시작되지 않으면 app-api가 조회 때 `failed`·`model_not_ready`로 닫고 작업을 `cancelled`로 둔다.
 - **판정(재시도 없음)**:
 
   | 어댑터 결과 | 출력 형식 확인 | `model_check` | `stage_job` |
@@ -224,7 +224,7 @@ app-api(G30)가 점검 요청마다 `model_check` 1행과 `stage_job` 1행(`orig
   | `ok`·`quality_below` | 불량 | `status='failed'`, `fail_reason='bad_output'`, `outcome`=그 값 | `failed`(`error_class` NULL) |
   | 인프라 5종 | — | `status='failed'`, `fail_reason`=그 분류 | `failed`, `error_class`=그 분류 |
 
-  출력 형식 기준은 SD_01 §10-4 표(M1 마스크 크기·전경 · M2 제안 값 · M3 관절 개수 · M5 깊이 크기·값 분산 · M7 GLB 다시 읽기·면 수). 점수는 쓰지 않는다(BR-OPS-06).
+  `quality_below`는 모델 자신의 품질 규칙이 낸 결과라 출력 파일이 없어도 통과로 본다. 형식 확인은 `ok`일 때만 한다. 출력 형식 기준은 SD_01 §10-4 표(M1 마스크 크기·전경 · M2 제안 값 · M3 관절 개수 · M5 깊이 크기·값 분산 · M7 GLB 다시 읽기·면 수). 점수는 쓰지 않는다(BR-OPS-06).
 - **측정**: `processing_ms`·`memory_mb`는 §12 평가와 같은 방식(적재 시간 제외, 워커 밖 런타임 메모리 제외). `started_at`은 점유 때, `finished_at`은 판정 때.
 - **정리**: 출력 파일은 `tmp/{job_id}/`에만 두고 판정 뒤 지운다. `stored_object`·`result`에 쓰지 않는다.
 - **이어받기**: 점유 만료 점검 작업은 다시 돌리지 않는다. sweeper(`api/src/sweeper/takeover.ts`)가 `stage_job`과 `model_check`를 함께 `failed`·`engine_down`으로 닫는다.

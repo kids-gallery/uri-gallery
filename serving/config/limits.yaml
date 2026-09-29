@@ -2,7 +2,7 @@
 # [추론] 기본값. 원천 확정값은 animate_render.timeout_s 뿐(BR-PRC-06). 재현 시험 뒤 A가 갱신한다.
 retry:            { max_attempts: 3, backoff_s: [10, 60] }
 claim:            { seconds: 60, heartbeat_s: 20 }
-priority:         { guardian: 10, eval: 50 }
+priority:         { guardian: 10, check: 30, eval: 50 }   # check: D20 점검(app-api가 30으로 등록, stage-job §13)
 poll:             { idle_s: 2 }
 stages:
   split:          { timeout_s: 60,  concurrency: 1 }   # stage-job §8 — M1 CPU 추론 RSS 8.5GB, 공유 호스트(A_팀서버_자원확인 §3)

@@ -39,7 +39,7 @@ def _png(path: Path, w: int = 8, h: int = 8, channels: int = 1, bit16: bool = Fa
     color = {1: 0, 4: 6}[channels]
     depth = 16 if bit16 else 8
     bpp = channels * (2 if bit16 else 1)
-    raw = b"".join(b"\x00" + b"\x7f" * (w * bpp) for _ in range(h))
+    raw = b"".join(b"\x00" + bytes([0x40 + y * 8]) * (w * bpp) for y in range(h))   # 줄마다 값이 달라 깊이 맵이 평평하지 않다(점검 형식 확인)
 
     def chunk(t, d):
         return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
