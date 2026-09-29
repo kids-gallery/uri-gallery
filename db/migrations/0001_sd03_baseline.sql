@@ -1269,7 +1269,7 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G14','설명 입력 최소','input','guardian'),
  ('G15','LLM 초안 도달','infra_exhausted','guardian'),
  ('G16','설명 규칙 검사','quality','system'),
- ('G17','3D 노출','business_state','unresolved'),
+ ('G17','3D 노출','business_state','operator'),
  ('G18','삭제 착수','atomic','guardian'),
  ('G19','처리 멈춤 확인','hold','system'),
  ('G20','평가 항목 등록','input','evaluator'),
@@ -1288,3 +1288,5 @@ INSERT IGNORE INTO gate_catalog (gate_id, gate_name, nature, release_role) VALUE
  ('G30','점검 입력','input','evaluator');
 -- 1c460b0: G29 이름 변경("보호자 해제 권한" → "보호자 관리 권한"). 이미 시드된 DB에도 적용(멱등)
 UPDATE gate_catalog SET gate_name = '보호자 관리 권한' WHERE gate_id = 'G29';
+-- T132: G17(3D 노출)의 해제 주체는 서비스 운영자(운영 CLI ops:feature, D22 ⑨). 이미 시드된 DB에도 적용(멱등)
+UPDATE gate_catalog SET release_role = 'operator' WHERE gate_id = 'G17';
