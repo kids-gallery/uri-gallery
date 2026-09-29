@@ -120,7 +120,8 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
     };
   }
 
-  r.get('/v1/admin/metrics', staffAuth(db, ['operator']), async (req, res, next) => {
+  r.get('/v1/admin/metrics', staffAuth(db, ['operator', 'evaluator', 'integrator']), // D21: 세 역할 읽기(UC9 A1·UC11 A5)
+    async (req, res, next) => {
     try {
       const iso = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString().slice(0, 19).replace('T', ' ') : undefined);
       if ((req.query.from && !iso(req.query.from)) || (req.query.to && !iso(req.query.to))) throw new Problem('validation_failed', 'period');

@@ -56,8 +56,13 @@ describe('지표(FR-13·26, BR-OPS-02~04)', () => {
     expect(m1.retryRate).toBeGreaterThan(0);
     const text = JSON.stringify(m.body);
     for (const s of [...titles, 'm@test.local', '하늘', 'family/']) expect(text).not.toContain(s);
+    // D21: 지표는 세 역할이 읽고(UC9 A1·UC11 A5), 결과 미도달 목록은 운영자 전용
     const ev = await staff(t, 'ev@test.local', ['evaluator']);
-    expect((await ev.a.get('/v1/admin/metrics')).status).toBe(403);
+    expect((await ev.a.get('/v1/admin/metrics')).status).toBe(200);
+    expect((await ev.a.get('/v1/admin/unreached')).status).toBe(403);
+    const ig = await staff(t, 'ig-m@test.local', ['integrator']);
+    expect((await ig.a.get('/v1/admin/metrics')).status).toBe(200);
+    expect((await ig.a.get('/v1/admin/unreached')).status).toBe(403);
     expect((await request(t.app).get('/v1/admin/metrics')).status).toBe(401);
   });
   it('기간 필터: 전체를 덮는 기간은 뷰 결과와 같고, 지난 기간은 비어 있다(§19 #18)', async () => {

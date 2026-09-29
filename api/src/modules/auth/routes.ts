@@ -1,4 +1,4 @@
-// 보호자 인증 7경로 + /v1/me + 팀원 로그인(T046~T050, UC13·UC14, FR-31·32, G26·G27, R-24).
+// 보호자 인증 7경로 + /v1/me + 팀원 로그인·로그아웃·/v1/ops/me(T046~T050·T146, UC13·UC14, FR-31·32, G26·G27, R-24, D21).
 // 가입·재발송·찾기는 가입 여부와 관계없이 항상 202(결정 ④). 토큰 오류는 400 token_invalid 하나(결정 ③).
 import argon2 from 'argon2';
 import { Router, type Request, type Response } from 'express';
@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { Problem, isDup } from '../../lib/problem.js';
-import { guardianAuth } from '../../auth/guards.js';
+import { guardianAuth, staffAuth } from '../../auth/guards.js';
 import { GUARDIAN_COOKIE, IDLE_MINUTES, STAFF_COOKIE, createSession, destroyAllFor, destroySession } from '../../auth/session.js';
 import type { Mailer, MailMessage } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from './rateLimit.js';
@@ -225,6 +225,22 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
       if (!m || !ok) throw new Problem('unauthorized', 'bad_credentials', 'G1');
       res.cookie(STAFF_COOKIE, await createSession(db, 'staff', m.member_id), cookieOpts);
       res.json({ roles: (m.roles ?? '').split(',').filter(Boolean) });
+    } catch (e) { next(e); }
+  });
+
+  // --- 팀원 로그아웃·상태(T146, D21 — 운영 셸 C9가 새로고침 뒤 역할을 되살린다) ---
+  r.post('/v1/ops/auth/logout', async (req, res, next) => {
+    try {
+      await destroySession(db, req.cookies?.[STAFF_COOKIE]);
+      res.clearCookie(STAFF_COOKIE, { path: '/' });
+      res.status(204).end(); // 세션이 없어도 204
+    } catch (e) { next(e); }
+  });
+
+  r.get('/v1/ops/me', staffAuth(db, ['operator', 'evaluator', 'integrator']), async (req, res, next) => {
+    try {
+      const [rows] = await db.query(`SELECT email FROM team_member WHERE member_id = ?`, [req.staff!.memberId]);
+      res.json({ emailMasked: maskEmail((rows as { email: string }[])[0].email), roles: req.staff!.roles });
     } catch (e) { next(e); }
   });
 

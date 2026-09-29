@@ -78,7 +78,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T024 (B 완료 2026-09-28 — `b/api`, main 병합 전) 앱 부트스트랩을 만든다: 라우터 마운트, `/live`, 시험 모드 `express-openapi-validator` 응답 검증 — `api/src/app.ts` · `api/src/server.ts` · 담당 B · 스킬 API · 근거 FR-12, R-19
 - [x] T025 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/storage/LocalFsDriver.ts`) [P] 저장소 포트와 로컬 드라이버를 만든다: `put/get/delete/exists/listByPrefix`, `family/`·`tmp/`·`ext/` 분리, 원본 `O_EXCL`+0440 — `api/src/storage/StoragePort.ts` · `api/src/storage/LocalFsDriver.ts` · 담당 B · 스킬 API · 근거 R-06, BR-INT-04
 - [x] T026 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 파일 읽기 토큰을 만든다: 짧게 유효한 서명 토큰 `GET /v1/files/{token}` → `X-Accel-Redirect`, 가족 확인 뒤에만 발급, 로그에 객체 키 없음 — `api/src/modules/files/` · 담당 B · 스킬 API, AUTH · 근거 SD_03 §17
-- [ ] T146 [P] 팀원 세션 API와 지표 역할을 맞춘다(D21): `GET /v1/ops/me`(역할·가린 계정)·`POST /v1/ops/auth/logout`(204), `GET /v1/admin/metrics`를 운영자·평가 담당·연동 개발 읽기로(미도달은 운영자 전용 유지), 계약 시험 — `api/src/modules/auth/routes.ts` · `api/src/modules/ops/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 §2-1 · C9, UC9 A1, UC11 A5
+- [x] T146 (신지현 대행 완료 2026-09-29 — `c/web-prep`, `api/tests/web-prep.test.ts`·`ops.test.ts`) [P] 팀원 세션 API와 지표 역할을 맞춘다(D21): `GET /v1/ops/me`(역할·가린 계정)·`POST /v1/ops/auth/logout`(204), `GET /v1/admin/metrics`를 운영자·평가 담당·연동 개발 읽기로(미도달은 운영자 전용 유지), 계약 시험 — `api/src/modules/auth/routes.ts` · `api/src/modules/ops/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 §2-1 · C9, UC9 A1, UC11 A5
 
 ### 서빙 공통 (A)
 
@@ -231,7 +231,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T098 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] 삭제 요청 API를 만든다: `DELETE /v1/artworks/{id}`·`/v1/children/{id}`, `deleting`+취소 플래그+`deletion_request` → 202 — `api/src/modules/deletion/request.ts` · 담당 B · 스킬 API · 근거 data-model §4 삭제 요청, BR-ACC-04
 - [x] T099 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] sweeper 삭제 완료를 만든다: `v_deletion_hold`가 비면(또는 점유 만료 + 30초) 파일 삭제 → `stored_object` → `artwork`(CASCADE·SET NULL) → `completed`, 아이 삭제는 작품이 모두 지워진 뒤 `child` 삭제, 실패는 1·5·30분 재시도 뒤 `incomplete`, `gate_event` G19 해제·삭제된 작품 이벤트의 `subject_id` NULL — `api/src/sweeper/deletion.ts` · 담당 B · 스킬 DB · 근거 data-model §4 삭제 완료, BR-DEL-01~03, SD_03 §16-3
 - [x] T100 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] 삭제 미완료 처리 운영 도구를 만든다(건 번호만, 이미지 없음, 원인 해결 뒤 다시 삭제) — `api/scripts/ops/purge-retry.ts` · 담당 B · 스킬 — · 근거 spec clarify 2026-09-28(삭제 미완료), BR-ACC-03
-- [ ] T147 [US5] 삭제 진행 조회를 만든다(D21): `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion` → `accepted`/`waiting_stop`(G19)/`deleting_files`/`done`, 없는 번호·다른 가족·끝난 삭제(미완료 포함)는 `done`(존재 비노출) + 시험 — `api/src/modules/deletion/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 S9, UC7, G19, BR-ACC-01
+- [x] T147 (신지현 대행 완료 2026-09-29 — `c/web-prep`, `api/tests/web-prep.test.ts`) [US5] 삭제 진행 조회를 만든다(D21): `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion` → `accepted`/`waiting_stop`(G19)/`deleting_files`/`done`, 없는 번호·다른 가족·끝난 삭제(미완료 포함)는 `done`(존재 비노출) + 시험 — `api/src/modules/deletion/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 S9, UC7, G19, BR-ACC-01
 - [ ] T101 [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9 · **D21 보정(2026-09-29)**: 진행은 `GET /v1/artworks/{id}/deletion`·`/v1/children/{id}/deletion` 폴링(T147)
 
 **Checkpoint**: US5 독립 검증 기준 통과.
