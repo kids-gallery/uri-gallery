@@ -7,7 +7,12 @@ import vue from '@vitejs/plugin-vue';
 
 const port = Number(process.env.WEB_PORT ?? 9501);
 const api = process.env.APP_API_URL ?? 'http://127.0.0.1:9521';
-const proxy = Object.fromEntries(['/v1', '/live', '/ready', '/openapi.json'].map((p) => [p, { target: api, changeOrigin: false }]));
+const modelApi = process.env.MODEL_API_URL ?? 'http://127.0.0.1:9541';
+// nginx 라우팅(quickstart §4)과 같은 순서: /v1/models/* → model-api, 그 밖 → app-api (0e1fede에서 가져옴)
+const proxy: Record<string, { target: string; changeOrigin: boolean }> = {
+  '/v1/models': { target: modelApi, changeOrigin: false },
+  ...Object.fromEntries(['/v1', '/live', '/ready', '/openapi.json', '/_files'].map((p) => [p, { target: api, changeOrigin: false }])),
+};
 
 export default defineConfig({
   plugins: [vue()],

@@ -4,12 +4,12 @@ import { expect, test } from '@playwright/test'
 test('Inter·Pretendard를 자체 호스팅으로 불러온다', async ({ page }) => {
   const external: string[] = []
   page.on('request', (r) => { if (!r.url().startsWith('http://127.0.0.1')) external.push(r.url()) })
-  await page.goto('/')
+  await page.goto('/app/login')
   await page.evaluate(() => document.fonts.ready)
   const loaded = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/['"]/g, '')))
-  expect(loaded).toContain('Inter')
+  expect(loaded).toContain('Inter Variable')
   expect(loaded).toContain('Pretendard Variable')
   const family = await page.evaluate(() => getComputedStyle(document.body).fontFamily)
-  expect(family.startsWith('Inter')).toBe(true)
+  expect(family).toMatch(/^"?Inter Variable/)
   expect(external).toEqual([])
 })
