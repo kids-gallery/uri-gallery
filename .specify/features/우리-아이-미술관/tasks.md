@@ -291,7 +291,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T122 (B가 A 몫까지 완료 2026-09-28 — model-api 등록·상태·결과 + 워커 `serving/workers/external.py` · sweeper 이어받기 · `serving/tests/test_external_worker.py`) (**model-api 쪽 B 완료** 2026-09-28 — 등록·상태·결과 1회 수령·만료, `b/api`. 워커 `serving/workers/external.py`는 A 남음) [US9] 외부 작업을 만든다: `POST /v1/models/{function}` → `external_job`(메타만, 입력은 `ext/{ext_job_id}/`, 점유 컬럼은 보완 S4), 상태 조회, 결과 1회 수령 후 삭제, 만료 정리, 서빙군별 외부 동시 1건·낮은 우선순위 — `serving/model_api/models.py` · `serving/workers/external.py` · 담당 A·B · 스킬 API · 근거 D8, D17, H16
 - [x] T123 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US9] 키 발급 운영 CLI를 만든다(`npm run ops:key -- issue --kind team_internal|course_internal|test`, 원문 1회 표시, `external`은 U12 확정 전 발급 금지) — `api/scripts/ops/key.ts` · 담당 B · 스킬 AUTH · 근거 R-09, D17
 - [x] T124 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US9] API활용 API를 만든다: 명세 조회(`/openapi.json` 기반)·시험 호출(평가 묶음 작품만, G23) — `api/src/modules/apiGuide/` · 담당 B · 스킬 API · 근거 R-11, BR-API-07~09, FR-30
-- [ ] T125 [US9] S12 API활용 메뉴 화면을 만든다(탭 3개, 버전 대조 경고, 시험 호출·G23·G25 차단) — `web/src/ops/views/ApiGuideView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S12 · **D22**: 키 발급·폐기 화면 없음 — 매뉴얼 탭에 `npm run ops:key` 절차 안내
+- [x] T125 (이제민 완료 2026-09-29, `web/src/ops/views/ApiGuideView.vue` — 엔드포인트 표·버전 대조 경고·마지막 확인 명세, 시험 호출은 평가 묶음 사진만, 가이드라인·매뉴얼 본문 원천 `docs/B_API활용_가이드라인_매뉴얼.md`; 시험 `ops-screens.spec.ts` 3건) [US9] S12 API활용 메뉴 화면을 만든다(탭 3개, 버전 대조 경고, 시험 호출·G23·G25 차단) — `web/src/ops/views/ApiGuideView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S12 · **D22**: 키 발급·폐기 화면 없음 — 매뉴얼 탭에 `npm run ops:key` 절차 안내
 
 **Checkpoint**: US9 독립 검증 기준 통과.
 

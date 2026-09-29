@@ -8,6 +8,8 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import ModelStatusChip from '../components/ModelStatusChip.vue';
 import OpsStatusView from '../ops/views/OpsStatusView.vue';
 import ModelsView from '../ops/views/ModelsView.vue';
+import ApiGuideView from '../ops/views/ApiGuideView.vue';
+import { GUIDELINE } from '../ops/apiGuideContent';
 import { useSession } from '../stores/session';
 import { ko } from '../copy/ko';
 
@@ -153,6 +155,48 @@ describe('S11 모델 평가·승격(T119)', () => {
     await w.find('[role="alertdialog"] .btn-primary').trigger('click');
     await flushPromises();
     expect(JSON.parse(String(calls('POST', '/v1/admin/models/M5/deactivate')[0]![1]!.body))).toEqual({ reason: '지표 악화' });
+    w.unmount();
+  });
+});
+
+describe('S12 API활용(T125)', () => {
+  const guide = { groups: [
+    { name: '보호자 앱', spec: { paths: { '/v1/artworks': { get: { summary: '작품 목록' } } } } },
+    { name: '모델 기능', spec: { paths: { '/v1/models/pose': { post: { summary: 'pose' } }, '/v1/models/caption': { post: { summary: '(P0.5) 설명' } } } } },
+  ], versionCheck: [{ modelId: 'M1', specVersion: 'v1', activeVersion: null, match: false }], fetchedAt: '2026-09-29T05:00:00Z', stale: true };
+  it('엔드포인트 표·구간(pose는 팀 내부 키, caption은 P0.5 예정)·버전 불일치 경고·마지막 확인 명세', async () => {
+    serve({ '/v1/admin/api-guide/spec': guide, '/v1/admin/eval-items': [] });
+    const w = await open(ApiGuideView, ['integrator']);
+    expect(w.text()).toContain('GET /v1/artworks');
+    expect(w.text()).toContain(ko.apiGuide.internalKey);
+    expect(w.text()).toContain(ko.apiGuide.p05);
+    expect(w.find('.warn').text()).toContain('M1');
+    expect(w.text()).toContain('2026-09-29 05:00:00');
+    w.unmount();
+  });
+  it('시험 호출은 평가 묶음 사진 작품만 고를 수 있고(설명 입력 제외), 고르기 전엔 사유 달린 비활성', async () => {
+    serve({ '/v1/admin/api-guide/spec': guide, '/v1/admin/eval-items': [{ id: '3', kind: 'person' }, { id: '4', kind: 'caption_input' }],
+      'POST /v1/admin/api-guide/test-call': () => json({ jobId: '9', function: 'segment', status: 'done', outcome: 'ok', model: { id: 'M1', version: 'v1' }, durationMs: 900 }, 202),
+      '/v1/admin/api-guide/test-call/9': { jobId: '9', function: 'segment', status: 'done', outcome: 'ok', model: { id: 'M1', version: 'v1' }, durationMs: 900 } });
+    const w = await open(ApiGuideView, ['integrator']);
+    const opts = w.findAll('option').map((o) => o.attributes('value'));
+    expect(opts).toContain('3');
+    expect(opts).not.toContain('4');
+    expect(w.findAll('button').find((b) => b.text().startsWith(ko.apiGuide.call))!.text()).toContain(ko.apiGuide.pickItem);
+    await w.findAll('select')[1]!.setValue('3');
+    await w.findAll('button').find((b) => b.text().startsWith(ko.apiGuide.call))!.trigger('click');
+    await flushPromises();
+    expect(JSON.parse(String(calls('POST', '/v1/admin/api-guide/test-call')[0]![1]!.body))).toEqual({ function: 'segment', evalItemId: '3' });
+    expect(w.text()).toContain('M1 v1');
+    w.unmount();
+  });
+  it('가이드라인 탭은 원천 문서 본문, 굵게·코드 표기를 해석해 그린다(원문 기호 없음)', async () => {
+    serve({ '/v1/admin/api-guide/spec': guide, '/v1/admin/eval-items': [] });
+    const w = await open(ApiGuideView, ['operator']);
+    await w.findAll('[role="tab"]')[1]!.trigger('click');
+    expect(w.findAll('.guide li')).toHaveLength(GUIDELINE.length);
+    expect(w.find('.guide').text()).not.toContain('**');
+    expect(w.find('.guide b').exists()).toBe(true);
     w.unmount();
   });
 });

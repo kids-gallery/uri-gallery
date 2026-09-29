@@ -258,6 +258,18 @@ export const ko = {
     noWait: '기다리지 않아도 돼요', toList: '목록으로',
     locked: '삭제 중 - 이 작품의 모든 조작이 잠겼어요',
   },
+  /** S12 API활용(docs/C_화면문구.md §4 "S12 구현 문구", T125). */
+  apiGuide: {
+    tabs: { endpoints: '엔드포인트', guideline: '가이드라인', manual: '매뉴얼' } as Record<string, string>,
+    colGroup: '묶음', colPath: '경로', colTier: '구간', p0: 'P0', p05: 'P0.5 예정', internalKey: 'P0 팀 내부 키',
+    versionOk: '문서 버전 - 명세 - 매니페스트 일치',
+    versionBad: (m: string, a: string, b: string) => `${m} 명세 ${a} · 활성 ${b}`, // [추론]
+    reload: 'openapi.json 다시 읽기', stale: (at: string) => `마지막 확인 명세 ${at}`, // [추론]
+    testTitle: (f: string) => `시험 호출 - ${f}`, fn: '기능', input: '입력 - 평가 묶음 작품',
+    call: '시험 호출', pickItem: '평가 묶음 작품을 골라 주세요', noItems: '평가 묶음 작품이 없어요', // [추론]
+    colOutcome: '결과 분류', colModel: '모델 ID 버전', colTime: '처리 시간', colState: '상태',
+    noFamily: '결과는 가족 저장소에 쓰지 않아요',
+  },
   /** S10·S11 운영(docs/C_화면문구.md §4 "S10~S11 구현 문구", 2026-09-29 이제민). 비율은 소수 둘째 자리(퍼센트 기호 없음). */
   ops: {
     alive: '생존', aliveOk: '응답함', aliveNo: '응답 없음', // [추론] 응답 없음

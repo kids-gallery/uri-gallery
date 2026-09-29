@@ -11,9 +11,6 @@ declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
 }
 
-const Pending = () => import('@/views/PendingView.vue');
-const pending = (screen: string, title: string, task: string) => ({ component: Pending, props: { screen, title, task } });
-
 export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/app' },
   // 보호자 — 로그인 전
@@ -51,7 +48,7 @@ export const routes: RouteRecordRaw[] = [
       { path: '', redirect: '/ops/status' },
       { path: 'status', component: () => import('@/ops/views/OpsStatusView.vue'), meta: { roles: OPS_ROLES.status } },
       { path: 'models', component: () => import('@/ops/views/ModelsView.vue'), meta: { roles: OPS_ROLES.models } },
-      { path: 'api-guide', ...pending('S12', 'API활용', 'T125'), meta: { roles: OPS_ROLES.apiGuide } },
+      { path: 'api-guide', component: () => import('@/ops/views/ApiGuideView.vue'), meta: { roles: OPS_ROLES.apiGuide } },
       { path: 'forbidden', component: () => import('@/views/OpsForbiddenView.vue') },
     ],
   },
