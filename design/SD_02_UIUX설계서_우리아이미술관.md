@@ -14,6 +14,7 @@
 > **개정 (2026-09-28, main `1c460b0` 후속)**: 보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1)이고 초대는 만든 보호자만 한다. 그에 맞춰 **S1b 와이어프레임을 "두 명 찬 상태"로 다시 그렸고**, T107이 만들 **S1c 초대 수락**과 **S1d 가족 없음** 화면을 추가했다(UC15 BF4~6 · A4 · A6 · E1~E3 · E9 · G28 · G29 · U20).
 > **개정 (2026-09-28, 모델 적재 상태 — A 서빙 구현 `763e90a` · B 계약 `fa57e57` · T109 · T143)**: 모델을 올리는 동안은 **오류가 아니다**. C10에 "불러오는 중"·"적재 실패"·"내려감 짐작(M6)"을 더하고, S3·S4에 "그림을 볼 준비를 하고 있어요", S7에 첫 생성 지연 안내(`GET /v1/captions/model-status`, `aa4e55d`), S11에 **모델 상태 표와 "지금 불러오기"**를 넣었다(근거 `docs/A_모델적재_화면요구.md` §3).
 > **개정 (2026-09-29, 웹 구현 전 점검 — 통합 결정 D21, 신지현)**: 구현 전 점검에서 드러난 빈틈을 채웠다. ① 로그인을 **S0a(보호자)**와 **S0o(팀원)** 두 화면으로 나눴다(쿠키·경로·셸이 다르다). ② **역할별 메뉴 표**(§2-1)를 정본으로 두었다 — 지표(S10)는 팀원 세 역할이 읽고 미도달 목록만 운영자 전용. ③ 운영 셸이 새로고침 뒤 역할을 되살리는 `GET /v1/ops/me`와 `POST /v1/ops/auth/logout`, S9 진행을 보는 `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion`을 바인딩했다. ④ S3의 **비활성 모델 선택지**(`unavailable[]`, 409 `model_disabled`), S6의 **동시 수정 충돌**(409 `story_conflict`), S11의 **비활성화**(clarify 확정)를 넣었다. ⑤ §16에 G26~G29를 더해 30개 전건으로 맞췄다. ⑥ 보류 블록은 점선 테두리로 통일하고, 상태 모양을 스타일가이드 토큰에 사상했다(§3-5).
+> **개정 (2026-09-29, 디자인 검토 — 통합 결정 D22, 신지현)**: §3-5 토큰 사상 확정, S0a·S0o 와이어프레임 추가, 운영 화면 헤더를 역할별 메뉴 표대로, §18 #1·#2·#3·#10 닫음(요청 채널 없음 · 키는 운영 CLI · 3D 노출은 운영 CLI · 별칭 1~20자 · 입력 중 세션 만료 시 브라우저 임시 저장). 문구 정본은 `docs/C_화면문구.md`(D22 ⑦).
 > **시각 기준**: 색·글꼴·간격·모서리·버튼·칩은 `design/style-guide/스타일가이드_우리아이미술관.html`(R-20)을 따른다. 보조: 같은 폴더의 `스타일가이드_메뉴얼_우리아이미술관.md`, 화면 흐름 참고: `design/prototype/우리아이미술관_프로토타입.html`. 스타일가이드와 이 문서가 다르면 **문구·동작은 이 문서**, 모양은 스타일가이드가 앞선다(제안 미리 선택 금지는 이 문서가 앞선다).
 
 ---
@@ -108,7 +109,7 @@
 
 **역할별 뷰** — 같은 프로세스에서 두 역할이 서로 다른 판단을 하는 곳은 없다. 운영 화면은 역할마다 **다른 화면**을 연다(S10 운영자 · S11 평가 담당 · S12 운영자와 연동 개발). S12는 두 역할이 같은 범위를 읽는다(UC11 UML 노트 [추론])라 한 벌만 그렸다. 보호자 계정 모델은 U1로 확정됐다(공동 보호자 초대, 같은 권한, 부모 두 명까지). 역할별로 화면을 나누지 않고 S1b에서 초대·해제 버튼만 만든 보호자에게 보인다(G29).
 
-**역할별 메뉴 표 (정본, D21)** — 운영 셸 헤더(C9)는 이 표에 있는 메뉴만 그린다. 와이어프레임 헤더는 예시이고, 다르면 이 표를 따른다. 값은 API의 역할 검사와 같다.
+**역할별 메뉴 표 (정본, D21)** — 운영 셸 헤더(C9)는 이 표에 있는 메뉴만 그린다. S10~S12 와이어프레임 헤더도 이 표에 맞췄다(D22 ⑤). 값은 API의 역할 검사와 같다.
 
 | 메뉴 | 서비스 운영자 | 평가 담당 | 연동 개발 |
 |---|:--:|:--:|:--:|
@@ -372,9 +373,9 @@ salt
 | C9 셸 헤더 | 보호자(가족명 가림) · 팀원(역할 · 계정 가림) | 보호자 앱 헤더 · 운영 화면 헤더 | 운영 화면 헤더에는 보호자 앱으로 가는 링크가 없다. 역할에 없는 메뉴는 그리지 않는다(403 링크를 두지 않음). 메뉴는 §2-1 역할별 메뉴 표를 따른다. 보호자 셸은 `GET /v1/me`(계정·가족), 운영 셸은 `GET /v1/ops/me`(역할·가린 계정, 새로고침 뒤 복원)와 `POST /v1/ops/auth/logout`을 쓴다(D21) |
 | C10 모델 상태 칩 | 준비됨 · 미준비(`not_loaded`, 기동 순서 대기) · **불러오는 중**(`loading`: 경과 초, 예상 시간이 있으면 남은 시간, 예상의 1.5배를 넘으면 "예상보다 오래 걸려요") · **적재 실패**(`failed`: "60초마다 다시 시도해요") · **내려감 짐작**(`cold`, M6만: "첫 요청 때 올라가요", 짐작임을 표시) · 비활성(라이선스 확인 전) · 비활성(P0.5) · CPU 실행 · 비노출(P1) · 확인 불가 | 표 행(S10 · S11) · 인라인(S12) | "미준비"와 "비활성"과 "CPU 실행"은 모양과 문구를 모두 다르게 한다(§17). "불러오는 중"은 오류 색을 쓰지 않는다(적재 중은 오류가 아니다). 값은 `GET /v1/ops/models`의 `load.state` · `elapsedSeconds` · `remainingSeconds` · `expectedSeconds` · `lastLoadSeconds` · `expiresAt`(T109 · T143) |
 
-### 3-5 상태 모양 → 스타일가이드 토큰 사상 (D21) [추론 — 신지현 검토]
+### 3-5 상태 모양 → 스타일가이드 토큰 사상 (D21 · D22 확정)
 
-§17의 "문구 + 모양" 규칙을 스타일가이드 토큰으로 옮긴 것이다. 스타일가이드에는 오류 색(빨강)이 없고 이 문서도 색만으로 상태를 말하지 않으므로, **모양은 테두리 굵기·선 종류·채움으로** 구분한다. 강조색 `--color-accent-magenta`는 상태 표현에 쓰지 않는다.
+§17의 "문구 + 모양" 규칙을 스타일가이드 토큰으로 옮긴 것이다. 스타일가이드에는 오류 색(빨강)이 없고 이 문서도 색만으로 상태를 말하지 않으므로, **모양은 테두리 굵기·선 종류·채움으로** 구분한다. 강조색 `--color-accent-magenta`는 상태 표현에 쓰지 않는다. C1·C2·C10의 시안은 스타일가이드 HTML의 "상태 컴포넌트" 절에 있다(D22 ②).
 
 | 대상 | 모양 | 토큰 |
 |---|---|---|
@@ -443,8 +444,8 @@ salt
 | 헤더 | 가족명(가림) · 작품 목록 · 로그아웃 | 1.1 Output 가족 ID(세션) | UX8 (C9) |
 | 여정 레일 | "아이 등록" 단계 | — | UX7 (C1 여정 변형) |
 | 우리 아이 목록 | 별칭 · 작품 수 · 별칭 고치기 · 아이 삭제 | 1.1 Output 별칭 목록 · 작품 수는 6.1의 "지워지는 항목" 안내와 같은 값 [추론] | UX8 — 다른 가족 아이는 목록에 없다 |
-| 아이 추가 | 별칭 입력 하나, "실명 대신 가족이 부르는 별칭" 안내, 받지 않는 항목 명시 | 1.2 · 1.3 Input 별칭 | 최소 수집(BR-CHD-01). 받지 않는 칸을 아예 두지 않는다 |
-| 안내·차단 블록 | 같은 별칭 안내(A5, 저장 유지) · G4 별칭 검사(E2 빈 값·형식) · G3 저장 실패(E5) | 1.4 Output 안내·거절 사유 코드 | UX6 (C2 · C3). 별칭 중복은 막지 않는다(D18) |
+| 아이 추가 | 별칭 입력 하나(앞뒤 공백 뺀 1~20자, 남은 글자 수 표시, D22), "실명 대신 가족이 부르는 별칭" 안내, 받지 않는 항목 명시 | 1.2 · 1.3 Input 별칭 | 최소 수집(BR-CHD-01). 받지 않는 칸을 아예 두지 않는다 |
+| 안내·차단 블록 | 같은 별칭 안내(A5, 저장 유지) · G4 별칭 검사(E2 빈 값·20자 초과 `alias_too_long`) · G3 저장 실패(E5) | 1.4 Output 안내·거절 사유 코드 | UX6 (C2 · C3). 별칭 중복은 막지 않는다(D18) |
 
 ### 4-3 상호작용
 
@@ -547,7 +548,7 @@ salt
 
 상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
 
-**S0a 로그인(보호자) · S0o 로그인(팀원)** — 2026-09-29 추가(D21). 두 화면은 같은 모양(이메일 · 비밀번호 · 로그인 버튼)이지만 경로·쿠키·셸이 다르고 서로 링크하지 않는다. 와이어프레임은 S0 가입 양식과 같은 틀이라 따로 그리지 않았다.
+**S0a 로그인(보호자) · S0o 로그인(팀원)** — 2026-09-29 추가(D21). 두 화면은 같은 모양(이메일 · 비밀번호 · 로그인 버튼)이지만 경로·쿠키·셸이 다르고 서로 링크하지 않는다. 와이어프레임은 아래 두 장이다(D22 ③).
 
 | 구분 | S0a 보호자 | S0o 팀원 |
 |---|---|---|
@@ -556,7 +557,55 @@ salt
 | 성공 뒤 | `next`가 있으면 그곳(S1c 등), 가족이 없으면 S1d(409 `no_family`), 그 밖에는 S4 | 역할별 메뉴 표(§2-1)의 첫 화면(S10) |
 | 링크 | 가입(S0) · 로그인 정보를 잊었어요(S0b) | 없음(팀원 계정은 운영 CLI로 만든다) |
 | 실패 | 이메일·비밀번호 불일치는 한 문구("이메일 또는 비밀번호가 맞지 않아요", 가입 여부 비노출) · 메일 확인 전 계정은 확인 메일 다시 받기 안내 · 요청 한도(E8)는 C2 | 불일치 한 문구 · 역할 없음은 G1 C2 |
-| 세션 만료 | 입력 중 값을 저장하지 않고 S0a로(`next`에 현재 주소) — §17 전역 실패 3 | S0o로 |
+| 세션 만료 | S0a로(`next`에 현재 주소). 이야기·설명 입력은 그 기기 브라우저에 임시 저장했다가 다시 로그인하면 복원 — §17 전역 실패 3 | S0o로 |
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S0a 로그인(보호자) - 이메일 또는 비밀번호 불일치
+salt
+{+
+{ 우리 아이 미술관 | [가입하기] }
+..
+{^"로그인"
+  이메일 | "ha*@ex*.com    "
+  비밀번호 | "********       "
+  [로그인]
+}
+{^"막힘  G0 - 로그인하지 못했어요"
+  사유: 이메일 또는 비밀번호가 맞지 않아요
+  해제 주체: 보호자 - 지금 이 화면
+  다음 행동: [다시 입력하기] | [로그인 정보를 잊었어요]
+}
+}
+@enduml
+```
+
+**[「S0a 로그인(보호자) - 이메일 또는 비밀번호 불일치」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9Uc1KAlEU3t-nONimjMRo50qK7AFaisGkUuJf6AiBCkMojBrkYsYmcYaJMjGExIYaySeac-YdutdMbNPZXc73ne_nRsuyVJIr-RwrZzOFK6kk5eFcSmYvSsVKIXVUzBVLsBU7iO0fHzI5I-fScBqWAB8H3qdLpruN745vuGR1d2APyHRwrJG5ADS62NYA5w2cKjhTOQbwQ-UrmhusLOVkVt1lVaD-FF8mQHqDcwHfXFJtz1GgBnFvqpDV9HXDc6cJqLNQiFXPAmvlAIMNvRoELqVgNH0dDCWLeeAj9n_kOSS4GvgZAYmvDyZYfSkwavmWAXAS5oHWS26DRgrg65ffU6nnUF9bGriZ0MCO_B-cBwEcWYJPeltE7Wuc6-sO2QOgpwXNnAisixQ9jhTPVcVV8B80HDsiS-eZzFvwey28e4hw3_zd4XSrifbwt6XaRh4gW-dHcbjgoDbdr2yLmHUWTRdS4tO_AQwYD2M=)** — 클릭 시 브라우저로 연결됩니다.
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S0o 로그인(팀원) - 역할 없음 G1
+salt
+{+
+{ 운영 화면 }
+..
+{^"팀원 로그인"
+  이메일 | "jo*@su*.kr     "
+  비밀번호 | "********       "
+  [로그인]
+}
+{^"막힘  G1 - 이 화면을 볼 역할이 없어요"
+  사유: 이 계정에는 운영 역할이 없어요
+  해제 주체: 서비스 운영자 - 운영 CLI로 역할 부여
+  다음 행동: [다른 계정으로 로그인]
+}
+}
+@enduml
+```
+
+**[「S0o 로그인(팀원) - 역할 없음 G1」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptkU1LAkEYx-_zKR7sUkaSdPMkSUbQrWMUbBlhrm7sricTLJbIF8jD-tqubGSEYBA61Ab7iZxnvkMzuhpBcxmYeX7P_P7PJA1T0c1iXiVGLlu4VnQlD2fKee5S14qFTEpTNR3W0jvp-N4uMbOmegFH2xqwZ2f25aPrr_NGBZ-aG7AF2HnnLU9s9-g2YD9ODEU1SWmTlAD7FLu3wHs2G1Eok1iMlE4jC_S3V4QAoEvZyEY3gBuIXGnRpFGMxnI6yCXv2bfFPips8sC7viyJhgtgVXK8anhCyvId9lblgy4IJWnp0tADXQvYNAi95blUb1Ps23OTuzE6XmIOzKYWei3sNFnNXob5BxMUb1H0HMCXACdUwJYjjLE2DCkcNKXDokPq8ECoLufGPivYGcuI9aEcIG9X2WMvIeLUh-zVXzo4gWT-RCyT5EUhI7_wByin6gE=)** — 클릭 시 브라우저로 연결됩니다.
+
 
 
 **S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 보호자는 부모 두 명까지다(만든 보호자 + 공동 보호자 1명). 권한은 같고 **초대하기와 해제 버튼만 만든 보호자에게 보인다**(G29). 공동 보호자가 이미 있으면 초대하기는 이유 달린 비활성("보호자는 두 명까지예요")이다. 아래는 만든 보호자 화면의 **두 명 찬 상태**다.
@@ -1226,7 +1275,7 @@ skinparam backgroundColor #F3F1EB
 title S10 서비스 상태와 모델별 지표 - 서비스 운영자 뷰
 salt
 {+
-{ 운영 화면 | 역할: 서비스 운영자 | jo*@su*.kr | [API활용] }
+{ 운영 화면 | 역할: 서비스 운영자 | jo*@su*.kr | [모델 평가] | [API활용] }
 ..
 { 생존: 응답함 | 준비: 일부 모델 미준비 | 기간: ^최근 7일^ }
 ..
@@ -1259,7 +1308,7 @@ salt
 @enduml
 ```
 
-**[「S10 서비스 상태와 모델별 지표 - 서비스 운영자 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVF1PGkEUfd9fcaNvNFIosSZN09ja2rTRhKTpU1MTrKaxojSAfRGTta4NBY3QsLrQxSwpClhMVwTEhP6hnbv_ofcOX0YLD8zHmTP3nHuG6Vg8FI1vrIWV2OrK-udQNLQGi6EPqx-jkY31pZlIOBKF8dnArP_FMyW-Eg8vwxu_D1AzxbWGqTLgzra7Y2JeBXFWFfsdcakBVlQ3a8LETVihicY2HmdAXNlKLBSOK5v3lM3-Orj5nKg1IQF4dO7q1qP_nkzAp4hnOrbh8a5GafLuafCVmzexUHsPW4rXy2w7RSw16XQxK9ItV68yY1klJl7rivagShB_Or0NQjgd27EJsYAt07nqwhRBF_qUC2N92MRI35iyOT7gSfQqzTstm8fSDB4Y2-7hiQIw7wfR1sRpnRZngm-BRVnasCyR4RK9DHwA7l4GLf02kAasUrvgEopdLDZRs9gYN69jsQN9OstEPUn2fSOA3LJ0Zg2A01TRSt5hvaEff6pYIYdZJOolttpp_BUlU6RyIA7yeJxlqklwrlPMnoCXRNUjxHTZPfzOJA2DVWLaJC8BT4uOrfKph2RQWZztEmRubv6WnqDPOznQPwWB50Nqtma3g20OUdAvIVv05XYMs2WRfIOD5zRUug-cS80t7FOBomZzXWhtkxxNpA3ZsP5Barf9g-7Dxm86aDuXXcDUNRmJJrfC5_V4aLffCkwa9CNOrNFO_wz5Jw6Iu84YGY4as_sIyCj8ek4dkS7nNfFrT6J4S6q4D48Xn4yeC3cgw62c5KicMPDuLe0c69mS0UtXHX5lx1k82gXRSLoGB3GQ7MYgYUaZyYac1Boio-JeT3jow65SPL545KvLYUUj4jK9NpoHel6PrncummQ2sLkkqaKSYqdVx5ItTbarVNIYy775mvEowwGiHGDpghyp0xXSbkqw3qVHRwnjXQmSeaOJTPBhEws5adX08voS_zf9A7YgbbQ=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S10 서비스 상태와 모델별 지표 - 서비스 운영자 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVF1PGlEQfd9fMdE3GimUWJOmaWxtbdpoQtL0qdEEq2msKA1gX8RkqWuDoBEaVoEuZklRwGK6IiAm9A_tnf0Pnbl8GS08sHvvuWfmnDmX6Ug0EI5urgeVyNrqxpdAOLAOS4GPa5_Coc2N5ZlQMBSG8VnfrPfVCyW6Gg2uwDuvB1AzxI2GyTLgTtzZMTCvgjivioOOuNIAK6qTMWDiNqzQxFwcT9Igri0lEghGla0HylZ_HZx8VtSaEAM8vnB088l_T8bgc8g1Hdl0udfC9PKhVxCcwz3bUhd45bn_jZM3sFBbgG3F7Wb-nSKWmsRXzIhUy9GrXKOsEjevdUV70DeIP53eBiHsjmVbhFjElmFfd2GKoIt9ysWxPmxipHhM2Rof8MR6veftlsXP0h5-yMWdo1MFYN4Loq2JszotzvjfA8s0tWFbIs0tuhn4CJz9NJr6XSA9sErtklsodrHYRM1kq5y8jsUO9OlMA_UEGfqdAHLL1JnVB3ZTRTNxj_WWfvypYoU8Z5Gol9h8u_FXlAyRzII4zONJhqkmwb5JMnsMXhNVjxBTZedoj0kaOVaJKYO8BDwr0pT41GMyqCzOdwkyNzd_R4_f454c6J8C38shNVuz28E2x8rvlZBt-vI4hmkzSX6Oo2g3VKoH9pXmFA6oQVGzuC804yRHE6mcHFj_II3b-kH1sPGbDlr2VRcweUNGosGj8LhdLtrtjwITOfoRp-Zop3-G_BOHxF1njAxHjdk9BGQUfrugiUiX85r4tS9RvCVVPISnS89GF4gnkOZRTnJUThl4v0o7y3q2ZfRSVZvv3UkGj3dBNBJOjoM4SHZjkLBcmcmGnDQaIqPm3k646MOuUjy-uuQ9zGJFI-Iy3T969_W8HpW3L5tkNrC5JKmikmK7VceSJU22qtTSGMu-fb_xOM0Bohxg6ZIcqVMJaTclWO_SpaOE8a4EybzRi0zwURMLWWnV9MrGMv9b_QNbpHfU)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 13-2 영역별 설계
 
@@ -1375,7 +1424,7 @@ skinparam backgroundColor #F3F1EB
 title S12 API활용 메뉴 - 시험 호출 차단 상태
 salt
 {+
-{ 운영 화면 | 역할: 연동 개발 | jo*@su*.kr | [상태-지표] | [모델 평가] }
+{ 운영 화면 | 역할: 연동 개발 | jo*@su*.kr | [상태-지표] | [모델 평가(읽기)] }
 ..
 {/ <b>엔드포인트 | 가이드라인 | 매뉴얼 }
 ..
@@ -1403,7 +1452,7 @@ salt
 @enduml
 ```
 
-**[「S12 API활용 메뉴 - 시험 호출 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVEtPGlEU3s-vONFNSyMWG7sgTWMf2rpoYtJlI8mo1KDIEAZtjJqgjo0wtr5ARjMQTKGIocmII4FE_9Ccc_9Dz-Vh46JNwwLued3zPS5jelJNJJeXooq-GInF1YS6BDPq7OJ8QluOzb3RoloCBieeTQTGXyvJSDIaho-BEXg1NSlObTqrAdaymHZhCMi0Rd4CYbWoaQM5F2heAG1vim1b0dVoUll7oqwBnblkbYI4zWLNhXWg_C-RKwX528H9U_AcGx2b4wuab0xf9vkXE3z41B0zRNWUOLSnZQQvL_BbC8R-2nNS07Ch-P3K2jC8mHlJ-Swe22K_ToWWyLS4mCuo4HIQC7cc5AhWy7w0ndz2GgcB600q7Mnixh2eyw28m7rnGAoAXrsSVPEAKHfFieGVwDBT9kVLLOp8nHrKNT1YnEyE1blV6K6H10a_oLev13IwU-kNWdLmwlF9WA_PL4Vjyf-ojGt6uFMGYi8FuOViMwViq_zvrlk1noxosU6jfxTI2qVSTtlgMbDeIsMGbBhUMmAlwCri5Q4Zrd5vZsncFd8typQlk8T0tS3JvhYPx9R4xL-g81w0y6w9Z-_49r4UoYGHfhiC2aiq65HPqwOSruIOlipBCHX167NPxUNxtAvjQz6fL8T3MLRgB2p_1lYZOOWTy4cGsJoWRQvg3cgoj_8wAtg2pCmNK7m7lNolo8S7s9tyUncG2bl8q042W66_UI87LmeBDapKd8op0qMHFnuOwxnKWXTi0lmWB4icSyUG_OOWGm4Q-hhMF832X67GozJQpu01alIrJozRipM0Wz7IXjbLWLnXzrsuYcXtUCmd_4DFR_cQH3e06mh-H5vu8kKFQzRvOP8-8Fzi9RqOd30L2DSwYv1pm3zbF57fbsPCn3VJM1tenq2yrO21rPdGYCbbeUvnV0xliooV-rpHeX4Wx849S4akaIM_Y-HYnPxX-Q1qc0Ec)** — 클릭 시 브라우저로 연결됩니다.
+**[「S12 API활용 메뉴 - 시험 호출 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVFtPGlEQft9fMdEXpRGKjX0gTWMv2vrQxKSPjSSrUoMCS1i0MWqCujYCtt5AVrMQTKGKocmKq4EE_9DOnP_QOVxsfGjT7MPumTMzZ77L2XE9qSaSy9GIoi-FY3E1oUZhVp1bWkhoy7H5N1pES8Dg5LNJ_8RrJRlORkLw0T8Kr6anxKlFZzXAWg7TDowAZS1RMEGYTbqzgOxLzF4CbW-KbUvR1UhSWXuirAGdOWRugjjNYc2BdaDCL5EvB_ht4_4puLaFtsXxRc0zri97vEsJXnzqthmhi5Q4tGZkBK8u8VsTxH7atVNDVLx3m_bwDGwoXq-y5oMXsy-pkMNjS-zXqdgUmSYXcSYVHQ5isc1BjuBFhYenk3avcBCwfkfFPZncuMdzOYl7W3dtQwHAG0eCKx0A5a95w7fi9zF1X7TEks7L6aec04PHm4mQOr8K3THxxugn9ObmaTFT7TWJavOhiO7TQwvRUCz5H5lxTQ910kDspQC3HLxLgdiq_LtqTo0nw1qsU-gdAzJ3qZxXNlgUrDfJsAAbBpUNWPGzmni1Q0az980sZXfFd5MyFckkMX0tU6qgxUMxNR72LurcF7MV9gB0tehLERx47IsRmIuouh7-vDog6SrtYLkagGBXxz77VDoUR7swMeLxeIJ8DkMLdKD2e21VgLc8cvjgAF6kRckEeDc6xu0_jAK2DGlO41rOLqV2yCjz7Oy6vNSdQXYO36qTxdbrD9TjjtNZYIMupEtlF-nVA5O9x-EM5U06cegsxw1E3qEyA_7RpoYTgD6GrIPZ1l-OxqMKUKblNmpSKyaM0YqTNFs_wJ7OVrD6oJ17U8aq06FS3oBHLA49QBzuaNXR_CE20-WFioeYveX99_7nEq_bsN2bNuCdgVXzT9nU277wfIcbJv6sS5rZ8nJtVmRur2S91wIzuc5dOr9mKlNUqtLXPSrwtTi2H1gyJEUb_IyHYvPy7_IbOZZGBQ==)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 15-2 영역별 설계
 
@@ -1505,7 +1554,7 @@ SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하�
 
 1. 저장소 장애로 파일을 못 읽으면, DB에서 읽은 글(제목·이야기)은 그대로 보이고 파일 자리에 "지금은 불러올 수 없어요 · 다시 불러오기"(UC6 E4). 결과를 다시 만들지 않는다.
 2. API 서버 무응답이면 운영 화면은 마지막 확인 값과 시각을 보이고 "갱신 불가"를 적는다(UC11 E2 · UC8 E4).
-3. 세션 만료는 입력 중 값을 저장하지 않고 로그인으로 보낸다(G0). 임시 보존 여부는 미정(UC5 E5).
+3. 세션 만료는 로그인으로 보낸다(G0, `next`에 현재 주소). 이야기(S6)·설명(S7) 입력 중이었다면 그 기기 브라우저에만 임시 저장하고, 다시 로그인해 같은 작품을 열면 "저장하지 못한 입력이 있어요"와 함께 채워 준다. 서버에는 저장하지 않고, 저장 성공·로그아웃 때 지운다(D22 ⑨, UC5 E5).
 4. 장애 문구에 오류 원문·객체 키를 쓰지 않는다(BR-PRV-01).
 
 ---
@@ -1514,16 +1563,16 @@ SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하�
 
 | # | 항목 | 걸리는 화면 | 영향 |
 |:--:|---|---|---|
-| 1 | **요청 채널이 없다** — 해제 주체가 타인인 게이트(G1 · G13 · G17 · G25)에 «요청 보내기»를 둘지. 상류에 기능이 없어 만들지 않았다 | S7 · S3 · S8 · S10~S12 | 중간. 두면 새 UC가 필요하다 |
-| 2 | **API 키 발급·폐기 화면** — U12 예시값은 "서비스 운영자가 'API활용' 메뉴에서"지만 UC 단계가 없다(D17) | S12 | 중간. P0 착수 전 UC11에 발급·폐기 흐름을 더할지 정한다 |
-| 3 | **3D 노출 설정을 켜는 화면·역할** (SD_01 §17 3번) | S3 · S5 · S8 · S10 | 중간(P1) |
+| 1 | ~~요청 채널~~ → 확정(D22): 두지 않는다. 해제 주체 이름과 대안 행동만 보인다 | S7 · S3 · S8 · S10~S12 | 닫음 |
+| 2 | ~~API 키 발급·폐기 화면~~ → 확정(D22): 운영 CLI `npm run ops:key`(T123)만. 화면은 두지 않고 S12 매뉴얼에 절차를 안내한다 | S12 | 닫음 |
+| 3 | ~~3D 노출 설정을 켜는 화면·역할~~ → 확정(D22): 서비스 운영자가 GPU 확인(U2) 뒤 운영 CLI로 켠다. 화면 없음(P1) | S3 · S5 · S8 · S10 | 닫음 |
 | 4 | ~~삭제 미완료 건을 끝내는 화면~~ → 확정(clarify 2026-09-28): 서비스 운영자가 원인 해결 뒤 운영 CLI(`ops:purge-retry`)로 다시 삭제한다. 화면은 두지 않고 S10은 수만 보인다 | S10 | 닫음 |
 | 5 | ~~롤백 후보 없음의 다음 조치~~ → 확정(clarify 2026-09-28): 평가 담당이 모델을 **비활성화**한다(S11 §14-2 · D21) | S11 | 닫음 |
 | 6 | ~~화면 갱신 방식(U8)~~ → 확정(R-12): 폴링 3→6→10초, 전이 중 상태만, 숨김 탭 정지. S11 모델 상태 표만 2초 | S3 · S4 · S9 · S11 · S12 | 닫음 |
 | 7 | 제안 문구·낮춤 문구 확정 (U10) — 이 문서의 문구는 UC의 [추론 문구]를 옮긴 것 | S3 · S4 · S5 · S7 | 중간 |
 | 8 | 결과 파일 형식(U9) — 재생·시차 컨트롤의 모양 | S5 · S8 | 중간 |
 | 9 | ~~가족 계정 모델(U1)~~ → 확정: 공동 보호자 초대, 같은 권한, 부모 두 명까지, 초대는 만든 보호자만(`1c460b0`). 역할별 뷰는 나누지 않고 S1b의 초대·해제 버튼만 만든 보호자에게 보인다. 초대 이메일 불일치(UC15 E2) 응답 코드도 확정: 403 `forbidden_role` · reason `invite_email_mismatch`(이제민 결정, R-25). 남은 것: 만든 보호자의 탈퇴·권한 이전(U20) | S1b · S1c · S1d | 닫음 |
-| 10 | 입력 중 세션 만료 시 임시 보존 (UC5 E5) · 별칭 길이·허용 문자 (UC1 E2) · 키워드 개수·길이 (UC10 E6) | S1 · S6 · S7 | 낮음 |
+| 10 | ~~입력값 기준~~ → 확정(D22): 별칭 1~20자·허용 문자 제한 없음(UC1 E2) · 키워드 5개·각 20자(UC10 E6) · 세션 만료 시 브라우저 임시 저장(UC5 E5, §17 3) | S1 · S6 · S7 | 닫음 |
 | 11 | 명암·움직임 줄이기 등 접근성 수치 — 원천에 없어 일반 기준을 [추론]으로 적었다 | 전 화면 | 낮음 |
 
 ### 도면 목록과 렌더 검증
@@ -1536,6 +1585,7 @@ SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하�
 | 4 | C2 차단 블록과 C3 비활성 버튼 - 변형 | §3-3 |
 | 5~16 | S1 ~ S12 와이어프레임 (화면당 1장, 모두 차단 상태 포함) | §4 ~ §15 |
 | 17~21 | S0 가입 · S0b 로그인 정보 찾기 · S1b 가족 보호자 관리 · S1c 초대 수락 · S1d 가족 없음 (D18 · U1 · `1c460b0`) | §4-5 |
+| 22~23 | S0a 로그인(보호자) · S0o 로그인(팀원) (D21 · D22) | §4-5 |
 
 도면은 21개다(처음 16개에 D18·U1로 계정·가족 화면 5개를 더했다). 처음 16개가 기준(14개 내외)보다 둘 많은 이유는 화면이 12개라서다(프로세스 11개 중 P3을 결정·이야기·설명의 세 화면으로, P2를 올리기·확정의 두 화면으로 나눴다 — 사이에 비동기 대기가 있어 보호자가 한 자리에서 끝내지 않기 때문이다(SD_01 §1-3)).
 

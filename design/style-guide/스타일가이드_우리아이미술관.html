@@ -191,6 +191,35 @@ footer.site ul{list-style:none;margin:var(--s-md) 0 0;padding:0;display:grid;gap
 @media (max-width:960px){footer.site .cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:559px){footer.site .cols{grid-template-columns:1fr}}
 
+/* ---------- 상태 컴포넌트 C1·C2·C3·C10 (SD_02 §3-5 · D22 시안) ---------- */
+.rail{display:flex;flex-wrap:wrap;gap:6px;align-items:center;list-style:none;margin:0;padding:0}
+.rail li{border:1px solid var(--color-hairline);border-radius:var(--r-pill);padding:6px 12px;font:330 16px/1.2 var(--font-sans);background:var(--color-canvas)}
+.rail li.is-now{background:var(--color-inverse-canvas);color:var(--color-inverse-ink);border-color:var(--color-inverse-canvas);font-weight:540}
+.rail li.is-blocked{border:2px solid var(--color-ink);font-weight:540}
+.rail li .gate{font:400 12px/1 var(--font-mono);letter-spacing:.6px;margin-left:6px}
+.gblock{border-radius:var(--r-md);padding:var(--s-md);display:grid;gap:6px;font:330 16px/1.45 var(--font-sans)}
+.gblock .head{font:540 18px/1.35 var(--font-sans)}
+.gblock .head .gate{font:400 12px/1 var(--font-mono);letter-spacing:.6px;margin-left:8px}
+.gblock dl{display:grid;grid-template-columns:auto 1fr;gap:4px var(--s-sm);margin:0}
+.gblock dt{font-weight:540} .gblock dd{margin:0}
+.gblock .acts{display:flex;gap:var(--s-sm);flex-wrap:wrap;margin-top:6px}
+.gblock.is-block{border:2px solid var(--color-ink);background:var(--color-canvas)}
+.gblock.is-hold{border:2px dashed var(--color-ink);background:var(--color-block-cream)}
+.gblock.is-final{border:1px solid var(--color-hairline);background:var(--color-surface-soft)}
+.downgrade{border-radius:var(--r-md);padding:var(--s-md);background:var(--color-block-lilac);font:330 16px/1.45 var(--font-sans)}
+.btn[aria-disabled="true"]{background:var(--color-hairline-soft);color:var(--color-ink);cursor:not-allowed}
+.btn[aria-disabled="true"] .why{font:330 14px/1.3 var(--font-sans);margin-left:6px}
+.mchip{display:inline-flex;align-items:center;gap:6px;border-radius:var(--r-pill);padding:6px 12px;font:400 12px/1 var(--font-mono);letter-spacing:.6px;border:1px solid transparent;min-height:28px}
+.mchip.ready{background:var(--color-inverse-canvas);color:var(--color-inverse-ink)}
+.mchip.not-ready,.mchip.cold{border-color:var(--color-ink);background:var(--color-canvas)}
+.mchip.loading{border-color:var(--color-ink);background:var(--color-canvas)}
+.mchip.loading .bar{display:inline-block;width:48px;height:6px;border-radius:var(--r-xs);background:linear-gradient(90deg,var(--color-block-mint) 60%,var(--color-hairline-soft) 60%)}
+.mchip.failed{border:2px solid var(--color-ink);background:var(--color-canvas)}
+.mchip.inactive{border-color:var(--color-hairline);background:repeating-linear-gradient(135deg,var(--color-canvas) 0 6px,var(--color-hairline) 6px 8px)}
+.mchip.cpu{background:var(--color-block-mint)}
+.mchip.hidden{border:1px dashed var(--color-hairline);background:var(--color-canvas)}
+.mchip.unknown{background:var(--color-hairline)}
+
 .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--s-xl)}
 .toc a{text-decoration:none}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -204,7 +233,7 @@ footer.site ul{list-style:none;margin:var(--s-md) 0 0;padding:0;display:grid;gap
     <a class="wordmark" href="#top">우리 아이 미술관</a>
     <nav class="navlinks" aria-label="스타일가이드 목차">
       <a href="#principles">원칙</a><a href="#colors">색</a><a href="#type">타이포</a>
-      <a href="#layout">레이아웃</a><a href="#components">컴포넌트</a><a href="#patterns">적용 예시</a><a href="#rules">해야 할 것</a>
+      <a href="#layout">레이아웃</a><a href="#components">컴포넌트</a><a href="#patterns">적용 예시</a><a href="#states">상태 컴포넌트</a><a href="#rules">해야 할 것</a>
     </nav>
     <div class="nav-cta">
       <a class="btn btn-secondary" href="#patterns">가족 전시 보기</a>
@@ -451,6 +480,61 @@ footer.site ul{list-style:none;margin:var(--s-md) 0 0;padding:0;display:grid;gap
     </div>
   </div>
   <p class="t-body-sm" style="margin-top:var(--s-md)">아이의 한마디는 큰 본문으로 먼저 보이고, AI 설명은 "AI 작성" 표시가 붙은 별도 카드에 둔다(BR-CAP, D6).</p>
+</section>
+
+<!-- ============ 상태 컴포넌트 (D22 시안) ============ -->
+<section class="container block" id="states">
+  <div class="sec-head">
+    <p class="t-eyebrow">06-1 · 상태 컴포넌트 <span class="tag-proposal t-caption">시안 · D22 · 신지현 검토</span></p>
+    <h2 class="t-display-lg">막힘은 색이 아니라 모양으로</h2>
+    <p class="t-body-lg" style="max-width:860px">SD_02 §3-5의 사상을 그대로 그린 시안이다. 빨강은 쓰지 않고, 마젠타는 상태에 쓰지 않는다. 차단은 굵은 실선, 보류는 점선과 크림 면, 종결은 회색 면이다. 모든 상태는 문구를 함께 적는다.</p>
+  </div>
+
+  <h3 class="t-card-title">C1 진행 레일</h3>
+  <div class="tile-lg stack" style="margin-top:var(--s-md)">
+    <ol class="rail" aria-label="작품 진행 - 기본">
+      <li>접수됨</li><li>판정 중</li><li class="is-now" aria-current="step">확정 대기</li><li>처리 중</li><li>확인 대기</li><li>승인됨</li><li>전시 중</li>
+    </ol>
+    <ol class="rail" aria-label="작품 진행 - 막힘">
+      <li>접수됨</li><li>판정 중</li><li>확정 대기</li><li>처리 중</li><li class="is-blocked" aria-current="step">처리하지 못함<span class="gate">G9</span></li><li>승인됨</li><li>전시 중</li>
+    </ol>
+    <p class="t-body-sm">현재 단계는 검정 알약, 막힌 단계는 굵은 테두리 알약에 게이트 번호를 붙인다. 레일 단계는 누를 수 없다.</p>
+  </div>
+
+  <h3 class="t-card-title" style="margin-top:var(--s-xxl)">C2 차단 블록 · C3 이유 달린 비활성 버튼 · C6 낮춤 안내</h3>
+  <div class="grid g2" style="margin-top:var(--s-md)">
+    <div class="gblock is-block" role="alert">
+      <p class="head">막힘<span class="gate">G11</span></p>
+      <dl><dt>사유</dt><dd>그린 날은 오늘 이후일 수 없어요</dd><dt>해제 주체</dt><dd>보호자 - 지금 이 화면</dd></dl>
+      <div class="acts"><button class="btn btn-secondary" type="button">그린 날 고치기</button><button class="btn" type="button" aria-disabled="true">저장<span class="why">(비활성) - 그린 날을 고쳐 주세요</span></button></div>
+    </div>
+    <div class="gblock is-hold" role="status">
+      <p class="head">기다리는 중<span class="gate">G19</span></p>
+      <dl><dt>사유</dt><dd>만들던 작업이 멈추기를 기다리는 중이에요</dd><dt>해제 주체</dt><dd>시스템 - 멈춤 확인 또는 시간 상한</dd></dl>
+      <div class="acts"><span class="t-body-sm">기다리지 않아도 돼요</span><button class="btn btn-secondary" type="button">목록으로</button></div>
+    </div>
+    <div class="gblock is-final">
+      <p class="head">되돌릴 수 없어요</p>
+      <dl><dt>사유</dt><dd>삭제 중인 작품이에요</dd><dt>해제 주체</dt><dd>없음</dd></dl>
+      <div class="acts"><button class="btn btn-secondary" type="button">목록으로</button></div>
+    </div>
+    <div class="downgrade">움직이는 그림을 만들지 못해 <b style="font-weight:540">2.5D 부조로 바꿨어요.</b> 원본 액자로 걸 수도 있어요.</div>
+  </div>
+  <p class="t-body-sm" style="margin-top:var(--s-sm)">블록이 나타나면 제목으로 포커스를 옮기고 사유와 해제 주체를 낭독한다. 비활성 버튼은 <code>aria-disabled</code>로 두어 포커스를 받고, 라벨 뒤에 사유를 붙인다. 토스트나 저절로 사라지는 배너는 쓰지 않는다.</p>
+
+  <h3 class="t-card-title" style="margin-top:var(--s-xxl)">C10 모델 상태 칩</h3>
+  <div class="tile-lg" style="margin-top:var(--s-md);display:flex;gap:var(--s-sm);flex-wrap:wrap;align-items:center">
+    <span class="mchip ready">준비됨</span>
+    <span class="mchip not-ready">미준비</span>
+    <span class="mchip loading">불러오는 중 <span class="bar" aria-hidden="true"></span> 12초 / 약 20초</span>
+    <span class="mchip failed">적재 실패 · 60초마다 다시 시도</span>
+    <span class="mchip cold">내려감 짐작 · 첫 요청 때 올라가요</span>
+    <span class="mchip inactive">비활성 · 라이선스 확인 전</span>
+    <span class="mchip cpu">CPU 실행</span>
+    <span class="mchip hidden">비노출 · P1</span>
+    <span class="mchip unknown">확인 불가</span>
+  </div>
+  <p class="t-body-sm" style="margin-top:var(--s-sm)">채움 · 빈 칸 · 굵은 테두리 · 사선 · 점선 · 회색 면으로 서로 다르게 보이고, 문구가 늘 함께 있다. "불러오는 중"은 오류가 아니므로 막대에 민트를 쓴다.</p>
 </section>
 
 <!-- ============ do / don't ============ -->
