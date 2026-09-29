@@ -37,17 +37,17 @@ watch(() => props.playing, (p) => {
 </template>
 
 <style scoped>
-.artframe{position:relative;display:inline-flex;flex-direction:column;align-items:center;padding-top:28px}
+.artframe{position:relative;display:inline-flex;max-width:100%;flex-direction:column;align-items:center;padding-top:28px}
 /* 위에서 비추는 조명(부채꼴) */
-.artframe.lit::before{content:"";position:absolute;top:-8px;left:50%;width:180%;height:calc(100% + 24px);transform:translateX(-50%);pointer-events:none;
+.artframe.lit::before{content:"";position:absolute;top:-8px;left:50%;width:min(180%,100vw);height:calc(100% + 24px);transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(ellipse 50% 60% at 50% 0,rgba(255,255,255,.75),rgba(255,255,255,0) 70%)}
 .frame{position:relative;background:var(--color-ink);padding:6px;border-radius:2px;box-shadow:var(--elev-3),0 2px 0 rgba(0,0,0,.35)}
 .mat{background:var(--color-canvas);padding:14px;display:grid;place-items:center}
 .is-sm .mat{padding:10px}
 .is-lg .mat{padding:24px}
-.mat img,.mat video{display:block;height:var(--art-h,200px);width:auto;max-width:min(78vw,var(--art-max-w,340px));object-fit:contain}
+.mat img,.mat video{display:block;height:var(--art-h,200px);width:auto;max-width:min(calc(100vw - 96px),var(--art-max-w,340px));object-fit:contain}
 .is-sm{--art-h:140px;--art-max-w:220px}
-.is-lg{--art-h:min(56vh,480px);--art-max-w:min(84vw,640px)}
+.is-lg{--art-h:min(56vh,480px);--art-max-w:min(calc(100vw - 96px),640px)}
 @media (max-width:560px){.is-md{--art-h:160px}.is-lg{--art-h:min(46vh,360px)}}
 .fail{height:var(--art-h,200px);width:calc(var(--art-h,200px) * 1.2);display:grid;place-items:center;text-align:center;padding:var(--s-sm)}
 /* 빈 액자 걸이 — 못과 끈만 */

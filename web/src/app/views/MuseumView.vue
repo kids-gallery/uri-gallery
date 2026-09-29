@@ -35,6 +35,9 @@ const alias = computed(() => children.value?.find((c) => c.id === childId.value)
 const rooms = computed(() => g.value?.groups ?? []);
 const count = computed(() => rooms.value.reduce((n, r) => n + r.items.length, 0));
 
+const WALLS = ['cream', 'mint', 'lilac', 'pink', 'lime', 'coral'];
+const wallOf = (i: number) => `color-mix(in srgb,var(--color-block-${WALLS[i % WALLS.length]}) 55%,var(--color-canvas))`;
+
 function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
 
 async function load() {
@@ -136,7 +139,7 @@ async function goRoom(age: number) {
       </nav>
 
       <!-- 세관 -->
-      <section v-for="r in rooms" :id="`room-${r.ageAtMaking}`" :key="r.ageAtMaking" class="room" :aria-labelledby="`rh-${r.ageAtMaking}`">
+      <section v-for="(r, ri) in rooms" :id="`room-${r.ageAtMaking}`" :key="r.ageAtMaking" class="room" :style="{ '--room-wall': wallOf(ri) }" :aria-labelledby="`rh-${r.ageAtMaking}`">
         <div class="container">
           <h2 :id="`rh-${r.ageAtMaking}`" class="signplate" tabindex="-1">{{ ko.museum.room(r.ageAtMaking) }}</h2>
         </div>
@@ -178,21 +181,26 @@ async function goRoom(age: number) {
 </template>
 
 <style scoped>
-.museum{--wall:color-mix(in srgb,var(--color-block-cream) 45%,var(--color-canvas));padding-bottom:var(--s-section);word-break:keep-all}
-/* 로비 — 한 화면의 컬러 블록 하나(걸린 배너) */
-.lobby{padding:var(--s-xl) 0 var(--s-lg)}
+/* 전시관 — 흰 바탕 없이 석조 벽 톤(SD_02 §17-2 토큰 사상). 새 색 없음: 토큰과 color-mix만 */
+.room{--room-wall:var(--wall)}
+.museum{--stone:color-mix(in srgb,var(--color-block-cream) 70%,var(--color-surface-soft));--wall:color-mix(in srgb,var(--color-block-cream) 55%,var(--color-canvas));
+  background:radial-gradient(ellipse 70% 420px at 50% 0,rgba(255,255,255,.85),rgba(255,255,255,0) 70%),var(--stone);
+  padding-bottom:var(--s-section);word-break:keep-all;overflow-x:clip;min-height:100vh}
+/* 로비 — 천장에서 끈 두 줄로 걸린 배너 */
+.lobby{padding:var(--s-xl) 0 var(--s-lg);position:relative}
+.lobby::before{content:"";position:absolute;inset:0 0 auto;height:14px;background:linear-gradient(180deg,color-mix(in srgb,var(--color-ink) 18%,transparent),transparent)}
 .lobby-in{display:grid;gap:var(--s-md);justify-items:center;text-align:center}
-.banner{background:var(--color-block-lime);border-radius:0 0 var(--r-lg) var(--r-lg);padding:var(--s-xl) var(--s-xxl) var(--s-xxl);position:relative;box-shadow:var(--elev-2);max-width:720px;width:100%}
-.banner::before,.banner::after{content:"";position:absolute;top:-24px;width:2px;height:24px;background:var(--color-ink)}
+.banner{background:var(--color-block-lime);border-radius:0 0 var(--r-lg) var(--r-lg);padding:var(--s-xl) var(--s-xxl) var(--s-xxl);position:relative;box-shadow:var(--elev-3);max-width:720px;width:100%}
+.banner::before,.banner::after{content:"";position:absolute;top:-32px;width:2px;height:32px;background:var(--color-ink)}
 .banner::before{left:18%}.banner::after{right:18%}
 .banner-eyebrow{font:400 14px/1.3 var(--font-mono);letter-spacing:.54px;text-transform:uppercase}
 .banner-title{margin:var(--s-xs) 0 0;font:340 48px/1.1 var(--font-sans);letter-spacing:-.8px}
 @media (max-width:560px){.banner{padding:var(--s-lg) var(--s-md) var(--s-xl)}.banner-title{font-size:32px}}
 .pick{min-width:220px}
-/* 평면 안내도 */
+/* 평면 안내도 — 가운데 복도, 양옆 세관 */
 .plan{margin:var(--s-lg) auto var(--s-xl)}
 .plan-h{font:400 14px/1.3 var(--font-mono);letter-spacing:.54px;text-transform:uppercase;text-align:center;margin-bottom:var(--s-sm)}
-.plan-map{display:grid;grid-template-columns:1fr 64px 1fr;gap:10px 0;max-width:560px;margin:0 auto;position:relative}
+.plan-map{display:grid;grid-template-columns:1fr 64px 1fr;gap:10px 0;max-width:560px;margin:0 auto;position:relative;background:var(--color-canvas);padding:14px;border:2px solid var(--color-ink);border-radius:var(--r-sm);box-shadow:var(--elev-2)}
 .corridor{grid-column:2;background:repeating-linear-gradient(0deg,var(--color-surface-soft) 0 14px,var(--color-hairline) 14px 15px);border-left:2px solid var(--color-ink);border-right:2px solid var(--color-ink);display:flex;align-items:flex-end;justify-content:center;min-height:100%}
 .corridor span{font:400 12px/1 var(--font-mono);letter-spacing:.6px;padding:6px 0;writing-mode:vertical-rl}
 .plan-room{border:2px solid var(--color-ink);background:var(--wall);min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:var(--s-xs);padding:8px 14px;font:330 16px/1.2 var(--font-sans);cursor:pointer;color:var(--color-ink)}
@@ -201,26 +209,35 @@ async function goRoom(age: number) {
 .plan-room.left{grid-column:1;border-right:0;border-radius:var(--r-sm) 0 0 var(--r-sm)}
 .plan-room.right{grid-column:3;border-left:0;border-radius:0 var(--r-sm) var(--r-sm) 0}
 .plan-room:hover{background:var(--color-block-cream)}
-/* 세관 */
+/* 세관 — 명판, 몰딩, 벽(세관별 색), 걸레받이, 원근 바닥 */
 .room{margin-top:var(--s-xl)}
-.signplate{display:inline-block;background:var(--color-inverse-canvas);color:var(--color-inverse-ink);font:540 22px/1 var(--font-sans);padding:12px 22px;border-radius:var(--r-sm);box-shadow:var(--elev-2);margin-bottom:var(--s-md)}
-.wall{background:linear-gradient(180deg,var(--wall) 0,var(--wall) 82%,color-mix(in srgb,var(--wall) 80%,var(--color-ink)) 100%);position:relative;padding:var(--s-xl) 0 0;overflow:hidden}
-.hang{list-style:none;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--s-xxl) var(--s-xl);padding-bottom:var(--s-xl)}
+.signplate{display:inline-flex;align-items:center;gap:10px;background:var(--color-inverse-canvas);color:var(--color-inverse-ink);font:540 22px/1 var(--font-sans);padding:14px 24px;border-radius:var(--r-sm);box-shadow:var(--elev-3);margin-bottom:-18px;position:relative;z-index:1}
+.wall{position:relative;padding:var(--s-xxl) 0 0;
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--color-ink) 22%,transparent) 0 6px,color-mix(in srgb,var(--color-canvas) 60%,transparent) 6px 9px,transparent 9px),
+    radial-gradient(ellipse 60% 180px at 50% 0,rgba(255,255,255,.55),rgba(255,255,255,0) 80%),
+    var(--room-wall);
+  box-shadow:inset 0 -18px 0 color-mix(in srgb,var(--color-ink) 78%,var(--room-wall))}
+.hang{list-style:none;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--s-xxl) var(--s-xl);padding-bottom:calc(var(--s-xl) + 18px)}
 .hang li{display:grid;justify-items:center;gap:var(--s-sm)}
 .piece{border:0;background:none;padding:0;cursor:pointer;transition:transform .2s ease}
 .piece:hover{transform:translateY(-3px)}
-.plaque{background:var(--color-inverse-canvas);color:var(--color-inverse-ink);border-radius:var(--r-xs);padding:8px 12px;display:grid;gap:2px;text-align:center;min-width:160px;max-width:260px}
+.plaque{background:var(--color-inverse-canvas);color:var(--color-inverse-ink);border-radius:var(--r-xs);padding:8px 12px;display:grid;gap:2px;text-align:center;min-width:160px;max-width:260px;box-shadow:var(--elev-2)}
 .plaque b{font:540 16px/1.3 var(--font-sans)}
 .plaque span{font:400 12px/1.2 var(--font-mono);letter-spacing:.4px;opacity:.85}
-.floor{height:36px;background:repeating-linear-gradient(90deg,var(--color-surface-soft) 0 64px,var(--color-hairline) 64px 65px),var(--color-surface-soft);border-top:1px solid var(--color-hairline)}
+/* 원근 바닥: 앞으로 넓어지는 줄눈 */
+.floor{height:44px;background:
+  repeating-linear-gradient(90deg,transparent 0 63px,color-mix(in srgb,var(--color-ink) 12%,transparent) 63px 64px),
+  linear-gradient(180deg,color-mix(in srgb,var(--stone) 70%,var(--color-ink)) 0,var(--stone) 100%);
+  transform:perspective(160px) rotateX(24deg);transform-origin:top;margin:0 -4%}
 .empty-cta{display:grid;justify-items:center;gap:var(--s-md);padding-bottom:var(--s-xl);text-align:center}
 @media (max-width:560px){.hide-m{display:none}}
 .prep{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center;justify-content:center;margin-top:var(--s-xl)}
-/* 작품 앞 */
-.viewing{background:var(--wall);padding:var(--s-xl) 0 var(--s-section)}
+/* 작품 앞 — 한 벽, 한 작품, 옆 월 라벨 */
+.viewing{background:radial-gradient(ellipse 60% 70% at 38% 20%,rgba(255,255,255,.6),rgba(255,255,255,0) 70%),var(--wall);padding:var(--s-xl) 0 var(--s-section);overflow-x:clip;min-height:80vh;box-shadow:inset 0 -18px 0 color-mix(in srgb,var(--color-ink) 78%,var(--wall))}
 .viewing-in{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:var(--s-xxl);align-items:center}
-@media (max-width:900px){.viewing-in{grid-template-columns:1fr;justify-items:center}}
-.wall-piece{display:grid;place-items:center}
+@media (max-width:900px){.viewing-in{grid-template-columns:minmax(0,1fr);justify-items:center}}
+.wall-piece{display:grid;place-items:center;max-width:100%}
 .walllabel{background:var(--color-inverse-canvas);color:var(--color-inverse-ink);border-radius:var(--r-xs);padding:var(--s-lg);display:grid;gap:var(--s-sm);max-width:420px;width:100%;box-shadow:var(--elev-3)}
 .wl-title{margin:0;font:540 26px/1.3 var(--font-sans)}
 .wl-meta{font:400 14px/1.4 var(--font-mono);letter-spacing:.3px;opacity:.9}
