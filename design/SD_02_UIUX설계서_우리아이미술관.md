@@ -88,6 +88,7 @@
 | S0o | 로그인(팀원) `/ops/login` | INC2 (G1 앞) | 팀원(운영자·평가 담당·연동 개발) | 입력 · 자주 |
 | S0w | 입장(첫 방문만, D25) | — | 보호자(로그인 전) | 연출 · 1회 |
 | S0b | 로그인 정보 찾기 | P1 (1.R1~1.R3) | 보호자(로그인 전) | 입력 · 드묾 |
+| S0c | 계정 - 비밀번호 변경 `/app/account` (UC14 A5, D24, T161) | P1 (1.R 변형) | 보호자(로그인 뒤) | 입력 · 드묾 |
 | S1b | 가족 보호자 관리 | P1 (1.I1~1.I4) | 보호자(만든·공동) | 설정 · 드묾 |
 | S1c | 초대 수락 | P1 (1.I2) | 초대받은 보호자 | 결정 · 1회 |
 | S1d | 가족 없음 | P1 (1.I4 뒤 · U20) | 나가거나 해제된 보호자 | 선택 · 드묾 |
@@ -614,6 +615,8 @@ salt
 **[「S0o 로그인(팀원) - 역할 없음 G1」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptkU1LAkEYx-_zKR7sUkaSdPMkSUbQrWMUbBlhrm7sricTLJbIF8jD-tqubGSEYBA61Ab7iZxnvkMzuhpBcxmYeX7P_P7PJA1T0c1iXiVGLlu4VnQlD2fKee5S14qFTEpTNR3W0jvp-N4uMbOmegFH2xqwZ2f25aPrr_NGBZ-aG7AF2HnnLU9s9-g2YD9ODEU1SWmTlAD7FLu3wHs2G1Eok1iMlE4jC_S3V4QAoEvZyEY3gBuIXGnRpFGMxnI6yCXv2bfFPips8sC7viyJhgtgVXK8anhCyvId9lblgy4IJWnp0tADXQvYNAi95blUb1Ps23OTuzE6XmIOzKYWei3sNFnNXob5BxMUb1H0HMCXACdUwJYjjLE2DCkcNKXDokPq8ECoLufGPivYGcuI9aEcIG9X2WMvIeLUh-zVXzo4gWT-RCyT5EUhI7_wByin6gE=)** — 클릭 시 브라우저로 연결됩니다.
 
 
+
+**S0c 계정 - 비밀번호 변경**(T161, UC14 A5, D24 — 2026-09-29 이제민. **들어가는 자리·배치는 디자인(신지현) 확인 대상 [추론]**) — 보호자 셸 헤더의 계정 표시(가린 이메일)를 누르면 연다. 칸은 현재 비밀번호 · 새 비밀번호 · 새 비밀번호 확인 셋이고, 규칙은 재설정(S0b)과 같다(8자 이상, 확인 일치). `POST /v1/auth/password` 204면 "비밀번호를 바꿨어요 - 다른 기기에서는 다시 로그인해야 해요" 안내 블록을 보이고 이 기기는 로그인을 유지한다. 현재 비밀번호가 틀리면 422 `current_password_mismatch` → C2 "현재 비밀번호가 맞지 않아요"(해제 주체: 보호자 - 지금 이 화면, 다음 행동 [다시 입력하기] · [로그인 정보를 잊었어요]), 여러 번 틀리면 429 `login_attempts` 보류 블록. 입력 검사 문구는 S0 가입과 같은 문장을 쓴다.
 
 **S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 보호자는 부모 두 명까지다(만든 보호자 + 공동 보호자 1명). 권한은 같고 **초대하기와 해제 버튼만 만든 보호자에게 보인다**(G29). 공동 보호자가 이미 있으면 초대하기는 이유 달린 비활성("보호자는 두 명까지예요")이다. 아래는 만든 보호자 화면의 **두 명 찬 상태**다.
 

@@ -124,6 +124,9 @@ export const ko = {
     newPassword: '새 비밀번호',
     newPasswordConfirm: '새 비밀번호 확인',
     save: '저장',
+    // S0c 계정 - 비밀번호 변경(T161, UC14 A5, docs/C_화면문구.md §4 S0c)
+    changePwTitle: '비밀번호 바꾸기', currentPassword: '현재 비밀번호', changePw: '바꾸기', needCurrent: '현재 비밀번호를 적어 주세요', // [추론]
+    pwChanged: '비밀번호를 바꿨어요 - 다른 기기에서는 다시 로그인해야 해요', myAccount: '내 계정', // [추론]
   },
   /** 보호자 여정 레일(C1 여정 변형, SD_02 §2-3 · S0 와이어프레임). */
   journey: {
@@ -342,6 +345,7 @@ const P: Record<string, ProblemCopy> = {
   'G0:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
   '-:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
   '-:email_unverified': { variant: 'block', summary: '메일 확인 전이에요', reason: '메일 확인을 아직 하지 않았어요', releaser: '보호자', self: true, actions: ['확인 메일 다시 받기'] },
+  '-:current_password_mismatch': { variant: 'block', summary: '바꾸지 못했어요', reason: '현재 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] }, // [추론] S0c
   '-:login_attempts': { variant: 'hold', summary: '잠시 기다려 주세요', reason: '로그인 시도가 많아요. 잠시 뒤 다시 해 주세요', releaser: '시스템 - 시간이 지나면 풀림', self: false, actions: ['로그인 정보를 잊었어요'] }, // [추론]
   'G1:role_missing': { variant: 'block', summary: '역할 없음', reason: '이 화면을 볼 역할이 없어요', releaser: '서비스 운영자 - 운영 CLI로 역할 부여', self: false, actions: ['다른 계정으로 로그인'] },
   'G1:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: '팀원 - 지금 이 화면', self: true, actions: ['다시 입력하기'] },
