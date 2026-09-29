@@ -116,7 +116,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T041 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/auth.test.ts`) [P] [US1] 인증 엔드포인트 7개 계약 시험: signup·verify/resend·recovery 항상 202, verify·reset 성공 204·실패 400 `token_invalid`, login 204·401·403 `email_unverified`, logout — `api/tests/auth.contract.test.ts` · 담당 B · 스킬 AUTH · 근거 FR-31, FR-32, D18
 - [x] T042 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/auth.test.ts`) [P] [US1] 가입 규칙 시험: 대소문자 무시 유일, 동시 가입 1건, 계정·가족 원자 저장(G26), 요청 한도(이메일 10분 3회·IP 1시간 20회), 재설정 뒤 모든 세션 무효, 로그에 이메일·토큰 원문 0 — `api/tests/auth.rules.test.ts` · 담당 B · 스킬 AUTH · 근거 G26, G27, BR-ACC-06~08, BR-PRV-01
 - [x] T043 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] [US1] 아이 등록 시험: 별칭 빈 값 거부(G4), 같은 별칭 저장 + 안내 플래그(UC1 A5), 다른 가족 아이 404, 로그에 별칭 없음 — `api/tests/children.test.ts` · 담당 B · 스킬 API · 근거 FR-1, G0, G4, BR-CHD-01
-- [ ] T044 [P] [US1] 가입→확인→로그인→아이 등록 E2E(390·1440px) — `web/e2e/us1-signup-child.spec.ts` · 담당 C · 스킬 FD · 근거 S0, S1
+- [x] T044 (완료 2026-09-29 이제민 보조 — 390·1440 각 1건 통과. 스택 `web/e2e/stack`: 임시 MariaDB·별도 app-api 9621·별도 Mailpit 1125/8125, 팀 DB·p1 미접속) [P] [US1] 가입→확인→로그인→아이 등록 E2E(390·1440px) — `web/e2e/us1-signup-child.spec.ts` · 담당 C · 스킬 FD · 근거 S0, S1
 
 #### 구현
 

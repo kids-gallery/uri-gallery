@@ -1,15 +1,22 @@
 // E2E(T004, R-19): 휴대폰 390px · 데스크톱 1440px 두 프로젝트(SD_02 §3-5, D22 ⑥).
-// 팀 서버에서는 9501을 운영 nginx가 쓰므로 로컬 PC에서 돌린다(quickstart). 다른 포트는 WEB_PORT로.
+// 흐름 E2E(T044~)는 e2e/stack이 띄우는 임시 MariaDB·별도 app-api·별도 Mailpit에 붙는다 — 팀 DB·p1에는 붙지 않는다.
+// 팀 서버에서는 9501을 운영 nginx가 쓰므로 웹은 기본 9613(다른 포트는 WEB_PORT). 나머지 포트는 e2e/stack/ports.ts.
 import { defineConfig } from '@playwright/test';
-
-const port = Number(process.env.WEB_PORT ?? 9501);
+import { API_PORT, WEB_PORT } from './e2e/stack/ports';
 
 export default defineConfig({
   testDir: 'e2e',
-  use: { baseURL: `http://127.0.0.1:${port}`, locale: 'ko-KR' },
+  globalSetup: './e2e/stack/global-setup.ts',
+  workers: 1,
+  use: { baseURL: `http://127.0.0.1:${WEB_PORT}`, locale: 'ko-KR' },
   projects: [
     { name: 'mobile-390', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
     { name: 'desktop-1440', use: { viewport: { width: 1440, height: 900 } } },
   ],
-  webServer: { command: 'npm run build && npm run preview', port, reuseExistingServer: !process.env.CI },
+  webServer: {
+    command: 'npm run build && npm run preview',
+    port: WEB_PORT,
+    reuseExistingServer: false,
+    env: { WEB_PORT: String(WEB_PORT), APP_API_URL: `http://127.0.0.1:${API_PORT}`, MODEL_API_URL: 'http://127.0.0.1:9' },
+  },
 });
