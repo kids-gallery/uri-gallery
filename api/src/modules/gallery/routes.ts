@@ -20,7 +20,7 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
       if (typeof req.query.q === 'string' && req.query.q.trim()) { where.push('g.title LIKE ?'); p.push(`%${req.query.q.trim().replace(/[%_]/g, '\\$&')}%`); }
       if (typeof req.query.madeOn === 'string') { where.push('g.made_on = ?'); p.push(req.query.madeOn); }
       const [rows] = await db.query(
-        `SELECT g.artwork_id, g.age_group, g.made_on, g.title, g.utterance, g.display_kind, g.result_object_id,
+        `SELECT g.artwork_id, g.age_group, g.made_on, g.title, g.utterance, g.guardian_note, g.display_kind, g.result_object_id,
                 g.caption_body, g.ai_badge, j.cutout_object_id, ao.object_id original_id
            FROM v_gallery g
            LEFT JOIN judgment j ON j.artwork_id = g.artwork_id
@@ -39,6 +39,7 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
           originalUrl: url(g.original_id as number | null),
           title: g.title, madeOn: new Date(g.made_on as Date).toISOString().slice(0, 10), ageAtMaking: Number(g.age_group),
           childWords: g.utterance ?? null,
+          guardianNote: g.guardian_note ?? null, // D24 — 한마디와 따로
           aiCaption: cfg.captionEnabled && g.caption_body ? { body: g.caption_body, aiAuthored: Boolean(g.ai_badge) } : null,
           backsideEstimated: kind === 'sculpture',
         };

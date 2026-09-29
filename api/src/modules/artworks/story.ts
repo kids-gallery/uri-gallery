@@ -1,4 +1,4 @@
-// 이야기(T090·T142, UC5, FR-7, G11·G12, BR-STY-01~03, FR-9 동시 수정): 부분 저장, 한마디는 받은 그대로(트림·교정 없음).
+// 이야기(T090·T142·T161, UC5, FR-7, G11·G12, BR-STY-01~04, FR-9 동시 수정): 부분 저장, 한마디·보호자 감상평은 받은 그대로(트림·교정 없음).
 // 전시 여부는 저장하지 않는다(v_exhibit_gate). 공동 보호자 동시 수정은 baseUpdatedAt 비교로 409 story_conflict.
 import type { PoolConnection } from 'mysql2/promise';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ export const storySchema = z.object({
   madeOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   ageAtMaking: z.number().int().min(0).max(18).nullable().optional(),
   childWords: z.string().max(2000).nullable().optional(),
+  guardianNote: z.string().max(1000).nullable().optional(), // D24 보호자 감상평 — 전시 조건 아님
   baseUpdatedAt: z.string().datetime().nullable().optional(),
 }).strict();
 
@@ -39,6 +40,7 @@ export async function saveStory(conn: PoolConnection, familyId: number, artworkI
   if (s.madeOn !== undefined) cols.push(['made_on', s.madeOn]);
   if (s.ageAtMaking !== undefined) cols.push(['age_at_creation', s.ageAtMaking]);
   if (s.childWords !== undefined) cols.push(['utterance', s.childWords]); // BR-STY-03 원문 그대로
+  if (s.guardianNote !== undefined) cols.push(['guardian_note', s.guardianNote]); // BR-STY-04 원문 그대로
   if (!existing) {
     await conn.query(
       `INSERT INTO story (artwork_id${cols.map(([c]) => `, ${c}`).join('')}, updated_at) VALUES (?${cols.map(() => ', ?').join('')}, CURRENT_TIMESTAMP)`,

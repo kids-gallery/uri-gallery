@@ -94,6 +94,20 @@ describe('이야기·전시(UC5·UC6)', () => {
     expect(JSON.stringify(g.body)).not.toMatch(/downgrade|cause|score/);
     expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: null })).status).toBe(422);
   });
+  it('보호자 감상평(D24, BR-STY-04): 선택·원문 그대로 저장, 상세와 전시에 한마디와 따로, 1000자 넘으면 422, 전시 조건 아님', async () => {
+    const f = await reviewed('s-note@test.local', 'relief');
+    await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
+    await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200); // 감상평 없이도 전시
+    let g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
+    expect(g.body.groups[0].items[0]).toMatchObject({ childWords: STORY.childWords, guardianNote: null });
+    const d0 = await f.a.get(`/v1/artworks/${f.id}`).expect(200);
+    const note = '  바다를 처음 본 날의 설렘이 파란 선에 다 담겼어요  ';
+    const d = await f.a.put(`/v1/artworks/${f.id}/story`).send({ guardianNote: note, baseUpdatedAt: d0.body.story.updatedAt }).expect(200);
+    expect(d.body.story).toMatchObject({ guardianNote: note, childWords: STORY.childWords });
+    g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
+    expect(g.body.groups[0].items[0]).toMatchObject({ guardianNote: note, childWords: STORY.childWords });
+    expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ guardianNote: '가'.repeat(1001) })).status).toBe(422);
+  });
   it('액자로 걸기면 전시는 원본 액자(SD_03 §19 #17)', async () => {
     const f = await reviewed('s3@test.local', 'animated');
     await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200);

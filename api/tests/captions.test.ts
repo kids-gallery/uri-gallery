@@ -38,12 +38,14 @@ describe('P0 비노출', () => {
 describe('초안 생성(BR-CAP-01~03, G14·G16)', () => {
   it('허용 필드만 보내고, 통과 초안은 승인 대기·AI 작성, 단계 작업 done', async () => {
     const f = await artwork();
+    await t.db.query(`UPDATE story SET guardian_note = '감상평비밀' WHERE artwork_id = ?`, [f.id]); // D24: 보호자 감상평은 AI 입력에 넣지 않는다
     t.llm.replies = [OK()];
     const r = await f.a.post(`/v1/artworks/${f.id}/captions`).send({ keywords: [' 파란색 '], selectedTags: ['바다'] }).expect(201);
     expect(r.body).toMatchObject({ source: 'llm', aiAuthored: true, edited: false, state: 'pending_approval', generationCount: 1 });
     expect(Object.keys(t.llm.calls[0]).sort()).toEqual(['ageAtMaking', 'keywords', 'requestId', 'tags', 'words']);
     expect(t.llm.calls[0]).toMatchObject({ keywords: ['파란색'], tags: ['바다'], words: '엄마랑 바다 갔어', ageAtMaking: 5 });
     expect(JSON.stringify(t.llm.calls[0])).not.toContain('비밀제목');
+    expect(JSON.stringify(t.llm.calls[0])).not.toContain('감상평비밀');
     expect(await job(f.id)).toMatchObject({ status: 'done', attempt_count: 1, downgrade_cause: null });
     const d = await f.a.get(`/v1/artworks/${f.id}`).expect(200);
     expect(d.body.caption.id).toBe(r.body.id);

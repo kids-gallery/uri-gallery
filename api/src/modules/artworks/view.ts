@@ -36,8 +36,8 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     `SELECT stage_kind, status, attempt_count, downgrade_cause FROM v_job_progress WHERE artwork_id = ? ORDER BY job_id`, [artworkId]);
   const cr = await one<{ result_kind: string; object_id: number | null }>(db, `SELECT result_kind, object_id FROM v_current_result WHERE artwork_id = ?`, [artworkId]);
   const dec = await one<{ decision_code: string }>(db, `SELECT decision_code FROM decision WHERE artwork_id = ? ORDER BY review_round DESC LIMIT 1`, [artworkId]);
-  const st = await one<{ title: string | null; made_on: Date | null; age_at_creation: number | null; utterance: string | null; updated_at: Date }>(db,
-    `SELECT title, made_on, age_at_creation, utterance, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
+  const st = await one<{ title: string | null; made_on: Date | null; age_at_creation: number | null; utterance: string | null; guardian_note: string | null; updated_at: Date }>(db,
+    `SELECT title, made_on, age_at_creation, utterance, guardian_note, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
 
   const loads = hooks.modelLoads && jobs.some((x) => x.status === 'queued') ? await hooks.modelLoads().catch(() => null) : null;
   let choices: string[] = [];
@@ -93,6 +93,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
       madeOn: st?.made_on ? new Date(st.made_on).toISOString().slice(0, 10) : null,
       ageAtMaking: st?.age_at_creation ?? null,
       childWords: st?.utterance ?? null,
+      guardianNote: st?.guardian_note ?? null, // D24 보호자 감상평
       updatedAt: st?.updated_at ? new Date(st.updated_at).toISOString() : null,
     },
     // (P0.5) 설명·키워드 후보 — 후보는 판정 근거로 보이지 않는다(BR-SUG-02)
