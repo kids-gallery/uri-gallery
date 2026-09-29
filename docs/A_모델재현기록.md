@@ -87,8 +87,52 @@
 
 위험(T068로 넘김): **M1 CPU 추론 중 8.5GB**. worker-cpu 동시 2건(limits.yaml)이면 17GB 이상 — 팀 서버 RAM 확인 전에는 split 동시 처리를 1로 두는 것을 권한다.
 
-## M3 Animated Drawings — 미실시 (T081)
+## M3 Animated Drawings — 재현 (T081, 2026-09-29, Studio-B, 네이티브)
 
-TorchServe 네이티브 설치(약 33GB)와 AD venv가 없다. 어댑터(`serving/adapters/m3_render.py`)는 AD 저장소 `image_to_annotations.py` 형식(COCO 17점 → char_cfg skeleton)대로 만들고 가짜 TorchServe·가짜 AD 스크립트로만 시험했다.
-- 관절 skeleton에는 `head`가 없다(`neck`이 코 위치) — M4 규칙의 필수 관절에서 `head`를 뺐다.
-- GIF→MP4는 호스트 Homebrew ffmpeg가 깨져 있어(`libx265.215.dylib` 없음) `imageio-ffmpeg 0.6.0`의 고정 바이너리(ffmpeg 7.1 arm64)를 쓴다.
+Docker 없이 재현했다(research R-03 2026-09-29 개정). 예상했던 33GB는 Docker 이미지 기준이었고, 네이티브 설치는 약 3GB다.
+
+### 환경
+
+| 항목 | 값 |
+|---|---|
+| 환경 | conda 접두사 환경 `serving/.venv-m3`(micromamba 2.9.0 — 공용 conda 24.1.0은 solver 오류로 쓰지 못함, `~/.local/bin/micromamba`). Homebrew에는 아무것도 설치하지 않음 |
+| 잠금 | `serving/conda-m3.lock`(Python 3.8.13 · openjdk 17.0.18 · mesalib 25.0.5, md5 포함), `serving/requirements-m3.lock`(pip 설치 결과) |
+| 주요 패키지 | torch 1.13.0 · torchvision 0.14.0 · torchserve 0.12.0 · mmcv-full 1.7.0(소스 빌드 5분 22초, `MMCV_WITH_OPS=1`) · mmdet 2.27.0 · mmpose 0.29.0 · xtcocotools(git `17252e74`) · numpy 1.24.4 · PyOpenGL 3.1.6 |
+| AD 저장소 | `models/m3/AnimatedDrawings` 커밋 `b859684857519c7424da51a0b0862fbd1fd258f4`(2025-09-03 보관 시점), `pip install -e` |
+| `.mar` | `models/m3/model-store/` — `drawn_humanoid_detector.mar` 327,104,441B SHA-256 `1a2654c8c4fc52faeeeb9cb2f12ba7ecd01f01f5aeef7ff6723cd0a18133abfb`, `drawn_humanoid_pose_estimator.mar` 374,824,711B SHA-256 `40ebdc69f1727dfe475161ae751fb066013e590f8894fe0016f0b69b336ee42f`(릴리스 v0.0.1) |
+| TorchServe | `ops/torchserve/config.properties` — 127.0.0.1:9561(예측)·9562(관리)·9563(지표), 워커 1개, 토큰 인증 해제(`disable_token_authorization=true`) |
+| 렌더 | `serving/adapters/m3_ad_run.py` — OSMesa 헤드리스(`USE_MESA: True`), `DYLD_FALLBACK_LIBRARY_PATH=serving/.venv-m3/lib`, AD 스크립트의 `localhost:8080`을 `TORCHSERVE_URL`로 바꿈 |
+| 매니페스트 | `models/manifest.yaml` M3 — `weights_sha256` `a739c067…f868`(두 `.mar` 해시를 이은 값), `image_digest` `sha256:22e60b57…60fc`(잠금 2개 + 설정 + `.mar` 해시), `config_hash` `677c843a…534c` |
+
+기동:
+
+```bash
+E=serving/.venv-m3; export JAVA_HOME=$E/lib/jvm PATH="$E/bin:$E/lib/jvm/bin:$PATH"
+cd serving/.run/torchserve && torchserve --start --ncs --ts-config ../../../ops/torchserve/config.properties \
+  --model-store ../../../models/m3/model-store --models drawn_humanoid_detector.mar drawn_humanoid_pose_estimator.mar
+curl -s http://127.0.0.1:9561/ping    # {"status": "Healthy"}
+```
+
+### 측정 (AD 예제 그림 `examples/drawings/garlic.png` 4032×3024 — 팀원 그림이 아니므로 평가 묶음 측정이 아니라 재현 확인용)
+
+| 항목 | 값 |
+|---|---|
+| TorchServe 기동 → 두 모델 READY | 128초(첫 기동, `.mar` 풀기 포함) |
+| TorchServe 메모리(RSS) | Java 0.34GB + 워커 2개 0.81·0.83GB = **약 2.0GB**(개인 PC Docker 1차 3.1GB보다 적음) |
+| 관절 추출(검출 + 자세, 긴 변 1000px) | 7.2~9.1초(검출 5.9~7.8초 · 자세 1.3~1.4초), 검출 점수 0.998, 관절 17점 |
+| 렌더 전체(`m3_ad_run.py`) | **125.5초**(주석 약 11초 + OSMesa 렌더 약 114초), 최대 RSS 1.59GB, 결과 GIF 500×500 339프레임 |
+| 결과 확인 | 프레임 3장을 뽑아 눈으로 확인 — 팔다리가 움직이고 텍스처가 입혀짐 |
+
+- 개인 PC Docker 실측(한 장 53~62초, 렌더 약 40초)보다 **렌더가 약 3배 느리다.** OSMesa는 CPU 소프트웨어 렌더라서다. 시간 상한 `animate_render.timeout_s: 600`(limits.yaml) 안에는 들어온다. U6(시간 상한)은 T137에서 팀원 그림으로 다시 잰다.
+- 렌더 중 CPU 사용률이 높다(user 293초 / real 125초 ≈ 2.3코어). worker-cpu 동시 처리 1(limits.yaml `animate_render.concurrency: 1`)을 유지한다.
+
+### 확인한 것 · 어댑터에 넘길 것(T072·T083)
+
+- **요청 크기**: TorchServe 기본 요청 상한은 6.5MB다. 어댑터 `joints()`가 원본을 그대로 PNG로 다시 저장하면 12MP 사진이 약 19MB가 되어 연결이 끊긴다. AD 스크립트처럼 **긴 변 1000px로 줄여 보내야 한다.** 그래야 관절 좌표도 AD `char_cfg`와 같은 좌표계가 된다.
+- **렌더 호출**: 어댑터 `render()`는 지금 AD `examples/image_to_animation.py`(창 모드 고정)를 부른다. `m3_ad_run.py`를 부르고 `DYLD_FALLBACK_LIBRARY_PATH`·`TORCHSERVE_URL`·`M3_AD_ROOT`를 넘기도록 바꾼다.
+- **관절 skeleton에는 `head`가 없다**(`neck`이 코 위치) — M4 규칙의 필수 관절에서 `head`를 뺐다(기존).
+- **GIF→MP4**: 호스트 Homebrew ffmpeg가 깨져 있어(`libx265.215.dylib` 없음) `imageio-ffmpeg 0.6.0`의 고정 바이너리(ffmpeg 7.1 arm64)를 쓴다(기존).
+- **포트**: 8080(다른 사용자 컨테이너 UI)·8081(다른 사용자 Express)이 쓰이고 있어 9561~9563으로 옮겼다(R-03).
+- **pioneer1은 SSH 세션만 있다**(콘솔 사용자는 다른 계정). GLFW 창 렌더는 불가 — OSMesa가 필수다.
+- TorchServe 로그에 `nvidia-smi` 없음 오류가 모델 조회마다 찍힌다. 동작에는 영향이 없다.
+- U14: `MODEL_ROOT=<저장소>/models`로 닫았다(research U14, 팀 확인 필요).

@@ -188,7 +188,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 #### 실제 모델 (A)
 
-- [ ] T081 [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 conda 환경 `serving/.venv-m3`(Python 3.8·Java 17·OSMesa, Homebrew 미사용) + TorchServe 네이티브 127.0.0.1·워커 1개, OSMesa 헤드리스 렌더, 잠금 파일·체크섬(R-03 2026-09-29 개정) — `docs/A_모델재현기록.md` · `ops/torchserve/config.properties` · `serving/conda-m3.lock` · `serving/requirements-m3.lock` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
+- [x] T081 (A 완료 2026-09-29 — TorchServe 9561 두 모델 READY 128초·RSS 약 2GB, 관절 7~9초, OSMesa 헤드리스 렌더 125초(GIF 339프레임), 잠금 파일·매니페스트 M3 해시, U14 닫음[팀 확인]) [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 conda 환경 `serving/.venv-m3`(Python 3.8·Java 17·OSMesa, Homebrew 미사용) + TorchServe 네이티브 127.0.0.1·워커 1개, OSMesa 헤드리스 렌더, 잠금 파일·체크섬(R-03 2026-09-29 개정) — `docs/A_모델재현기록.md` · `ops/torchserve/config.properties` · `serving/conda-m3.lock` · `serving/requirements-m3.lock` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
 - [x] T082 (A 완료 — `a/model-serving`, main 병합 전) [US3] M5 Depth Anything V2 Small(`depth-anything/Depth-Anything-V2-Small-hf`)을 재현하고 CPU·MPS(`exec_device='gpu'`, runtime에 mps 표기)·GPU 시간을 잰다 — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
 - [ ] T083 (A 부분 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤) [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
 
