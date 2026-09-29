@@ -1,0 +1,16 @@
+/* 홈 시안 팔레트 — 아날로그 감성의 현대 디스플레이(SD_02 §17-3, D26 시안). `.paper` 안에서만 쓴다.
+   스타일가이드 토큰(tokens.css)은 바꾸지 않는다. 종이 결은 인라인 SVG 노이즈(외부 이미지 없음). */
+.paper{
+  --paper-bg:#f3eee4; --paper-card:#fbf8f2; --paper-mat:#ffffff; --paper-edge:#e4dccd;
+  --paper-ink:#23201b; --paper-ink-2:#5b544a; --paper-line:#2a2620;
+  --paper-accent:#c8412b; --paper-accent-ink:#ffffff; --paper-tape:rgba(214,190,140,.72);
+  --paper-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .17 0 0 0 0 .12 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background:var(--paper-grain),var(--paper-bg);color:var(--paper-ink);
+}
+/* 마스킹테이프 — 반투명 크라프트 사선 조각 */
+.paper-tape{position:absolute;width:88px;height:26px;background:var(--paper-tape);box-shadow:0 1px 2px rgba(0,0,0,.08);
+  -webkit-mask:linear-gradient(90deg,transparent 0 2px,#000 2px calc(100% - 2px),transparent calc(100% - 2px));mask:linear-gradient(90deg,transparent 0 2px,#000 2px calc(100% - 2px),transparent calc(100% - 2px))}
+/* 도장 버튼 — 인주 주홍, 살짝 번진 테두리 */
+.paper-stamp{display:inline-flex;align-items:center;gap:10px;background:var(--paper-accent);color:var(--paper-accent-ink);border:0;border-radius:999px;
+  padding:12px 22px;font:540 17px/1 var(--font-sans);text-decoration:none;cursor:pointer;box-shadow:0 0 0 2px var(--paper-card),0 0 0 3px color-mix(in srgb,var(--paper-accent) 55%,transparent)}
+.paper-stamp:hover{background:color-mix(in srgb,var(--paper-accent) 88%,#000)}

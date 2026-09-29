@@ -13,6 +13,7 @@ import ConfirmView from '../app/views/ConfirmView.vue';
 import ReviewView from '../app/views/ReviewView.vue';
 import StoryView from '../app/views/StoryView.vue';
 import MuseumView from '../app/views/MuseumView.vue';
+import PaperHomeView from '../app/views/PaperHomeView.vue';
 import WelcomeView from '../app/views/WelcomeView.vue';
 import { isFirstVisit } from '../app/entrance';
 import OpsLoginView from '../ops/views/OpsLoginView.vue';
@@ -311,6 +312,38 @@ describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
     await flushPromises();
     expect(w.text()).toContain(ko.museum.emptyTitle);
     expect(w.findAll('.artframe.empty').length).toBeGreaterThan(0);
+    w.unmount();
+  });
+});
+
+describe('홈 시안 — 아날로그 감성(D26, SD_02 §17-3)', () => {
+  const gal = { childId: '1', groups: [
+    { ageAtMaking: 5, items: [{ id: '8', kind: 'frame', originalUrl: '/v1/files/o8', title: '해님', madeOn: '2025-03-01', ageAtMaking: 5, childWords: '해가 웃어' }] },
+    { ageAtMaking: 6, items: [{ id: '7', kind: 'frame', originalUrl: '/v1/files/o', title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: null }] },
+  ] };
+  it('시안 띠, 첫 화면에 최근 작품, 숫자 줄(작품 수·세관 수·첫 그림), 작품 줄은 제작일 순, 한마디 패널', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
+    const w = await open(PaperHomeView, '/app/draft/paper');
+    await flushPromises();
+    expect(w.find('.draftbar').text()).toContain(ko.paper.draft);
+    expect(w.find('.title').text()).toBe(ko.museum.hall('하늘'));
+    expect(w.find('.hero-art').attributes('aria-label')).toBe('강아지');
+    expect(w.findAll('.stats b').map((b) => b.text())).toEqual(['2점', '2개', '2025.03']);
+    expect(w.findAll('.polaroid').map((b) => b.attributes('aria-label'))).toEqual(['해님', '강아지']);
+    expect(w.find('.words').text()).toBe('“해가 웃어”');
+    expect(w.text()).not.toContain('바꿨어요');
+    await w.find('.hero-art').trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.query).toMatchObject({ art: '7', child: '1' });
+    w.unmount();
+  });
+  it('작품이 없으면 빈 폴라로이드와 "첫 그림을 걸어 볼까요?", 숫자 줄·작품 줄은 없음', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': { childId: '1', groups: [] }, '/v1/artworks': [] });
+    const w = await open(PaperHomeView, '/app/draft/paper');
+    await flushPromises();
+    expect(w.text()).toContain(ko.museum.emptyTitle);
+    expect(w.find('.stats').exists()).toBe(false);
+    expect(w.find('.reel').exists()).toBe(false);
     w.unmount();
   });
 });

@@ -251,6 +251,14 @@ export const ko = {
     collection: (n: number) => `소장 작품 ${n}점`, latest: '최근에 걸린 작품', // [추론]
     hangOf: (age: number) => `${age}살 때 그린 작품`, // [추론] 세관 벽(옆으로 넘기는 영역) 이름
   },
+  /** 홈 시안(D26, SD_02 §17-3 — 시안, docs/C_화면문구.md). */
+  paper: {
+    draft: '시안 - 아날로그 감성 홈 (검토용)', toCurrent: '지금 홈 보기', enterHall: '전시실로 들어가기', // [추론]
+    statWorks: '소장 작품', unitWorks: '점', statRooms: '세관', unitRooms: '개', statFirst: '첫 그림', // [추론]
+    firstOf: (d: string) => `${d.slice(0, 4)}.${d.slice(5, 7)}`,
+    reel: '걸린 작품', prev: '이전 작품', next: '다음 작품', pos: (i: number, n: number) => `${i} / ${n}`, // [추론]
+    family: '가족 보호자', toFamily: '가족 보호자 보기', // [추론]
+  },
   /** S1b~S1d 공동 보호자(docs/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
     title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,
