@@ -221,6 +221,18 @@ export const ko = {
     empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
     toList: '목록으로', toUpload: '작품 올리기',
   },
+  /** S9 삭제(docs/C_화면문구.md §4 "S9 구현 문구", T101). */
+  del: {
+    artwork: '작품 삭제', child: '아이 삭제',
+    title: '되돌릴 수 없어요 - 지워지는 것',
+    artworkItems: ['원본 사진 - 잘라 낸 그림 - 깊이 정보 - 결과물', '이야기 - 작품 설명 - 임시 파일'],
+    childItems: (alias: string, n: number) => `${alias}과 작품 ${n}개가 모두 지워져요`, // [추론]
+    keeps: '통계용 숫자만 남고 누구의 작품인지는 남지 않아요',
+    confirm: '삭제', cancel: '취소',
+    progress: { accepted: '접수했어요', waiting_stop: '만들던 작업이 멈추기를 기다리는 중이에요', deleting_files: '파일을 지우는 중이에요', done: '삭제했어요' } as Record<string, string>,
+    noWait: '기다리지 않아도 돼요', toList: '목록으로',
+    locked: '삭제 중 - 이 작품의 모든 조작이 잠겼어요',
+  },
   /** S10·S11 운영(docs/C_화면문구.md §4 "S10~S11 구현 문구", 2026-09-29 이제민). 비율은 소수 둘째 자리(퍼센트 기호 없음). */
   ops: {
     alive: '생존', aliveOk: '응답함', aliveNo: '응답 없음', // [추론] 응답 없음

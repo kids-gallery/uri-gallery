@@ -233,7 +233,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T099 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] sweeper 삭제 완료를 만든다: `v_deletion_hold`가 비면(또는 점유 만료 + 30초) 파일 삭제 → `stored_object` → `artwork`(CASCADE·SET NULL) → `completed`, 아이 삭제는 작품이 모두 지워진 뒤 `child` 삭제, 실패는 1·5·30분 재시도 뒤 `incomplete`, `gate_event` G19 해제·삭제된 작품 이벤트의 `subject_id` NULL — `api/src/sweeper/deletion.ts` · 담당 B · 스킬 DB · 근거 data-model §4 삭제 완료, BR-DEL-01~03, SD_03 §16-3
 - [x] T100 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] 삭제 미완료 처리 운영 도구를 만든다(건 번호만, 이미지 없음, 원인 해결 뒤 다시 삭제) — `api/scripts/ops/purge-retry.ts` · 담당 B · 스킬 — · 근거 spec clarify 2026-09-28(삭제 미완료), BR-ACC-03
 - [x] T147 (신지현 대행 완료 2026-09-29 — `c/web-prep`, `api/tests/web-prep.test.ts`) [US5] 삭제 진행 조회를 만든다(D21): `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion` → `accepted`/`waiting_stop`(G19)/`deleting_files`/`done`, 없는 번호·다른 가족·끝난 삭제(미완료 포함)는 `done`(존재 비노출) + 시험 — `api/src/modules/deletion/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 S9, UC7, G19, BR-ACC-01
-- [ ] T101 [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9 · **D21 보정(2026-09-29)**: 진행은 `GET /v1/artworks/{id}/deletion`·`/v1/children/{id}/deletion` 폴링(T147)
+- [x] T101 (이제민 완료 2026-09-29, `web/src/app/components/DeleteDialog.vue` — S4 상세 작품 삭제·S1 아이 삭제, 진행 폴링·G19 보류·G18; 시험 `g1-screens.spec.ts`) [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9 · **D21 보정(2026-09-29)**: 진행은 `GET /v1/artworks/{id}/deletion`·`/v1/children/{id}/deletion` 폴링(T147)
 
 **Checkpoint**: US5 독립 검증 기준 통과.
 

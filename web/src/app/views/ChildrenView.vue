@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // S1 아이 관리(T054, SD_02 §4, UC1, G4·G3, D18·D22). 별칭 하나만 받는다(앞뒤 공백 뺀 1~20자, 남은 글자 수 표시).
 // 같은 별칭은 막지 않고 저장 뒤 안내(A5)만 보인다. 실명·생년월일 칸은 두지 않는다(BR-CHD-01).
-// 아이 삭제(S9 대화상자, UC7 A1)는 T101 DeleteDialog가 생기면 이 표의 조작 칸에 잇는다.
+// 아이 삭제(S9 대화상자, UC7 A1)는 표의 조작 칸에서 연다(T101).
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
@@ -12,6 +12,7 @@ import ReasonButton from '@/components/ReasonButton.vue';
 import { ko, problemCopy } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { JOURNEY_FROM_CHILD } from '../authForm';
+import DeleteDialog from '../components/DeleteDialog.vue';
 
 type Child = components['schemas']['Child'];
 const MAX = 20;
@@ -26,6 +27,7 @@ const busy = ref(false);
 const block = ref<Notice | null>(null);
 const dup = ref<Child | null>(null);
 const aliasEl = ref<HTMLInputElement | null>(null);
+const removing = ref<Child | null>(null);
 
 const trimmed = computed(() => alias.value.trim());
 const left = computed(() => MAX - [...trimmed.value].length);
@@ -84,12 +86,18 @@ function fixDup() { if (dup.value) startEdit(dup.value); }
             <tr v-for="c in children" :key="c.id">
               <td class="alias">{{ c.alias }}</td>
               <td class="num">{{ c.artworkCount ?? 0 }}</td>
-              <td><button class="btn btn-secondary btn-sm" type="button" @click="startEdit(c)">{{ ko.child.edit }}</button></td>
+              <td class="row-acts">
+                <button class="btn btn-secondary btn-sm" type="button" @click="startEdit(c)">{{ ko.child.edit }}</button>
+                <button class="btn btn-secondary btn-sm" type="button" @click="removing = c">{{ ko.child.remove }}</button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
+
+    <DeleteDialog v-if="removing" kind="child" :id="removing.id" :alias="removing.alias" :count="removing.artworkCount ?? 0"
+      @close="removing = null" @done="load" />
 
     <NoticeBlock v-if="dup" :title="`${ko.child.dupTitle} - ${ko.child.dupSaved}`">
       <p>{{ ko.child.dup(dup.alias) }}</p>
@@ -135,4 +143,5 @@ table.plain th{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transfo
 .alias{font-weight:540}
 .num{font-variant-numeric:tabular-nums}
 .btn-sm{min-height:44px;font-size:16px;padding:6px 14px}
+.row-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs)}
 </style>

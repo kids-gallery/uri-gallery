@@ -11,6 +11,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { usePolling } from '@/composables/usePolling';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
+import DeleteDialog from '../components/DeleteDialog.vue';
 import { MOVING_STATES, blockOf, loadArtwork, nextActionLabel, notDeliveredBlock, railOf, routeFor, type ArtworkDetail } from '../artwork';
 
 const route = useRoute();
@@ -19,6 +20,7 @@ const id = String(route.params.id);
 const a = ref<ArtworkDetail | null>(null);
 const block = ref<Notice | null>(null);
 const started = route.query.started === '1';
+const deleting = ref(false);
 
 const rail = computed(() => (a.value ? railOf(a.value.state) : null));
 const g9 = computed(() => (a.value?.state === 'failed' ? notDeliveredBlock(a.value) : null));
@@ -71,14 +73,17 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
 
       <DowngradeNote v-if="a.downgrade" :path="a.downgrade" />
       <BlockNotice v-if="g9" :notice="g9" @action="onBlock" />
-      <div v-else-if="next">
-        <RouterLink class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/gallery' : routeFor(a)">{{ next }}</RouterLink>
+      <div class="acts">
+        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/gallery' : routeFor(a)">{{ next }}</RouterLink>
+        <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
+      <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
     </template>
   </main>
 </template>
 
 <style scoped>
+.acts{display:flex;flex-wrap:wrap;gap:var(--s-sm)}
 .table-wrap{overflow-x:auto}
 table.plain{width:100%;border-collapse:collapse;font:330 16px/1.45 var(--font-sans)}
 table.plain th,table.plain td{text-align:left;padding:var(--s-sm) var(--s-sm) var(--s-sm) 0;border-bottom:1px solid var(--color-hairline-soft);vertical-align:middle}

@@ -139,6 +139,8 @@ describe('S3 확정(T067)', () => {
     expect(btn(w, ko.kind.animated!)!.attributes('aria-disabled')).toBe('true');
     expect(btn(w, ko.kind.animated!)!.text()).toContain(ko.review.unavailable.model_disabled);
     expect(w.findAll('.chip-opt[aria-pressed="true"]')).toHaveLength(0);
+    // UX2 같은 크기: 비활성 칸도 같은 칩 모양, 순서는 움직임 → 2.5D → 액자 고정
+    expect(w.findAll('.opts .chip-opt').map((b) => b.text().split('(')[0]!.trim())).toEqual([ko.kind.animated, ko.kind.relief, ko.kind.frame]);
     expect(btn(w, ko.confirm.submit)!.text()).toContain(ko.confirm.pickOne);
     w.unmount();
   });
@@ -151,7 +153,7 @@ describe('S3 확정(T067)', () => {
   it('원본 액자를 골라 확정하면 frame을 보내고 진행 상세로', async () => {
     serve({ '/v1/artworks/7': disabled, 'POST /v1/artworks/7/confirm': () => json({ ...disabled, state: 'processing', confirmedKind: 'frame' }) });
     const w = await open(ConfirmView, '/app/artworks/7/confirm');
-    await w.find('.chip-opt').trigger('click');
+    await btn(w, ko.kind.frame!)!.trigger('click');
     await btn(w, ko.confirm.submit)!.trigger('click');
     await flushPromises();
     expect(JSON.parse(String(calls('POST', '/v1/artworks/7/confirm')[0]![1]!.body))).toEqual({ kind: 'frame' });
@@ -277,6 +279,36 @@ describe('S0o 팀원 로그인(T055)', () => {
     await btn(w, ko.auth.login)!.trigger('click');
     await flushPromises();
     expect(w.find('[data-gate="G1"]').exists()).toBe(true);
+    w.unmount();
+  });
+});
+
+describe('S9 삭제(T101)', () => {
+  it('확인 전에는 보내지 않고, 삭제하면 진행을 폴링해 G19 보류 → 삭제했어요', async () => {
+    const states = ['waiting_stop', 'done'];
+    serve({
+      '/v1/artworks/7': { ...base, state: 'processing' },
+      'DELETE /v1/artworks/7': () => new Response(null, { status: 202 }),
+      '/v1/artworks/7/deletion': () => json({ state: states.shift() ?? 'done', gate: null }),
+    });
+    const w = await open(ArtworkDetailView, '/app/artworks/7');
+    await btn(w, ko.del.artwork)!.trigger('click');
+    expect(w.text()).toContain(ko.del.keeps);
+    expect(calls('DELETE', '/v1/artworks/7')).toHaveLength(0);
+    await w.find('[role="alertdialog"] .btn-primary').trigger('click');
+    await flushPromises();
+    expect(calls('DELETE', '/v1/artworks/7')).toHaveLength(1);
+    expect(w.find('[data-gate="G19"]').exists()).toBe(true);
+    expect(w.text()).toContain(ko.del.noWait);
+    w.unmount();
+  });
+  it('착수 실패는 G18 "아무것도 바뀌지 않았어요"', async () => {
+    serve({ '/v1/artworks/7': { ...base, state: 'processing' }, 'DELETE /v1/artworks/7': () => problem(503, { code: 'not_saved', reason: 'deletion_failed' }) });
+    const w = await open(ArtworkDetailView, '/app/artworks/7');
+    await btn(w, ko.del.artwork)!.trigger('click');
+    await w.find('[role="alertdialog"] .btn-primary').trigger('click');
+    await flushPromises();
+    expect(w.find('[data-gate="G18"]').text()).toContain('아무것도 바뀌지 않았어요');
     w.unmount();
   });
 });
