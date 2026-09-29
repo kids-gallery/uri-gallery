@@ -64,3 +64,18 @@ ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api &
 | 날짜 | 커밋 | 한 사람 | 결과 |
 |---|---|---|---|
 | — | — | — | 대기 — 팀 서버 접속 정보·사양(U2·U14) 확인 뒤 첫 배포 |
+
+## 7. p1.sumzip.com 구성 (2026-09-29, A 최호준 — 첫 배포)
+
+Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p01.conf`)가 `https://p1.sumzip.com`의 TLS를 풀고 `http://192.168.0.19:9501`로 넘긴다. 공유 nginx 설정은 고치지 않는다. 그래서 팀 입구 9501(D19)은 **pioneer1 계정의 nginx 인스턴스**가 평문 HTTP로 연다(§1의 `ops/nginx.conf`는 9501에서 TLS를 직접 여는 단독 서버용).
+
+| 구성 | 값 |
+|---|---|
+| 입구 | `ops/p1/nginx.conf` — `listen 9501`(평문), `set_real_ip_from 192.168.0.19` + `real_ip_header X-Forwarded-For`로 실제 접속 IP를 앱에 넘긴다(요청 한도 G26·G27) |
+| 첫 화면 `/` | **웹 빌드(`web/dist`)가 생기기 전까지 SD_02 클릭 프로토타입**(`design/prototype/share/`). `web/dist/index.html`이 생기면 nginx가 그쪽을 먼저 내보낸다 |
+| API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541, `/internal/*` 404, `/metrics`는 로컬만 |
+| 프로세스 | `ops/p1/ecosystem.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.cjs` |
+| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`, `TORCHSERVE_URL=http://127.0.0.1:9561` |
+| 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) |
+| DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
+| 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`로 켠다 |
