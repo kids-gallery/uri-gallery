@@ -106,7 +106,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 이메일 확인(G27) — 성공하면 세션 발급(UC13 BF5) ---
   r.post('/v1/auth/email/verify', async (req, res, next) => {
     try {
-      const { token } = parse(z.object({ token: z.string().min(10).max(200) }), req.body);
+      const { token } = parse(z.object({ token: z.string() }), req.body); // 형식이 어긋난 토큰도 무효와 같게 400(G27, 계약 TokenInvalid — 구분하지 않음)
       const accountId = await withTx(db, async (conn) => {
         const t = await lockValidToken(conn, token, 'verify');
         if (!t) throw new Problem('token_invalid', 'token_invalid', 'G27');
@@ -185,7 +185,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   r.post('/v1/auth/recovery/reset', async (req, res, next) => {
     try {
       // 규칙 위반은 토큰을 쓰기 전에 거절한다(UC14 E3)
-      const b = parse(withConfirm({ token: z.string().min(10).max(200) }), req.body);
+      const b = parse(withConfirm({ token: z.string() }), req.body); // 토큰 형식은 검사하지 않는다 — 무효면 400 token_invalid(G27)
       const hash = await argon2.hash(b.password, { type: argon2.argon2id });
       try {
         await withTx(db, async (conn) => {

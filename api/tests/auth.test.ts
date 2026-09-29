@@ -39,6 +39,14 @@ describe('가입·확인(UC13, G26·G27)', () => {
     expect(r.status).toBe(422);
     expect(r.body.code).toBe('validation_failed');
   });
+  it('형식이 어긋난 토큰(짧음·빈 값)도 422가 아니라 400 token_invalid — 무효 사유를 구분하지 않음(G27)', async () => {
+    for (const token of ['', 'abc', 'x'.repeat(300)]) {
+      const v = await request(t.app).post('/v1/auth/email/verify').send({ token });
+      expect([v.status, v.body.code]).toEqual([400, 'token_invalid']);
+      const r = await request(t.app).post('/v1/auth/recovery/reset').send({ token, password: PW, passwordConfirm: PW });
+      expect([r.status, r.body.code]).toEqual([400, 'token_invalid']);
+    }
+  });
   it('확인 토큰은 1회용 — 재사용·재발급된 이전 토큰은 400 token_invalid(E7)', async () => {
     await request(t.app).post('/v1/auth/signup').send({ email: 'p@test.local', password: PW, passwordConfirm: PW }).expect(202);
     const old = tokenOf(t.mailer.sent.at(-1)!.link);
