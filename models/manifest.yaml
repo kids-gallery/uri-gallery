@@ -17,6 +17,7 @@ models:
       measured_at: '2026-09-28'
     note: CPU만(MPS에 deform_conv2d 없음). HF 원격 코드 — revision 고정 필수. CPU 추론 중 RSS 8.5GB.
       라이선스 MIT 계열 — 확정 기록 필요
+    image_digest: sha256:c2a660901204cbb81ca1cdc7729dae303ea719223780321b6f7f93c046a9b947
   M2:
     source: laion/CLIP-ViT-B-32-laion2B-s34B-b79K
     arch: ViT-B-32
@@ -33,6 +34,7 @@ models:
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
     note: open_clip_model.safetensors를 직접 읽는다(pickle .bin 쓰지 않음). A2 라이선스 기록 전 비활성(BR-MDL-07)
+    image_digest: sha256:2989b05a1dbe5857558bc78495d55c0da45cf263dc66cd4ac5883327945f966f
   M3:
     source: facebookresearch/AnimatedDrawings
     revision: b859684857519c7424da51a0b0862fbd1fd258f4
@@ -70,6 +72,7 @@ models:
       measured_at: '2026-09-28'
     note: MPS(exec_device=gpu, runtime에 mps). 비정사각 입력의 bicubic은 PYTORCH_ENABLE_MPS_FALLBACK로
       CPU. Apache-2.0 — 팀 확정 기록 뒤 license_confirmed=true
+    image_digest: sha256:f472b77ab3ca38f69d45a6cd0575a540a57db1ff431c0a5311701cc2b7a1ed75
   M6:
     source: Qwen/Qwen3-4B-Instruct-2507
     ollama_tag: qwen3:4b-instruct-2507-q4_K_M
@@ -91,3 +94,4 @@ models:
       공유 Ollama v0.34.0). 공유 서버의 `qwen3:4b`는 Qwen3-4B-Thinking-2507과 같은 블롭(sha256:3e4cb141…)이라
       생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A_모델재현기록.md). 라이선스 Apache-2.0(모델 카드)이나
       팀 확정 기록 전 비활성(U4). expected_seconds는 공유 서버 대기 포함 실측
+    image_digest: sha256:fd15e9b41339cc2fda806ab4b62f8a727087024a2372cc0a981636a063630593
