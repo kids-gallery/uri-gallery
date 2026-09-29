@@ -27,14 +27,14 @@ models:
     config_hash: a99f0ae6049b25fedadb120c179eec0764fdc3bebd44d7547cf8efd5f3b2db18
     runtime: open_clip-2.26.1-mps
     exec_device: gpu
-    license_confirmed: false
+    license_confirmed: true
     size_mb: 605
     load:
       expected_seconds: 3.49
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
     note: 'open_clip_model.safetensors를 직접 읽는다(pickle .bin 쓰지 않음). A2 라이선스 기록 전 비활성(BR-MDL-07)
-      · U4 팀 확정 2026-09-29: 보류(모델 카드 배포 권고, T137 오인율 뒤 재검토)'
+      · U4 팀 확정 2026-09-29: 보류(모델 카드 배포 권고, T137 오인율 뒤 재검토) → 같은 날 팀 합의로 보류 해제(이진우 전달) — 켬은 활성화가 아니며 평가 통과(G22) 뒤 승격'
     image_digest: sha256:2989b05a1dbe5857558bc78495d55c0da45cf263dc66cd4ac5883327945f966f
   M3:
     source: facebookresearch/AnimatedDrawings
