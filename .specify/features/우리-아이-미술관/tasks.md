@@ -273,7 +273,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T115 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/admin/routes.ts`) [US8] 관리 API를 만든다: 모델 목록·버전·평가 요청(`stage_job origin=eval`, priority 50, 보완 S3)·평가 결과·승격(`v_promotion_eligibility`)·롤백·**비활성화**(활성 버전 → `retired`, `release_event.kind='deactivate'`는 보완 S9 — SD_03 개정 전에는 앱 감사 로그)·평가 항목 등록 — `api/src/modules/admin/models.ts` · `api/src/modules/admin/evalItems.ts` · 담당 B · 스킬 API · 근거 contracts `/v1/admin/*`, BR-MDL-03·04·07
 - [x] T116 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/models.ts`) [US8] 확정 화면·확정 API가 비활성 모델의 선택지를 이유와 함께 막도록 연결한다(판정 모델 비활성이면 제안 없이 직접 확정) — `api/src/modules/artworks/confirm.ts` · `web/src/app/views/ConfirmView.vue` · 담당 B·C · 스킬 API, FD · 근거 spec clarify(첫 버전 비활성화), BR-FBK-04
 - [x] T117 (A 완료 2026-09-29 — stage-job §12 설계 먼저, 워커 점유 순서 보호자→평가→외부, 모델별 result_path, timeout 재시도 없음, 처리 시간·메모리, 이어받기 incomplete 채움, `eval/runner.py run·report`, 시험 17건. M6(P0.5)·M7(P1) 평가는 해당 구간에서) [US8] 평가 실행기를 만든다(같은 어댑터로 항목별 결과·시간·메모리, 인프라 소진은 평가 미완료) — `eval/runner.py` · `serving/workers/stages/eval.py` · 담당 A · 스킬 — · 근거 UC9 BF4, FR-17
-- [ ] T118 [P] [US8] 평가 묶음을 만든다(팀원 제작: 사람·비인물·촬영 조건·입체·설명 입력, 기대 경로) — `eval/items/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-17, BR-MDL-04
+- [ ] T118 (A 부분 2026-09-29 — `eval/items/manifest.yaml` 틀·구성 목표[추론]·등록 방법까지. 팀원 제작 작품 제작·등록이 남음) [P] [US8] 평가 묶음을 만든다(팀원 제작: 사람·비인물·촬영 조건·입체·설명 입력, 기대 경로) — `eval/items/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-17, BR-MDL-04
 - [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 C · 스킬 FD, RL · 근거 S11
 
 **Checkpoint**: US8 독립 검증 기준 통과.

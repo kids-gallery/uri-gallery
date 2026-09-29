@@ -1,0 +1,13 @@
+# 평가 묶음 목록 (T118 · FR-17 · BR-MDL-04 · UC9 BF3·A6·E1, docs/팀원별_작업지시_프롬프트.md A6)
+# - 팀원이 직접 만든 작품만 넣는다. 실제 가족 작품·공개 이미지·AD 예제 그림은 넣지 않는다(G20, BR-ACC-03).
+# - 파일은 저장소에 넣지 않는다. 등록은 운영 화면 S11 또는 POST /v1/admin/eval-items(평가 담당, G20)로 하고,
+#   등록 뒤 받은 item_id를 아래 id 칸에 적는다. 파일 원본은 팀 공유 위치에 두고 file 칸에 상대 경로만 적는다.
+# - expected_path: animated | relief | frame | sculpture | caption. category: person | non_person | capture_condition | sculpture | caption_input
+# - 구성 목표 수는 [추론] 제안이다(원천 없음). 1차 측정(T137)에 필요한 최소 규모로 잡았다.
+targets:                       # category → 목표 항목 수 [추론]
+  person: 8                    # 사람 그림 — 대부분 animated, 팔다리가 겹치거나 한쪽이 없는 그림은 relief
+  non_person: 8                # 집·자동차·동물·사물 — relief. 집 그림은 2장 이상(0.946 오인 사례 재현, Scenario 2)
+  capture_condition: 6         # 기울기·그림자·책상 배경·흐린 경계 — 분리 미달이면 frame
+  sculpture: 3                 # 점토·종이 입체 — relief 또는 frame(M7은 P1)
+  caption_input: 5             # 설명 입력 문장(P0.5 M6) — caption
+items: []                      # 예) - {id: null, category: person, expected_path: animated, maker: 최호준, file: drawings/p01.jpg, note: 막대 사람}
