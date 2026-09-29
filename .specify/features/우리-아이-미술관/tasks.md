@@ -142,7 +142,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [x] T056 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/intake-confirm.test.ts`) [P] [US2] 접수 계약 시험: `POST /v1/artworks` 202·멱등(같은 요청 번호 1건), 형식 400·용량 413·판독 불가 400(G5), 원본·기록 저장 실패 시 흔적 0(G6) — `api/tests/intake.test.ts` · 담당 B · 스킬 API · 근거 FR-2, Scenario 9, BR-INT-01~03
 - [x] T057 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/intake-confirm.test.ts`) [P] [US2] 확정 시험: 제안과 다른 확정 허용·`is_modified`, 제안 전 확정 `before`, 소진 `none`(G7), 이미 확정·삭제 중 409(G8), 노출 꺼진 `sculpture` 거부(G17), 응답에 점수 필드 없음 — `api/tests/confirm.test.ts` · 담당 B · 스킬 API · 근거 FR-3, FR-21, Scenario 3, D14
-- [ ] T058 [P] [US2] 분리·판정 워커 시험(가짜): split 성공·품질 미달(액자 권장)·소진, judge 제안 규칙(점수 단독 금지, 집 그림 0.946 사례) — `serving/tests/test_split_judge.py` · 담당 A · 스킬 — · 근거 Scenario 2, stage-job §5.1, BR-SUG-04
+- [x] T058 (A 완료 2026-09-29 — 17건: 집 그림 0.946·점수 단독 금지·관절 없음·분리 미달/소진 조합·제안 진리표. 기본 흐름은 test_stage_job_contract) [P] [US2] 분리·판정 워커 시험(가짜): split 성공·품질 미달(액자 권장)·소진, judge 제안 규칙(점수 단독 금지, 집 그림 0.946 사례) — `serving/tests/test_split_judge.py` · 담당 A · 스킬 — · 근거 Scenario 2, stage-job §5.1, BR-SUG-04
 - [ ] T059 [P] [US2] 올리기→확정 E2E: 선택지 즉시 표시·기본 선택 없음, "나중에 고르기" — `web/e2e/us2-intake-confirm.spec.ts` · 담당 C · 스킬 FD · 근거 S2, S3, U10 clarify
 
 #### 구현
