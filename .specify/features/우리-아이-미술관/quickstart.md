@@ -10,7 +10,7 @@
 
 | 항목 | 버전 | 설치(macOS, Homebrew) | 비고 |
 |---|---|---|---|
-| Node.js | **20 LTS** | `brew install node@20` 또는 nvm `nvm install 20` | 저장소 `.nvmrc`=20 |
+| Node.js | **22 LTS** (D23) | `brew install node@22` 또는 nvm `nvm install 22` | 저장소 `.nvmrc`=22. 팀 서버의 Node 25에서도 돈다 |
 | Python | 3.11 | `brew install python@3.11` | model-api·워커 |
 | Python(M3 전용) | 3.8.13 | conda 접두사 환경 `serving/.venv-m3`(research R-03) | Homebrew에 설치하지 않음 |
 | Java · OSMesa | 17 · Mesa<25.1 | 같은 conda 환경(conda-forge `openjdk=17`, `mesalib<25.1`) | TorchServe(M3)·헤드리스 렌더 |
@@ -26,7 +26,7 @@
 ```
 project2610/
 ├── web/                # C  Vue 3 + TS + Vite + Pinia
-├── api/                # B  Node 20 + Express + TS + mysql2
+├── api/                # B  Node 22 + Express + TS + mysql2
 ├── db/migrations/      # B  NNNN_*.sql
 ├── serving/            # A  Python: model_api(FastAPI) · workers · adapters · config
 ├── caption/            # C  Python 패키지 (P0.5 규칙 검사·템플릿)

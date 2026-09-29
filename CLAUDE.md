@@ -23,8 +23,8 @@
 
 | 항목 | 결정 | 근거 |
 |------|------|------|
-| 웹 프론트엔드 | Vue 3.4+ (Composition API) · TypeScript 5.x · Vite 5.x · Pinia 2.x · Vue Router 4. 화면 구현 기준은 `design/style-guide/스타일가이드_우리아이미술관.html`(사용자 지시) | Intent-Plan 웹스택, R-01, R-20 |
-| 보호자 앱 API | Node.js 20 LTS · Express 4.x · TypeScript 5.x · mysql2 3.x (SQL 직접, ORM 없음) | Intent-Plan, U7 닫음(R-01) |
+| 웹 프론트엔드 | Vue 3.5 (Composition API) · TypeScript 5.9 · Vite 8 · Pinia 3 · Vue Router 4.6 · Vitest 5 (D23). 화면 구현 기준은 `design/style-guide/스타일가이드_우리아이미술관.html`(사용자 지시) | Intent-Plan 웹스택, R-01, R-20 |
+| 보호자 앱 API | Node.js 22 LTS (D23) · Express 4.x · TypeScript 5.x · mysql2 3.x (SQL 직접, ORM 없음) | Intent-Plan, U7 닫음(R-01) |
 | 모델 기능 API | Python 3.11 venv · FastAPI · uvicorn (`model-api` :9541, 외부 `/v1/models/*`) · 모델마다 어댑터 | R3·BR-API-01, BR-MDL-02, R-01·R-10 |
 | 서빙 3종 실체 | CPU 비전 = `worker-cpu`(큐 워커) · GPU = `worker-gpu`(큐 워커, 모델 상주) · LLM = `llm-server`(내부 동기 HTTP :8200, 큐 없음, P0.5) | BR-SRV-01, SD_01 P4 4.4, R-18 |
 | 모델 | M1 BiRefNet `ZhengPeng7/BiRefNet` · M2 OpenCLIP `ViT-B-32`/`laion2b_s34b_b79k` · M3 Animated Drawings(`.mar` 2종, TorchServe 네이티브) · M4 기하 규칙 파일 · M5 `depth-anything/Depth-Anything-V2-Small-hf` · (P0.5) M6 **Qwen3-4B-Instruct-2507**(`Qwen/Qwen3-4B-Instruct-2507`, Ollama `qwen3:4b-instruct-2507-q4_K_M`, `num_ctx 8192`, 공유 Ollama) · (P1) M7 `stabilityai/TripoSR` | REF §2, D16, R-22 |

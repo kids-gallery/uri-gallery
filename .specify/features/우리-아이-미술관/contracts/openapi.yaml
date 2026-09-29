@@ -3,7 +3,7 @@ info:
   title: 우리 아이 미술관 — 앱 API (app-api)
   version: 0.1.0
   description: |
-    보호자 앱·운영·관리 API. Node.js 20 + Express 4 (research R-01).
+    보호자 앱·운영·관리 API. Node.js 22 LTS + Express 4 (research R-01, D23).
     모델 기능 엔드포인트(/v1/models/*)는 model-api.openapi.yaml(Python uvicorn)에 있다.
     - 오류는 RFC 9457 Problem Details(application/problem+json) + `code` (research R-10).
     - 보호자 경로는 세션 쿠키 `uam_sid`, 운영 경로는 `uam_ops_sid` (research R-08).

@@ -13,7 +13,7 @@
 ## R-01. 보호자 앱 스택 확정 (U7 닫음)
 
 - **Decision**: Intent-Plan의 웹스택 **Vue.js + Node.js**로 확정한다.
-  - 웹: Vue 3.4+ (Composition API, `<script setup>`), TypeScript 5.x, Vite 5.x, Pinia 2.x, Vue Router 4.
+  - 웹: Vue 3.5 (Composition API, `<script setup>`), TypeScript 5.9, Vite 8, Pinia 3, Vue Router 4.6, Vitest 5 — D23(2026-09-29)로 올림. Node.js 22 LTS.
   - 앱 API: Node.js **20 LTS**, Express 4.x, TypeScript 5.x, mysql2 3.x(Promise API).
   - DB: 팀 MariaDB(`ABC10pioneer1`, 12.0.2). SQL 쿼리 기반 데이터 조작(ORM 없음).
   - **모델 서빙 계층은 Python으로 분리**한다(R3, BR-API-01): Python 3.11 가상환경 + FastAPI + uvicorn. 앱 API는 모델을 import하지 않는다(BR-MDL-02).
