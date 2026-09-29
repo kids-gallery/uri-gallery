@@ -187,3 +187,24 @@ LLM 서빙군은 큐 워커가 없다. 실행 주체는 내부 동기 서버 **`
 | 소진 | §4.3 | 보호자 선택지 template / later / direct (D1) |
 | 취소 | 취소 플래그 + heartbeat | app-api가 HTTP 요청 중단 → `llm-server`가 연결 종료 감지해 Ollama 생성 중단 → `cancelled` |
 | 점유·이어받기 | 있음 | 없음(요청이 끊기면 끝) |
+
+## 12. 평가 작업(`origin='eval'`) 실행 (T117, UC9 BF4·E4, SD_01 8.4) — A 워커 절, 2026-09-29 추가
+
+app-api(G21)가 평가 요청마다 `evaluation` 1행과 항목마다 `stage_job`(`origin='eval'`, `artwork_id` NULL, `evaluation_id`·`eval_item_id`, `model_version_id`=후보, `priority` 50)을 등록한다. 워커가 이것을 처리해 항목마다 `eval_item_result`를 쓴다. 가족 데이터(`artwork`·`judgment`·`result`)는 건드리지 않는다(BR-ACC-03).
+
+- **점유 순서**: 워커는 매 주기에 보호자 작업(`origin<>'eval'`) → 평가 작업 → 외부 작업(§9) 순으로 본다 `[추론]`. 평가는 서빙군별 동시 1건(`GET_LOCK('uam_eval_{group}', 0)`) — 처리 시간·메모리 측정이 다른 평가 항목과 겹치지 않게 한다.
+- **같은 어댑터**: 워커에 올라간 어댑터를 그대로 쓴다. 어댑터는 매니페스트 리비전으로 가중치를 올리므로, 실행 직전에 후보 버전의 `weights_sha256`·`config_hash`가 매니페스트와 같은지 다시 본다. 다르면(평가 요청 뒤 매니페스트가 바뀜) 재시도 없이 `incomplete`로 닫는다.
+- **입력**: `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`, `evalset/…`)의 파일을 `original`로 준다. `caption_input` 항목(M6)은 P0.5에서, M7은 GPU가 있을 때만(UC9 A4) 처리한다 — 그 전에는 점유하지 않는다.
+- **모델별 실행과 `result_path`**(기대 경로 `eval_item.expected_path`와 비교하는 값). 나머지 단계는 성공한다고 보고 이 모델의 결과가 이르는 경로를 적는다 `[추론]`:
+
+  | 후보 | 단계(어댑터) | `ok` | `quality_below` |
+  |---|---|---|---|
+  | M1 | `split` | `relief`(마스크 있음) | `frame` |
+  | M2 | `judge`(M2 + 활성 M3 관절 + M4) | 제안 규칙(§5.1)을 `split_ok=TRUE`로 돌린 제안 | 같음 |
+  | M3 | `animate_render` | `animated` | `relief` |
+  | M5 | 활성 M1 `split` → `depth_relief` | `relief` | `frame`(M1 미달 포함) |
+
+- **분류**: `ok`·`quality_below` → `eval_item_result.status='done'`, `stage_job.status='done'`(평가에는 낮춤 체인이 없다). 인프라(`engine_down`·`storage`·`db`·`model_not_ready`)는 §4.2와 같게 10초·60초 뒤 재시도, 3회째 `stage_job.failed` + `eval_item_result.status='incomplete'`(E4). **`timeout`은 재시도하지 않고** 곧바로 `status='timeout'`으로 닫는다 — 시간 상한 초과 자체가 측정 결과이기 때문이다(E4 "시간 초과로 기록하고 나머지 항목은 계속", `[추론]`).
+- **측정**: `processing_ms` = 어댑터 실행 시간(모델 적재 시간 제외). `memory_mb` = 실행 중 워커 프로세스와 그 하위 프로세스의 RSS 합의 최댓값(0.5초 간격 표본) — TorchServe(M3)·Ollama(M6)처럼 워커 밖 런타임의 메모리는 포함하지 않는다. `score` = 어댑터 점수(기록만, BR-PRC-04).
+- **이어받기**: sweeper가 점유 만료 평가 작업을 `failed`로 닫으면 `eval_item_result`가 없다. 워커의 평가 실행기가 주기마다 "끝났는데 결과가 없는 평가 작업"에 `incomplete`를 채운다(sweeper는 가족 흐름만 다룬다).
+- **보고**: `eval/runner.py report <evaluation_id>`가 SD_01 8.5 보고서(기대 경로 일치율, 불일치·오인 후보 목록, 처리 시간 p50·p95·최대, 메모리 최대, 미완료·시간 초과 수)를 만든다. `eval/runner.py run`은 pm2 없이 평가 작업만 처리하는 일회성 워커다.
