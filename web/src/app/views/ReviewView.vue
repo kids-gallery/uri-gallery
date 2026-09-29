@@ -65,7 +65,7 @@ async function decide(code: string) {
   } finally { busy.value = false; }
 }
 async function onBlock(label: string) {
-  if (label === '목록으로') await router.push('/app');
+  if (label === '목록으로') await router.push('/app/works');
   else if (label === '다시 저장') await load();
 }
 </script>

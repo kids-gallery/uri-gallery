@@ -19,11 +19,20 @@ beforeEach(() => setActivePinia(createPinia()));
 afterEach(() => { vi.unstubAllGlobals(); setNavigator(null); });
 
 describe('보호자 가드', () => {
-  it('세션 없으면 S0a로, next에 원래 주소', async () => {
+  it('세션 없으면(재방문) S0a로, next에 원래 주소', async () => {
+    localStorage.setItem('uam.entered', '1');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(unauth()));
     const r = mk();
-    await r.push('/app/gallery');
-    expect(r.currentRoute.value.fullPath).toBe('/app/login?next=/app/gallery');
+    await r.push('/app/works');
+    expect(r.currentRoute.value.fullPath).toBe('/app/login?next=/app/works');
+    localStorage.removeItem('uam.entered');
+  });
+  it('세션 없고 첫 방문이면 입장 화면(S0w)을 먼저, next 유지(SD_02 §17-2)', async () => {
+    localStorage.removeItem('uam.entered');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(unauth()));
+    const r = mk();
+    await r.push('/app/works');
+    expect(r.currentRoute.value.fullPath).toBe('/app/welcome?next=/app/works');
   });
   it('가족 없으면 S1d, 초대 링크는 그대로 연다', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => json(200, { hasFamily: false, role: null })));

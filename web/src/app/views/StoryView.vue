@@ -14,7 +14,8 @@ import JourneyRail from '@/components/JourneyRail.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
-import { blockOf, loadArtwork, railOf, type ArtworkDetail } from '../artwork';
+import { blockOf, loadArtwork, railOf, resultImage, type ArtworkDetail } from '../artwork';
+import ArtFrame from '@/components/ArtFrame.vue';
 
 interface Form { title: string; madeOn: string; age: string; words: string }
 const route = useRoute();
@@ -75,7 +76,7 @@ async function save() {
 }
 async function onBlock(label: string) {
   if (label === '최신 내용 불러오기') await load();
-  else if (label === '목록으로') await router.push('/app');
+  else if (label === '목록으로') await router.push('/app/works');
   else if (label === '다시 저장') await save();
   else document.getElementById(futureDate.value ? 'st-date' : 'st-title')?.focus();
 }
@@ -97,8 +98,12 @@ function dropDraft() { draft.value = null; clearDraft(); }
           <button class="btn btn-secondary" type="button" @click="dropDraft">{{ ko.fail.draftDiscard }}</button>
         </template>
       </NoticeBlock>
+      <!-- 전시 확정 순간: 액자가 벽에 걸린다(1초 안팎, 움직임 줄이기면 멈춤 — SD_02 §17-2) -->
+      <div v-if="done === 'exhibited'" class="hang-wall" aria-hidden="true">
+        <div class="hang-anim"><ArtFrame size="sm" :src="resultImage(a).still" :alt="a.story?.title ?? ''" /></div>
+      </div>
       <NoticeBlock v-if="done" :title="done === 'exhibited' ? ko.story.exhibited : ko.story.saved">
-        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" to="/app/gallery">{{ ko.list.toGallery }}</RouterLink></template>
+        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" to="/app">{{ ko.list.toGallery }}</RouterLink></template>
       </NoticeBlock>
 
       <form class="card stack story-form" novalidate @submit.prevent="save">
@@ -142,6 +147,10 @@ function dropDraft() { draft.value = null; clearDraft(); }
 
 <style scoped>
 .story-form{max-width:640px}
+.hang-wall{background:color-mix(in srgb,var(--color-block-cream) 45%,var(--color-canvas));border-radius:var(--r-md);display:grid;place-items:center;padding:var(--s-lg) 0 var(--s-xl);overflow:hidden}
+.hang-anim{animation:hang 1s cubic-bezier(.2,.9,.3,1.2) both;transform-origin:50% 0}
+@keyframes hang{0%{opacity:0;transform:translateY(-40px) rotate(-6deg)}60%{opacity:1;transform:translateY(4px) rotate(2deg)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.hang-anim{animation:none}}
 fieldset{border:0;margin:0;padding:0}
 textarea.input{min-height:96px;resize:vertical}
 .acts{display:flex;flex-wrap:wrap;gap:var(--s-sm)}

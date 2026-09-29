@@ -3,9 +3,9 @@ import { ko } from '@/copy/ko';
 import type { MenuItem } from '@/components/RoleHeader.vue';
 
 export const APP_MENU: MenuItem[] = [
-  { to: '/app', label: ko.shell.appMenu.artworks },
+  { to: '/app', label: ko.shell.appMenu.gallery }, // 미술관(전시실 홈)
   { to: '/app/upload', label: ko.shell.appMenu.upload },
-  { to: '/app/gallery', label: ko.shell.appMenu.gallery },
+  { to: '/app/works', label: ko.shell.appMenu.artworks }, // 작품 관리(S4 목록)
   { to: '/app/children', label: ko.shell.appMenu.children },
   { to: '/app/family', label: ko.shell.appMenu.family },
 ];

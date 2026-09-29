@@ -12,7 +12,9 @@ import UploadView from '../app/views/UploadView.vue';
 import ConfirmView from '../app/views/ConfirmView.vue';
 import ReviewView from '../app/views/ReviewView.vue';
 import StoryView from '../app/views/StoryView.vue';
-import GalleryView from '../app/views/GalleryView.vue';
+import MuseumView from '../app/views/MuseumView.vue';
+import WelcomeView from '../app/views/WelcomeView.vue';
+import { isFirstVisit } from '../app/entrance';
 import OpsLoginView from '../ops/views/OpsLoginView.vue';
 import FamilyView from '../app/views/FamilyView.vue';
 import InviteAcceptView from '../app/views/InviteAcceptView.vue';
@@ -238,26 +240,60 @@ describe('S6 이야기(T095)', () => {
   });
 });
 
-describe('S8 가족 전시(T096)', () => {
-  it('연령 묶음으로 보이고 낮춤 표시가 없으며, 작품을 열면 한마디가 먼저 보인다', async () => {
-    serve({
-      '/v1/children': [{ id: '1', alias: '하늘' }],
-      '/v1/gallery': { childId: '1', groups: [{ ageAtMaking: 6, items: [{ id: '7', kind: 'frame', originalUrl: '/v1/files/o', title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '멍멍이가 웃어' }] }] },
-    });
-    const w = await open(GalleryView, '/app/gallery');
+describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
+  const gal = { childId: '1', groups: [
+    { ageAtMaking: 5, items: [{ id: '8', kind: 'animated', originalUrl: '/v1/files/o8', primaryUrl: '/v1/files/v8', title: '해님', madeOn: '2026-03-01', ageAtMaking: 5, childWords: null }] },
+    { ageAtMaking: 6, items: [{ id: '7', kind: 'frame', originalUrl: '/v1/files/o', title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '멍멍이가 웃어' }] },
+  ] };
+  it('배너 "{별칭}의 미술관", 평면 안내도와 N세관, 명패(제목·그린 날·나이), 낮춤 표시 없음, 준비 중 작품 수', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal,
+      '/v1/artworks': [{ id: '7', childId: '1', state: 'exhibited', updatedAt: 'x' }, { id: '9', childId: '1', state: 'processing', updatedAt: 'x' }] });
+    const w = await open(MuseumView, '/app');
     await flushPromises();
-    expect(w.text()).toContain(ko.gallery.age(6));
+    expect(w.find('.banner-title').text()).toBe(ko.museum.hall('하늘'));
+    expect(w.findAll('.plan-room').map((b) => b.find('b').text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
+    expect(w.findAll('.signplate').map((h) => h.text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
+    expect(w.text()).toContain(ko.museum.plaque('2026-09-01', 6));
     expect(w.text()).not.toContain('바꿨어요');
-    await w.find('button.art').trigger('click');
-    expect(w.find('.quote').text()).toContain('멍멍이가 웃어');
+    expect(w.text()).toContain(ko.museum.preparing(1));
     w.unmount();
   });
-  it('전시 작품이 없으면 빈 안내와 작품 올리기', async () => {
-    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': { childId: '1', groups: [] } });
-    const w = await open(GalleryView, '/app/gallery');
+  it('작품을 누르면 월 라벨: 결과 종류·한마디(그대로), 움직이는 그림은 누를 때만 재생 토글', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
+    const w = await open(MuseumView, '/app');
     await flushPromises();
-    expect(w.text()).toContain(ko.gallery.empty);
+    await w.findAll('button.piece')[1]!.trigger('click');
+    expect(w.find('.wl-title').text()).toBe('강아지');
+    expect(w.find('.wl-kind').text()).toBe(ko.museum.kind.frame);
+    expect(w.find('.wl-words').text()).toBe('멍멍이가 웃어');
+    expect(btn(w, ko.museum.play)).toBeUndefined();
+    await btn(w, ko.museum.back)!.trigger('click');
+    await w.findAll('button.piece')[0]!.trigger('click');
+    expect(w.find('.wl-kind').text()).toBe(ko.museum.kind.animated);
+    expect(btn(w, ko.museum.play)!.attributes('aria-pressed')).toBe('false');
     w.unmount();
+  });
+  it('전시 작품이 없으면 빈 액자 걸이와 "첫 그림을 걸어 볼까요?"', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': { childId: '1', groups: [] }, '/v1/artworks': [] });
+    const w = await open(MuseumView, '/app');
+    await flushPromises();
+    expect(w.text()).toContain(ko.museum.emptyTitle);
+    expect(w.findAll('.artframe.empty').length).toBeGreaterThan(0);
+    w.unmount();
+  });
+});
+
+describe('S0w 입장(제안 SD_02 §17-2)', () => {
+  it('첫 방문이면 입장 화면, [입장하기] 뒤에는 저장값으로 건너뛰고 next를 로그인에 넘긴다', async () => {
+    localStorage.removeItem('uam.entered');
+    expect(isFirstVisit()).toBe(true);
+    const w = await open(WelcomeView, '/app/welcome?next=/app/upload');
+    await btn(w, ko.museum.enter)!.trigger('click');
+    await flushPromises();
+    expect(isFirstVisit()).toBe(false);
+    expect(router.currentRoute.value.fullPath).toBe('/app/login?next=/app/upload');
+    w.unmount();
+    localStorage.removeItem('uam.entered');
   });
 });
 

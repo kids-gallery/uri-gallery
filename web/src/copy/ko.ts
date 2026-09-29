@@ -221,6 +221,18 @@ export const ko = {
     empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
     toList: '목록으로', toUpload: '작품 올리기',
   },
+  /** 전시실 홈(제안, SD_02 §17-2, docs/C_화면문구.md "전시실 홈 구현 문구" — 팀 확인 전). */
+  museum: {
+    name: '우리 아이 미술관', tagline: '작은 손이 그린 큰 이야기', enter: '입장하기', // [추론] tagline
+    hall: (alias: string) => `${alias}의 미술관`, // [추론]
+    child: '아이', plan: '전시실 안내', entrance: '입구', room: (n: number) => `${n}세관`, // [추론] 안내·입구
+    plaque: (date: string, age: number) => `${date} · ${age}살`,
+    emptyTitle: '첫 그림을 걸어 볼까요?', upload: '작품 올리기', // [추론]
+    preparing: (n: number) => `전시 준비 중인 작품 ${n}점`, manage: '작품 관리', // [추론]
+    kind: { animated: '움직이는 그림 - 누르면 움직여요', relief: '입체 부조', frame: '액자 작품', sculpture: '3D 조각' } as Record<string, string>, // [추론] 움직이는 그림·액자 작품
+    play: '움직여 보기', stop: '멈추기', showOriginal: '원본 보기', showWork: '작품 보기', back: '전시실로', // [추론]
+    childWords: '아이의 한마디', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
+  },
   /** S1b~S1d 공동 보호자(docs/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
     title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,
@@ -316,7 +328,7 @@ export const ko = {
     opsName: '운영 화면',
     role: { operator: '서비스 운영자', evaluator: '평가 담당', integrator: '연동 개발' } as Record<string, string>,
     menu: { status: '상태-지표', models: '모델 평가', modelsRead: '모델 평가(읽기)', apiGuide: 'API활용' },
-    appMenu: { artworks: '작품 목록', children: '우리 아이', family: '가족 보호자', gallery: '가족 전시', upload: '작품 올리기' },
+    appMenu: { artworks: '작품 관리', children: '우리 아이', family: '가족 보호자', gallery: '미술관', upload: '작품 올리기' }, // 전시실 홈 개정안(SD_02 §17-2): 목록은 '작품 관리', 전시는 '미술관'
   },
 } as const;
 

@@ -8,8 +8,10 @@ export interface MenuItem { to: string; label: string }
 defineProps<{ shell: 'app' | 'ops'; account?: string; roles?: string[]; menu: MenuItem[] }>();
 const emit = defineEmits<{ logout: [] }>();
 const route = useRoute();
-// 셸 첫 메뉴(/app·/ops)는 하위 경로 전체에 켜지면 다른 메뉴와 겹쳐 보인다 — 작품 화면(/app/artworks/*)만 "작품 목록"에 둔다
-const active = (to: string) => (to === '/app' ? route.path === '/app' || route.path.startsWith('/app/artworks') : route.path === to || route.path.startsWith(`${to}/`));
+// 셸 첫 메뉴(/app·/ops)는 하위 경로 전체에 켜지면 다른 메뉴와 겹쳐 보인다 — /app(미술관)은 그 화면만, 작품 화면(/app/artworks/*)은 "작품 관리"에 둔다
+const active = (to: string) => (to === '/app' ? route.path === '/app'
+  : to === '/app/works' ? route.path === '/app/works' || route.path.startsWith('/app/artworks') // 작품 화면은 작품 관리 아래
+  : route.path === to || route.path.startsWith(`${to}/`));
 </script>
 
 <template>

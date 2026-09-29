@@ -44,7 +44,7 @@ async function remove() {
     block.value = err.status === 404 ? toBlock(err) : { ...problemCopy({ gate: 'G18', reason: 'deletion_not_saved' }), actions: [...problemCopy({ gate: 'G18', reason: 'deletion_not_saved' }).actions], gate: 'G18', fields: [] };
   }
 }
-async function toList() { poll.stop(); emit('close'); await router.push(props.kind === 'artwork' ? '/app' : '/app/children'); }
+async function toList() { poll.stop(); emit('close'); await router.push(props.kind === 'artwork' ? '/app/works' : '/app/children'); }
 function onBlock(label: string) { if (label === ko.del.toList || label === '목록으로') void toList(); else void remove(); }
 </script>
 

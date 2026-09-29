@@ -77,7 +77,7 @@ async function submit() {
 }
 async function onBlock(label: string) {
   if (label === ko.list.toReview && a.value) await router.push(`/app/artworks/${id}/review`);
-  else if (label === '목록으로') await router.push('/app');
+  else if (label === '목록으로') await router.push('/app/works');
   else optsEl.value?.querySelector<HTMLElement>('button')?.focus();
 }
 </script>
@@ -119,7 +119,7 @@ async function onBlock(label: string) {
 
       <div class="acts">
         <ReasonButton :label="ko.confirm.submit" :disabled="!!why" :reason="why" @click="submit" @blocked="optsEl?.querySelector('button')?.focus()" />
-        <RouterLink class="btn btn-secondary" to="/app">{{ ko.confirm.later }}</RouterLink>
+        <RouterLink class="btn btn-secondary" to="/app/works">{{ ko.confirm.later }}</RouterLink>
       </div>
     </template>
   </main>

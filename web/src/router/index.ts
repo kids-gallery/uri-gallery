@@ -6,6 +6,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type Router } from
 import { ApiError, setNavigator } from '@/api/client';
 import { useSession } from '@/stores/session';
 import { OPS_ROLES, safeNext } from './menu';
+import { isFirstVisit } from '@/app/entrance';
 
 declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
@@ -14,6 +15,7 @@ declare module 'vue-router' {
 export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/app' },
   // 보호자 — 로그인 전
+  { path: '/app/welcome', component: () => import('@/app/views/WelcomeView.vue'), meta: { shell: 'app', public: true } }, // S0w 입장(제안 SD_02 §17-2)
   { path: '/app/login', component: () => import('@/app/views/LoginView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/signup', component: () => import('@/app/views/SignupView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/verify', component: () => import('@/app/views/VerifyView.vue'), meta: { shell: 'app', public: true } },
@@ -27,7 +29,8 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { shell: 'app' },
     children: [
-      { path: '', name: 'app-home', component: () => import('@/app/views/ArtworksView.vue') },
+      { path: '', name: 'app-home', component: () => import('@/app/views/MuseumView.vue') }, // 홈 = 전시실(제안 SD_02 §17-2)
+      { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리
       { path: 'artworks/:id', component: () => import('@/app/views/ArtworkDetailView.vue') },
       { path: 'artworks/:id/confirm', component: () => import('@/app/views/ConfirmView.vue') },
       { path: 'artworks/:id/review', component: () => import('@/app/views/ReviewView.vue') },
@@ -35,7 +38,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'upload', component: () => import('@/app/views/UploadView.vue') },
       { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
       { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
-      { path: 'gallery', component: () => import('@/app/views/GalleryView.vue') },
+      { path: 'gallery', redirect: (to) => ({ path: '/app', query: to.query }) }, // S8은 홈 전시실로 합침
     ],
   },
   // 팀원
@@ -66,7 +69,8 @@ export function installGuards(router: Router) {
         const me = await s.loadGuardian();
         if (!me.hasFamily && !to.matched.some((r) => r.meta.noFamilyOk)) return '/app/no-family';
       } catch (e) {
-        if (e instanceof ApiError && e.status === 401) return login;
+        // 로그인 전 첫 방문이면 입장 화면(S0w)을 한 번 거친다
+        if (e instanceof ApiError && e.status === 401) return isFirstVisit() ? { path: '/app/welcome', query: login.query } : login;
         if (e instanceof ApiError && e.reason === 'no_family') return '/app/no-family';
         // 그 밖(무응답 등)은 화면이 §17 전역 실패 규칙으로 보인다
       }

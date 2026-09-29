@@ -40,7 +40,7 @@ onMounted(first);
 
 function onBlock(label: string) {
   if (label === ko.list.toReview && a.value) void router.push(routeFor(a.value));
-  else void router.push('/app');
+  else void router.push('/app/works');
 }
 function stageNote(s: ArtworkDetail['stages'][number]): string {
   if (s.waitingForModel) return s.etaSeconds ? `${ko.wait.model} - ${ko.wait.modelEta(Math.ceil(s.etaSeconds))}` : ko.wait.model;
@@ -51,7 +51,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
 
 <template>
   <main class="container page stack">
-    <RouterLink class="t-body-sm" to="/app">{{ ko.list.backToList }}</RouterLink>
+    <RouterLink class="t-body-sm" to="/app/works">{{ ko.list.backToList }}</RouterLink>
     <BlockNotice v-if="block" :notice="block" @action="onBlock" />
     <template v-if="a && rail">
       <JourneyRail :current="rail.current" :variant="waitingQueue ? 'waiting' : rail.variant" :gate="rail.gate" :blocked-label="rail.blockedLabel" />
@@ -74,7 +74,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <DowngradeNote v-if="a.downgrade" :path="a.downgrade" />
       <BlockNotice v-if="g9" :notice="g9" @action="onBlock" />
       <div class="acts">
-        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/gallery' : routeFor(a)">{{ next }}</RouterLink>
+        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app' : routeFor(a)">{{ next }}</RouterLink>
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
