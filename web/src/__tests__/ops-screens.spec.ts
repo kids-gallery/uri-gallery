@@ -200,3 +200,41 @@ describe('S12 API활용(T125)', () => {
     w.unmount();
   });
 });
+
+describe('모델 점검(T157, D20)', () => {
+  const now = new Date().toISOString();
+  const checks = { checks: [
+    { id: '1', modelId: 'M1', versionId: '11', versionLabel: 'v1', evalItemId: '3', status: 'passed', processingMs: 1500, requestedAt: now, finishedAt: now },
+    { id: '2', modelId: 'M5', versionId: '51', versionLabel: 'v1', evalItemId: '3', status: 'running', requestedAt: now },
+  ] };
+  it('S11: 마지막 점검 칸(점수 없이 통과·처리 시간), 점검 중이면 [점검]은 사유 달린 비활성, 연동 개발에는 버튼 없음', async () => {
+    serve({ '/v1/admin/models': manifest, '/v1/ops/models': loads, '/v1/ops/model-checks': checks });
+    const w = await open(ModelsView, ['operator']);
+    expect(w.find('[data-check="passed"]').text()).toBe(ko.ops.checkPassed('1.5', ko.ops.ago(0)));
+    expect(w.find('[data-check="running"]').text()).toBe(ko.ops.checkRunning);
+    const checkBtns = w.findAll('button').filter((b) => b.text().startsWith(ko.ops.check));
+    expect(checkBtns.some((b) => b.attributes('aria-disabled') === 'true' && b.text().includes(ko.ops.checking))).toBe(true);
+    expect(w.text()).toContain(ko.ops.checkNotPromotion);
+    w.unmount();
+    const r = await open(ModelsView, ['integrator']);
+    expect(r.findAll('button').filter((b) => b.text().startsWith(ko.ops.check))).toHaveLength(0);
+    r.unmount();
+  });
+  it('S11: [점검] → POST, 실행기 배포 전이면 C2 "점검을 아직 쓸 수 없어요"', async () => {
+    serve({ '/v1/admin/models': manifest, '/v1/ops/models': loads, '/v1/ops/model-checks': { checks: [] },
+      'POST /v1/ops/models/M1/check': () => new Response(JSON.stringify({ type: 'about:blank', title: 't', status: 503, code: 'not_saved', reason: 'check_runner_missing' }), { status: 503, headers: { 'content-type': 'application/problem+json' } }) });
+    const w = await open(ModelsView, ['evaluator']);
+    await w.findAll('button').find((b) => b.text().startsWith(ko.ops.check))!.trigger('click');
+    await flushPromises();
+    expect(calls('POST', '/v1/ops/models/M1/check')).toHaveLength(1);
+    expect(w.find('.gblock').text()).toContain('점검을 아직 쓸 수 없어요');
+    w.unmount();
+  });
+  it('S10: 준비 표에 마지막 점검(읽기만)', async () => {
+    serve({ '/ready': { status: 'ready' }, '/v1/ops/models': loads, '/v1/admin/metrics': metrics, '/v1/admin/models': manifest, '/v1/ops/model-checks': checks });
+    const w = await open(OpsStatusView, ['integrator']);
+    expect(w.text()).toContain(ko.ops.checkPassed('1.5', ko.ops.ago(0)));
+    expect(w.findAll('button').filter((b) => b.text().startsWith(ko.ops.check))).toHaveLength(0);
+    w.unmount();
+  });
+});
