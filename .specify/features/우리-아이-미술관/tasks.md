@@ -43,14 +43,14 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T001 (B 완료 2026-09-28 — `design/uri_gallery_ddl.sql`에 email_norm·owner_family_id·auth_email_token·family_invite·G26~G29 확인) main이 계획 기준(`5a774f0`)인지 확인한다: `design/uri_gallery_ddl.sql`에 `guardian_account.email_norm`·`role`·`owner_family_id`, `auth_email_token`, `family_invite`, G26~G29, `gate_event.chk_ge_subject`의 `family_invite`·`guardian_account`가 있고 `uq_child_family_alias`·`uq_guardian_family`가 없는지 본다(D18·공동 보호자는 병합 완료, 확인만) — `design/` · `.specify/features/우리-아이-미술관/spec.md` · 담당 B · 스킬 — · 근거 D18, U1, data-model §1
 - [ ] T002 (**일부** 2026-09-28 — `api`·`db`·`ops`·`models`·`serving`·`contracts` README 있음. `web`·`caption`·`eval`은 담당 C·A가 폴더를 만들 때 README 함께) 저장소 골격을 만든다: `web/`·`api/`·`db/migrations/`·`serving/`·`caption/`·`eval/`·`models/`·`contracts/`·`ops/`와 각 폴더 `README.md`(담당·경계 한 줄) — 루트 · 담당 B · 스킬 — · 근거 quickstart §1
 - [x] T003 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 앱 API 프로젝트를 초기화한다: Node 20(`.nvmrc`), Express 4 · TypeScript 5 · mysql2 3 · pino · zod · Vitest · Supertest, ESLint·Prettier, `npm run build|test|lint|db:migrate` 스크립트 — `api/package.json` · `api/tsconfig.json` · 담당 B · 스킬 API · 근거 R-01
-- [x] T004 (완료 2026-09-29 — vue-tsc·Vitest 1/1·빌드·Playwright 390/1440 2/2, 로컬 확인은 WEB_PORT로 9501 대신) [P] 웹 프로젝트를 초기화한다: Vite 5 · Vue 3.4 · TypeScript · Pinia · Vue Router 4 · Vitest · Vue Test Utils · Playwright(390px·1440px 프로젝트 2개) — `web/package.json` · `web/vite.config.ts` · `web/playwright.config.ts` · 담당 C · 스킬 FD · 근거 R-01, R-19
+- [x] T004 (완료 2026-09-29 — vue-tsc·Vitest 1/1·빌드·Playwright 390/1440 2/2, 로컬 확인은 WEB_PORT로 9501 대신) [P] 웹 프로젝트를 초기화한다: Vite 5 · Vue 3.4 · TypeScript · Pinia · Vue Router 4 · Vitest · Vue Test Utils · Playwright(390px·1440px 프로젝트 2개) — `web/package.json` · `web/vite.config.ts` · `web/playwright.config.ts` · 담당 C · 스킬 FD · 근거 R-01, R-19 · **D21 보정(2026-09-29)**: Vite 개발 서버 9501(D19)·프록시 `/v1`·`/live`·`/ready`·`/openapi.json` → `127.0.0.1:9521`(app-api에 CORS 없음), 개발용 `.env`에 `SECURE_COOKIES=0`. Node·Vite 버전은 착수 전 결정(Node 20은 2026-04 지원 종료). `web/README.md`(T002 몫) 함께. CI `web` 작업은 T148
 - [x] T005 (A 완료 — `a/model-serving`, main 병합 전) [P] 서빙 Python 프로젝트를 초기화한다: Python 3.11 venv, FastAPI · uvicorn · PyMySQL · structlog · pillow · pillow-heif · pytest, 해시 잠금 파일 — `serving/pyproject.toml` · `serving/requirements.lock` · 담당 A · 스킬 API · 근거 R-01, R-03, FR-30
 - [x] T006 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 환경 변수 견본과 비밀 제외를 둔다: `DB_HOST`·`DB_PORT`·`DB_USER`·`DB_NAME`·`DB_PASSWORD`·`SESSION_SECRET`·`STORAGE_ROOT`·`MODEL_ROOT`·`MODEL_API_INTERNAL_URL`·`UAM_FAKE_MODELS`·`GPU_ENABLED`·`TORCHSERVE_URL`·`MAIL_SMTP_URL`·`MAIL_FROM`·`APP_BASE_URL`·`AUTH_HMAC_SECRET`, P0.5 `LLM_SERVER_URL`·`OLLAMA_URL`, `.gitignore`에 `.env` — `.env.example` · `.gitignore` · 담당 B · 스킬 — · 근거 R-21
 - [x] T007 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 계약 정본을 루트로 복사하고 lint를 건다: `.specify/…/contracts/*` → `contracts/`, Redocly 설정, `npm run contracts:lint` — `contracts/` · `redocly.yaml` · 담당 B · 스킬 API · 근거 plan Phase 1
 - [x] T008 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] pm2 구성을 만든다: `app-api`(:9521) · `model-api`(:9541) · `worker-cpu` · `worker-gpu` · `sweeper`, `llm-server`(:8200, 큐 없는 동기 서버)는 P0.5 주석 처리, 모두 127.0.0.1. 서빙 진입점은 A 구현 기준(`serving/.venv/bin/python -m model_api.main` · `-m workers.main --group cpu_vision|gpu`(kill_timeout 10000) · `-m llm_server.main`, env `OLLAMA_URL=http://127.0.0.1:11434`·`OLLAMA_CHAT_MODEL=qwen3:4b-instruct-2507-q4_K_M`), worker-cpu는 T068 전까지 인스턴스 1개(M1 RSS 8.5GB). 로컬 부대 프로세스(Mailpit :1025/:8025, TorchServe :9561~9563 + Java 17) 기동 절차를 같은 파일 주석과 `ops/README.md`에 — `ops/ecosystem.config.cjs` · `ops/README.md` · 담당 B · 스킬 — · 근거 R-02, R-03, R-23
 - [x] T009 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :9541, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :9521, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
 - [x] T010 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] GitLab CI를 lint·타입 검사·단위 시험·계약 lint만 돌게 만든다(배포 없음) — `.gitlab-ci.yml` · 담당 B · 스킬 — · 근거 R-02
-- [x] T011 (완료 2026-09-29 — 토큰 일치 시험·자체 호스팅 글꼴 E2E 390/1440, 가변 Inter를 토큰 이름 "Inter"로 등록) [P] 디자인 토큰과 글꼴을 옮긴다: **`design/style-guide/스타일가이드_우리아이미술관.html`**(기준 파일)의 `:root` 변수·클래스를 그대로 옮기고, `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20
+- [x] T011 (완료 2026-09-29 — 토큰 일치 시험·자체 호스팅 글꼴 E2E 390/1440, 가변 Inter를 토큰 이름 "Inter"로 등록) [P] 디자인 토큰과 글꼴을 옮긴다: **`design/style-guide/스타일가이드_우리아이미술관.html`**(기준 파일)의 `:root` 변수·클래스를 그대로 옮기고, `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20 · **D21 보정(2026-09-29)**: 글꼴은 가변 글꼴(`@fontsource-variable/inter`·Pretendard Variable) — 굵기 320·330·340·540. 상태 모양은 SD_02 §3-5 토큰 사상, 중단점 560·768·960
 - [x] T012 (B 완료 2026-09-28; `docs/결정_DB비밀정보.md`) `Intent-Plan.md` 작업 사본의 평문 DB 비밀번호(커밋된 이력에는 없음)를 커밋 전에 지울지·`.env` 참조로 바꿀지 팀에 결정 요청하고 결과를 기록한다. 결정 전에는 이 파일을 커밋하지 않는다 — `docs/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
 
 **Checkpoint**: 세 프로젝트가 빌드되고 CI가 녹색이다.
@@ -78,6 +78,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T024 (B 완료 2026-09-28 — `b/api`, main 병합 전) 앱 부트스트랩을 만든다: 라우터 마운트, `/live`, 시험 모드 `express-openapi-validator` 응답 검증 — `api/src/app.ts` · `api/src/server.ts` · 담당 B · 스킬 API · 근거 FR-12, R-19
 - [x] T025 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/storage/LocalFsDriver.ts`) [P] 저장소 포트와 로컬 드라이버를 만든다: `put/get/delete/exists/listByPrefix`, `family/`·`tmp/`·`ext/` 분리, 원본 `O_EXCL`+0440 — `api/src/storage/StoragePort.ts` · `api/src/storage/LocalFsDriver.ts` · 담당 B · 스킬 API · 근거 R-06, BR-INT-04
 - [x] T026 (B 완료 2026-09-28 — `b/api`, main 병합 전) [P] 파일 읽기 토큰을 만든다: 짧게 유효한 서명 토큰 `GET /v1/files/{token}` → `X-Accel-Redirect`, 가족 확인 뒤에만 발급, 로그에 객체 키 없음 — `api/src/modules/files/` · 담당 B · 스킬 API, AUTH · 근거 SD_03 §17
+- [ ] T146 [P] 팀원 세션 API와 지표 역할을 맞춘다(D21): `GET /v1/ops/me`(역할·가린 계정)·`POST /v1/ops/auth/logout`(204), `GET /v1/admin/metrics`를 운영자·평가 담당·연동 개발 읽기로(미도달은 운영자 전용 유지), 계약 시험 — `api/src/modules/auth/routes.ts` · `api/src/modules/ops/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 §2-1 · C9, UC9 A1, UC11 A5
 
 ### 서빙 공통 (A)
 
@@ -93,11 +94,11 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 ### 웹 공통 (C)
 
 - [ ] T035 [P] 화면 문구를 한 파일에 모은다(SD_02 문구 기준, 스타일가이드와 다르면 SD_02 우선) — `web/src/copy/ko.ts` · 담당 C · 스킬 FD · 근거 U10, R-20
-- [ ] T036 [P] API 클라이언트를 만든다: `openapi-typescript` 생성 타입, Problem Details → `BlockNotice` 모델 변환, 401 → 로그인 이동 — `web/src/api/client.ts` · `web/src/api/types.gen.ts` · 담당 C · 스킬 FD · 근거 R-10, G0
+- [ ] T036 [P] API 클라이언트를 만든다: `openapi-typescript` 생성 타입, Problem Details → `BlockNotice` 모델 변환, 401 → 로그인 이동 — `web/src/api/client.ts` · `web/src/api/types.gen.ts` · 담당 C · 스킬 FD · 근거 R-10, G0 · **D21 보정(2026-09-29)**: 타입은 `openapi.yaml`+`model-api.openapi.yaml`을 번들한 뒤 생성(외부 `$ref`). 오류 사상은 `reason`+`gate` 기준(`code` 아님, 예 `forbidden_role`/`invite_email_mismatch`), 409 `no_family` → S1d, 401 → 로그인(`next`). §17 전역 실패 규칙("지금은 불러올 수 없어요"·운영 "갱신 불가"+마지막 값)도 여기서
 - [x] T037 (완료 2026-09-29 — Vitest 7건: 3→6→10초·전이 끝나면 멈춤·숨김 탭 정지·실패 뒤 계속·겹침 없음·S11 2초·범위 해제) [P] 폴링 컴포저블을 만든다: 3→6→10초, 전이 중 상태만, `visibilitychange`에서 멈춤 — `web/src/composables/usePolling.ts` · 담당 C · 스킬 FD · 근거 R-12
 - [ ] T038 [P] 공통 컴포넌트 C1·C2·C3를 만든다: `JourneyRail`(기본·막힘·대기·전시 보류·종결), `BlockNotice`(차단·보류·종결, 사유·해제 주체·다음 행동 필수), `ReasonButton`(`aria-disabled`+사유, hover·포커스 같은 문구) — `web/src/components/JourneyRail.vue` · `BlockNotice.vue` · `ReasonButton.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3, UX6, G 사상 규칙 1·2
 - [ ] T039 [P] 공통 컴포넌트 C4·C9를 만든다: `StatusBadge`, `RoleHeader`(보호자/팀원 셸, 계정 가림) — `web/src/components/StatusBadge.vue` · `RoleHeader.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4, UX8
-- [ ] T040 라우터와 레이아웃을 만든다: `/app/*`(보호자)·`/ops/*`(팀원) 분리, 역할 가드, 보호자↔운영 링크 없음, 모바일 390px 우선·1440px — `web/src/router/index.ts` · `web/src/layouts/AppLayout.vue` · `OpsLayout.vue` · 담당 C · 스킬 RL · 근거 SD_02 §2, R-11, UX8
+- [ ] T040 라우터와 레이아웃을 만든다: `/app/*`(보호자)·`/ops/*`(팀원) 분리, 역할 가드, 보호자↔운영 링크 없음, 모바일 390px 우선·1440px — `web/src/router/index.ts` · `web/src/layouts/AppLayout.vue` · `OpsLayout.vue` · 담당 C · 스킬 RL · 근거 SD_02 §2, R-11, UX8 · **D21 보정(2026-09-29)**: 로그인 둘(S0a `/app/login`·S0o `/ops/login`), 운영 셸은 `GET /v1/ops/me`로 역할 복원·SD_02 §2-1 역할별 메뉴 표대로 메뉴, `?next=` 복귀(S1c 초대 링크), 메일 링크 경로 `/app/verify`·`/app/reset`·`/app/invite`
 
 **Checkpoint**: `npm run db:migrate` 두 번 성공·위반 거부 시험 통과, `/live` 200, 가짜 어댑터로 단계 작업 계약 시험 통과, 웹 셸이 열린다. 이제 스토리를 병렬로 시작할 수 있다.
 
@@ -126,10 +127,10 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T049 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US1] 인증·초대 요청 한도를 만든다(`auth_rate_event`, 이메일·IP HMAC, 가입·재발송·찾기 같은 이메일 10분 3회·같은 IP 1시간 20회, 초대 같은 가족 하루 20건·같은 이메일 하루 3건 `[추론]`, 초과해도 응답 동일) — `api/src/modules/auth/rateLimit.ts` · 담당 B · 스킬 AUTH · 근거 FR-31, data-model §6 S7
 - [x] T050 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/auth/routes.ts`) [US1] 팀원 로그인을 만든다(`POST /v1/ops/auth/login`, `uam_ops_sid`) — `api/src/modules/auth/opsLogin.ts` · 담당 B · 스킬 AUTH · 근거 INC2, G1
 - [x] T051 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US1] 아이 API를 만든다: `GET/POST /v1/children`, `PATCH /v1/children/{id}`, 중복 검사 없음·같은 별칭 안내, 작품 수는 `v_child_artwork_count` — `api/src/modules/children/` · 담당 B · 스킬 API · 근거 FR-1, UC1 A1·A5, D18
-- [ ] T052 [P] [US1] S0 가입·확인 화면을 만든다(이메일·비밀번호·확인만, 응답은 항상 같은 안내) — `web/src/app/views/SignupView.vue` · `VerifyView.vue` · 담당 C · 스킬 FD, RL · 근거 S0, FR-31
-- [ ] T053 [P] [US1] 로그인·S0b 찾기·재설정 화면을 만든다 — `web/src/app/views/LoginView.vue` · `RecoveryView.vue` · `ResetView.vue` · 담당 C · 스킬 FD, RL · 근거 S0b, FR-32
+- [ ] T052 [P] [US1] S0 가입·확인 화면을 만든다(이메일·비밀번호·확인만, 응답은 항상 같은 안내) — `web/src/app/views/SignupView.vue` · `VerifyView.vue` · 담당 C · 스킬 FD, RL · 근거 S0, FR-31 · **D21 보정(2026-09-29)**: G26 필드 사유·요청 한도 C2, G27 `token_invalid`, 확인 성공 뒤 S1 "이제 아이를 등록해 주세요", 초대 링크로 온 가입은 이메일 미리 채움(UC13 A4)
+- [ ] T053 [P] [US1] 로그인·S0b 찾기·재설정 화면을 만든다 — `web/src/app/views/LoginView.vue` · `RecoveryView.vue` · `ResetView.vue` · 담당 C · 스킬 FD, RL · 근거 S0b, FR-32 · **D21 보정(2026-09-29)**: S0a 보호자 로그인(SD_02 §4-5 D21), 불일치는 한 문구, 메일 확인 전 계정 안내
 - [ ] T054 [P] [US1] S1 아이 관리 화면을 만든다(별칭만, 실명·생년월일 칸 없음, 같은 별칭 안내, G4 차단 블록) — `web/src/app/views/ChildrenView.vue` · 담당 C · 스킬 FD, RL · 근거 S1, UX6
-- [ ] T055 [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 C · 스킬 FD · 근거 G1
+- [ ] T055 [P] [US1] 팀원 로그인 화면을 만든다 — `web/src/ops/views/OpsLoginView.vue` · 담당 C · 스킬 FD · 근거 G1 · **D21 보정(2026-09-29)**: S0o(SD_02 §4-5 D21), 로그아웃 `POST /v1/ops/auth/logout`
 
 **Checkpoint**: US1 독립 검증 기준 통과.
 
@@ -153,8 +154,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T063 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/routes.ts`) [US2] 확정을 만든다: `FOR UPDATE` → `artwork_outcome` INSERT → 경로별 `stage_job`(animate_render·depth_relief·frame_compose) → `processing`, 분리 실패+relief는 frame_compose — `api/src/modules/artworks/confirm.ts` · 담당 B · 스킬 API · 근거 data-model §4 확정, G8, G17, BR-PRC-01
 - [x] T064 (A 완료 — `a/model-serving`, main 병합 전) [US2] split 단계를 만든다: M1 마스크·컷아웃 저장, `judgment.split_ok`, 성공·낮춤·소진 모두 judge를 연다 — `serving/workers/stages/split.py` · 담당 A · 스킬 — · 근거 stage-job §2, FR-20
 - [x] T065 (A 완료 — `a/model-serving`, main 병합 전) [US2] judge 단계를 만든다: M2 종류·태그 → M3 관절 → M4 기하 규칙 → 제안 규칙, `tag_candidate`, `awaiting_confirm`, 소진 `exhausted` — `serving/workers/stages/judge.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 stage-job §5.1, FR-21, G7
-- [ ] T066 [P] [US2] S2 작품 올리기 화면을 만든다(아이 선택·사진·G5 차단 블록·"닫아도 계속돼요") — `web/src/app/views/UploadView.vue` · 담당 C · 스킬 FD, RL · 근거 S2
-- [ ] T067 [P] [US2] S3 판정 제안 확정 화면을 만든다: 선택지 셋 같은 무게·기본 선택 없음, 제안은 도착하면 문구로, G7 차단 블록, 3D는 노출 설정 뒤만, 폴링 — `web/src/app/views/ConfirmView.vue` · 담당 C · 스킬 FD, RL · 근거 S3, UX2, U10 clarify
+- [ ] T066 [P] [US2] S2 작품 올리기 화면을 만든다(아이 선택·사진·G5 차단 블록·"닫아도 계속돼요") — `web/src/app/views/UploadView.vue` · 담당 C · 스킬 FD, RL · 근거 S2 · **D21 보정(2026-09-29)**: 접수 202 뒤 S3로 이동
+- [ ] T067 [P] [US2] S3 판정 제안 확정 화면을 만든다: 선택지 셋 같은 무게·기본 선택 없음, 제안은 도착하면 문구로, G7 차단 블록, 3D는 노출 설정 뒤만, 폴링 — `web/src/app/views/ConfirmView.vue` · 담당 C · 스킬 FD, RL · 근거 S3, UX2, U10 clarify · **D21 보정(2026-09-29)**: "나중에 고르기"(S4로), 모델 적재 대기 "그림을 볼 준비를 하고 있어요"(`waitingForModel`·`etaSeconds`, 오류 색 없음), 비활성 모델 선택지 C3(`unavailable[]`)·409 `model_disabled` 처리 — T116의 C 몫
 
 #### 실제 모델 (A — 가짜 흐름과 병행, 스토리 완료에는 가짜로 충분)
 
@@ -184,7 +185,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T144 (B가 A 몫까지 완료 2026-09-28 — `serving/workers/records.py` open_confirmed · `serving/tests/test_confirm_before_judge.py`) [US3] 판정 전 확정 순서를 지킨다(stage-job §2 "판정 전 확정의 순서", main 52b1d09): 워커가 `judge`를 닫을 때(성공·품질 미달·소진 모두) 같은 작품의 잠긴 `origin='confirm'` 결과 작업을 `available_at=UTC_TIMESTAMP()`로 열고, `relief` 확정인데 `split_ok`가 TRUE가 아니면 `depth_relief`를 `done_downgraded`·`split_fail`로 닫고 `frame_compose`를 등록한다. 시험: 판정 중 확정 → 판정 완료 뒤에만 결과 작업 실행 — `serving/workers/stages/judge.py` · `serving/tests/test_confirm_before_judge.py` · 담당 A · 스킬 — · 근거 BR-SUG-05, stage-job §2·§6 — **B 구현 중 발견(2026-09-28), A 세션 연결이 끊겨 작업으로 등록**
 - [x] T078 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/view.ts`) [US3] 작품 목록 API를 만든다: `GET /v1/artworks`(`v_artwork_display`, 현재 단계, 삭제 중 제외) — `api/src/modules/artworks/list.ts` · 담당 B · 스킬 API · 근거 FR-4, D13
 - [ ] T079 [P] [US3] C6 낮춤 안내 컴포넌트를 만든다(S4·S5 전용) — `web/src/components/DowngradeNote.vue` · 담당 C · 스킬 FD · 근거 UX3, BR-EXH-07
-- [ ] T080 [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7
+- [ ] T080 [US3] S4 작품 목록·진행 상세 화면을 만든다(진입 홈, 상태 배지, 단계별 진행, G9 블록, 폴링) — `web/src/app/views/ArtworksView.vue` · 담당 C · 스킬 FD, RL · 근거 S4, UX7 · **D21 보정(2026-09-29)**: 모델 적재 대기 문구(`waitingForModel`·`etaSeconds`), 목록 갱신은 `updatedAt`이 아니라 `state`로
 
 #### 실제 모델 (A)
 
@@ -216,8 +217,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T092 [P] [US4] C5 원본-결과 비교를 만든다(정지 우선, 재생·시차 토글, WebGL 시차, 형식 표시 불가 시 원본) — `web/src/components/SideBySide.vue` · `web/src/components/ParallaxRelief.vue` · 담당 C · 스킬 FD · 근거 UX4, R-07
 - [ ] T093 [P] [US4] C7 이야기 카드·C8 전시 조건 체크를 만든다(한마디와 AI 작성 칸 분리) — `web/src/components/StoryCard.vue` · `ExhibitCheck.vue` · 담당 C · 스킬 FD · 근거 UX5, UX1
 - [ ] T094 [US4] S5 결과 확인 화면을 만든다(선택지는 API가 준 것만, G9·G10 차단 블록, 다시 찍기 확인 창) — `web/src/app/views/ReviewView.vue` · 담당 C · 스킬 FD, RL · 근거 S5
-- [ ] T095 [US4] S6 이야기 쓰기 화면을 만든다(부분 저장, G11 차단, P0에서는 설명 확장점 숨김) — `web/src/app/views/StoryView.vue` · 담당 C · 스킬 FD, RL · 근거 S6
-- [ ] T096 [US4] S8 가족 전시 화면을 만든다(아이별·연령 묶음, 동등 크기, 자동 넘김 없음) — `web/src/app/views/GalleryView.vue` · 담당 C · 스킬 FD, RL · 근거 S8, BR-EXH-03·04
+- [ ] T095 [US4] S6 이야기 쓰기 화면을 만든다(부분 저장, G11 차단, P0에서는 설명 확장점 숨김) — `web/src/app/views/StoryView.vue` · 담당 C · 스킬 FD, RL · 근거 S6 · **D21 보정(2026-09-29)**: 동시 수정 409 `story_conflict` C2 + 최신 내용 불러오기(`baseUpdatedAt`) — T142의 C 몫
+- [ ] T096 [US4] S8 가족 전시 화면을 만든다(아이별·연령 묶음, 동등 크기, 자동 넘김 없음) — `web/src/app/views/GalleryView.vue` · 담당 C · 스킬 FD, RL · 근거 S8, BR-EXH-03·04 · **D21 보정(2026-09-29)**: 제목·그린 날 찾기, G12 직접 주소·G17·G0 C2, 빈 전시와 "작품 올리기"
 
 **Checkpoint**: US1~US4로 "가입 → 올리기 → 확정 → 결과 → 이야기 → 전시"가 가짜 모델로 끝까지 돈다(**MVP**).
 
@@ -230,7 +231,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T098 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] 삭제 요청 API를 만든다: `DELETE /v1/artworks/{id}`·`/v1/children/{id}`, `deleting`+취소 플래그+`deletion_request` → 202 — `api/src/modules/deletion/request.ts` · 담당 B · 스킬 API · 근거 data-model §4 삭제 요청, BR-ACC-04
 - [x] T099 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] sweeper 삭제 완료를 만든다: `v_deletion_hold`가 비면(또는 점유 만료 + 30초) 파일 삭제 → `stored_object` → `artwork`(CASCADE·SET NULL) → `completed`, 아이 삭제는 작품이 모두 지워진 뒤 `child` 삭제, 실패는 1·5·30분 재시도 뒤 `incomplete`, `gate_event` G19 해제·삭제된 작품 이벤트의 `subject_id` NULL — `api/src/sweeper/deletion.ts` · 담당 B · 스킬 DB · 근거 data-model §4 삭제 완료, BR-DEL-01~03, SD_03 §16-3
 - [x] T100 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US5] 삭제 미완료 처리 운영 도구를 만든다(건 번호만, 이미지 없음, 원인 해결 뒤 다시 삭제) — `api/scripts/ops/purge-retry.ts` · 담당 B · 스킬 — · 근거 spec clarify 2026-09-28(삭제 미완료), BR-ACC-03
-- [ ] T101 [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9
+- [ ] T147 [US5] 삭제 진행 조회를 만든다(D21): `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion` → `accepted`/`waiting_stop`(G19)/`deleting_files`/`done`, 없는 번호·다른 가족·끝난 삭제(미완료 포함)는 `done`(존재 비노출) + 시험 — `api/src/modules/deletion/routes.ts` · `api/tests/` · 담당 B(신지현 대행, D21) · 스킬 API · 근거 SD_02 S9, UC7, G19, BR-ACC-01
+- [ ] T101 [US5] S9 삭제 확인·진행 대화상자를 만든다(지워지는 항목, G19 보류 블록, 잠긴 조작) — `web/src/app/components/DeleteDialog.vue` · 담당 C · 스킬 FD · 근거 S9 · **D21 보정(2026-09-29)**: 진행은 `GET /v1/artworks/{id}/deletion`·`/v1/children/{id}/deletion` 폴링(T147)
 
 **Checkpoint**: US5 독립 검증 기준 통과.
 
@@ -245,7 +247,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T104 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/family/routes.ts`) [US6] 수락을 만든다: `POST /v1/family/invites/accept`(G28 — 토큰 유효(아니면 400 `token_invalid`)·로그인 이메일 일치(아니면 403 `invite_email_mismatch`)·`family_id IS NULL`(아니면 409 `already_in_family`), `role='co'`), 초대 링크 가입은 새 가족 없이 합류하고 확인 메일 생략(UC13 A4, `signup.ts`에 초대 토큰 분기) — `api/src/modules/family/accept.ts` · `api/src/modules/auth/signup.ts` · 담당 B · 스킬 AUTH · 근거 G28, UC13 A4
 - [x] T105 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/family/routes.ts`) [US6] 구성원·해제·나가기를 만든다: `GET /v1/family/members`(역할·이메일 가림), `DELETE /v1/family/members/{id}`(만든 보호자만, G29), `POST /v1/family/leave`(공동 보호자만), 둘 다 `family_id=NULL` + 그 계정 `app_session` 전부 삭제 + `gate_event`(대상 `guardian_account`) — `api/src/modules/family/members.ts` · 담당 B · 스킬 AUTH · 근거 G29, FR-9 "즉시 접근 불가", R-25
 - [x] T106 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/auth/guards.ts`) [US6] 가족 없는 계정 처리를 만든다: 나가거나 해제된 계정이 로그인하면 자동으로 가족을 만들지 않고 "초대 기다리기 / 새 가족 공간 만들기" 중 고르게 함(U20 P0 기본값 `[추론]`), 경로는 `GET /v1/me`(가족 소속·역할)와 `POST /v1/family`(새 가족 만들기, `family` + `role='owner'`, 이미 소속이면 409) — `api/src/modules/family/noFamily.ts` · 담당 B · 스킬 API, AUTH · 근거 U20
-- [ ] T107 [US6] 가족 보호자 화면 S1b, 초대 수락 S1c, 가족 없음 S1d를 만든다(SD_02 `274018f` 기준): S1b — 초대하기는 만든 보호자에게만, 두 명 차면 C3 비활성("보호자는 두 명까지예요")·대기 초대 0건, 공동 보호자 화면은 나가기만(초대·해제 없음), 403 `invite_owner_only`·409 `co_guardian_full` 차단 블록 / S1c — 400 `token_invalid`·403 `invite_email_mismatch`(초대받은 이메일로 로그인 안내)·409 `already_in_family`(만든 보호자이면 "다른 이메일로 다시 초대받기" 안내 `[추론]`) / S1d — `GET /v1/me`의 `hasFamily=false`이면 G0 차단 블록과 "초대 기다리기 / 새 가족 공간 만들기"(`POST /v1/family` 201, 409이면 S4로), 만들면 다른 가족 초대를 못 받는다는 안내 `[추론]` — `web/src/app/views/FamilyView.vue` · `InviteAcceptView.vue` · `NoFamilyView.vue` · 담당 C · 스킬 FD, RL · 근거 S1b, S1c, S1d, UX6, G0, G28, G29, U20
+- [ ] T107 [US6] 가족 보호자 화면 S1b, 초대 수락 S1c, 가족 없음 S1d를 만든다(SD_02 `274018f` 기준): S1b — 초대하기는 만든 보호자에게만, 두 명 차면 C3 비활성("보호자는 두 명까지예요")·대기 초대 0건, 공동 보호자 화면은 나가기만(초대·해제 없음), 403 `invite_owner_only`·409 `co_guardian_full` 차단 블록 / S1c — 400 `token_invalid`·403 `invite_email_mismatch`(초대받은 이메일로 로그인 안내)·409 `already_in_family`(만든 보호자이면 "다른 이메일로 다시 초대받기" 안내 `[추론]`) / S1d — `GET /v1/me`의 `hasFamily=false`이면 G0 차단 블록과 "초대 기다리기 / 새 가족 공간 만들기"(`POST /v1/family` 201, 409이면 S4로), 만들면 다른 가족 초대를 못 받는다는 안내 `[추론]` — `web/src/app/views/FamilyView.vue` · `InviteAcceptView.vue` · `NoFamilyView.vue` · 담당 C · 스킬 FD, RL · 근거 S1b, S1c, S1d, UX6, G0, G28, G29, U20 · **D21 보정(2026-09-29)**: 오류 사상 정정: 403 `forbidden_role`·reason `invite_email_mismatch`(이메일 다름)·`invite_owner_only`, 409 `co_guardian_full`·`already_in_family` — reason 기준
 
 **Checkpoint**: US6 독립 검증 기준 통과.
 
@@ -258,8 +260,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T109 (A 완료 — `a/model-serving`, main 병합 전) [US7] model-api 내부 준비 확인을 만든다(`GET /internal/ready`, 모델별 활성 버전·장치) — `serving/model_api/internal.py` · 담당 A · 스킬 API · 근거 FR-12
 - [x] T110 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US7] 운영 API를 만든다: `/ready`(DB·저장소·model-api), `/metrics`(prom-client, 뷰 기반, p95는 여기서만), `/v1/admin/metrics`, `/v1/admin/unreached` — `api/src/modules/ops/` · 담당 B · 스킬 API · 근거 R-17, SD_03 §2-3
 - [x] T143 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/ops/routes.ts`·`artworks/view.ts`) [US7] 모델 적재 상태를 붙인다(A `docs/A_모델적재_화면요구.md` §4): `/ready`에 `models[]` 요약(`anyLoading`, 공개 응답엔 버전·장치 없음), 운영 경로 `GET /v1/ops/models`·`POST /v1/ops/models/{id}/warmup`(model-api `/internal/models*` 프록시, M6는 409 `m6_preload_at_start_only`), 보호자 `GET /v1/artworks/{id}` 단계에 `waitingForModel`·`etaSeconds`만 — `api/src/modules/ops/models.ts` · `api/src/modules/artworks/detail.ts` · 담당 B · 스킬 API · 근거 FR-12, T109, contracts/openapi.yaml — **A 인계로 추가(T143)**
-- [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4
-- [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 C · 스킬 FD, RL · 근거 S10
+- [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4 · **D21 보정(2026-09-29)**: 상태 추가: 불러오는 중(`loading`, 경과·남은 시간, 1.5배 초과 문구)·적재 실패(`failed`)·내려감 짐작(`cold`, M6) — SD_02 C10·§3-5
+- [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 C · 스킬 FD, RL · 근거 S10 · **D21 보정(2026-09-29)**: 역할별: 미도달 추적 탭은 운영자에게만(§2-1)
 
 **Checkpoint**: US7 독립 검증 기준 통과.
 
@@ -274,7 +276,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T116 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/models.ts`) [US8] 확정 화면·확정 API가 비활성 모델의 선택지를 이유와 함께 막도록 연결한다(판정 모델 비활성이면 제안 없이 직접 확정) — `api/src/modules/artworks/confirm.ts` · `web/src/app/views/ConfirmView.vue` · 담당 B·C · 스킬 API, FD · 근거 spec clarify(첫 버전 비활성화), BR-FBK-04
 - [x] T117 (A 완료 2026-09-29 — stage-job §12 설계 먼저, 워커 점유 순서 보호자→평가→외부, 모델별 result_path, timeout 재시도 없음, 처리 시간·메모리, 이어받기 incomplete 채움, `eval/runner.py run·report`, 시험 17건. M6(P0.5)·M7(P1) 평가는 해당 구간에서) [US8] 평가 실행기를 만든다(같은 어댑터로 항목별 결과·시간·메모리, 인프라 소진은 평가 미완료) — `eval/runner.py` · `serving/workers/stages/eval.py` · 담당 A · 스킬 — · 근거 UC9 BF4, FR-17
 - [ ] T118 (A 부분 2026-09-29 — `eval/items/manifest.yaml` 틀·구성 목표[추론]·등록 방법까지. 팀원 제작 작품 제작·등록이 남음) [P] [US8] 평가 묶음을 만든다(팀원 제작: 사람·비인물·촬영 조건·입체·설명 입력, 기대 경로) — `eval/items/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-17, BR-MDL-04
-- [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 C · 스킬 FD, RL · 근거 S11
+- [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 C · 스킬 FD, RL · 근거 S11 · **D21 보정(2026-09-29)**: 모델 상태 표 2초 폴링(`GET /v1/ops/models`)·지금 불러오기(운영자·평가 담당만)·M6 "첫 요청 때 올라가요", 롤백 후보 없으면 비활성화(clarify), 운영자·연동 개발은 읽기 전용
 
 **Checkpoint**: US8 독립 검증 기준 통과.
 
@@ -302,7 +304,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 C · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
 - [x] T128 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US10] 설명 API를 만든다(`/captions`, `GET /v1/captions/model-status`(S7 대기 요약 warming·maxWaitSeconds·busy, 모델 이름·원래 상태 없음), 승인 고정, G13~G16): 호출 전 `stage_job(stage_kind='caption', origin='caption', status='running')`를 만들고 응답으로 닫는다(`done` / `done_downgraded`+`llm_to_template` / 인프라), 걸린 초안은 `caption_check_failure`만, 인프라 재시도 1초·3초 뒤 소진 시 template·later·direct 선택지(stage-job §11) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
 - [x] T145 (B가 A 몫까지 완료 2026-09-28 — `serving/llm_server/app.py` · `test_llm_server.py`) [US10] `llm-server` `POST /v1/caption` 응답에 `failClasses`(걸린 초안마다 분류, 순서대로, 길이 = `ruleFailCount`)를 싣는다(llm-contract §4, 2026-09-28 추가) — app-api가 `caption_check_failure`를 초안마다 1행씩 쓰는 근거. 시험: 두 번 걸리고 세 번째 통과 → `failClasses` 2개 — `serving/llm_server/app.py` · `serving/tests/test_llm_server.py` · 담당 A · 스킬 API · 근거 SD_03 `caption_check_failure`, FR-26 설명 규칙 검사 실패율 — **B 구현 중 발견(T128)**
-- [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7
+- [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7 · **D21 보정(2026-09-29)**: 첫 생성 지연 안내(`GET /v1/captions/model-status`의 `warming`·`maxWaitSeconds`·`busy`)
 - [x] T130 (B 완료 2026-09-28 — `b/api`, main 병합 전; `serving/model_api/external.py`) [US10] 외부 `caption` 엔드포인트와 약관을 연다(model-api가 키·한도 확인 뒤 `llm-server`로 동기 프록시, `external_job` 없음, 이미지·이름 필드 422) — `serving/model_api/caption.py` · 담당 B · 스킬 API · 근거 FR-28, D17
 
 ### User Story 11 — 만들기 작품 3D 조각 (P1)
@@ -326,6 +328,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
 - [x] T140 (B 완료 2026-09-28; `ops/DEPLOY.md` 절차 — 첫 배포는 팀 서버 확인(U2·U14) 뒤) 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
 - [x] T141 (B 완료 2026-09-28; `docs/추적성.md`) 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
+- [ ] T148 [P] 웹 CI·배포 경로를 맞춘다: `.gitlab-ci.yml`에 `web` 작업(lint·type·Vitest), DEPLOY의 `web/dist`를 nginx `root /srv/uam/web/dist`로 복사하는 단계(지금은 빌드만 하고 옮기지 않음) — `.gitlab-ci.yml` · `ops/DEPLOY.md` · 담당 C(D21) · 스킬 — · 근거 R-19, T140
 
 ---
 
@@ -393,4 +396,5 @@ Phase 2 Foundational ── DB(T013~T018) ─┬─ 앱 API 공통(T019~T026)
 | US10 설명(P0.5) | 5 |
 | US11 3D(P1) | 3 |
 | Final Phase | 8 |
-| **합계** | **141** |
+| D21 추가(T146·T147·T148) | 3 |
+| **합계** | **141 + T142~T145 + 3** |

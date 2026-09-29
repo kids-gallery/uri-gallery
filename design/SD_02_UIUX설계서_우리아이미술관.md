@@ -13,6 +13,8 @@
 > **개정 (2026-09-28, 통합 결정 D18)**: 이용자 중복을 별칭이 아니라 보호자 이메일 계정으로 막게 되어 **S0 가입(이메일)**과 **S0b 로그인 정보 찾기** 화면을 추가하고(SD_01 1.0 · 1.R1~1.R3 · G26 · G27), S1의 별칭 중복 차단을 "같은 별칭 안내(저장은 유지)"로 바꿨다.
 > **개정 (2026-09-28, main `1c460b0` 후속)**: 보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1)이고 초대는 만든 보호자만 한다. 그에 맞춰 **S1b 와이어프레임을 "두 명 찬 상태"로 다시 그렸고**, T107이 만들 **S1c 초대 수락**과 **S1d 가족 없음** 화면을 추가했다(UC15 BF4~6 · A4 · A6 · E1~E3 · E9 · G28 · G29 · U20).
 > **개정 (2026-09-28, 모델 적재 상태 — A 서빙 구현 `763e90a` · B 계약 `fa57e57` · T109 · T143)**: 모델을 올리는 동안은 **오류가 아니다**. C10에 "불러오는 중"·"적재 실패"·"내려감 짐작(M6)"을 더하고, S3·S4에 "그림을 볼 준비를 하고 있어요", S7에 첫 생성 지연 안내(`GET /v1/captions/model-status`, `aa4e55d`), S11에 **모델 상태 표와 "지금 불러오기"**를 넣었다(근거 `docs/A_모델적재_화면요구.md` §3).
+> **개정 (2026-09-29, 웹 구현 전 점검 — 통합 결정 D21, 신지현)**: 구현 전 점검에서 드러난 빈틈을 채웠다. ① 로그인을 **S0a(보호자)**와 **S0o(팀원)** 두 화면으로 나눴다(쿠키·경로·셸이 다르다). ② **역할별 메뉴 표**(§2-1)를 정본으로 두었다 — 지표(S10)는 팀원 세 역할이 읽고 미도달 목록만 운영자 전용. ③ 운영 셸이 새로고침 뒤 역할을 되살리는 `GET /v1/ops/me`와 `POST /v1/ops/auth/logout`, S9 진행을 보는 `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion`을 바인딩했다. ④ S3의 **비활성 모델 선택지**(`unavailable[]`, 409 `model_disabled`), S6의 **동시 수정 충돌**(409 `story_conflict`), S11의 **비활성화**(clarify 확정)를 넣었다. ⑤ §16에 G26~G29를 더해 30개 전건으로 맞췄다. ⑥ 보류 블록은 점선 테두리로 통일하고, 상태 모양을 스타일가이드 토큰에 사상했다(§3-5).
+> **시각 기준**: 색·글꼴·간격·모서리·버튼·칩은 `design/style-guide/스타일가이드_우리아이미술관.html`(R-20)을 따른다. 보조: 같은 폴더의 `스타일가이드_메뉴얼_우리아이미술관.md`, 화면 흐름 참고: `design/prototype/우리아이미술관_프로토타입.html`. 스타일가이드와 이 문서가 다르면 **문구·동작은 이 문서**, 모양은 스타일가이드가 앞선다(제안 미리 선택 금지는 이 문서가 앞선다).
 
 ---
 
@@ -80,6 +82,8 @@
 | 화면 | 명칭 | 대응 프로세스 | 주 사용자 | 성격 |
 |:--:|---|---|---|---|
 | S0 | 가입(이메일) | P1 (1.0) | 보호자(가입 전) | 입력 · 1회 |
+| S0a | 로그인(보호자) `/app/login` | P1 (G0 앞) | 보호자 | 입력 · 자주 |
+| S0o | 로그인(팀원) `/ops/login` | INC2 (G1 앞) | 팀원(운영자·평가 담당·연동 개발) | 입력 · 자주 |
 | S0b | 로그인 정보 찾기 | P1 (1.R1~1.R3) | 보호자(로그인 전) | 입력 · 드묾 |
 | S1b | 가족 보호자 관리 | P1 (1.I1~1.I4) | 보호자(만든·공동) | 설정 · 드묾 |
 | S1c | 초대 수락 | P1 (1.I2) | 초대받은 보호자 | 결정 · 1회 |
@@ -104,6 +108,19 @@
 
 **역할별 뷰** — 같은 프로세스에서 두 역할이 서로 다른 판단을 하는 곳은 없다. 운영 화면은 역할마다 **다른 화면**을 연다(S10 운영자 · S11 평가 담당 · S12 운영자와 연동 개발). S12는 두 역할이 같은 범위를 읽는다(UC11 UML 노트 [추론])라 한 벌만 그렸다. 보호자 계정 모델은 U1로 확정됐다(공동 보호자 초대, 같은 권한, 부모 두 명까지). 역할별로 화면을 나누지 않고 S1b에서 초대·해제 버튼만 만든 보호자에게 보인다(G29).
 
+**역할별 메뉴 표 (정본, D21)** — 운영 셸 헤더(C9)는 이 표에 있는 메뉴만 그린다. 와이어프레임 헤더는 예시이고, 다르면 이 표를 따른다. 값은 API의 역할 검사와 같다.
+
+| 메뉴 | 서비스 운영자 | 평가 담당 | 연동 개발 |
+|---|:--:|:--:|:--:|
+| S10 상태-지표(생존·준비·지표·탭) | 읽기 | 읽기 | 읽기 |
+| S10 결과 미도달 추적 탭(`/v1/admin/unreached`) | 읽기 | — (탭을 그리지 않음) | — (탭을 그리지 않음) |
+| S11 모델 평가(매니페스트·모델 상태 표) | 읽기 | 읽기·조작 | 읽기 |
+| S11 지금 불러오기 | 조작 | 조작 | — |
+| S11 평가 요청·판단·승격·롤백·비활성화 | — | 조작 | — |
+| S12 API활용(시험 호출 포함) | 읽기·시험 | — (메뉴를 그리지 않음) | 읽기·시험 |
+
+지표 읽기를 세 역할에 연 근거: 평가 담당은 롤백을 지표로 판단하고(UC9 A1, S11 → S10), 연동 개발은 매뉴얼의 "상태 보기"로 S10을 연다(UC11 A5). 지표에는 식별 정보가 없다(BR-OPS-02). 미도달 추적은 운영자의 조치 목록이라 운영자에게만 둔다.
+
 ### 2-2 내비게이션 구조
 
 전진은 실선에 통과 게이트 ID를, 되돌아가거나 대화상자·확장 패널을 여는 이동은 점선으로 그렸다.
@@ -114,7 +131,8 @@ skinparam backgroundColor #F3F1EB
 skinparam shadowing false
 title 화면 지도와 이동 경로
 
-rectangle "로그인\n(보호자 - 팀원)" as LOGIN
+rectangle "S0a 로그인\n(보호자)" as LOGIN
+rectangle "S0o 로그인\n(팀원)" as OLOGIN
 rectangle "초대 메일 링크" as MAIL
 package "계정 - 가족" {
   rectangle "S0 가입(이메일)" as S0
@@ -151,9 +169,9 @@ S1c --> S4 : G28 수락
 S1d --> S1 : 새 가족 공간
 S4 ..> S1b : 가족 보호자
 S1b ..> LOGIN : 나가기 - 세션 삭제
-LOGIN --> S10 : G1 운영자
-LOGIN --> S11 : G1 평가 담당
-LOGIN --> S12 : G1 운영자 - 연동 개발
+OLOGIN --> S10 : G1 세 역할
+OLOGIN --> S11 : G1 평가 담당 (읽기는 세 역할)
+OLOGIN --> S12 : G1 운영자 - 연동 개발
 S4 --> S1 : G0
 S1 --> S2 : 아이 1명 이상
 S4 --> S2 : 아이 1명 이상
@@ -190,7 +208,7 @@ end note
 @enduml
 ```
 
-**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1Vs9PG1cQvu9fMaIXOBh5bTA2hyo0agxSmiKh3nqxgVAUsCNw1ENVyQ4LMj8iTIrxknqpkZxiIrdawJBFNf2D9r39Hzrz3vPuemkOlrw735v5Zuabeftks5TbKL1ZX9M2X60WXuc2cuuQzy2-WtkoviksPS2uFTfgq2fJZ_q334QQmz_lloo_rxZW4GVubXNZK62W1pbBOz1mlz3gF2V2aPDTMnCrxw5Pwb1-YOdNTdtYXizlCiuIHMFn97PDLefHwii76Xmmw89qEAPvoMx_r42NQG4Tnn-fnXsRPsR7VXZQBnZ5zK0-sIuKV-kK5Hczc8-118g6t4Iw98bgrTo6c-0yP78agV80gJCbhbiwnG2PEj_hTAZciEeBefCJAvpEpsDtf13HVvh85IC-CIokr5rMepAwfTEKW1LcgDd2uHWgYEvar0EWQVV4_X9ymAB-duS9rwL7dMnOrRi_MLyTXawm_sHUsBdVldRENDg6NDBzcHtl9mdXxY6C8gOGAY8hfDTzxIAPN7uI8kuUiOCS2OIatYe3mrxeRZ51fJLYZAQ7icqx3Zu-AFmOBE1GQClSGa_3MSLw32w_cCqCmwJutNmnbWoQBsZKzcfHJ5FNhxlKcAtTkTNpv00tg-83JSgdAWWAv_0Ls1Esg06gDHAi-FYFi6cCZMId5h963KwMpmZUSl-E-nA59rjjehzQl7fVxAhl76hJvTaa7N7ge22QvoJAelTKuo5K6bB3DniHu5hVjO_du9eX6EQ-A9vvsf37wfFHekjAzPycd9pEbjSAbLdH8QdRcdh4wxazbjeZ3Ry4SWC-mphjiMW-Ri3CNGTjQVWP3M99ZR8fR3sc7XI2h97m8fUXBlHDM8K1Tq4TKWSSTUwNdoRsiUYeyJP0OY1S7aIYSIXsfRszb2NzgwBhwjip08OzqtGyUcbFIV4xRZ2camQMUk6k1ULQyKPPl29VB87dm1vXNjSEi5T1fBDXn0CNXofzYG9NxJDysf6Gw7dNpcWhFKioWT2QyJBRl8YhEQwBEpHT0VYT5aABceQoH-mcWjS6GDuc0q2Kj_6SOSHNSXI2Sc1MgbdzS0sgBol4QkNLUNa0Wh_E6drEtQO8feSHmESIFADgKKoqCZhXN3GGcCD-8eodyGY0xIojKfKapLUjxGGbNKB4au8evbBax_dNQPlWDGyjhjceymqbtT5qaBSYtKicTklgFeUKGSKYJqho95SievaRt2riQBJ_ExoahD0cTm6xWZxwZC2sVEslYm6_o0Rnp3zjhNDJ3_zOVNsUBQvulSNgqUeVE2eSio5Y08Zgs__wNAkzGR-UIU5SbYNYmcdE0iSIAC87PjiWCShm9bTIOyNHUlxqGmlXjoNI8aKNa4ef9IHqVG9RV7mFrNEqUSRBteXc2xq_xkitKrc7IUhcjB2tUZorsUB0PWRj521mX9ElxfY7IDdtiEcogvISI5Dr4EV8V2V_dLnZJqdaoVhahnyxVCquQ_GlWIUAWBivYQJN811TXT1Uj3n0T18t9YfRWZ1UP6unxrhlEEUS3n57nE6fOuyuDF6lx6w-zcuJ4-05bO8Y69llZwfqJhEFbuyIQ8uFJSAmj-jQR8F8HJvVwbjUYN7Y5hauD3F5cauMdvrGwMsL9woaJJIRWEIatTA7P9AT_Idfk_8BPqqXWw==)** — 클릭 시 브라우저로 연결됩니다.
+**[「화면 지도와 이동 경로」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1Vs9PG1cQvu9fMaIXOBh5bTA2hyo0agxSGpBQb73YQCgK2BE46qGqZMOCzI8Ik2K8pDY1klNM5FQLGLKopn_Qvrf_Q2fee95dL-VgybvzvZlvZr6Zt882Cpn1wru1VW3jzUrubWY9swbZzMKb5fX8u9zi8_xqfh2-eRF_oX__XQCx8XNmMf_LSm4ZXmdWN5a0wkphdQnc02N22QV-UWSHBj8tAm902eEpONcP7LyuaetLC4VMbhmRQ_PRDOA756vNG_ZPuWF203VNm59VRoYgswEvZ9Mzrwbx-QG8e1Dkfyjw7CM075bZQRHY5TFv9IBdlNxSR0B_mJp5qb3F9DLLCHNuDN6sQgQcq8jPr4bgVw1gIKiwnG0PUyLCmYw4Hw0Dsz47QJ-YDnDrX8e2FD4bOqAvgCLJyyZrPEiYvhCGLSpuwGs7vHGgYIvab34WXumAV_8nhzHgZ0fuhzKwz5fsvBHhF4Z7soslxD-YGjatrJIaCwdHhwZmDk63yP7qqNhhULbP0OcxgA9nHuvz4WYHUV6JYiFcHNyDCrWHN-u8WkaeVXyS2HgIO44Ss5ybngA1bAkaD4ESJEde7WFE4L9bXuBECDcB3Gixz9vUIAyMlZqLjo4jmzYzlOLmJ0Jnkl6bmgbfr0tQMgRKAd_8gtkoln4nUAY4Onyr5Ol_PhXsMP_Y5WapP15K-yLUx8uRxx3Xo4C-3K06Rii6R3XqtVFn9wbfa4H05QfSw1LWdVRKm723wT3cxawifO_eub6kmRPPwPa7bP--f_yRHmIwNTfjntaRGw0g2-1S_H5UHDZes8RSsOrMqvfdxDBfTcwxRCLfohZhEtJRv6pHzteeso-Ooj2KdjmbA2-z-PqJQdTwjHCtk-tYApmkYxP9HSFbopEH8iR9TqJUOygGUiH70MLMW9hcP0CQME7q5OCsarRslHFhgFdEUSenGhn9lGNJtRA08ujx5VvlvnPn5taxDA3hImU968f1JlCj18E82KaJGFI-1t-w-baptKjNBnOgqqZ1QmAOX9xqc9CsS_OADgB34wM6ZnvHgXMjgwdjyu9TKqBs_N5Ekb58pHNqB-liInGAt0oe-ilzTJrj5Gyc-pwAd-eW9kMEYtGYhha_4km1WYjTtYkbCXjryAsxjhCpDcApVQUUMLdq4njhrPzjVtuQTmmIFUcS5DVOG0noxjJpdvHU3j16YZW255uA8q2Y5VoFb01U3DZrftLQKDBJUTmdksAqyu0yQDBJUKGECUX17BNvVsSBOP7GNDQIezCcXHDTOPzIWliplkrf3HpPiU5PeMYxIaG_-Z2pFi1qGZwrW8ASjyonzsQVHbHBjf7S__F5HKZSHihFnKQQ-7FSj4kkSRA-Xna8fyzlU0zrSZF3Sk6ruO80UrWcFJHiRQs3Ej_pAdWp2qSu8gayRqtEkQTVAnRuK_waIzXL3GoHIFExkbRhaeTEbtH1gI2dt5h1RfcX22-DXMIBHoEIykuEQI6Nd_Rdmf3Z4WaLnGq5fGEJsvlCIb8G-ddiSwJgYdyaCTTod3V1K1E95tA_fdBUH4andVL9tJ4Y4Q2DKJLw9lujdPrUZndFcEtd1ujRvJzY7p4thnezw84O1CUjClzbEYeWcotATB7Roe-FuSg2q41xqcG8ts0buFnEvcYbRbTT5wfea7hy0CCRjMASUqsE2XmBnuE_-iL9D6uRtuQ=)** — 클릭 시 브라우저로 연결됩니다.
 
 **읽는 법**
 
@@ -198,6 +216,7 @@ end note
 - **점선 셋이 되돌아가는 루프다.** 다시 찍기(S5 → S2, H7), 낮춘 결과로 걸기(S5 → S4, H6), 확정 전 작품(S4 → S3, UC3 A9).
 - **계정·가족 화면(S0 · S0b · S1c · S1d)은 G0 앞에 있다.** 가족에 속하지 않은 계정은 S4 대신 S1d로 가고, 초대 메일 링크는 로그인(없으면 S0 가입) 뒤 S1c를 연다. S1b는 S4의 가족 메뉴에서 연다.
 - **S9는 대화상자다.** S4 · S5 · S1 어디서든 열리고, 끝나면 S4로 돌아온다.
+- **로그인은 둘이다(D21).** 보호자는 S0a(`/app/login`, `POST /v1/auth/login`, 쿠키 `uam_sid`), 팀원은 S0o(`/ops/login`, `POST /v1/ops/auth/login`, 쿠키 `uam_ops_sid`). 서로 링크하지 않는다(UX8).
 - **운영 화면은 보호자 앱과 연결선이 없다**(UX8). 운영 화면 셋 사이의 점선은 UC11 A4·A5와 UC9 A1이 적은 참조 이동이다.
 
 ### 2-3 진행 레일
@@ -237,7 +256,7 @@ ANY --> 삭제중 : S9 삭제 - G18
 @enduml
 ```
 
-**[「작품 상태 전이와 화면」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFVM9vElEQvr-_YlJvJiRSAhYPTdVYejImnozxsApWUgoGtvFKW2JowXRpWbNUtlkMabFBs8XG0MhfxJv9H5z39qd0jYc9vJlvvvlm3vd2raYqVXVnu8RqW8Xye6WqbMNr5c3WZrWyU84_rpQqVbiznlpPPnkUQdTeKfnKh2J5E94qpVqBqUW1VAA86zjHTcD9XWe_D2g10LzGXh2cXpd_u4YE4EXD-XwA3GqiOUPTAPyi4aTPSINagCWnraGlAw47S6DUwD3SKcj3dJHn7fp8arsQGXEDPgonBj8fByzucYHFnC6ymNM4Fkc38KIO_PK3o48idG7cDQcVNG-rH_aVx0hf3PuOlszTJvjliJ9YgAOblkaLs-Y3dbdMokTZy7uvIJFYJaIONg2ujeABPF8GNMYkgJQSSy4NuQwLAQIebI3gz-4lksBPrvjAZGFcoiKLI-BGCkRXvQnc0PhhF3L3AT-26b7YX0ipx1-o0JPymISYFRam_B7-WkWPNMwn9vznDPhRg7fGC-jbi6WaXDYqIyCT-MMbEXDXkgb82kK9gaddYTN9gGdaTElUeRr43g_8ZXii-KAP86upgG5kWIyYuJ6yT1jJwrx7cZ4DBDoDDslrkuXpTegz7_6SyyxExdSEYCqVb-P8QJiM2wYauzET-u7xJmwNpSXtT3KulX_O9Z8yz8G-aeX7lm59-PQFo-82SdY7yiGpb5ATSOFsuttkFvjxkAzbpr-Bh2drhXKe_kZ_ABMba2s=)** — 클릭 시 브라우저로 연결됩니다.
+**[「작품 상태 전이와 화면」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFVM9vElEQvr-_YlJvJiRSAhYPTdVYejImnozxsApWUgoGtvFKW2JowXRpWbNUtlkMabFBs8XG0MhfxJv9H5z39qd0jYc9vJlvvvlm3vd2raYqVXVnu8RqW8Xye6WqbMNr5c3WZrWyU84_rpQqVbiznlpPPnkUQdTeKfnKh2J5E94qpVqBqUW1VAA86zjHTcD9XWe_D2g10LzGXh2cXpd_u4YE4EXD-XwA3GqiOUPTAPyi4aTPSINagCWnraGlAw47S6DUwD3SKcj3dJHn7fp8arsQGXEDPgonBj8fByzucYHFnC6ymNM4Fkc38KIO_PK3o48idG7cDQcVNG-rH_aVx0hf3PuOlszTJvjliJ9YgAOblkaLs-Y3dbdMokTZy7uvIJFYJaIONg2ujeABPF8GNMYkgJQSSy4NuQwLAQIebI3gz-4lksBPrvjAZGFcoiKLI-BGCkRXvQnc0PhhF3L3AT-26b7YX0ipx1-o0JPymISYFRam_B7-WkWPNMwn9vznDPhRg7fGC-jbi6WaXDYqIyCT-MMbEXDXkgb82kK9gaddYTN9gGdaTElUeRr43g_8ZXii-KAP86upgG5kWIyYuJ6yT1jJwrx7cZ4DBDoDDslrkuXpTegz7_6SyyxExdSEYCqVb-P8QJiM2wYauzET-u7xJmwNpSXtT3KulX_O9Z8yz8G-aeX7lm59-PQFo-82SdY7yiGpb5ATSOFsuttkFvjxkAzbpr-Bh2drhXJe_I3-AH6Qa3U=)** — 클릭 시 브라우저로 연결됩니다.
 
 ---
 
@@ -290,7 +309,7 @@ salt
 @enduml
 ```
 
-**[「C1 진행 레일 - 상태별 변형」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqllE1rE1EUhvfzKw51KQGjuNCFlH6J4MqVMIwQbZHSNJEkXdVCTEdJk5EmbSZOZRJuNU3SGCFmBpxi_ENzzv0PnpuZaFMQiu5y7_l63vPeyWK-kMoVdrbTWn5rM_MqlUttw_PUi62XuexOZn05m87m4MbanbXk6pJW2CykN2A5CdQzZfMAUJSpNYEE0P4bue-iZwJ6RenYWj6VLmi7N7XdZwthMEIv4CTpmNQeAlb7oWdipQFoFUPflE6woEHc8j6QqFPZwVofHoC0aiRsoE6dD7o8sdVJVQUjg29o7GB3GIdVtBXEURWsXPA56kPCpKqrErU9hYS9A9l2GGn6w4qR6EMNwrFFLV9WAni0ci2qOairTHp0krZDvSLg4Ie0-wAP7xl_54MZE7VrXMqTTRfHvNdhQMLFU5cRR6E3wbMJZ1p43Jm1bpap6dPHBrwGfa4He-KrjcXaI9IEKF-qHRQdPOT2NSf0BGBTYMmJLvr_pF-_tAB-F2VX8TNrPK07VMZz0Li-ZcCJDTz3qcVY1S9kmwpQGfbuPR5OWHKkLC5htXg2NbdeAzodhd_8KQ1eCFYDNPj5_8ZeJdd_oxtz7Gx28jZP058asW-zUjox8bOlvAIDlLODc-XJ9wC7I8CSUPwlh99irO3TW65XGy195WzV-7IK_c-1oZJaLLldl0f8eTr8OPp4LNQq-C4KiXA8iV8LLD1JrKw-Tty6y5P2tMWNzDr_GfwCl1k8Iw==)** — 클릭 시 브라우저로 연결됩니다.
+**[「C1 진행 레일 - 상태별 변형」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqllE1rE1EUhvfzKw51KQGjuNCFlH6J4MqVMIwQbZHSNJEkXdVCTEdJk5EmbSZOZRJuNU3SGCFmBpxi_ENzzv0PnpuZaFMQiu5y7_l63vPeyWK-kMoVdrbTWn5rM_MqlUttw_PUi62XuexOZn05m87m4MbanbXk6pJW2CykN2A5CdQzZfMAUJSpNYEE0P4bue-iZwJ6RenYWj6VLmi7N7XdZwthMEIv4CTpmNQeAlb7oWdipQFoFUPflE6woEHc8j6QqFPZwVofHoC0aiRsoE6dD7o8sdVJVQUjg29o7GB3GIdVtBXEURWsXPA56kPCpKqrErU9hYS9A9l2GGn6w4qR6EMNwrFFLV9WAni0ci2qOairTHp0krZDvSLg4Ie0-wAP7xl_54MZE7VrXMqTTRfHvNdhQMLFU5cRR6E3wbMJZ1p43Jm1bpap6dPHBrwGfa4He-KrjcXaI9IEKF-qHRQdPOT2NSf0BGBTYMmJLvr_pF-_tAB-F2VX8TNrPK07VMZz0Li-ZcCJDTz3qcVY1S9kmwpQGfbuPR5OWHKkLC5htXg2NbdeAzodhd_8KQ1eCFYDNPj5_8ZeJdd_oxtz7Gx28jZP058asW-zUjox8bOlvAIDlLODc-XJ9wC7I8CSUPwlh99irO3TW65XGy195WzV-7IK_c-1oZJaLLldl0f8eTr8OPp4LNQq-C4KiXA8iV8LLD1JrKw-Tty6y5P2tMWNzLr6M_gF04Y8LQ==)** — 클릭 시 브라우저로 연결됩니다.
 
 | 구분 | 내용 |
 |---|---|
@@ -331,11 +350,11 @@ salt
 @enduml
 ```
 
-**[「C2 차단 블록과 C3 비활성 버튼 - 변형」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFlFFP2mAUhu_7K07czZaFC8bVuHIzc9lvMC5h0yxGlAXxyplUVhaELoBSqdqSshWQhSVVmq0k_UU95_sPO19RRMdc0hs-vnPe933OaRd3Cpl8YXcrq-xsbmx_zOQzW_Au837zQz63u722lMvm8vBoObWcfPVSKWwUsuuw9AzIu8DqBWDQxI4djUJYSgGONXFqkXYJeKWJSggJwJEqTEPZyWQLyt5TZe_twnVhAoThk2MBfQ_pyo88FYSpUXsIVBzS2YDadYDXyeSCAvGJ5aQh-h1gzwMsOmSrQKaLFRPI9sW5RnYIVOZfrS904tNZk8vuCKTZii_MQPZNAPXVKCjLWhCnTRz4fB2rLtk6iJNDrJ2mYeVWDaKRQ2MzCrxV-AQr5KjU7sLjadwn3HHWmxYXjOqxtBawm1Vl_-HsLI7dQCbFti6Dp2aDv3gD5JfJKAN7wEo3jm9o1D-4pgXU8aJLGcYgm9u4DY5GrfpcEKJ2OJH0sToGoat0HjO50wKPXJikY0Dz6LCREV8bMtEuWSF2LEDvfMqof0BOA-jYuzm5zYB9HY9dPr-H8F9RruHx_LBrynsVlx8pKI5U7IUS1_NZXBMB_Mrr0G5QqyTHjIMy_WpK190wpsjAe0OsNP8Di6oWi4mSJZdZ9nCnhMx6XF61Ik8D-nwgDOtvUFMpXjmeWYXHhjUNsBaynOSCPwb8Bk0I3qzJt1J05c2sCS-1rc8mpOLP-A9pPZApxVH5oRBxA5mgbmJNx54_fVlsfc5w73vaVxbXt9f4C_EHuO5gxQ==)** — 클릭 시 브라우저로 연결됩니다.
+**[「C2 차단 블록과 C3 비활성 버튼 - 변형」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqFlFFP2mAUhu_7K07czZaFC8bVuHIzc9lvMC5h0yxGlAXxyplUVhaELoBSqdqSshWQhSVVmq0k_UU95_sPO19RRMdc0hs-vnPe933OaRd3Cpl8YXcrq-xsbmx_zOQzW_Au837zQz63u722lMvm8vBoObWcfPVSKWwUsuuw9AzIu8DqBWDQxI4djUJYSgGONXFqkXYJeKWJSggJwJEqTEPZyWQLyt5TZe_twnVhAoThk2MBfQ_pyo88FYSpUXsIVBzS2YDadYDXyeSCAvGJ5aQh-h1gzwMsOmSrQKaLFRPI9sW5RnYIVOZfrS904tNZk8vuCKTZii_MQPZNAPXVKCjLWhCnTRz4fB2rLtk6iJNDrJ2mYeVWDaKRQ2MzCrxV-AQr5KjU7sLjadwn3HHWmxYXjOqxtBawm1Vl_-HsLI7dQCbFti6Dp2aDv3gD5JfJKAN7wEo3jm9o1D-4pgXU8aJLGcYgm9u4DY5GrfpcEKJ2OJH0sToGoat0HjO50wKPXJikY0Dz6LCREV8bMtEuWSF2LEDvfMqof0BOA-jYuzm5zYB9HY9dPr-H8F9RruHx_LBrynsVlx8pKI5U7IUS1_NZXBMB_Mrr0G5QqyTHjIMy_WpK190wpsjAe0OsNP8Di6oWi4mSJZdZ9nCnhMx6XF61Ik8D-nwgDOtvUFMpXjmeWYXHhjUNsBaynOSCPwb8Bk0I3qzJt1J05c2sCS-1rc8mpOLP-A9pPZApxVH5oRBxA5mgbmJNx54_fVlsfc5w73vaVxbXt9fkF-IPGcxgzw==)** — 클릭 시 브라우저로 연결됩니다.
 
 | 구분 | 내용 |
 |---|---|
-| 상태 | 차단(해제 주체 = 현재 사용자) · 차단(해제 주체 = 다른 사람) · 보류(G19, 스스로 풀림, 노란 테두리) · 종결(해제 없음, `삭제 중`) |
+| 상태 | 차단(해제 주체 = 현재 사용자) · 차단(해제 주체 = 다른 사람) · 보류(G19, 스스로 풀림, 점선 테두리) · 종결(해제 없음, `삭제 중`) |
 | 구성 | 제목 행 `막힘  G번호 - 요약  E번호` · 사유 · 해제 주체 · 다음 행동(버튼). 세 줄은 빠질 수 없다 |
 | 변형 규칙 | 해제 주체가 현재 사용자면 **해제 행동 버튼**을 준다. 다른 사람이면 해제 버튼을 주지 않고 **대안 행동**만 준다(예: G13의 기본 문장·직접 쓰기). 요청 보내기 채널은 상류에 없어 만들지 않았다(§16 사상 규칙 ③) |
 | C3 동작 | 비활성 버튼은 라벨에 `(비활성) - 사유`를 붙이고, hover·키보드 포커스에서 같은 사유를 말풍선으로 보인다. 누르면 아무 일도 없고 C2로 포커스를 옮긴다 [추론] |
@@ -350,8 +369,33 @@ salt
 | C6 낮춤 안내 | 낮춤 없음(숨김) · 모델 낮춤 · 인프라 실패와 구분된 "처리하지 못함" 문구 | 움직임 → 2.5D · 2.5D → 액자 · 3D → 2.5D · 분리 실패 → 액자 · 설명 LLM → 템플릿(S7) | 읽기 전용. S8에는 두지 않는다(BR-EXH-07) |
 | C7 이야기 카드 | 입력(S6) · 표시(S8) | 한마디 칸(원문, 표시 없음) · AI 작성 칸(출처 LLM·템플릿이면 "AI 작성", 직접이면 표시 없음, D6) · 승인 전 초안(S7에서만) | 한마디 칸과 AI 칸은 입력·저장·표시가 모두 따로다. 한 칸의 편집이 다른 칸을 바꾸지 않는다 |
 | C8 전시 조건 체크 | 둘 다 충족 · 결과 확인 빠짐 · 이야기 빠짐 · 둘 다 빠짐 | 체크 두 줄 | 빠진 줄을 누르면 해당 화면(S5 또는 S6 필수 칸)으로 간다 |
-| C9 셸 헤더 | 보호자(가족명 가림) · 팀원(역할 · 계정 가림) | 보호자 앱 헤더 · 운영 화면 헤더 | 운영 화면 헤더에는 보호자 앱으로 가는 링크가 없다. 역할에 없는 메뉴는 그리지 않는다(403 링크를 두지 않음) |
+| C9 셸 헤더 | 보호자(가족명 가림) · 팀원(역할 · 계정 가림) | 보호자 앱 헤더 · 운영 화면 헤더 | 운영 화면 헤더에는 보호자 앱으로 가는 링크가 없다. 역할에 없는 메뉴는 그리지 않는다(403 링크를 두지 않음). 메뉴는 §2-1 역할별 메뉴 표를 따른다. 보호자 셸은 `GET /v1/me`(계정·가족), 운영 셸은 `GET /v1/ops/me`(역할·가린 계정, 새로고침 뒤 복원)와 `POST /v1/ops/auth/logout`을 쓴다(D21) |
 | C10 모델 상태 칩 | 준비됨 · 미준비(`not_loaded`, 기동 순서 대기) · **불러오는 중**(`loading`: 경과 초, 예상 시간이 있으면 남은 시간, 예상의 1.5배를 넘으면 "예상보다 오래 걸려요") · **적재 실패**(`failed`: "60초마다 다시 시도해요") · **내려감 짐작**(`cold`, M6만: "첫 요청 때 올라가요", 짐작임을 표시) · 비활성(라이선스 확인 전) · 비활성(P0.5) · CPU 실행 · 비노출(P1) · 확인 불가 | 표 행(S10 · S11) · 인라인(S12) | "미준비"와 "비활성"과 "CPU 실행"은 모양과 문구를 모두 다르게 한다(§17). "불러오는 중"은 오류 색을 쓰지 않는다(적재 중은 오류가 아니다). 값은 `GET /v1/ops/models`의 `load.state` · `elapsedSeconds` · `remainingSeconds` · `expectedSeconds` · `lastLoadSeconds` · `expiresAt`(T109 · T143) |
+
+### 3-5 상태 모양 → 스타일가이드 토큰 사상 (D21) [추론 — 신지현 검토]
+
+§17의 "문구 + 모양" 규칙을 스타일가이드 토큰으로 옮긴 것이다. 스타일가이드에는 오류 색(빨강)이 없고 이 문서도 색만으로 상태를 말하지 않으므로, **모양은 테두리 굵기·선 종류·채움으로** 구분한다. 강조색 `--color-accent-magenta`는 상태 표현에 쓰지 않는다.
+
+| 대상 | 모양 | 토큰 |
+|---|---|---|
+| C2 차단 | 굵은 실선 테두리 블록 | 테두리 2px `--color-ink` · 배경 `--color-canvas` · 모서리 `--r-md` · 안쪽 `--s-md` |
+| C2 보류 | 점선 테두리 블록 | 테두리 2px dashed `--color-ink` · 배경 `--color-block-cream` |
+| C2 종결 | 가는 테두리 + 채움, 블록 안 조작 모두 잠금 | 테두리 1px `--color-hairline` · 배경 `--color-surface-soft` |
+| C6 낮춤 안내 | 테두리 없는 안내 블록 | 배경 `--color-block-lilac` · 모서리 `--r-md` |
+| C3 비활성 버튼 | 원래 버튼 모양 유지 + 라벨 뒤 사유, 채움만 옅게 | `.btn-*` 그대로, 배경 `--color-hairline-soft` · 글자 `--color-ink` (대비 4.5:1 유지) |
+| C1 현재 단계 | 채운 알약 | `--color-inverse-canvas` 배경 · `--color-inverse-ink` 글자 · `--r-pill` |
+| C1 지난·남은 단계 | 테두리 알약 | 1px `--color-hairline` · `--r-pill` |
+| C1 막힌 단계 | 굵은 테두리 알약 + 게이트 ID | 2px `--color-ink` · `--r-pill` |
+| C10 준비됨 | 채움 | `.chip` + 배경 `--color-inverse-canvas` · 글자 `--color-inverse-ink` |
+| C10 미준비 · 내려감 짐작 | 빈 칸(테두리만), 내려감 짐작은 "짐작" 문구를 붙임 | 1px `--color-ink` |
+| C10 불러오는 중 | 빈 칸 + 경과/예상 막대(오류 색 없음) | 1px `--color-ink` · 막대 `--color-block-mint` |
+| C10 적재 실패 | 굵은 테두리 칸 | 2px `--color-ink` |
+| C10 비활성(라이선스·P0.5) | 사선 칸 | `repeating-linear-gradient`(`--color-hairline`) |
+| C10 CPU 실행 | 연한 채움 | 배경 `--color-block-mint` |
+| C10 비노출(P1) | 점선 칸 | 1px dashed `--color-hairline` |
+| C10 확인 불가 | 회색 채움 | 배경 `--color-hairline` |
+
+중단점: 스타일가이드의 560 · 768 · 960px를 레이아웃 기준으로 쓰고, 시험은 390px(휴대폰)·1440px(데스크톱)에서 한다(T138). 글꼴 굵기 320·330·340·540은 가변 글꼴(Inter Variable · Pretendard Variable)로만 나온다(T011).
 
 ---
 
@@ -390,7 +434,7 @@ salt
 @enduml
 ```
 
-**[「S1 아이 관리 - 같은 별칭 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNU8Fu2kAQvfsrRuTWNkgk6iWHNm3V_ECPFZVoE1VRCFRATgTJCaYigBRo7RSIjYxKSomI6hSHGIkv8o7_oTNrg0jVQ-2LZ_zm7Xszs9v5QipXODpMK_mD_cynVC51CO9THw4-5rJHmd1X2XQ2B2s7mzuJ1y-Vwn4hvQdvEoCGhpYLvquKH2NYB9_poKWCmGg4u6G_VXHqApZPgrKp5FPpglJ8rBQBuw7Do2Lxy8OqTRRULyZu0Paw14Rj4lKxf7sFgdF-JLQBZd5irxV8qYK4Hom-leSM6Jv-vcdMl-UklJR4nPmHWnBxtkX46ISvtxL_DCICbI9JgO85lAo6BtoGffi_HX8yl7HlMdZy0ZiHILQ1rJsR_7vYQwOwIa4rMaW4tvB9vDyn2uag71CsgHRCcWJDKg-x_sTGWZtOSS7l4ukN2maSCoSjc8Hm_-FL9LK4KDvVqYOyp1wohg2iu-SfXT1G3FgfkGwQDRXrdtRs2aypKq5cUdOjQrQ0sn-CF0T5fY6aR_UsbWE1Jl2tPCvk6zR7S1RoODpacw6nJmXwmyPONXkEKRqq1MhaKGzhQO7NX9sEL54yg61i70qmm00SFbl5CGVJbJ780HbRNKohMg60LOSYtgZEq-3PGpR8EvbUDqPnrF52kPXR0LE2CCqm7IzucKF_NxZTLTCYkAXRmnRHvLI4aInJHcvg6pG07JMg20BzLo8cnkU2qX_1AVoNoD0V5x1a1VVhTTnef82c-7O8BsstpioJx_uf-LnB16CkbO9lduky_wEXjB-N)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1 아이 관리 - 같은 별칭 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNU8Fu2kAQvfsrRuTWNkgk6iWHNm3V_ECPFZVoE1VRCFRATgTJCaYigBRo7RSIjYxKSomI6hSHGIkv8o7_oTNrg0jVQ-2LZ_zm7Xszs9v5QipXODpMK_mD_cynVC51CO9THw4-5rJHmd1X2XQ2B2s7mzuJ1y-Vwn4hvQdvEoCGhpYLvquKH2NYB9_poKWCmGg4u6G_VXHqApZPgrKp5FPpglJ8rBQBuw7Do2Lxy8OqTRRULyZu0Paw14Rj4lKxf7sFgdF-JLQBZd5irxV8qYK4Hom-leSM6Jv-vcdMl-UklJR4nPmHWnBxtkX46ISvtxL_DCICbI9JgO85lAo6BtoGffi_HX8yl7HlMdZy0ZiHILQ1rJsR_7vYQwOwIa4rMaW4tvB9vDyn2uag71CsgHRCcWJDKg-x_sTGWZtOSS7l4ukN2maSCoSjc8Hm_-FL9LK4KDvVqYOyp1wohg2iu-SfXT1G3FgfkGwQDRXrdtRs2aypKq5cUdOjQrQ0sn-CF0T5fY6aR_UsbWE1Jl2tPCvk6zR7S1RoODpacw6nJmXwmyPONXkEKRqq1MhaKGzhQO7NX9sEL54yg61i70qmm00SFbl5CGVJbJ780HbRNKohMg60LOSYtgZEq-3PGpR8EvbUDqPnrF52kPXR0LE2CCqm7IzucKF_NxZTLTCYkAXRmnRHvLI4aInJHcvg6pG07JMg20BzLo8cnkU2qX_1AVoNoD0V5x1a1VVhTTnef82c-7O8BsstpioJx_uf-LnB16CkbO9ldvky_wE3Ix-X)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 4-2 영역별 설계
 
@@ -446,7 +490,7 @@ salt
 @enduml
 ```
 
-**[「S0 가입 - 메일함 확인 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptU11r01AYvs-veKl3lRXFOy9mmbg_4OWoELeiY_2QtgNhFto1G7ErqFuytbMZGda1lcqyLmCE_qK87_kPvic5abbhuTp5v57nfc6TfL2h1xq75ZJW39mufNBrehne6ps772rV3crWy2qpWoNH68_Wn75a0xrbjVIRXj-B0GvRxQGsAE4tchbCnoAY2OQEQLaJ-z5Qpy06Q62ulxra3mNtD-jcw6sZpw1yfMDrgEw39FvwCTbwchj-Cbi5AE0tl5PFY0Ocfn4OGzFOAVYVUIKyuhx0coOXjvy--CaOTaD-jGHCwOOQrHVtvoRzL7y92-v4ZC_iInINOhoq4DcZTsVITCrdchmVY_CvgV4L56boBzjuAXrfJZlzK6NBWsmLZd7r2XzxYza3WS0Dn3v5iHyyuNoGLYv6Jk-SwlqepLBM4E9GHvfwZETjFoe7MSaPvMtHombVgfhkHpYoGf5fKcGuDLmya4iBpVpWErlZT7z1sWtFW98j0ozki18_tQU5hgIUNrf_WJARqAV_TfDETTTmGM1_09lXDgzIaYEEn_qSkuKL47ZozyIZmEHHpFOfm3IR4-tAzRH2MAI57CE_4dRP7JhqLuti2ZYhOjukYVzdHYleoGgzTHjj4X6fveVKj-DxCPBoFF2jN0_3kfM44_SAfYtfBmzdhHbshrSPbVeQrn_Au08HE8biWS9SXxRY1aaWL1a2-P_8Bz7cDK8=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S0 가입 - 메일함 확인 안내 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptU11r01AYvs-veKl3lRXFOy9mmbg_4OWoELeiY_2QtgNhFto1G7ErqFuytbMZGda1lcqyLmCE_qK87_kPvic5abbhuTp5v57nfc6TfL2h1xq75ZJW39mufNBrehne6ps772rV3crWy2qpWoNH68_Wn75a0xrbjVIRXj-B0GvRxQGsAE4tchbCnoAY2OQEQLaJ-z5Qpy06Q62ulxra3mNtD-jcw6sZpw1yfMDrgEw39FvwCTbwchj-Cbi5AE0tl5PFY0Ocfn4OGzFOAVYVUIKyuhx0coOXjvy--CaOTaD-jGHCwOOQrHVtvoRzL7y92-v4ZC_iInINOhoq4DcZTsVITCrdchmVY_CvgV4L56boBzjuAXrfJZlzK6NBWsmLZd7r2XzxYza3WS0Dn3v5iHyyuNoGLYv6Jk-SwlqepLBM4E9GHvfwZETjFoe7MSaPvMtHombVgfhkHpYoGf5fKcGuDLmya4iBpVpWErlZT7z1sWtFW98j0ozki18_tQU5hgIUNrf_WJARqAV_TfDETTTmGM1_09lXDgzIaYEEn_qSkuKL47ZozyIZmEHHpFOfm3IR4-tAzRH2MAI57CE_4dRP7JhqLuti2ZYhOjukYVzdHYleoGgzTHjj4X6fveVKj-DxCPBoFF2jN0_3kfM44_SAfYtfBmzdhHbshrSPbVeQrn_Au08HE8biWS9SXxRY1aaWL1a25P_5D0uVDLk=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -488,7 +532,7 @@ salt
 @enduml
 ```
 
-**[「S0b 로그인 정보 찾기 - 메일 보냄 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1kt9KAlEQxu_PUwx2VyRFd11JUS_QZRhsJRX-C10hUEFzi62EonbNbA0jywShUy20gfRAO7Pv0BzTSqi92XPOnO-b33y7kayuZfRcMiGy8Z3UrpbRkrCubcS3MulcanMxnUhnYGJ5bnl2aUHoO3oiBisz64C3jv_mUdMDatn46gLJD9-TMA3YtajZBz7DigFUKQcVR2S1hC7yUyIP1JD40AOyDWq6gE8emS3fLUEBVr89o1AU4bDIr4X-aRMSAL4s0c1BYDvARsOmBQhta5OR2N5keCOdBH5CA-MhkrxmbZS1v2wHHGhZeGz9ZckLujyjhiWKiodsE_fdUXM8G7-JXRdGG-MrAZNqLqsV8KhSB-yUg3KPIQDfDZQlfDGDuof3fY7LVMc8bGDzsHd9MjzVHEYaplR8rMBOldP-ukkdTvrE8SW_bJOBVZEueDyzDnQzhPjFwN6Xh-T0FTEdt4OqF9iPQ2j_WeK-krXYEvC8DXjSHizlNcc1TsWVZhWC2hGeXs3_JP0tUIGPfVvV9NaJcpxFEYmlNvnH-wRMWHCv)** — 클릭 시 브라우저로 연결됩니다.
+**[「S0b 로그인 정보 찾기 - 메일 보냄 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1kt9KAlEQxu_PUwx2VyRFd11JUS_QZRhsJRX-C10hUEFzi62EonbNbA0jywShUy20gfRAO7Pv0BzTSqi92XPOnO-b33y7kayuZfRcMiGy8Z3UrpbRkrCubcS3MulcanMxnUhnYGJ5bnl2aUHoO3oiBisz64C3jv_mUdMDatn46gLJD9-TMA3YtajZBz7DigFUKQcVR2S1hC7yUyIP1JD40AOyDWq6gE8emS3fLUEBVr89o1AU4bDIr4X-aRMSAL4s0c1BYDvARsOmBQhta5OR2N5keCOdBH5CA-MhkrxmbZS1v2wHHGhZeGz9ZckLujyjhiWKiodsE_fdUXM8G7-JXRdGG-MrAZNqLqsV8KhSB-yUg3KPIQDfDZQlfDGDuof3fY7LVMc8bGDzsHd9MjzVHEYaplR8rMBOldP-ukkdTvrE8SW_bJOBVZEueDyzDnQzhPjFwN6Xh-T0FTEdt4OqF9iPQ2j_WeK-krXYEvC8DXjSHizlNcc1TsWVZhWC2hGeXs3_JP0tUIGPfVvV9NaJcpxFEYmlNtWP9wm9EXC5)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -502,6 +546,17 @@ salt
 | 메일 링크 → 저장 | `POST /v1/auth/recovery/reset`. 링크 무효면 400 `token_invalid`. 성공(204)하면 현재 세션을 포함해 모든 세션이 끊기고, "이메일과 새 비밀번호로 로그인해 주세요"와 함께 로그인 화면으로 | UC14 BF4~6 · E2 · E3 · E5 |
 
 상태 전이: `입력 중` → (메일 받기) → `메일 보냄 안내` → (링크) → `재설정 입력` → (저장) → `로그인 화면` · `재설정 입력` → (링크 만료) → `차단(G27)` → (다시 요청) → `입력 중`.
+
+**S0a 로그인(보호자) · S0o 로그인(팀원)** — 2026-09-29 추가(D21). 두 화면은 같은 모양(이메일 · 비밀번호 · 로그인 버튼)이지만 경로·쿠키·셸이 다르고 서로 링크하지 않는다. 와이어프레임은 S0 가입 양식과 같은 틀이라 따로 그리지 않았다.
+
+| 구분 | S0a 보호자 | S0o 팀원 |
+|---|---|---|
+| 주소 | `/app/login` (`?next=` 로 돌아갈 곳 — 초대 링크 `/app/invite?token=…` 등) | `/ops/login` |
+| 호출 | `POST /v1/auth/login` → `GET /v1/me` | `POST /v1/ops/auth/login` → `GET /v1/ops/me` |
+| 성공 뒤 | `next`가 있으면 그곳(S1c 등), 가족이 없으면 S1d(409 `no_family`), 그 밖에는 S4 | 역할별 메뉴 표(§2-1)의 첫 화면(S10) |
+| 링크 | 가입(S0) · 로그인 정보를 잊었어요(S0b) | 없음(팀원 계정은 운영 CLI로 만든다) |
+| 실패 | 이메일·비밀번호 불일치는 한 문구("이메일 또는 비밀번호가 맞지 않아요", 가입 여부 비노출) · 메일 확인 전 계정은 확인 메일 다시 받기 안내 · 요청 한도(E8)는 C2 | 불일치 한 문구 · 역할 없음은 G1 C2 |
+| 세션 만료 | 입력 중 값을 저장하지 않고 S0a로(`next`에 현재 주소) — §17 전역 실패 3 | S0o로 |
 
 
 **S1b 가족 보호자 관리** — 공동 보호자 초대·해제·나가기(UC15, U1 확정). 보호자는 부모 두 명까지다(만든 보호자 + 공동 보호자 1명). 권한은 같고 **초대하기와 해제 버튼만 만든 보호자에게 보인다**(G29). 공동 보호자가 이미 있으면 초대하기는 이유 달린 비활성("보호자는 두 명까지예요")이다. 아래는 만든 보호자 화면의 **두 명 찬 상태**다.
@@ -533,7 +588,7 @@ salt
 @enduml
 ```
 
-**[「S1b 가족 보호자 관리 - 만든 보호자 화면 - 두 명 찬 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk19r2mAUxu_fT3GwN61jsm53u5KV9QvsUhykrWyl_imawsAKWc1GWIXVzaxJp6JgVxwdizRjFvKJck6-w84x0ekc3sT3nPN7nvO8Sbama1X9pFRUtaPD8rFW1Uqwp-0fvapWTsoHO5VipQobu092t58_U_qhXizAi-09CD2DhhPAOz9yptS_gNA38NstPAS8aeHnwVIlcjs49qXSvgD8_g7IuwVqvo2aXVXTirqqP1B1oCtP5sk2qecD_pySNWCmjC1Ip4nsU4hsJ43miE9y1G9HnywGj3HYy8sJDrvh76mQvjbz0FCZjKq_TCUCa8bhsXhauAvvW3RjpFR9Y0WYLn9E9kAehh4rKoDXWjpbeJPO7FdKsIlnzhYX13Y_hQy3Hi-18g53v_Cju9KUi2yfBt28avBPvPoWtgxeMpx6bI0TwXGHegFvBvOaT1edFMNz8YHw8MyXgU28NyO3S-Zkazk-_NBZXZIcixl5ZvxrCa8DiC2xB7k8PB_R-V_tAZDlAPUt-iI2_kdgseQu2X98RbNFyA7Yowig0w49VzridydeiVmxCrlG4kFYybWxTOgx1VyLmv_DurFZmgyTWGjUTtAAj8KJL-Etxpk_D0fS7gVxnsGcN9tnNiyddPl-IdBQ2UL5gL-fP8tb2Mo=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1b 가족 보호자 관리 - 만든 보호자 화면 - 두 명 찬 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk19r2mAUxu_fT3GwN61jsm53u5KV9QvsUhykrWyl_imawsAKWc1GWIXVzaxJp6JgVxwdizRjFvKJck6-w84x0ekc3sT3nPN7nvO8Sbama1X9pFRUtaPD8rFW1Uqwp-0fvapWTsoHO5VipQobu092t58_U_qhXizAi-09CD2DhhPAOz9yptS_gNA38NstPAS8aeHnwVIlcjs49qXSvgD8_g7IuwVqvo2aXVXTirqqP1B1oCtP5sk2qecD_pySNWCmjC1Ip4nsU4hsJ43miE9y1G9HnywGj3HYy8sJDrvh76mQvjbz0FCZjKq_TCUCa8bhsXhauAvvW3RjpFR9Y0WYLn9E9kAehh4rKoDXWjpbeJPO7FdKsIlnzhYX13Y_hQy3Hi-18g53v_Cju9KUi2yfBt28avBPvPoWtgxeMpx6bI0TwXGHegFvBvOaT1edFMNz8YHw8MyXgU28NyO3S-Zkazk-_NBZXZIcixl5ZvxrCa8DiC2xB7k8PB_R-V_tAZDlAPUt-iI2_kdgseQu2X98RbNFyA7Yowig0w49VzridydeiVmxCrlG4kFYybWxTOgx1VyLmv_DurFZmgyTWGjUTtAAj8KJL-Etxpk_D0fS7gVxnsGcN9tnNiyddPl-IdBQ2UL5QL6fP6Q-2NQ=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -576,7 +631,7 @@ salt
 @enduml
 ```
 
-**[「S1c 초대 수락 - 이미 다른 가족 공간에 속한 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVN9r01AUfs9fcZgvOrEw96D0qSibf4CPo0Lsioz1h7QdCLWQrmFka8Vua7a0S0qGmXVQMFtjjVj_odxz_wfPvY10rX0Y5CG599zvfN93vptUuaKWKnv5nFLe3Sm8V0tqHt6qmd13peJeYftlMVcswYPN9c21jRdKZaeSy8LrtQxgYLCWBmhYzPkDTwCdgH0PgTU9dhVC5Gt4eQPR6Efk63jeBjz4xE0bsFHnDVspq7mKUn2sVAF7Pvs6BDR1AgBCQMONAo0A2SjgVoj9NnwEdmlHP0N0wiTk1dVU9sNqIlPM08ZWvEPHLxppqCmJhFJ9szLXPqbKribA_As0LTwLsNdZUSBmz02LXQeimn3uzvoSCLC2qP5Hj1T2j_mJMZWL5iQKfQHLzW_RbwuIN2nhpkAncDZosVN3hoddDaJxi2wQWJHfFai9TgLYvoXesXTpyKOHNIm1yDcEQeppTBkLwlPX2aDO60N21AFhKrs1qBeReobOhLgaBCUW8DRcAKgJc9jgkPctgFdPn99jbnTWaQFsrEu_9odou0mQAkY6uiY62n0gZPuEZDs7J78WqiVvkZVYsHhxKTdfJngbJO-EgpgPtCg0_kNAPXZPB3biSaqxXcLWpodNO577khkJS-cBHX1uFucHUy2iv5yFHMBYF_OPDRB2XHdoFHcbziI41jhdAjOQmvQwzgqVkc387JAimIStpdpsgZgWqY9v3UP2S-ddG_WbR-LCLPd_0Y848u58NNKUjZqSyha26UfwF_xmYhc=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1c 초대 수락 - 이미 다른 가족 공간에 속한 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVN9r2lAUfs9fceheto4JXR82fJKNdn_AHosDZ2WU-mOohYETYg0lrY7Z1rTRJpIyO1cQltbMZcz9Q7nn_g87J2ZYnQ-FPCT3nvud7_vOd5MolVPF8l4uq5R2d_LvU8VUDt6m0rvvioW9_PbLQrZQhAeb65trGy-U8k45m4HXa2lATxdNFVA3hf0HngDanvjug2j0xZUPgavi5Q0Eox-Bq-F5C_DgkzQswHpN1i2llMqWlcpjpQLYdcXXIaChEQAQAupO4KkEKEaeNH3steAjiEsr-Omj7cchl1pNZD6sxtKFHG1sRTt0_KKehKoSiymVNytz7SOq4moCwr1Aw8QzD7vtFQUi9tIwxbXH1eJzZ9aXQEC0uPofPVLZO5Yn-lQuGpPAdxlWGt-C3yYQb9IiDUYncDFoilNnhocdFYJxk2xgrMDtMGq3HQOxb2L_OHTpqE8PaeK1wNWZIPXUp4yZ8NR1MajJ2lActYFNFbc69SJSz9CeEFedoHgBT_0FgCqbIwaHsmcCvHr6_B5zo7N2E2BjPfRrf4iWE4dQwEhDx0BbvQ9E2D4Wsp2dC78WqkPenJVIML84lJsvE7z14ndCQcwHauDr_yGgFrmngTjph1Qju9jWRh8bVjT3JTNiS-cBbW1uFucHUy3cP5xFOICxxvOPDGA7rts0irsNZxEcq5IugeGFmjQ_ygqVkc3y7JAiGIetpdosRkxy6qNb91D80mTHQu3mEV-Y5f4v-hFF3pmPRpKyUVUSmfw2_wj-Al6WYiE=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -622,7 +677,7 @@ salt
 @enduml
 ```
 
-**[「S1d 가족 없음 - 초대 기다리기와 새 가족 공간 만들기」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9k81u00AQx-9-ilG5FRFRccspAlEegGNVJNNEqGo-qsSVkEIkJ7GqBYwIYLdOawdX9INKlnAbAz6EF9odvwOztkNMWpAvuzuzM7__f9aVjqa2tb1GXensbDd31bbagOfq1s6LdmuvWX3UqrfacGf9wfra44eKtq3Va_B0rQo81PHkCvBwHz0T7gFGTJg68DgUb0_FeUALHOuAQzZP5dPvPDRAXJji0ymFlY5a15TuXaULeBTSFUDbQC8C8S1G5vNIp7JiGiVOjJMRvAJx4vKfMXpxGXbV1Urt5Wppq9WgwEYeoevHw03oKaWS0n22Ii5eJxMH4Ml9ybf_LrHdv1lks0zAigKAgwBdv7yUcjhCwwUxcHho8auQFpDYEfquGDl4EM2ZqcHkQ_KRQTK2xGVE14BUUgIPGSBz0j4HER5Z1CkrAPhlhtdRuaCR9IbH6Om5m-JsJu8K71diO3nzG4aiV_SUZDgMfeOGCjoPxHmYY8oe5FieldIOvpIUCrMcsyctvGWq0iq5OYsX4FSAX5sFavFDT4Z9ST31QVxa6M3Qc4izn_SDNIGZ4nOQWmDEmSu3jUa8sUC8H6PNqEW6CS0a9h9X_MzbJeh_vzkJv_Gf-KYUl25oiCAhcodSeDr3F6IpQmyzDH45mLLKR1Oc_ty3Rc2CY3LwxtJT6dFXqTWr9HP-BvOeJdk=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S1d 가족 없음 - 초대 기다리기와 새 가족 공간 만들기」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9k81u00AQx-9-ilG5FRFRccspAlEegGNVJNNEqGo-qsSVkEIkJ7GqBYwIYLdOawdX9INKlnAbAz6EF9odvwOztkNMWpAvuzuzM7__f9aVjqa2tb1GXensbDd31bbagOfq1s6LdmuvWX3UqrfacGf9wfra44eKtq3Va_B0rQo81PHkCvBwHz0T7gFGTJg68DgUb0_FeUALHOuAQzZP5dPvPDRAXJji0ymFlY5a15TuXaULeBTSFUDbQC8C8S1G5vNIp7JiGiVOjJMRvAJx4vKfMXpxGXbV1Urt5Wppq9WgwEYeoevHw03oKaWS0n22Ii5eJxMH4Ml9ybf_LrHdv1lks0zAigKAgwBdv7yUcjhCwwUxcHho8auQFpDYEfquGDl4EM2ZqcHkQ_KRQTK2xGVE14BUUgIPGSBz0j4HER5Z1CkrAPhlhtdRuaCR9IbH6Om5m-JsJu8K71diO3nzG4aiV_SUZDgMfeOGCjoPxHmYY8oe5FieldIOvpIUCrMcsyctvGWq0iq5OYsX4FSAX5sFavFDT4Z9ST31QVxa6M3Qc4izn_SDNIGZ4nOQWmDEmSu3jUa8sUC8H6PNqEW6CS0a9h9X_MzbJeh_vzkJv_Gf-KYUl25oiCAhcodSeDr3F6IpQmyzDH45mLLKR1Oc_ty3Rc2CY3LwxtJT6dFXqTWr8uf8DRmQJeM=)** — 클릭 시 브라우저로 연결됩니다.
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
@@ -674,7 +729,7 @@ salt
 @enduml
 ```
 
-**[「S2 작품 올리기 - 용량 초과 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk1FP02AUhu_7K07wRjEuOqMXvTAEMiYmMyReks1MIYYwNjPGFSyZ0JjBhgOk2GGLXdhg0yV2o8aa9Bf1nP4Hz9nqJNEtWb5-53vPed7v7WY2StliaXM9p2ysrebfZovZdXiVfb32pljYzC_PFXKFItyafzj_IDGrlFZLuRV4EQc6PwqPq0BGHy_7gefAPaCzHn7ZA3KrwbUP5HSx1gXafRfumspGNldStu4qW3zKYQWQrpHlAn73qGoHboX1eO2Ghkfnh7ANgVOh1kCFUDemUWvzzlI0Eb_2sGWlZQdbZvDTk06fd9NQVmIx6X-lhad76mTAxwEfhycT_YQ4zZthUydb50UwdARani2Pn1lKui--eG1rVDOj_pkprGrBjz5ZRnQHLBDas5MpBf5M3YaMkGeUsihop89UUl4aL_lyDkYEYkvv4vCEPh2SZkJwbWPHlRIfDut1snwVFlLJl9P8iT1NLMwBxB-nZrn6bDGR5EtbfC6_40qom8zUgfj91Kw4YIQxAF7thecGQPLRPzFBIj7iZi7TVmHMJxakCXZ8QM2gU5ftCZHuks0zLnwauuqNwDi8Whs7XqT_64NFXCGrDhwKNpoqp_b_k-PLmLxOt_GXFjZN0gZ3uPsNRxNE0XbR8kc4mseE6ei6pYkDeNweObOPqMqqpoYXdTw0sOdOguMgdtzwg8tGZCanLBU9cstbwnrJ4yoc7D6j8gtywg1EibVvHDY2BEOj9wfY8EVW5u_MSn6Z_06_ASQpyrg=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S2 작품 올리기 - 용량 초과 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk1FP02AUhu_7K07wRjEuOqMXvTAEMiYmMyReks1MIYYwNjPGFSyZ0JjBhgOk2GGLXdhg0yV2o8aa9Bf1nP4Hz9nqJNEtWb5-53vPed7v7WY2StliaXM9p2ysrebfZovZdXiVfb32pljYzC_PFXKFItyafzj_IDGrlFZLuRV4EQc6PwqPq0BGHy_7gefAPaCzHn7ZA3KrwbUP5HSx1gXafRfumspGNldStu4qW3zKYQWQrpHlAn73qGoHboX1eO2Ghkfnh7ANgVOh1kCFUDemUWvzzlI0Eb_2sGWlZQdbZvDTk06fd9NQVmIx6X-lhad76mTAxwEfhycT_YQ4zZthUydb50UwdARani2Pn1lKui--eG1rVDOj_pkprGrBjz5ZRnQHLBDas5MpBf5M3YaMkGeUsihop89UUl4aL_lyDkYEYkvv4vCEPh2SZkJwbWPHlRIfDut1snwVFlLJl9P8iT1NLMwBxB-nZrn6bDGR5EtbfC6_40qom8zUgfj91Kw4YIQxAF7thecGQPLRPzFBIj7iZi7TVmHMJxakCXZ8QM2gU5ftCZHuks0zLnwauuqNwDi8Whs7XqT_64NFXCGrDhwKNpoqp_b_k-PLmLxOt_GXFjZN0gZ3uPsNRxNE0XbR8kc4mseE6ei6pYkDeNweObOPqMqqpoYXdTw0sOdOguMgdtzwg8tGZCanLBU9cstbwnrJ4yoc7D6j8gtywg1EibVvHDY2BEOj9wfY8EVW5u_MSn5Z_k6_Ae7rysI=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 5-2 영역별 설계
 
@@ -739,7 +794,7 @@ salt
 @enduml
 ```
 
-**[「S3 판정 제안 확정 - 제안 없음 상태 G7」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNpdU29L22AQf59Pcbg3ypjgZBP6Ysg29QPspTjopgyx6qj1lSvEGqWzYbZi2lSTkLK6VikstsFF9BPlLt9hd09iHcur55673O_P3TO_U8oXS7ubBW1nY33ra76Y34RP-c8bX4rbu1ur77YL20V4tji7OLPwViutlwpr8GEWErNOvgXkO2RVIWlbEr14jKl1RK4JdLCfHDiwNKft5Aslbe-5tgd0HuCvAZBlkBsC_o6o6sehzv_iKEzsiLw6fAPyGslpNQeJFVJbB-o1-HI5vQW8vsKOuwJlbXpaOvaMpPk9x9gNqtpY78ObMb1ug4PljB6aehwFK3xDQ1uRUGnJulGWleTxHcdpH_INqjmqMEPb-zhBno3uA2AlynhOaMDfMt3_EVkXByKL-7MgwVNJvDUUYq2bmH28CoEu6jjiBpUB8-eSMguU3srAtGF6JtdgfB3vjMSyqaez_PukWaVmSOdnaV1vn7VDPOoLLfr5QEY0zvl1MeX4TOyl1kCluQlZx8JVVZVZG0Nj73vi2cDj4mFkBmKtH48Y3xuwDXjCpyOT-QIsvBaOwt7xc5kNimklTH6EjCWQZDg4NKhVBxxErCYOGNirUuuJvQzYdxSrYZj7Zwd4lw5ryniWjRUbLx-ehPp4Kdby_1jryqbxAuBJOydrhZ7NiAyd1YnZ6QIklg9shqKQ4ivdfMbmfTw0Ib6J4juTExk6XvexUYc4aJPLvg9CLhLZkzDF89OFjmfw3CR-Of3qPXc-ZBk8bJ06QZZ4HLTVYVn88yyXdYI42Fc9DyO6ZflGV7l92mXq2DOzYQkTWJqZE56PW8xuyJpOyj60HTJupmRaY4v-X4IVeTecYyNlDmPr5PWUtfm1rVV--H8BADQzXA==)** — 클릭 시 브라우저로 연결됩니다.
+**[「S3 판정 제안 확정 - 제안 없음 상태 G7」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNpdU29L22AQf59Pcbg3ypjgZBP6Ysg29QPspTjopgyx6qj1lSvEGqWzYbZi2lSTkLK6VikstsFF9BPlLt9hd09iHcur55673O_P3TO_U8oXS7ubBW1nY33ra76Y34RP-c8bX4rbu1ur77YL20V4tji7OLPwViutlwpr8GEWErNOvgXkO2RVIWlbEr14jKl1RK4JdLCfHDiwNKft5Aslbe-5tgd0HuCvAZBlkBsC_o6o6sehzv_iKEzsiLw6fAPyGslpNQeJFVJbB-o1-HI5vQW8vsKOuwJlbXpaOvaMpPk9x9gNqtpY78ObMb1ug4PljB6aehwFK3xDQ1uRUGnJulGWleTxHcdpH_INqjmqMEPb-zhBno3uA2AlynhOaMDfMt3_EVkXByKL-7MgwVNJvDUUYq2bmH28CoEu6jjiBpUB8-eSMguU3srAtGF6JtdgfB3vjMSyqaez_PukWaVmSOdnaV1vn7VDPOoLLfr5QEY0zvl1MeX4TOyl1kCluQlZx8JVVZVZG0Nj73vi2cDj4mFkBmKtH48Y3xuwDXjCpyOT-QIsvBaOwt7xc5kNimklTH6EjCWQZDg4NKhVBxxErCYOGNirUuuJvQzYdxSrYZj7Zwd4lw5ryniWjRUbLx-ehPp4Kdby_1jryqbxAuBJOydrhZ7NiAyd1YnZ6QIklg9shqKQ4ivdfMbmfTw0Ib6J4juTExk6XvexUYc4aJPLvg9CLhLZkzDF89OFjmfw3CR-Of3qPXc-ZBk8bJ06QZZ4HLTVYVn88yyXdYI42Fc9DyO6ZflGV7l92mXq2DOzYQkTWJqZE56PW8xuyJpOyj60HTJupmRaY4v-X4IVeTecYyNlDmPr5PWUtfm1rVV5-H8BM5ozZg==)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 6-2 영역별 설계
 
@@ -749,7 +804,7 @@ salt
 | 잘라 낸 작품 | 컷아웃 미리보기, 분리 실패면 원본과 "액자 권장" | H3 마스크·컷아웃 참조 (0.3 · 0.5 Output) | UX4 |
 | 제안 | 제안 문구만. 점수 칸 없음. 판정 중이면 "살펴보는 중". 분리·판정 모델을 올리는 중이면 "그림을 볼 준비를 하고 있어요. 조금만 기다려 주세요"(남은 시간이 있으면 "약 N초") — 오류 블록·빨간 표시 없음, 직접 고르기는 그대로 가능 | H3 제안 문구 코드 (0.5 Output) · `GET /v1/artworks/{id}` 단계 `waitingForModel` · `etaSeconds` | UX2 · UX7 (모델 적재, T143) |
 | 차단 블록 | G7(판정 소진) · G8(확정할 수 없는 상태) | 0.5 Output 오류 분류 · 2.6 거절 | UX6 |
-| 선택지 | 움직임 · 2.5D 입체 부조 · 원본 액자 — 같은 크기, 기본 선택 없음. 3D는 노출 설정 뒤(G17) | 2.6 Input 확정값 | UX2 · BR-SUG-03 |
+| 선택지 | 움직임 · 2.5D 입체 부조 · 원본 액자 — 같은 크기, 기본 선택 없음. 3D는 노출 설정 뒤(G17). **모델이 비활성인 선택지**는 같은 크기의 C3 비활성 버튼 "(비활성) - 지금은 이 방식을 쓸 수 없어요"로 그리고, 해제 주체는 평가 담당(새 버전 승격)이다(clarify 확정: 비활성화는 낮춤으로 우회하지 않음) | 2.6 Input 확정값 · `GET /v1/artworks/{id}`의 `choices[]`·`unavailable[{choice, reason:'model_disabled'}]` | UX2 · BR-SUG-03 · UX6 |
 | 행동 | 확정하기(선택 전 비활성) · 나중에 고르기 | 2.6 · 2.7 Output 처리 단계 작업(H4) | UX7 — 나중에 S4에서 이어 확정 |
 
 ### 6-3 상호작용
@@ -761,6 +816,7 @@ salt
 | 확정하기 | `POST /v1/artworks/{id}/confirm`. 성공하면 "만들기 시작했어요"와 S4로 | UC2 BF7 · BF8 |
 | 나중에 고르기 | S4로. 작품은 "확정 대기" 배지 | UC2 A2 |
 | 액자 선택 | 추가 확인 없음. 원인 "보호자 선택"으로 기록된다(화면에는 원인 표시 없음) | UC2 A4 · UX3 |
+| 비활성 선택지 | 누르면 선택되지 않고 C2(해제 주체 평가 담당)로 포커스. 화면을 연 사이 비활성이 되어 확정이 409 `model_disabled`(G8)로 거절되면 C2를 보이고 선택지를 다시 불러온다 | clarify 2026-09-28 · T116 |
 
 ### 6-4 상태 전이
 
@@ -803,7 +859,7 @@ salt
 @enduml
 ```
 
-**[「S4 작품 목록과 진행 상세 - 처리하지 못함 G9」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1k0FvElEQx-_7KSb0pilJUz3IqdFYTz15bDBB25imFAzQEzRB-kxowZQqSxdccEmptAZ1CxuyRj7Rzux3cGZ3sZDYwyZv572Z_39-895GvpDKFQ4P0lp-fy_zLpVLHcDr1Jv9t7nsYWbnWTadzcHK5vrm2vOnWmGvkN6Fl4-Aeuf-pyrg9xvsd73JDGio_NYJ0PF7Ui6sAo0N_DbydYOGZT72x9ev4cUTLZ9KF7TiQ60I1LH5AJCuqOsA_nKpanlOmVNx4viGS70GlMCzy9S_TQAXeoBqwJHtKIPPcn4yiIRmyBhxxHPtIBhmAlmKamYSjrR4XCuuzI2X5sIlsewfm7zwDUW9EWDt2psoDVjToXaZOzuXTTYgh__TFvclTn-fBo1MWdbmbM_WRYKP_Uv22zp1XcB6mU1KytgWdHimyL7hlAhJ5LwEaDfvNIEG4oOqJikTr2bANbA24B08bcomF8CRw4KebS5rWvqd5rY3sfDKwa-BjsDSQjSvYgv9rkYUcKKiycYEXhhcZEZ6FSuOSE-VmNxak2Bb4WWdF3GhWG-IgYUo9T7QeE6KTQC1HOq4aA2o0xRyiyRh6_E92EuwjmO-grUBDxj4Y45-qxoUa3JTR9ITDk_8nhGMaDXiLexwWMfPg3mxeVJMZlAZkWklQCCPFRN1yTKxby67vr-GoKv8pKkRqQX96QprVbpohP0JZ4sLXs64YGLhuvOr-dLAicsJff4XVe_Wlbmh0ZApz3u1P3JQoPN_tw48HjxrJ3i24YUK7xmZM66w9EAqP1g4GbDZ2M3s8Jv_C59eOkM=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S4 작품 목록과 진행 상세 - 처리하지 못함 G9」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1k0FvElEQx-_7KSb0pilJUz3IqdFYTz15bDBB25imFAzQEzRB-kxowZQqSxdccEmptAZ1CxuyRj7Rzux3cGZ3sZDYwyZv572Z_39-895GvpDKFQ4P0lp-fy_zLpVLHcDr1Jv9t7nsYWbnWTadzcHK5vrm2vOnWmGvkN6Fl4-Aeuf-pyrg9xvsd73JDGio_NYJ0PF7Ui6sAo0N_DbydYOGZT72x9ev4cUTLZ9KF7TiQ60I1LH5AJCuqOsA_nKpanlOmVNx4viGS70GlMCzy9S_TQAXeoBqwJHtKIPPcn4yiIRmyBhxxHPtIBhmAlmKamYSjrR4XCuuzI2X5sIlsewfm7zwDUW9EWDt2psoDVjToXaZOzuXTTYgh__TFvclTn-fBo1MWdbmbM_WRYKP_Uv22zp1XcB6mU1KytgWdHimyL7hlAhJ5LwEaDfvNIEG4oOqJikTr2bANbA24B08bcomF8CRw4KebS5rWvqd5rY3sfDKwa-BjsDSQjSvYgv9rkYUcKKiycYEXhhcZEZ6FSuOSE-VmNxak2Bb4WWdF3GhWG-IgYUo9T7QeE6KTQC1HOq4aA2o0xRyiyRh6_E92EuwjmO-grUBDxj4Y45-qxoUa3JTR9ITDk_8nhGMaDXiLexwWMfPg3mxeVJMZlAZkWklQCCPFRN1yTKxby67vr-GoKv8pKkRqQX96QprVbpohP0JZ4sLXs64YGLhuvOr-dLAicsJff4XVe_Wlbmh0ZApz3u1P3JQoPN_tw48HjxrJ3i24YUK7xmZM66w9EAqP1g4GbDZ2M3syJv_C9mrOk0=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 7-2 영역별 설계
 
@@ -868,7 +924,7 @@ salt
 @enduml
 ```
 
-**[「S5 결과 확인 - 낮춘 결과와 선택지」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9VF1PE1EQfd9fMcEXjYGIhgf7YIgf8AN8bNakCjGEUkwpT9hkKaupdE2Kdsu23W22WmglRJfS4DbU-H_2zv0PztzdSEsI7UMzc2fOOXNm0sWtQiZf2N7Ialvra7l3mXxmA15n3qy_zW9u51aebWY383Bn6dHS_IunWmGtkF2FlwsQDYLofAyyYaMXwiyI0k-8cJI0NgxA05d7HvYMbSuTLWg797UdwGYgjk8BbRO9IYhfIZb9aGhw-_lQOiG2q_AesH0gv5RTEAU2V_YMyqXjJIiTH6Lj6VDU5uYYsGfK-qcUoH-AZUdU-_AEpFVF3wbsHnBA-igQlhGFAcU4cJQC9ZhO1MevOj_vjygR46BvYsVVpQnbzqsZbFXFeTijAX3ScQBYOiUdusqhcyqOA4h-hwQqOi4liySfOhPDZuHh3MJzmvEDDsiCCwM7QQKXVJAtJJEMYcWzJMMmC_SEseJi0AfZ7HMljl3WrTiKGnGoJXTJ37IoDbm33KcCdhDtffayWWMubBnY28U2bcEE0bPE1y5zYX0o_C62rGl1NAWIoBb97VMBITCAX2W792u8NzwkP7-Pp1g0JYcB65fRwILoLIxGVkKfxm-VuExXm7U7tHdm4SreAyVFpavMDz4nE07d11Uxa2BD8bCKpsvRdTi-xShoTOoicHFEe9vblXsues7VrQIsP4bl-QfKJXUq0nY4L04upd1PTWiHu2JkyoaL5tk9sjoWFgVkwuHH2Cj9ptlumGxi3-JozFSA3h_0rFvosO0zimzRAmPA-JalPVTLMMObBUzC6OoU-ITVHUzR3tLG7P-7VAf9lJ2pua8NWaTv4mpuhf5j_gHIxH2m)** — 클릭 시 브라우저로 연결됩니다.
+**[「S5 결과 확인 - 낮춘 결과와 선택지」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9VF1PE1EQfd9fMcEXjYGIhgf7YIgf8AN8bNakCjGEUkwpT9hkKaupdE2Kdsu23W22WmglRJfS4DbU-H_2zv0PztzdSEsI7UMzc2fOOXNm0sWtQiZf2N7Ialvra7l3mXxmA15n3qy_zW9u51aebWY383Bn6dHS_IunWmGtkF2FlwsQDYLofAyyYaMXwiyI0k-8cJI0NgxA05d7HvYMbSuTLWg797UdwGYgjk8BbRO9IYhfIZb9aGhw-_lQOiG2q_AesH0gv5RTEAU2V_YMyqXjJIiTH6Lj6VDU5uYYsGfK-qcUoH-AZUdU-_AEpFVF3wbsHnBA-igQlhGFAcU4cJQC9ZhO1MevOj_vjygR46BvYsVVpQnbzqsZbFXFeTijAX3ScQBYOiUdusqhcyqOA4h-hwQqOi4liySfOhPDZuHh3MJzmvEDDsiCCwM7QQKXVJAtJJEMYcWzJMMmC_SEseJi0AfZ7HMljl3WrTiKGnGoJXTJ37IoDbm33KcCdhDtffayWWMubBnY28U2bcEE0bPE1y5zYX0o_C62rGl1NAWIoBb97VMBITCAX2W792u8NzwkP7-Pp1g0JYcB65fRwILoLIxGVkKfxm-VuExXm7U7tHdm4SreAyVFpavMDz4nE07d11Uxa2BD8bCKpsvRdTi-xShoTOoicHFEe9vblXsues7VrQIsP4bl-QfKJXUq0nY4L04upd1PTWiHu2JkyoaL5tk9sjoWFgVkwuHH2Cj9ptlumGxi3-JozFSA3h_0rFvosO0zimzRAmPA-JalPVTLMMObBUzC6OoU-ITVHUzR3tLG7P-7VAf9lJ2pua8NWaTv4mpuhf9j_gFGg32w)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 8-2 영역별 설계
 
@@ -935,7 +991,7 @@ salt
 @enduml
 ```
 
-**[「S6 이야기 쓰기 - 값 검증과 전시 보류」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptU0FLG2EQve-vGNJLS0lIlHrIQWyLlt4KvRQkhbRKEaOWGE9WWONaVt3SRLO6MdmwwWiqCN2Ypd2Av2hn9j90ZjdJY2kIJPN9b2bevHnf3GYpXyxtrRWUzdWV9c_5Yn4NPuQ_rn4qbmytL73cKGwU4dHC9EJm_oVSWikVluHtDJDtkXkf-C7QiSs_SQjcYwjuVLqyg_49kKPRUROw7-GlpWzmCyVl-6myDXTu4tUtkKlxCcCfPulO4Kmcz9DQ8qlVgS9ArWp4rGe5pinIrspni_Eh4M01tu0c7CiplBTsauHpQZYbVkm3sPIDZiE0KuSYQJ2qBHVTAjRU4TkLdGdFDMaXtv_3cpEOB3zAZXICjYcQKLzKTA1bvk-EzEm3Egowosl8mF1iTJXqKlDZpd4-AAgm-O3jlQtYdgQ3lZ6aSWbSyfQ0wATANBhgiSaMmYEHn4SyI12xexC2LGGSEbnHVYdCotzNZyJW5VtqOtkHGCZldfDQktWFDVafd6RzdPaVTj06r3FaaHo8D9DFPd152YmFTHaDoO_QwGK5OAOPOmQbwAvA7_Usq-eo1LqExzjQwnqTtN6Tf5hqUXq_EjXRfO6bi4eLDUG2xSya2NWxVuNU0pxwz5Y_zq6MIKUMFduRsejslvNl3gRef-MvFwhcnrOxxyP9R8DROttu0POijUry4rsc-9YV0w7dQHUNLwyxHORGG34gQXK0q3heEaJaYbOqvH5hELin9MvlAK-9oYnojAE9H52OaB3Tif1MWgdv9rnm89fiexYNaOBzPBZCHIU1l8eOlisu2x2mRSRGKxTGYblDDQNPmiLSsDR5Opn8cNxG_FLfpFPPRPYdZW55fYlf_h_hZRqS)** — 클릭 시 브라우저로 연결됩니다.
+**[「S6 이야기 쓰기 - 값 검증과 전시 보류」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptU0FLG2EQve-vGNJLS0lIlHrIQWyLlt4KvRQkhbRKEaOWGE9WWONaVt3SRLO6MdmwwWiqCN2Ypd2Av2hn9j90ZjdJY2kIJPN9b2bevHnf3GYpXyxtrRWUzdWV9c_5Yn4NPuQ_rn4qbmytL73cKGwU4dHC9EJm_oVSWikVluHtDJDtkXkf-C7QiSs_SQjcYwjuVLqyg_49kKPRUROw7-GlpWzmCyVl-6myDXTu4tUtkKlxCcCfPulO4Kmcz9DQ8qlVgS9ArWp4rGe5pinIrspni_Eh4M01tu0c7CiplBTsauHpQZYbVkm3sPIDZiE0KuSYQJ2qBHVTAjRU4TkLdGdFDMaXtv_3cpEOB3zAZXICjYcQKLzKTA1bvk-EzEm3Egowosl8mF1iTJXqKlDZpd4-AAgm-O3jlQtYdgQ3lZ6aSWbSyfQ0wATANBhgiSaMmYEHn4SyI12xexC2LGGSEbnHVYdCotzNZyJW5VtqOtkHGCZldfDQktWFDVafd6RzdPaVTj06r3FaaHo8D9DFPd152YmFTHaDoO_QwGK5OAOPOmQbwAvA7_Usq-eo1LqExzjQwnqTtN6Tf5hqUXq_EjXRfO6bi4eLDUG2xSya2NWxVuNU0pxwz5Y_zq6MIKUMFduRsejslvNl3gRef-MvFwhcnrOxxyP9R8DROttu0POijUry4rsc-9YV0w7dQHUNLwyxHORGG34gQXK0q3heEaJaYbOqvH5hELin9MvlAK-9oYnojAE9H52OaB3Tif1MWgdv9rnm89fiexYNaOBzPBZCHIU1l8eOlisu2x2mRSRGKxTGYblDDQNPmiLSsDR5Opn8cNxG_FLfpFPPRPYdZW55fUle_h_8ARqc)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 9-2 영역별 설계
 
@@ -944,7 +1000,7 @@ salt
 | 진행 레일 | 승인됨 + G12 표시 | 3.9 Output | UX1 (C1 전시 보류) |
 | 필수 | 제목 · 그린 날 · 그때 나이 | 3.6 Output 기존 이야기 · 3.7 Input | UX1 |
 | 한마디 | 선택, 적은 그대로 | 3.7 Input 한마디 원문 | UX5 (C7) |
-| 차단 블록 | G11(미래 날짜 E1 · 나이 범위 E2 · 전시 중 필수 비움 E7) · G3(저장 실패 E3) · 삭제 중 종결(E4) | 3.8 Output 거절 사유 | UX6 |
+| 차단 블록 | G11(미래 날짜 E1 · 나이 범위 E2 · 전시 중 필수 비움 E7 · **다른 보호자가 먼저 고침** 409 `story_conflict`) · G3(저장 실패 E3) · 삭제 중 종결(E4) | 3.8 Output 거절 사유 | UX6 |
 | 전시 조건 | 결과 확인 · 필수 이야기 두 줄 | 3.9 Output 승인 상태 · 이야기 필드 | UX1 (C8) |
 | 작품 설명 | AI 작성 칸(한마디와 분리) · P0.5 확장점 버튼 · 승인 설명이 있으면 고정 표시 | 3.10 Output · H10 | UX5 |
 
@@ -956,6 +1012,7 @@ salt
 | 저장 | `PUT /v1/artworks/{id}/story`. 서버 재검사 | UC5 BF4 |
 | 저장 뒤 | 승인됨 + 필수 충족이면 "전시에 걸렸어요", 아니면 C8에 빠진 줄 | UC5 BF5 · A1 · A5 |
 | 한마디 지우기 | 비우고 저장하면 지움 | UC5 A4 |
+| 동시 수정 충돌 | 저장 요청에 불러올 때의 `baseUpdatedAt`을 싣는다. 공동 보호자가 먼저 고쳤으면 409 `story_conflict`(G11) — C2 "다른 보호자가 먼저 고쳤어요" + [최신 내용 불러오기]. 내 입력은 지우지 않고 옆에 남겨 다시 옮겨 적게 한다 | FR-9 · U1 공동 보호자 · T142 |
 | 키워드로 설명 초안 받기 | S7 패널 열기(P0.5, 승인 설명이 없을 때만) | UC5 A6 · UC10 BF1 |
 
 ### 9-4 상태 전이
@@ -999,7 +1056,7 @@ salt
 @enduml
 ```
 
-**[「S7 설명 초안 받기 - LLM 장애 상태 G15」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNplk29L23AQx5_nVRzuyebWUh06lgdDN3QIDgZ7MigddFOGWHXU-kiFWtMRbYftbGpt0xJZtdsoLLURI_QV5S7vYXdJ65SFBn693_35fu4uM5uZZDqztZZSNldX1r8k08k1-Jj8tPo5vbG1vvRqI7WRhgfzT-cn5l4qmZVMahnePQPS2vg7D-ToZOiAdsNzbXgbi05BBBYX3wC1zsmwgPb3_H0TXk9MKZvJVEbZfqxsA9VtvOgCGRo1HcA_LumW52Q5EvuOX3OpVYIdzlD2v-sqeLYhnp0s2-IcQMaAa-GZCXhU5BvPzvL_BOwq0agk72h-9UCFaDQKL4AOb6jpYuknn-NkaVQwgdrlhOQPCKiZhZH9zPZ6jkjirFjQ6aRE9cow74cxP9emRhGPzTEFYIxyNvXyT8DrX1GjBMNHrpjXu3bBb2hMo0L8feI-AiTANxw58Q3math1lF0pMLvAFaUFmBswfR6tc24J5bqM5PUHo37xixea6A5cHUlLxqHc1iuBgJFQFUKVI5E7fLDw3B1KvNvaoQ4ONkzs6FipqIC_vvGPy3GHgRr7VBXV7MkmFaYl3bWLFzabLBUmY5PTkdjzyPh4SIOdA79VAxk9U8wujFaFNBMvNaYoY-EK6OQrNYsAcxOiXFhNzsWKPFcXxNs4amqAHaZqA-m1IK7qMHAg2SGLx_djQJcs7N8OcfPyBRl3yO3wmrA7FtpSkpcEj055PrJMfRew68rOmoNgs4J9li2JC2-7HEyGAwtmYKTOHllloGNb3ELgIV_I2iqT1guQpL97txDOPeXxcD3hId5o_qnJIY9E9P--oZKg_rAL8rndCRMNu8rM8voSf8d_Ac87Cd0=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S7 설명 초안 받기 - LLM 장애 상태 G15」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNplk29L23AQx5_nVRzuyebWUh06lgdDN3QIDgZ7MigddFOGWHXU-kiFWtMRbYftbGpt0xJZtdsoLLURI_QV5S7vYXdJ65SFBn693_35fu4uM5uZZDqztZZSNldX1r8k08k1-Jj8tPo5vbG1vvRqI7WRhgfzT-cn5l4qmZVMahnePQPS2vg7D-ToZOiAdsNzbXgbi05BBBYX3wC1zsmwgPb3_H0TXk9MKZvJVEbZfqxsA9VtvOgCGRo1HcA_LumW52Q5EvuOX3OpVYIdzlD2v-sqeLYhnp0s2-IcQMaAa-GZCXhU5BvPzvL_BOwq0agk72h-9UCFaDQKL4AOb6jpYuknn-NkaVQwgdrlhOQPCKiZhZH9zPZ6jkjirFjQ6aRE9cow74cxP9emRhGPzTEFYIxyNvXyT8DrX1GjBMNHrpjXu3bBb2hMo0L8feI-AiTANxw58Q3math1lF0pMLvAFaUFmBswfR6tc24J5bqM5PUHo37xixea6A5cHUlLxqHc1iuBgJFQFUKVI5E7fLDw3B1KvNvaoQ4ONkzs6FipqIC_vvGPy3GHgRr7VBXV7MkmFaYl3bWLFzabLBUmY5PTkdjzyPh4SIOdA79VAxk9U8wujFaFNBMvNaYoY-EK6OQrNYsAcxOiXFhNzsWKPFcXxNs4amqAHaZqA-m1IK7qMHAg2SGLx_djQJcs7N8OcfPyBRl3yO3wmrA7FtpSkpcEj055PrJMfRew68rOmoNgs4J9li2JC2-7HEyGAwtmYKTOHllloGNb3ELgIV_I2iqT1guQpL97txDOPeXxcD3hId5o_qnJIY9E9P--oZKg_rAL8rndCRMNu8rM8vqSfMd_AdkiCec=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 10-2 영역별 설계
 
@@ -1066,7 +1123,7 @@ salt
 @enduml
 ```
 
-**[「S8 가족 전시 - 작품 상세와 직접 주소 차단」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNpVU11r2mAUvs-vOLibzaG0lpbNq-6jHbveZVFwaxmlVofaKyf4kQ5bHdNh2mjfSKRdtUVYrBnLQPaDck7-w84bo0PIRfJy3ufzZDtfSOUKJ8dpJX90mPmUyqWO4X3qw9HHXPYks_8qm87m4NHuxu76zkulcFhIH8C7Z-BaZRpMgEyVGgIiQP22970OVKuQ6lC3DDSskNkGup7RlyaQNcLGSMmn0gWl-FQpAvUsvB0DaSoZNuBPh-qma5cZaRX5czASh6Sn6eEkH4TIFHh_J0d_O3hrAVZNJvjrOhaEoKREo0oxGdqiqh1SAPY8zZ7raUuZ2oD6rQSj7LmWJqGHkjMW3XztHwayAg08f1WWRvpqQilJ1M0FKo5tvupaYmXIx53-wuvBfy5loWhJ6MupWjQ5BR6D2FpsK7L2PBIO-59L4UGkDGRqUiZn69XEXOZVC6cO4NRm0wkenodEhg6eJnBYx04nDnj3lR8-ZzssskYXto_bEFwHeL2RO50BzYTEkKgcKg4MEjMciMDvolb1Bu9PWcqLt7JpUidSoVQKqDUDM9wPnndgxSZWdU4Kf8z8rkyHJVCvM8fG4ZnX1wHerMekSX9RmBno0lqsE-xsSCKqjkmYcd_lsBKsBrZ0PxXtnIxycEFmcNmSDACyd1P4uA-8PpyVpztciNybB0ta97oaGY4fAt_TZnKBaKLyDvAbI2DjhowmeBdn-K0bXxYSxMQ8qhRrL-ILZLGDeS_wGP-oXldwWk9knCVl-yCzz__ZP7qO1w4=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S8 가족 전시 - 작품 상세와 직접 주소 차단」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNpVU11r2mAUvs-vOLibzaG0lpbNq-6jHbveZVFwaxmlVofaKyf4kQ5bHdNh2mjfSKRdtUVYrBnLQPaDck7-w84bo0PIRfJy3ufzZDtfSOUKJ8dpJX90mPmUyqWO4X3qw9HHXPYks_8qm87m4NHuxu76zkulcFhIH8C7Z-BaZRpMgEyVGgIiQP22970OVKuQ6lC3DDSskNkGup7RlyaQNcLGSMmn0gWl-FQpAvUsvB0DaSoZNuBPh-qma5cZaRX5czASh6Sn6eEkH4TIFHh_J0d_O3hrAVZNJvjrOhaEoKREo0oxGdqiqh1SAPY8zZ7raUuZ2oD6rQSj7LmWJqGHkjMW3XztHwayAg08f1WWRvpqQilJ1M0FKo5tvupaYmXIx53-wuvBfy5loWhJ6MupWjQ5BR6D2FpsK7L2PBIO-59L4UGkDGRqUiZn69XEXOZVC6cO4NRm0wkenodEhg6eJnBYx04nDnj3lR8-ZzssskYXto_bEFwHeL2RO50BzYTEkKgcKg4MEjMciMDvolb1Bu9PWcqLt7JpUidSoVQKqDUDM9wPnndgxSZWdU4Kf8z8rkyHJVCvM8fG4ZnX1wHerMekSX9RmBno0lqsE-xsSCKqjkmYcd_lsBKsBrZ0PxXtnIxycEFmcNmSDACyd1P4uA-8PpyVpztciNybB0ta97oaGY4fAt_TZnKBaKLyDvAbI2DjhowmeBdn-K0bXxYSxMQ8qhRrL-ILZLGDeS_wGP-oXldwWk9knCVl-yCzL_-zf5G11xg=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 11-2 영역별 설계
 
@@ -1132,7 +1189,7 @@ salt
 @enduml
 ```
 
-**[「S9 삭제 확인과 진행 - 멈춤 대기 G19」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9lF9P02AUxu_7KU7wRmMgIcZEuCIY8AN4SWYyhRjCADPGFZJM6EjZajZkhTLapYtlGzhi2QqU2E_Uc_odPO_bjolEb9b1PX_e5_yes81sFLL5wuZqTtlYWV77lM1nV-F99sPKx_z65tri6_Xceh6ezL-Yn5ybVQrLhdwSvJ0C2rkkx4L4xCA7iAYhUEeNj_ZhHPBcoxsXUC9GgQdvJqeUjWyuoGw9V7aAGh62e0CGSrYP-DMgzYn8oqga-LEZULMGn4GaB_E3bXqYHXlFal3x-UISALw4x5adgW1lYkI0lTdPczjRRO5BhjuKG5ICsk2u6eKhA9Ty-CwJOVE_pCOfGvW007sxrJlY1bHNYc0EOt5L49ytU6RTnT-xXIeovzumANBpDQcBo-ixBJHTNNEOAXcCiG4DbId8Ft2V5W2OwROK977HtLAXinrbJyMUlMZTpUCqixcl-a5ShfnqOtkiN967jgYqNc5Z2Q_GhB2dL-pGAwdQU6PrnhhyOG6Q6uQE_sa4y4J4o859UkgZifO2S3t6RtmWow98PDNBGCbs6Oh46OJX2ZOOS9IuYWyd5eJZCOJRcdFxua1kwRAshz1rlqjPuTfsmUx83ElNOwmF7JWgcFxL1MWGLx38HnITblaxqOzGJWu0VsnCAZo1WV6xIk8F2v0SGxbXsySydeB1wOrJ9FBkuzeigFW-vhoKU5lAsklkhdiyUg4P1ybZFzHgQuLcUMBTvFPjE4vUq2fCrT82T4C9N5YOPfH4f3biOfkaGdq_U1ObOvtxU9r06j4sMAtUrNowxah48Ss2ugBzLx9YkyTXzHsa5mi9mUzP572WfLw6FvW_sx7bM_rNjkvyvK-cR_3Lx04sDONSA8tkKmKibWVmaW2R_3t-A25tkRI=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S9 삭제 확인과 진행 - 멈춤 대기 G19」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp9lF9P02AUxu_7KU7wRmMgIcZEuCIY8AN4SWYyhRjCADPGFZJM6EjZajZkhTLapYtlGzhi2QqU2E_Uc_odPO_bjolEb9b1PX_e5_yes81sFLL5wuZqTtlYWV77lM1nV-F99sPKx_z65tri6_Xceh6ezL-Yn5ybVQrLhdwSvJ0C2rkkx4L4xCA7iAYhUEeNj_ZhHPBcoxsXUC9GgQdvJqeUjWyuoGw9V7aAGh62e0CGSrYP-DMgzYn8oqga-LEZULMGn4GaB_E3bXqYHXlFal3x-UISALw4x5adgW1lYkI0lTdPczjRRO5BhjuKG5ICsk2u6eKhA9Ty-CwJOVE_pCOfGvW007sxrJlY1bHNYc0EOt5L49ytU6RTnT-xXIeovzumANBpDQcBo-ixBJHTNNEOAXcCiG4DbId8Ft2V5W2OwROK977HtLAXinrbJyMUlMZTpUCqixcl-a5ShfnqOtkiN967jgYqNc5Z2Q_GhB2dL-pGAwdQU6PrnhhyOG6Q6uQE_sa4y4J4o859UkgZifO2S3t6RtmWow98PDNBGCbs6Oh46OJX2ZOOS9IuYWyd5eJZCOJRcdFxua1kwRAshz1rlqjPuTfsmUx83ElNOwmF7JWgcFxL1MWGLx38HnITblaxqOzGJWu0VsnCAZo1WV6xIk8F2v0SGxbXsySydeB1wOrJ9FBkuzeigFW-vhoKU5lAsklkhdiyUg4P1ybZFzHgQuLcUMBTvFPjE4vUq2fCrT82T4C9N5YOPfH4f3biOfkaGdq_U1ObOvtxU9r06j4sMAtUrNowxah48Ss2ugBzLx9YkyTXzHsa5mi9mUzP572WfLw6FvW_sx7bM_rNjkvyvK-cR_3Lx04sDONSA8tkKmKibWVmaW1R_Pf8Bv-JkRw=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 12-2 영역별 설계
 
@@ -1148,7 +1205,7 @@ salt
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 삭제 | `DELETE`. 즉시 목록·전시에서 사라짐, 202 | UC7 BF2 |
+| 삭제 | `DELETE`. 즉시 목록·전시에서 사라짐, 202. 대화상자를 열어 둔 동안 `GET /v1/artworks/{id}/deletion`(아이는 `GET /v1/children/{id}/deletion`)을 폴링해 `waiting_stop`(G19 보류) → `deleting_files` → `done`을 보인다. 끝내 실패한 파일(삭제 미완료)도 보호자에게는 `done`이다(S10 집계, 운영 CLI로 처리) | UC7 BF2 · D21 |
 | 취소 | 아무것도 바뀌지 않음 | UC7 A3 |
 | 목록으로 | 기다리지 않고 S4로. 삭제는 계속 | UC7 BF3 · BF4 |
 | 다시 삭제하기 | G18 실패 뒤 재요청 | UC7 E5 |
@@ -1202,17 +1259,17 @@ salt
 @enduml
 ```
 
-**[「S10 서비스 상태와 모델별 지표 - 서비스 운영자 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVF1PGkEUfd9fcaNvNFIosSZN09ja2rTRhKTpU1MTrKaxojSAfRGTta4NBY3QsLrQxSwpClhMVwTEhP6hnbv_ofcOX0YLD8zHmTP3nHuG6Vg8FI1vrIWV2OrK-udQNLQGi6EPqx-jkY31pZlIOBKF8dnArP_FMyW-Eg8vwxu_D1AzxbWGqTLgzra7Y2JeBXFWFfsdcakBVlQ3a8LETVihicY2HmdAXNlKLBSOK5v3lM3-Orj5nKg1IQF4dO7q1qP_nkzAp4hnOrbh8a5GafLuafCVmzexUHsPW4rXy2w7RSw16XQxK9ItV68yY1klJl7rivagShB_Or0NQjgd27EJsYAt07nqwhRBF_qUC2N92MRI35iyOT7gSfQqzTstm8fSDB4Y2-7hiQIw7wfR1sRpnRZngm-BRVnasCyR4RK9DHwA7l4GLf02kAasUrvgEopdLDZRs9gYN69jsQN9OstEPUn2fSOA3LJ0Zg2A01TRSt5hvaEff6pYIYdZJOolttpp_BUlU6RyIA7yeJxlqklwrlPMnoCXRNUjxHTZPfzOJA2DVWLaJC8BT4uOrfKph2RQWZztEmRubv6WnqDPOznQPwWB50Nqtma3g20OUdAvIVv05XYMs2WRfIOD5zRUug-cS80t7FOBomZzXWhtkxxNpA3ZsP5Barf9g-7Dxm86aDuXXcDUNRmJJrfC5_V4aLffCkwa9CNOrNFO_wz5Jw6Iu84YGY4as_sIyCj8ek4dkS7nNfFrT6J4S6q4D48Xn4yeC3cgw62c5KicMPDuLe0c69mS0UtXHX5lx1k82gXRSLoGB3GQ7MYgYUaZyYac1Boio-JeT3jow65SPL545KvLYUUj4jK9NpoHel6PrncummQ2sLkkqaKSYqdVx5ItTbarVNIYy775mvEowwGiHGDpghyp0xXSbkqw3qVHRwnjXQmSeaOJTPBhEws5adX08voS_Tf9A0hsbao=)** — 클릭 시 브라우저로 연결됩니다.
+**[「S10 서비스 상태와 모델별 지표 - 서비스 운영자 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptVF1PGkEUfd9fcaNvNFIosSZN09ja2rTRhKTpU1MTrKaxojSAfRGTta4NBY3QsLrQxSwpClhMVwTEhP6hnbv_ofcOX0YLD8zHmTP3nHuG6Vg8FI1vrIWV2OrK-udQNLQGi6EPqx-jkY31pZlIOBKF8dnArP_FMyW-Eg8vwxu_D1AzxbWGqTLgzra7Y2JeBXFWFfsdcakBVlQ3a8LETVihicY2HmdAXNlKLBSOK5v3lM3-Orj5nKg1IQF4dO7q1qP_nkzAp4hnOrbh8a5GafLuafCVmzexUHsPW4rXy2w7RSw16XQxK9ItV68yY1klJl7rivagShB_Or0NQjgd27EJsYAt07nqwhRBF_qUC2N92MRI35iyOT7gSfQqzTstm8fSDB4Y2-7hiQIw7wfR1sRpnRZngm-BRVnasCyR4RK9DHwA7l4GLf02kAasUrvgEopdLDZRs9gYN69jsQN9OstEPUn2fSOA3LJ0Zg2A01TRSt5hvaEff6pYIYdZJOolttpp_BUlU6RyIA7yeJxlqklwrlPMnoCXRNUjxHTZPfzOJA2DVWLaJC8BT4uOrfKph2RQWZztEmRubv6WnqDPOznQPwWB50Nqtma3g20OUdAvIVv05XYMs2WRfIOD5zRUug-cS80t7FOBomZzXWhtkxxNpA3ZsP5Barf9g-7Dxm86aDuXXcDUNRmJJrfC5_V4aLffCkwa9CNOrNFO_wz5Jw6Iu84YGY4as_sIyCj8ek4dkS7nNfFrT6J4S6q4D48Xn4yeC3cgw62c5KicMPDuLe0c69mS0UtXHX5lx1k82gXRSLoGB3GQ7MYgYUaZyYac1Boio-JeT3jow65SPL545KvLYUUj4jK9NpoHel6PrncummQ2sLkkqaKSYqdVx5ItTbarVNIYy775mvEowwGiHGDpghyp0xXSbkqw3qVHRwnjXQmSeaOJTPBhEws5adX08voS_zf9A7YgbbQ=)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 13-2 영역별 설계
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
 |---|---|---|---|
-| 헤더 | 역할 · 계정(가림) · API활용 | 7.1 Output | UX8 (C9) |
+| 헤더 | 역할 · 계정(가림) · 역할별 메뉴 표(§2-1)의 메뉴 | 7.1 Output · `GET /v1/ops/me` | UX8 (C9) |
 | 요약 행 | 생존 · 준비 · 기간 | 7.2 · 7.3 Output | 운영 화면의 고정 레일 |
 | 준비 - 모델별 | 모델 · 서빙군 · 상태 칩 · 영향 경로 | 7.3 Output 모델별 준비·활성 버전 · H14 | UX8 (C10) |
 | 지표 | 첫 결과 승인율 · 판정 수정률 · 결과 미도달(목표 0) · 삭제 미완료 · 설명 규칙 검사 실패율(P0.5) — "정의와 검증 계획이며 실적 아님" | 7.4 Output (H13) | BR-OPS-02 |
-| 탭 | 모델별(낮춤률 · p95 · 재시도율 · 큐 적체 · 외부 호출량·한도 초과) · 원인 5분류 · 결과 미도달 추적(단계 작업 번호 기준) | 7.5 · 7.6 · 7.7 Output | UX3 · UX8 |
+| 탭 | 모델별(낮춤률 · p95 · 재시도율 · 큐 적체 · 외부 호출량·한도 초과) · 원인 5분류 · 결과 미도달 추적(단계 작업 번호 기준, **운영자에게만 그림**) | 7.5 · 7.6 · 7.7 Output | UX3 · UX8 |
 | 구조적 차단 안내 | 가족 이미지·이야기로 가는 경로 없음 | — (BR-ACC-03) | UX8 |
 
 ### 13-3 상호작용
@@ -1276,7 +1333,7 @@ salt
 @enduml
 ```
 
-**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VdFOG1cQffdXjMhLS2WKDUURTxRCqkpNQxv1KXKlbXETF2OQvTSqIJIh28jgjTCRTUxiu4vi1pAade2sEizRH9o7-w89s7u2MSQPK917fefMmTNnrudyupbVN1bTkdxKKrOuZbVV-kn7eeVBdm0js7ywll7L0o3bU7dji_MRPaWnk3QvFiP15kQ9Oydvf9e183yUJ97rud1TioZHpIqOKvZIvbcjOS2tRzY_i2wSv3S4uk3eUVmdOrRF_OLMq1izV2K26Ne18bncxvjEShab-_xk23tSi3Ir7x3UEvQ4MjER2bzRp7AFuBobHSzUcVPZHfJeGeqtwA8Wqn7BdYcNi_eacl5xuFiLEN2J0Xzq--Qv3yZ1HP8W8yk95bopu7gPXeG65GAg9KoSEqe768nMwjdfL12-PQyLDcPYMkZCp-jLTGpV05PLdCurPUplHuSupZ34QNag4h_HwooDPSB1nJ2CahVUsUmu3eGihTOuFlAb9s_HRkTixl-AkoW1zY22iGLm3XNbFvtH3Di4JsfC0g9yvZlXPUOVToCNXGiCau32QcbHwQCXJoX4xysMkNS7gvqzzdWm2isD9oCmhb_A7pxwHQ6q_EfxyQAw3gf8gm4l1_WHgP1dfwg4nN9Zujcsg4tNzxRuM5NDMfCJBvjUvnQg5ruohXILQxaoPSEZZui7R8nMVHR6HrfuptPaqiZkdxxlNV27RNwqQR1RtvsPDFzm7hmpigmh27CVuP9leSDB40GvoGVoPxgp8PcY0vWd3n6Hds8S77RVwxQNegZartoXkshpy5Twse12HNk3_uCu72czz6_AyKoJI3zec5RsApZbhne4OwtJ6XOaniY-MtRr89I0_nseHsUFsH7ulQ2wJ35qIhQA98OLQYEJEQzc3bcWGxDyhSNqyaFnllTxhLBVx_UEqhVbtna9RpXoq7gPbhnCFs25lpsWZ0QDFM21S1M_-N2rnKk3pxRH2RhXQBT40Om_LO77C7dj-wGlKpoJv-xxxQBhkRUTbYHo6wvkvvqeRK-nGLBDrLgFowf9MAizqPvq5dBOQYCvQkjpE3QteHw-HUkiBfS1CZ6k6CjD_rjT4s3LgojDVNcQBeuOtAeVqn1T_e2EXvI7hNBDJyg7pA6nYLb9sbIqkqiVHwhUDS4H_PCb27Wl3SGvKxWMvJ8Bx4Tv6blkZhl_Ef8De_0yNQ==)** — 클릭 시 브라우저로 연결됩니다.
+**[「S11 모델 평가와 승격 - 평가 담당 뷰」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNp1VdFOG1cQffdXjMhLS2WKDUURTxRCqkpNQxv1KXKlbXETF2OQvTSqIJIh28jgjTCRTUxiu4vi1pAade2sEizRH9o7-w89s7u2MSQPK917fefMmTNnrudyupbVN1bTkdxKKrOuZbVV-kn7eeVBdm0js7ywll7L0o3bU7dji_MRPaWnk3QvFiP15kQ9Oydvf9e183yUJ97rud1TioZHpIqOKvZIvbcjOS2tRzY_i2wSv3S4uk3eUVmdOrRF_OLMq1izV2K26Ne18bncxvjEShab-_xk23tSi3Ir7x3UEvQ4MjER2bzRp7AFuBobHSzUcVPZHfJeGeqtwA8Wqn7BdYcNi_eacl5xuFiLEN2J0Xzq--Qv3yZ1HP8W8yk95bopu7gPXeG65GAg9KoSEqe768nMwjdfL12-PQyLDcPYMkZCp-jLTGpV05PLdCurPUplHuSupZ34QNag4h_HwooDPSB1nJ2CahVUsUmu3eGihTOuFlAb9s_HRkTixl-AkoW1zY22iGLm3XNbFvtH3Di4JsfC0g9yvZlXPUOVToCNXGiCau32QcbHwQCXJoX4xysMkNS7gvqzzdWm2isD9oCmhb_A7pxwHQ6q_EfxyQAw3gf8gm4l1_WHgP1dfwg4nN9Zujcsg4tNzxRuM5NDMfCJBvjUvnQg5ruohXILQxaoPSEZZui7R8nMVHR6HrfuptPaqiZkdxxlNV27RNwqQR1RtvsPDFzm7hmpigmh27CVuP9leSDB40GvoGVoPxgp8PcY0vWd3n6Hds8S77RVwxQNegZartoXkshpy5Twse12HNk3_uCu72czz6_AyKoJI3zec5RsApZbhne4OwtJ6XOaniY-MtRr89I0_nseHsUFsH7ulQ2wJ35qIhQA98OLQYEJEQzc3bcWGxDyhSNqyaFnllTxhLBVx_UEqhVbtna9RpXoq7gPbhnCFs25lpsWZ0QDFM21S1M_-N2rnKk3pxRH2RhXQBT40Om_LO77C7dj-wGlKpoJv-xxxQBhkRUTbYHo6wvkvvqeRK-nGLBDrLgFowf9MAizqPvq5dBOQYCvQkjpE3QteHw-HUkiBfS1CZ6k6CjD_rjT4s3LgojDVNcQBeuOtAeVqn1T_e2EXvI7hNBDJyg7pA6nYLb9sbIqkqiVHwhUDS4H_PCb27Wl3SGvKxWMvJ8Bx4Tv6blkZln-Iv4HrjwyPw==)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 14-2 영역별 설계
 
@@ -1287,7 +1344,8 @@ salt
 | 모델 상태 표 | 모델 · 활성 버전 · 장치(`execDevice`/`runtime`, MPS 표기) · 적재(C10 칩, 불러오는 중이면 경과/예상 막대, 마지막 적재 초, M6는 내려갈 시각) · 대기(M6 `queue`, 그 밖은 `queue_backlog`) · 동작. 2초 폴링, 화면이 안 보이면 멈춤 [추론]. **운영자 · 평가 담당 · 연동 개발이 읽고, 지금 불러오기는 운영자 · 평가 담당만** | `GET /v1/ops/models`(T143 · T109) | UX8 (C10) · UX6 |
 | 평가 진행 | 평가 묶음 구성(팀원 제작만) · 완료/전체 · 평가 미완료 수 | 8.3 · 8.4 Output | G20 · UX6 |
 | 차단 블록 | G20 항목 등록 · G21 착수(해시·격리) · G22 승격(미완료·라이선스·계약) | 8.3 · 8.7 Output | UX6 |
-| 롤백 | 직전 활성 후보로. 후보 없으면 비활성 + "해제 주체 없음" (벽, §18) | 8.8 Output | UX6 |
+| 롤백 · 비활성화 | 직전 활성 후보가 있으면 **롤백**. 없으면 롤백 버튼은 C3 "(비활성) - 되돌릴 후보가 없어요"이고 대신 **비활성화**를 준다(clarify 확정). 비활성은 "미준비"(장애)와 다른 칩(사선)으로 보이고, 새 버전 승격 때 다시 활성 | 8.8 Output · `POST /v1/admin/models/{id}/rollback` · `…/deactivate` | UX6 |
+| 역할 | 평가 담당만 조작. 운영자·연동 개발은 같은 화면을 읽기 전용으로 보고 조작 버튼을 그리지 않는다(지금 불러오기는 운영자도 조작) | §2-1 역할별 메뉴 표 | UX8 |
 
 ### 14-3 상호작용
 
@@ -1299,10 +1357,11 @@ salt
 | 판단 기록 | 오인 분류 · 통과 판단 · 근거 | UC9 BF6 · A2(보류) |
 | 승격 | G22 통과 시에만 활성. 직전 활성은 롤백 후보로 | UC9 BF7 · D5 |
 | 롤백 | S10 지표를 근거로. 재평가 없이 즉시 | UC9 A1 |
+| 비활성화 | 롤백 후보가 없는 첫 버전 문제일 때. 확인 창("이 모델이 필요한 선택지가 보호자 화면에서 막혀요") 뒤 실행. 대기 중인 작업은 모델 미준비 규칙을 따른다 | UC9 E8 · clarify 2026-09-28 |
 
 ### 14-4 상태 전이
 
-모델 상태: `미준비`/`적재 실패` → (지금 불러오기) → `불러오는 중` → `준비됨` 또는 `적재 실패`(60초마다 재시도) · M6 `준비됨` → (5분 요청 없음) → `내려감 짐작` → (첫 요청) → `불러오는 중`. 평가: `목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` 또는 `벽(E8)`.
+모델 상태: `미준비`/`적재 실패` → (지금 불러오기) → `불러오는 중` → `준비됨` 또는 `적재 실패`(60초마다 재시도) · M6 `준비됨` → (5분 요청 없음) → `내려감 짐작` → (첫 요청) → `불러오는 중`. 평가: `목록` → (평가 요청) → `착수 검사` → `평가 중` 또는 `차단(G21)` · `평가 중` → `보고서` → (판단) → `판단 기록됨` → (승격) → `활성` 또는 `차단(G22)` · `활성` → (롤백) → `되돌림` · `활성`(후보 없음) → (비활성화) → `비활성` → (새 버전 승격) → `활성`.
 
 ---
 
@@ -1344,7 +1403,7 @@ salt
 @enduml
 ```
 
-**[「S12 API활용 메뉴 - 시험 호출 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVEtPGlEU3s-vONFNSyMWG7sgTWMf2rpoYtJlI8mo1KDIEAZtjJqgjo0wtr5ARjMQTKGIocmII4FE_9Ccc_9Dz-Vh46JNwwLued3zPS5jelJNJJeXooq-GInF1YS6BDPq7OJ8QluOzb3RoloCBieeTQTGXyvJSDIaho-BEXg1NSlObTqrAdaymHZhCMi0Rd4CYbWoaQM5F2heAG1vim1b0dVoUll7oqwBnblkbYI4zWLNhXWg_C-RKwX528H9U_AcGx2b4wuab0xf9vkXE3z41B0zRNWUOLSnZQQvL_BbC8R-2nNS07Ch-P3K2jC8mHlJ-Swe22K_ToWWyLS4mCuo4HIQC7cc5AhWy7w0ndz2GgcB600q7Mnixh2eyw28m7rnGAoAXrsSVPEAKHfFieGVwDBT9kVLLOp8nHrKNT1YnEyE1blV6K6H10a_oLev13IwU-kNWdLmwlF9WA_PL4Vjyf-ojGt6uFMGYi8FuOViMwViq_zvrlk1noxosU6jfxTI2qVSTtlgMbDeIsMGbBhUMmAlwCri5Q4Zrd5vZsncFd8typQlk8T0tS3JvhYPx9R4xL-g81w0y6w9Z-_49r4UoYGHfhiC2aiq65HPqwOSruIOlipBCHX167NPxUNxtAvjQz6fL8T3MLRgB2p_1lYZOOWTy4cGsJoWRQvg3cgoj_8wAtg2pCmNK7m7lNolo8S7s9tyUncG2bl8q042W66_UI87LmeBDapKd8op0qMHFnuOwxnKWXTi0lmWB4icSyUG_OOWGm4Q-hhMF832X67GozJQpu01alIrJozRipM0Wz7IXjbLWLnXzrsuYcXtUCmd_4DFR_cQH3e06mh-H5vu8kKFQzRvOP8-8Fzi9RqOd30L2DSwYv1pm3zbF57fbsPCn3VJM1tenq2yrO21rPdGYCbbeUvnV0xliooV-rpHeX4Wx849S4akaIM_Y-HYHP-r_AYpV0ES)** — 클릭 시 브라우저로 연결됩니다.
+**[「S12 API활용 메뉴 - 시험 호출 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNqNVEtPGlEU3s-vONFNSyMWG7sgTWMf2rpoYtJlI8mo1KDIEAZtjJqgjo0wtr5ARjMQTKGIocmII4FE_9Ccc_9Dz-Vh46JNwwLued3zPS5jelJNJJeXooq-GInF1YS6BDPq7OJ8QluOzb3RoloCBieeTQTGXyvJSDIaho-BEXg1NSlObTqrAdaymHZhCMi0Rd4CYbWoaQM5F2heAG1vim1b0dVoUll7oqwBnblkbYI4zWLNhXWg_C-RKwX528H9U_AcGx2b4wuab0xf9vkXE3z41B0zRNWUOLSnZQQvL_BbC8R-2nNS07Ch-P3K2jC8mHlJ-Swe22K_ToWWyLS4mCuo4HIQC7cc5AhWy7w0ndz2GgcB600q7Mnixh2eyw28m7rnGAoAXrsSVPEAKHfFieGVwDBT9kVLLOp8nHrKNT1YnEyE1blV6K6H10a_oLev13IwU-kNWdLmwlF9WA_PL4Vjyf-ojGt6uFMGYi8FuOViMwViq_zvrlk1noxosU6jfxTI2qVSTtlgMbDeIsMGbBhUMmAlwCri5Q4Zrd5vZsncFd8typQlk8T0tS3JvhYPx9R4xL-g81w0y6w9Z-_49r4UoYGHfhiC2aiq65HPqwOSruIOlipBCHX167NPxUNxtAvjQz6fL8T3MLRgB2p_1lYZOOWTy4cGsJoWRQvg3cgoj_8wAtg2pCmNK7m7lNolo8S7s9tyUncG2bl8q042W66_UI87LmeBDapKd8op0qMHFnuOwxnKWXTi0lmWB4icSyUG_OOWGm4Q-hhMF832X67GozJQpu01alIrJozRipM0Wz7IXjbLWLnXzrsuYcXtUCmd_4DFR_cQH3e06mh-H5vu8kKFQzRvOP8-8Fzi9RqOd30L2DSwYv1pm3zbF57fbsPCn3VJM1tenq2yrO21rPdGYCbbeUvnV0xliooV-rpHeX4Wx849S4akaIM_Y-HYnPxX-Q1qc0Ec)** — 클릭 시 브라우저로 연결됩니다.
 
 ### 15-2 영역별 설계
 
@@ -1375,7 +1434,7 @@ salt
 
 ## 16. 게이트 맵 → 화면 표현 사상
 
-SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이상의 버튼을 비활성화한다.
+SD_01 §15의 게이트 **30개 전건**(G0~G29)이다. 모든 게이트가 하나 이상의 버튼을 비활성화한다.
 
 | 게이트 | 화면 | UI 표현 | 비활성화 대상 | 해제 액션 |
 |:--:|---|---|---|---|
@@ -1387,10 +1446,10 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | G5 사진 검사 | S2 | C2(형식·용량·판독 사유) | 올리기 | 보호자: 다른 사진 고르기 |
 | G6 내구 접수 | S2 | C2 "접수되지 않았어요" | S3로 가는 진행(접수 완료 화면이 뜨지 않음) · 올리기는 다시 활성 | 보호자: 다시 올리기 |
 | G7 판정 제안 도달 | S3 · S4(배지) | 제안 칸을 "제안을 준비하지 못했어요"로, C2 | 확정하기(선택 전) | 보호자: 셋 중 직접 고르기 |
-| G8 확정 가능 상태 | S3 | C2 "이미 만들기 시작했어요/삭제 중이에요" + 현재 상태 | 선택지 · 확정하기 | 보호자: S5에서 결정으로 바꾸기(삭제 중은 종결) |
+| G8 확정 가능 상태 | S3 | C2 "이미 만들기 시작했어요/삭제 중이에요" + 현재 상태. 비활성 모델 선택지는 409 `model_disabled` → C2 "지금은 이 방식을 쓸 수 없어요"(해제 주체 평가 담당) | 선택지 · 확정하기 | 보호자: S5에서 결정으로 바꾸기(삭제 중은 종결) |
 | G9 결과 단계 소진 | S4 · S5 · C1 | 레일 막힘 변형 + C2 "서버 문제로 만들지 못했어요 - 낮춘 결과가 아니에요" | 좋아요 · 낮춘 결과로 걸기 | 보호자: 액자로 걸기 / 다시 찍기 |
 | G10 결과 열람 | S5 | C5 칸 안 C2 | 미리보기 실패: 모든 결정 버튼 / 원본 실패: 액자로 걸기 | 보호자: 나중에 다시 열기 / 다시 찍기 |
-| G11 이야기 값 | S6 | 필드 옆 사유 + C2 | 저장 | 보호자: 값 고치기 |
+| G11 이야기 값 | S6 | 필드 옆 사유 + C2. 동시 수정은 409 `story_conflict` C2 "다른 보호자가 먼저 고쳤어요" | 저장 | 보호자: 값 고치기 · 최신 내용 불러오기 |
 | G12 전시 | S6 · S8 · C1 · C8 | 레일 전시 보류 변형 + C8 빠진 줄. S8 직접 주소는 C2 | S8 "전시로 보기" · S6 "전시 보기" | 보호자: 빠진 쪽 채우기(S5 결정 · S6 필수) |
 | G13 설명 모델 조건 | S7 · S6 | C2(해제 주체 = 평가 담당) | AI 초안 만들기 | 보호자 대안: 기본 문장으로 받기 · 직접 쓰기. 해제는 평가 담당의 P8 승격(요청 채널 없음) |
 | G14 설명 입력 | S7 | C3 사유 "키워드를 하나 이상 적거나 골라 주세요" | 초안 만들기 | 보호자: 키워드·태그 입력 |
@@ -1398,13 +1457,17 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | G16 규칙 검사 | S7 | 걸린 초안은 보이지 않음. 반복 실패면 C6 "기본 문장으로 바꿨어요" | 걸린 초안의 승인(초안 자체가 표시되지 않음) | 시스템 재생성 → 보호자: 템플릿 고치기 / 직접 쓰기 |
 | G17 3D 노출 | S3 · S5 · S8 | 3D 선택지·회전 토글을 그리지 않음. 직접 주소는 C2 | 3D 조각 선택지 · 돌려 보기 | 노출 설정을 켜는 팀원(주체 미정, §18). 보호자 쪽 요청 채널 없음 |
 | G18 삭제 착수 | S9 | C2 "삭제되지 않았어요" | 목록으로 가기 전 "삭제 완료" 표시 없음 · 잠금 해제 없음 | 보호자: 다시 삭제하기 |
-| G19 처리 멈춤 (보류형) | S9 · C1 | C2 보류 변형(노란 테두리) | 이 작품의 결과 확인 · 이야기 · 설명 버튼 | 시스템(멈춤 확인·시간 상한). 보호자는 기다리지 않아도 됨 |
+| G19 처리 멈춤 (보류형) | S9 · C1 | C2 보류 변형(점선 테두리) | 이 작품의 결과 확인 · 이야기 · 설명 버튼 | 시스템(멈춤 확인·시간 상한). 보호자는 기다리지 않아도 됨 |
 | G20 평가 항목 등록 | S11 | C2 "팀원이 만든 작품만 등록할 수 있어요" | 항목 등록 | 평가 담당: 조건 채워 다시 등록 |
 | G21 평가 착수 | S11 | C2 해시 불일치 항목 · 열린 포트 | 평가 요청 | 평가 담당: 재설치·격리 조치 뒤 다시 요청 |
 | G22 승격 | S11 | C2 미완료 수 · 라이선스 · 계약 불일치 | 승격 | 평가 담당: 미완료 재평가 · 라이선스 확인 · 어댑터 수정 |
 | G23 시험 호출 입력 | S12 | 드롭다운에 평가 묶음 작품만. 비활성 모델은 C2 | 시험 호출 | 연동 개발: 평가 묶음에서 다시 고르기 |
 | G24 요청 크기·형식 | S12 응답 · P10 | 413/422를 C2로 | 시험 호출(형식 오류 입력) | 연동 개발: 입력 고치기 |
 | G25 외부 기능 준비 | S12 · C10 | 모델 칩 비활성·미준비 + C2 | 해당 기능의 시험 호출 | 해제 주체가 타인: 평가 담당(승격) · 운영자(서빙군 복구). 연동 개발은 다른 기능 고르기 |
+| G26 이메일 검사(가입) | S0 | 형식·비밀번호 규칙은 필드 옆 사유 + C2. 이미 가입된 주소도 새 가입과 같은 "메일함을 확인해 주세요"(가입 여부 비노출). 요청 한도는 C2 | 가입하기 | 보호자: 값 고치기 · 로그인(S0a) · 찾기(S0b) |
+| G27 메일 링크 토큰 | S0(확인) · S0b(재설정) | 400 `token_invalid` → C2 "링크를 쓸 수 없어요"(만료·사용·무효 구분 없음) | 확인 완료 표시 · 새 비밀번호 저장 | 보호자: 메일 다시 받기 |
+| G28 초대 수락 | S1c | 400 `token_invalid` · 403 `forbidden_role`/`invite_email_mismatch` · 409 `already_in_family` → C2 | 수락하기 | 초대받은 사람: 올바른 이메일로 다시 로그인 · 다른 가족에서 나오기 · 새 초대 받기 |
+| G29 보호자 관리 권한 | S1b | 초대·해제 버튼은 만든 보호자에게만 그림. 두 명 찬 뒤 초대는 C3 "보호자는 두 명까지예요"(409 `co_guardian_full`). 만든 보호자의 나가기는 C3 | 초대하기 · 해제 · (만든 보호자) 나가기 | 만든 보호자: 공동 보호자 해제. 만든 보호자의 탈퇴·이전은 U20 |
 
 **사상 규칙**
 
@@ -1454,9 +1517,9 @@ SD_01 §15의 게이트 **26개 전건**이다. 모든 게이트가 하나 이�
 | 1 | **요청 채널이 없다** — 해제 주체가 타인인 게이트(G1 · G13 · G17 · G25)에 «요청 보내기»를 둘지. 상류에 기능이 없어 만들지 않았다 | S7 · S3 · S8 · S10~S12 | 중간. 두면 새 UC가 필요하다 |
 | 2 | **API 키 발급·폐기 화면** — U12 예시값은 "서비스 운영자가 'API활용' 메뉴에서"지만 UC 단계가 없다(D17) | S12 | 중간. P0 착수 전 UC11에 발급·폐기 흐름을 더할지 정한다 |
 | 3 | **3D 노출 설정을 켜는 화면·역할** (SD_01 §17 3번) | S3 · S5 · S8 · S10 | 중간(P1) |
-| 4 | **삭제 미완료 건을 끝내는 화면** — S10은 수만 보인다 (SD_01 §17 1번) | S10 | 높음 |
-| 5 | **롤백 후보 없음의 다음 조치** — S11 롤백 버튼은 비활성 + "해제 주체 없음" (SD_01 §17 2번) | S11 | 높음 |
-| 6 | 화면 갱신 방식(폴링/푸시)과 갱신 주기 (U8) | S3 · S4 · S9 · S12 | 중간. 레일·배지가 언제 바뀌는지가 여기서 정해진다 |
+| 4 | ~~삭제 미완료 건을 끝내는 화면~~ → 확정(clarify 2026-09-28): 서비스 운영자가 원인 해결 뒤 운영 CLI(`ops:purge-retry`)로 다시 삭제한다. 화면은 두지 않고 S10은 수만 보인다 | S10 | 닫음 |
+| 5 | ~~롤백 후보 없음의 다음 조치~~ → 확정(clarify 2026-09-28): 평가 담당이 모델을 **비활성화**한다(S11 §14-2 · D21) | S11 | 닫음 |
+| 6 | ~~화면 갱신 방식(U8)~~ → 확정(R-12): 폴링 3→6→10초, 전이 중 상태만, 숨김 탭 정지. S11 모델 상태 표만 2초 | S3 · S4 · S9 · S11 · S12 | 닫음 |
 | 7 | 제안 문구·낮춤 문구 확정 (U10) — 이 문서의 문구는 UC의 [추론 문구]를 옮긴 것 | S3 · S4 · S5 · S7 | 중간 |
 | 8 | 결과 파일 형식(U9) — 재생·시차 컨트롤의 모양 | S5 · S8 | 중간 |
 | 9 | ~~가족 계정 모델(U1)~~ → 확정: 공동 보호자 초대, 같은 권한, 부모 두 명까지, 초대는 만든 보호자만(`1c460b0`). 역할별 뷰는 나누지 않고 S1b의 초대·해제 버튼만 만든 보호자에게 보인다. 초대 이메일 불일치(UC15 E2) 응답 코드도 확정: 403 `forbidden_role` · reason `invite_email_mismatch`(이제민 결정, R-25). 남은 것: 만든 보호자의 탈퇴·권한 이전(U20) | S1b · S1c · S1d | 닫음 |
