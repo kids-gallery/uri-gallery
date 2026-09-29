@@ -1,4 +1,4 @@
-// E2E 전용 스택(T044·T059·T075·T087·T138, R-19): 임시 MariaDB(소켓만) + 별도 app-api + 별도 Mailpit + CPU 워커.
+// E2E 전용 스택(T044·T059·T075·T087·T138, R-19): 임시 MariaDB(소켓만) + 별도 app-api + 별도 Mailpit + CPU 워커 + sweeper.
 // 팀 DB·p1(app-api 9521, Mailpit 1025/8025, model-api 9541)에는 절대 붙지 않는다. model-api는 닫힌 포트를 가리킨다.
 // 포트: app-api E2E_API_PORT(9621) · Mailpit SMTP E2E_SMTP_PORT(1125) · 웹 수신함 E2E_MAIL_PORT(8125).
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
@@ -49,6 +49,8 @@ export default async function globalSetup() {
 
   procs.push(spawn(path.join(os.homedir(), '.local/bin/mailpit'), ['--smtp', `127.0.0.1:${SMTP_PORT}`, '--listen', `127.0.0.1:${MAIL_PORT}`, '--database', path.join(dir, 'mail.db')], { stdio: ['ignore', log('mailpit'), log('mailpit')] }));
   procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] }));
+  // 삭제(S9)를 끝까지 처리하는 sweeper(10초 주기, pm2 'sweeper'와 같은 진입점)
+  procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/sweeper/main.ts'], { cwd: API, env, stdio: ['ignore', log('sweeper'), log('sweeper')] }));
   // 액자 경로(frame_compose)를 처리하는 CPU 워커 — 모델 없이 도는 단계만 실제로 돈다(활성 모델 없음, p1과 같음)
   const run = path.join(dir, 'run');
   fs.mkdirSync(run);
