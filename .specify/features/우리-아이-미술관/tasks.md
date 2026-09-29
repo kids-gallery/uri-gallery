@@ -94,7 +94,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [ ] T035 [P] 화면 문구를 한 파일에 모은다(SD_02 문구 기준, 스타일가이드와 다르면 SD_02 우선) — `web/src/copy/ko.ts` · 담당 C · 스킬 FD · 근거 U10, R-20
 - [ ] T036 [P] API 클라이언트를 만든다: `openapi-typescript` 생성 타입, Problem Details → `BlockNotice` 모델 변환, 401 → 로그인 이동 — `web/src/api/client.ts` · `web/src/api/types.gen.ts` · 담당 C · 스킬 FD · 근거 R-10, G0
-- [ ] T037 [P] 폴링 컴포저블을 만든다: 3→6→10초, 전이 중 상태만, `visibilitychange`에서 멈춤 — `web/src/composables/usePolling.ts` · 담당 C · 스킬 FD · 근거 R-12
+- [x] T037 (완료 2026-09-29 — Vitest 7건: 3→6→10초·전이 끝나면 멈춤·숨김 탭 정지·실패 뒤 계속·겹침 없음·S11 2초·범위 해제) [P] 폴링 컴포저블을 만든다: 3→6→10초, 전이 중 상태만, `visibilitychange`에서 멈춤 — `web/src/composables/usePolling.ts` · 담당 C · 스킬 FD · 근거 R-12
 - [ ] T038 [P] 공통 컴포넌트 C1·C2·C3를 만든다: `JourneyRail`(기본·막힘·대기·전시 보류·종결), `BlockNotice`(차단·보류·종결, 사유·해제 주체·다음 행동 필수), `ReasonButton`(`aria-disabled`+사유, hover·포커스 같은 문구) — `web/src/components/JourneyRail.vue` · `BlockNotice.vue` · `ReasonButton.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3, UX6, G 사상 규칙 1·2
 - [ ] T039 [P] 공통 컴포넌트 C4·C9를 만든다: `StatusBadge`, `RoleHeader`(보호자/팀원 셸, 계정 가림) — `web/src/components/StatusBadge.vue` · `RoleHeader.vue` · 담당 C · 스킬 FD · 근거 SD_02 §3-4, UX8
 - [ ] T040 라우터와 레이아웃을 만든다: `/app/*`(보호자)·`/ops/*`(팀원) 분리, 역할 가드, 보호자↔운영 링크 없음, 모바일 390px 우선·1440px — `web/src/router/index.ts` · `web/src/layouts/AppLayout.vue` · `OpsLayout.vue` · 담당 C · 스킬 RL · 근거 SD_02 §2, R-11, UX8
