@@ -1,0 +1,4 @@
+/* 웹 전역 스타일 진입점 — 순서: 글꼴 → 토큰 → 기본·컴포넌트 */
+@import './fonts.css';
+@import './tokens.css';
+@import './base.css';
