@@ -65,6 +65,7 @@ ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api &
 | 날짜 | 커밋 | 한 사람 | 결과 |
 |---|---|---|---|
 | 2026-09-29 | main(§7 구성) | A 최호준 | Studio-B, https://p1.sumzip.com — pm2 8개(app-api·model-api·worker-cpu·worker-gpu·sweeper·p1-nginx·mailpit·torchserve) online, 팀 DB 마이그레이션(테이블 35+1·트리거 15), `/live`·`/ready`·`/openapi.json` 200, `/v1/models/segment` 401, `/internal/*` 404. 모델은 U4 확정 전 비활성. 호스트 재부팅 뒤 자동 기동(`pm2 startup`)은 관리자 권한이 필요해 미설정 — 재부팅 뒤 `pm2 resurrect` |
+| 2026-09-29 | 9b5f637(웹) | A 최호준 | 첫 화면을 프로토타입에서 **main 웹 빌드**로 교체(`ops/p1/deploy-web.sh`). 웹은 공통 기반 단계(라우터·가드·레이아웃, 각 화면은 담당 작업 번호 자리 표시) — `/` → `/app` → `/v1/me` 401 → `/app/login`, `/ops/*` → `/v1/ops/me` 401 → `/ops/login`. 화면이 main에 더해지면 `ops/p1/deploy-web.sh`를 다시 실행 |
 
 ## 7. p1.sumzip.com 구성 (2026-09-29, A 최호준 — 첫 배포)
 
