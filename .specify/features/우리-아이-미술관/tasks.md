@@ -177,7 +177,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [x] T073 (A 완료 — `a/model-serving`, main 병합 전) [P] [US3] 낮춤 체인·재시도 장애 주입 시험: 5종 오류 × 결과 단계, 인프라가 낮춤으로 집계 0건 — `serving/tests/test_downgrade_chain.py` · 담당 A · 스킬 — · 근거 Scenario 4·5·6·7, FR-5, FR-23, BR-FBK-04
 - [x] T074 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/intake-confirm.test.ts`) [P] [US3] 목록·진행 API 시험: 가족 작품만, `display_status`, 단계 진행에 점수·객체 키 없음 — `api/tests/progress.test.ts` · 담당 B · 스킬 API · 근거 FR-4, UC3
-- [ ] T075 [P] [US3] 진행 확인 E2E(대기·다시 시도 중·낮춤 안내·처리하지 못함 블록) — `web/e2e/us3-progress.spec.ts` · 담당 C · 스킬 FD · 근거 S4
+- [x] T075 (완료 2026-09-29 이제민 보조 — 390·1440 통과. 활성 모델이 없어 임시 DB에 단계 작업 행을 두고 S4를 본다: 대기·다시 시도 중(1번 다시 시도)·낮춤 안내(액자 합성은 실제 CPU 워커)·G9. 가짜 M3 버전은 행을 넣는 동안만 활성 후 retired) [P] [US3] 진행 확인 E2E(대기·다시 시도 중·낮춤 안내·처리하지 못함 블록) — `web/e2e/us3-progress.spec.ts` · 담당 C · 스킬 FD · 근거 S4
 
 #### 구현
 
