@@ -34,8 +34,12 @@
 ## R-03. M3 Animated Drawings·TorchServe의 Docker 없는 실행 (BR-MDL-06 대체 방식)
 
 - **Decision**: 원천의 "내부 TorchServe, Docker 고정 이미지"를 **고정 가상환경 + 잠금 파일 + 체크섬 + 루프백 바인딩**으로 대체한다.
-  - M3 전용 가상환경 `serving/.venv-m3`(Animated Drawings 요구 Python 버전으로 따로 둠), `requirements-m3.lock`(해시 고정 `pip install --require-hashes`).
-  - TorchServe는 `torchserve --start --ncs --ts-config serving/runtime/torchserve.properties`로 네이티브 실행. `inference_address=http://127.0.0.1:8080`, `management_address=http://127.0.0.1:8081`, `metrics_address=http://127.0.0.1:8082`, `enable_token_auth`(가능 버전이면 켬). Java 17 런타임 필요(Homebrew `openjdk@17` 권장, 현재 openjdk 26만 있음 → 호환 확인 필요).
+  - M3 전용 환경 `serving/.venv-m3` = **conda-forge 접두사 환경**(`conda create -p`, 사용자 폴더 안). AD 저장소 `torchserve/setup_macos.sh` 기준으로 Python 3.8.13 · torch 1.13.0 · mmcv-full 1.7.0 · mmdet 2.27.0 · mmpose 0.29.0 · torchserve · AD 패키지(`pip install -e`)를 넣는다. conda 쪽은 `serving/conda-m3.lock`(`conda list --explicit --md5`), pip 쪽은 `serving/requirements-m3.lock`(설치 결과 고정)으로 잠근다. **2026-09-29 개정**
+  - **Java 17과 OSMesa도 같은 conda 환경에 넣는다**(conda-forge `openjdk=17`, `mesalib<25.1` — Mesa 25.1부터 OSMesa가 빠짐). 여러 사용자가 함께 쓰는 호스트의 Homebrew에는 아무것도 설치하지 않는다(Homebrew 공용 패키지 변경이 다른 사용자에게 번지는 것을 막음). **2026-09-29 개정**
+  - AD 저장소는 커밋 `b859684857519c7424da51a0b0862fbd1fd258f4`(2025-09-03 보관 시점)로 고정해 `$MODEL_ROOT/m3/AnimatedDrawings`에 두고, `.mar` 2종은 AD 릴리스 v0.0.1에서 받아 `$MODEL_ROOT/m3/model-store`에 둔다(저장소에 넣지 않음).
+  - TorchServe는 `torchserve --start --ncs --ts-config ops/torchserve/config.properties`로 네이티브 실행한다. 설정: `inference_address=http://127.0.0.1:8080`, `management_address=http://127.0.0.1:8081`, `metrics_address=http://127.0.0.1:8082`(모두 루프백), **`default_workers_per_model=1`**(기본값은 CPU 코어 수만큼 워커를 띄워 모델 2종이 워커마다 따로 올라감 — 공유 호스트 메모리 보호), `load_models=all`(모델 저장 위치는 설정 파일이 아니라 기동 인자 `--model-store "$MODEL_ROOT/m3/model-store"`로 준다), 토큰 인증은 가능 버전이면 켠다. pm2에 등록할 때 `max_memory_restart`로 메모리 상한을 둔다. **2026-09-29 개정**
+  - **헤드리스 렌더는 OSMesa**(AD 설정 `view.USE_MESA: True`). 서비스 계정은 SSH로만 접속해 macOS 창 서버(GLFW 창)를 쓸 수 없다. **2026-09-29 실측 사실**: Studio-B 콘솔 사용자는 다른 계정이고 pioneer1은 SSH 세션만 있다.
+  - 워커는 `M3_AD_PYTHON=serving/.venv-m3/bin/python`, `M3_AD_ROOT=$MODEL_ROOT/m3/AnimatedDrawings`로 렌더 스크립트를 부른다(`serving/adapters/m3_render.py`).
   - `.mar` 파일 2개(검출·자세)의 SHA-256을 매니페스트에 기록한다.
   - 매니페스트의 `image_digest` 필드는 컨테이너 이미지 대신 **실행 환경 다이제스트**(`requirements-*.lock` + 런타임 설정 파일 + `.mar` 해시를 이은 SHA-256)를 담는다. 필드 이름은 BR-MDL-01·SD_03과 맞추려고 유지한다.
 - **Rationale**: 격리의 목적(외부 접근 차단, 고정 버전, 변조 탐지)은 루프백 바인딩·해시 잠금·체크섬으로 같은 수준을 지킨다. 관리 포트(8081)는 외부로 열지 않고 방화벽으로도 막는다.

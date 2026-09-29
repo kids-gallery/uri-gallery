@@ -12,8 +12,8 @@
 |---|---|---|---|
 | Node.js | **20 LTS** | `brew install node@20` 또는 nvm `nvm install 20` | 저장소 `.nvmrc`=20 |
 | Python | 3.11 | `brew install python@3.11` | model-api·워커 |
-| Python(M3 전용) | Animated Drawings 요구 버전 | `pyenv install <버전>` | `serving/.venv-m3` 따로 |
-| Java | 17 | `brew install openjdk@17` | TorchServe(M3) |
+| Python(M3 전용) | 3.8.13 | conda 접두사 환경 `serving/.venv-m3`(research R-03) | Homebrew에 설치하지 않음 |
+| Java · OSMesa | 17 · Mesa<25.1 | 같은 conda 환경(conda-forge `openjdk=17`, `mesalib<25.1`) | TorchServe(M3)·헤드리스 렌더 |
 | MariaDB 클라이언트 | 12.x | `brew install mariadb` | 로컬 시험 DB `uam_test`도 여기서 |
 | nginx | 1.2x | `brew install nginx` | 리버스 프록시 |
 | ffmpeg | (설치 불필요) | 서빙은 `imageio-ffmpeg` 고정 바이너리 사용 | GIF → MP4(research R-07). Homebrew ffmpeg는 Studio-B에서 깨져 있음(`libx265` 없음) — 다른 용도로 필요하면 `brew reinstall ffmpeg` |
@@ -96,9 +96,9 @@ UAM_FAKE_MODELS=1 python -m workers.run --group gpu
 python -m serving.tools.verify_manifest ../models/manifest.yaml
 
 # M3: 별도 가상환경 + TorchServe 네이티브 (127.0.0.1 바인딩)
-source .venv-m3/bin/activate
-torchserve --start --ncs --ts-config runtime/torchserve.properties \
-  --model-store "$MODEL_ROOT/m3" --models drawn_humanoid_detector.mar drawn_humanoid_pose_estimator.mar
+conda activate ./.venv-m3   # conda 접두사 환경(R-03)
+torchserve --start --ncs --ts-config ../ops/torchserve/config.properties \
+  --model-store "$MODEL_ROOT/m3/model-store" --models drawn_humanoid_detector.mar drawn_humanoid_pose_estimator.mar
 curl -s http://127.0.0.1:8080/ping              # {"status": "Healthy"}
 ```
 
