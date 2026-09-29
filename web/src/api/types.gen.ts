@@ -330,6 +330,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 로그인한 보호자의 비밀번호 변경 (UC14 A5, D24)
+         * @description 현재 비밀번호를 확인하고 새 비밀번호(재설정과 같은 규칙)로 바꾼다. password_changed_at 갱신으로 다른 기기의 세션은 모두 무효가 되고, 지금 기기에는 새 세션 쿠키를 준다(로그인 유지). 현재 비밀번호가 틀리면 바꾸지 않고 로그인 실패와 같은 요청 한도를 센다.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        currentPassword: string;
+                        password: string;
+                        passwordConfirm: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description 바뀜. 다른 기기 세션 무효, 이 기기는 새 `uam_sid` 쿠키 */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 새 비밀번호 규칙 위반·확인 불일치(invalid_fields) 또는 현재 비밀번호 틀림(reason current_password_mismatch) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description 현재 비밀번호를 여러 번 틀림(로그인 실패와 같은 한도, reason login_attempts) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                503: components["responses"]["NotSaved"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ops/auth/login": {
         parameters: {
             query?: never;
@@ -2109,6 +2173,7 @@ export interface paths {
                         "application/json": components["schemas"]["EvalRun"];
                     };
                 };
+                404: components["responses"]["NotFound"];
             };
         };
         put?: never;

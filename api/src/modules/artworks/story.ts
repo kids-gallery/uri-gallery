@@ -1,4 +1,4 @@
-// 이야기(T090·T142·T161, UC5, FR-7, G11·G12, BR-STY-01~04, FR-9 동시 수정): 부분 저장, 한마디·보호자 감상평은 받은 그대로(트림·교정 없음).
+// 이야기(T090·T142·T163, UC5, FR-7, G11·G12, BR-STY-01~04, FR-9 동시 수정): 부분 저장, 한마디·보호자 감상평은 받은 그대로(트림·교정 없음).
 // 전시 여부는 저장하지 않는다(v_exhibit_gate). 공동 보호자 동시 수정은 baseUpdatedAt 비교로 409 story_conflict.
 import type { PoolConnection } from 'mysql2/promise';
 import { z } from 'zod';

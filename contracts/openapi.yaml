@@ -172,9 +172,9 @@ paths:
                 password: { type: string, minLength: 8 }
                 passwordConfirm: { type: string }
       responses:
-        '204': { description: 바뀜. 다른 기기 세션 무효, 이 기기는 새 `uam_sid` 쿠키 }
+        '204': { description: '바뀜. 다른 기기 세션 무효, 이 기기는 새 `uam_sid` 쿠키' }
         '422': { description: '새 비밀번호 규칙 위반·확인 불일치(invalid_fields) 또는 현재 비밀번호 틀림(reason current_password_mismatch)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
-        '429': { description: 현재 비밀번호를 여러 번 틀림(로그인 실패와 같은 한도, reason login_attempts), content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '429': { description: '현재 비밀번호를 여러 번 틀림(로그인 실패와 같은 한도, reason login_attempts)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
         '503': { $ref: '#/components/responses/NotSaved' }
   /v1/ops/auth/login:
     post:
