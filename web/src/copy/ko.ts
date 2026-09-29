@@ -221,6 +221,31 @@ export const ko = {
     empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
     toList: '목록으로', toUpload: '작품 올리기',
   },
+  /** S1b~S1d 공동 보호자(docs/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
+  family: {
+    title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,
+    colMember: '보호자', colRole: '역할', colActions: '조작', role: { owner: '만든 보호자', co: '공동 보호자' } as Record<string, string>, me: '(나)',
+    release: '해제', inviteTitle: '초대하기 - 이메일로 초대해요', inviteEmail: '초대할 이메일', // [추론] 초대할 이메일
+    send: '초대 보내기', full: '보호자는 두 명까지예요', fullHint: '공동 보호자를 해제하면 다시 초대할 수 있어요',
+    same: '공동 보호자는 아이 - 작품 - 이야기를 똑같이 관리해요', ownerOnly: '초대와 해제는 가족 공간을 만든 보호자만 할 수 있어요',
+    sent: '초대 메일을 보냈어요',
+    pending: (n: number) => `대기 중 초대 ${n}건`, pendingFull: '보호자가 두 명이라 보낼 수 있는 초대가 없어요',
+    colInvite: '초대 이메일', colExpires: '만료', cancelInvite: '취소', // [추론] 만료
+    releaseConfirm: '해제하면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요',
+    leave: '가족 공간에서 나가기', leaveConfirm: '나가면 이 가족 자료를 볼 수 없게 돼요. 올린 작품은 남아요', leaveGo: '나가기', // [추론] leaveConfirm
+    cancel: '취소',
+    // S1c
+    invitedTitle: '가족 공간 초대를 받았어요', invited1: '수락하면 공동 보호자가 되어 아이 - 작품 - 이야기를 함께 관리해요',
+    invited2: '만든 보호자와 권한이 같아요. 나중에 스스로 나갈 수 있어요', invited3: '초대 링크는 한 번만 - 7일 안에만 쓸 수 있어요',
+    accept: '수락하기', toFamily: '지금 가족 공간으로', leaveFirst: '다른 가족 공간에서 나간 뒤 수락할 수 있어요',
+    ownerCannotLeave: '만든 보호자는 가족 공간을 나갈 수 없어요 - 초대한 분께 다른 이메일로 다시 초대를 부탁해 주세요',
+    joined: '가족 공간에 합류했어요', signupInvited: '초대받은 이메일로 가입하기', // [추론] 가입하기
+    // S1d
+    noFamilySummary: '속한 가족 공간이 없음', noFamilyReason: '가족 공간에서 나갔거나 해제되어 아이 - 작품 화면에 들어갈 수 없어요',
+    noFamilyReleaser: '보호자 - 받은 초대를 수락하거나 새 가족 공간을 만들기', oldWorks: '예전 가족 공간에 올린 작품은 그 가족에 남아 있어요',
+    waitTitle: '초대 기다리기', wait1: '다른 보호자에게 초대를 부탁하고 메일의 링크를 눌러 주세요', wait2: '가족 공간이 없는 동안에는 바로 수락할 수 있어요',
+    create: '새 가족 공간 만들기', create1: '만들면 이 가족의 만든 보호자가 돼요', create2: '만든 보호자는 나갈 수 없어 다른 가족의 초대를 받을 수 없어요',
+  },
   /** S9 삭제(docs/C_화면문구.md §4 "S9 구현 문구", T101). */
   del: {
     artwork: '작품 삭제', child: '아이 삭제',

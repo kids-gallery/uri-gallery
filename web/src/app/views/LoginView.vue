@@ -24,6 +24,11 @@ const block = ref<Notice | null>(null);
 const resent = ref(false);
 const emailEl = ref<HTMLInputElement | null>(null);
 const resetDone = route.query.reset === '1';
+// 초대 링크(S1c)로 왔는데 계정이 없으면 초대받은 이메일로 가입(UC15 A4) — next의 token을 가입에 넘긴다
+const inviteToken = computed(() => {
+  const n = typeof route.query.next === 'string' ? route.query.next : '';
+  return n.startsWith('/app/invite') ? new URLSearchParams(n.split('?')[1] ?? '').get('token') : null;
+});
 
 const reason = computed(() => emailProblem(email.value) || (password.value ? '' : ko.auth.needPassword));
 
@@ -76,6 +81,7 @@ async function onAction(label: string) {
         <!-- 막힘 블록이 같은 링크를 다음 행동으로 주면 두 번 보이지 않게 숨긴다 -->
         <RouterLink v-if="!block?.actions.includes(ko.auth.forgot)" class="btn btn-tertiary" to="/app/recovery">{{ ko.auth.forgot }}</RouterLink>
       </div>
+      <RouterLink v-if="inviteToken" class="btn btn-secondary" :to="{ path: '/app/signup', query: { invite: inviteToken } }">{{ ko.family.signupInvited }}</RouterLink>
     </form>
   </main>
 </template>

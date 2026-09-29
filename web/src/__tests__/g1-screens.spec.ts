@@ -14,6 +14,9 @@ import ReviewView from '../app/views/ReviewView.vue';
 import StoryView from '../app/views/StoryView.vue';
 import GalleryView from '../app/views/GalleryView.vue';
 import OpsLoginView from '../ops/views/OpsLoginView.vue';
+import FamilyView from '../app/views/FamilyView.vue';
+import InviteAcceptView from '../app/views/InviteAcceptView.vue';
+import NoFamilyView from '../app/views/NoFamilyView.vue';
 import { routeFor } from '../app/artwork';
 import { ko } from '../copy/ko';
 
@@ -309,6 +312,79 @@ describe('S9 삭제(T101)', () => {
     await w.find('[role="alertdialog"] .btn-primary').trigger('click');
     await flushPromises();
     expect(w.find('[data-gate="G18"]').text()).toContain('아무것도 바뀌지 않았어요');
+    w.unmount();
+  });
+});
+
+describe('S1b~S1d 공동 보호자(T107)', () => {
+  const owner = [{ id: '1', role: 'owner', emailMasked: 'ha***', isMe: true }];
+  it('만든 보호자·한 명: 초대 보내기 → 항상 "초대 메일을 보냈어요"', async () => {
+    serve({ '/v1/family/members': owner, '/v1/family/invites': [], 'POST /v1/family/invites': () => new Response(null, { status: 202 }) });
+    const w = await open(FamilyView, '/app/family');
+    await w.find('#fm-email').setValue('pa@ex.com');
+    await btn(w, ko.family.send)!.trigger('click');
+    await flushPromises();
+    expect(JSON.parse(String(calls('POST', '/v1/family/invites')[0]![1]!.body))).toEqual({ email: 'pa@ex.com' });
+    expect(w.text()).toContain(ko.family.sent);
+    w.unmount();
+  });
+  it('두 명 찼으면 초대는 "보호자는 두 명까지예요" 비활성, 해제는 확인 창 뒤', async () => {
+    serve({ '/v1/family/members': [...owner, { id: '2', role: 'co', emailMasked: 'pa***', isMe: false }], '/v1/family/invites': [],
+      'DELETE /v1/family/members/2': () => new Response(null, { status: 204 }) });
+    const w = await open(FamilyView, '/app/family');
+    expect(btn(w, ko.family.send)!.text()).toContain(ko.family.full);
+    await btn(w, ko.family.release)!.trigger('click');
+    expect(w.text()).toContain(ko.family.releaseConfirm);
+    expect(calls('DELETE', '/v1/family/members/2')).toHaveLength(0);
+    await w.find('[role="alertdialog"] .btn-primary').trigger('click');
+    await flushPromises();
+    expect(calls('DELETE', '/v1/family/members/2')).toHaveLength(1);
+    w.unmount();
+  });
+  it('공동 보호자 화면: 초대·해제 없이 나가기만, 나가면 로그인으로', async () => {
+    serve({ '/v1/family/members': [{ id: '1', role: 'owner', emailMasked: 'ha***', isMe: false }, { id: '2', role: 'co', emailMasked: 'pa***', isMe: true }],
+      'POST /v1/family/leave': () => new Response(null, { status: 204 }) });
+    const w = await open(FamilyView, '/app/family');
+    expect(btn(w, ko.family.send)).toBeUndefined();
+    expect(btn(w, ko.family.release)).toBeUndefined();
+    expect(calls('GET', '/v1/family/invites')).toHaveLength(0);
+    await btn(w, ko.family.leave)!.trigger('click');
+    await w.find('[role="alertdialog"] .btn-primary').trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.path).toBe('/app/login');
+    w.unmount();
+  });
+  it('S1c: 가족 없는 계정은 수락 → S4(합류 안내), 이메일이 다르면 G28 블록', async () => {
+    serve({ '/v1/me': { emailMasked: 'pa***', hasFamily: false, role: null }, 'POST /v1/family/invites/accept': () => new Response(null, { status: 204 }) });
+    const w = await open(InviteAcceptView, '/app/invite?token=tok123');
+    await btn(w, ko.family.accept)!.trigger('click');
+    await flushPromises();
+    expect(JSON.parse(String(calls('POST', '/v1/family/invites/accept')[0]![1]!.body))).toEqual({ token: 'tok123' });
+    expect(router.currentRoute.value.fullPath).toBe('/app?joined=1');
+    w.unmount();
+    serve({ '/v1/me': { emailMasked: 'ma***', hasFamily: false, role: null },
+      'POST /v1/family/invites/accept': () => problem(403, { code: 'forbidden_role', reason: 'invite_email_mismatch', gate: 'G28' }) });
+    const w2 = await open(InviteAcceptView, '/app/invite?token=tok123');
+    await btn(w2, ko.family.accept)!.trigger('click');
+    await flushPromises();
+    expect(w2.find('[data-gate="G28"]').text()).toContain('초대받은 이메일로 로그인해 주세요');
+    w2.unmount();
+  });
+  it('S1c: 이미 가족이 있는 만든 보호자는 수락이 사유 달린 비활성 + 나갈 수 없다는 안내', async () => {
+    serve({ '/v1/me': { emailMasked: 'ma***', hasFamily: true, role: 'owner' } });
+    const w = await open(InviteAcceptView, '/app/invite?token=tok123');
+    await flushPromises();
+    expect(btn(w, ko.family.accept)!.text()).toContain(ko.family.leaveFirst);
+    expect(w.text()).toContain(ko.family.ownerCannotLeave);
+    w.unmount();
+  });
+  it('S1d: G0 블록과 새 가족 공간 만들기 → S1(아이 등록 안내)', async () => {
+    serve({ 'POST /v1/family': () => new Response(null, { status: 201 }), '/v1/me': { emailMasked: 'pa***', hasFamily: true, role: 'owner' } });
+    const w = await open(NoFamilyView, '/app/no-family');
+    expect(w.find('[data-gate="G0"]').exists()).toBe(true);
+    await btn(w, ko.family.create)!.trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.fullPath).toBe('/app/children?verified=1');
     w.unmount();
   });
 });

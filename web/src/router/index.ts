@@ -23,8 +23,8 @@ export const routes: RouteRecordRaw[] = [
   { path: '/app/recovery', component: () => import('@/app/views/RecoveryView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/reset', component: () => import('@/app/views/ResetView.vue'), meta: { shell: 'app', public: true } },
   // 보호자 — 가족 없어도 되는 화면
-  { path: '/app/invite', ...pending('S1c', '초대 수락', 'T107'), meta: { shell: 'app', noFamilyOk: true } },
-  { path: '/app/no-family', ...pending('S1d', '가족 없음', 'T107'), meta: { shell: 'app', noFamilyOk: true } },
+  { path: '/app/invite', component: () => import('@/app/views/InviteAcceptView.vue'), meta: { shell: 'app', noFamilyOk: true } },
+  { path: '/app/no-family', component: () => import('@/app/views/NoFamilyView.vue'), meta: { shell: 'app', noFamilyOk: true } },
   {
     path: '/app',
     component: () => import('@/layouts/AppLayout.vue'),
@@ -37,7 +37,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'artworks/:id/story', component: () => import('@/app/views/StoryView.vue') },
       { path: 'upload', component: () => import('@/app/views/UploadView.vue') },
       { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
-      { path: 'family', ...pending('S1b', '가족 보호자', 'T107') },
+      { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
       { path: 'gallery', component: () => import('@/app/views/GalleryView.vue') },
     ],
   },

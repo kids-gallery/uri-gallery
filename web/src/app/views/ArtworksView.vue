@@ -2,6 +2,7 @@
 // S4 작품 목록(T080, SD_02 §7, UC3 BF1·BF2). 로그인 뒤 진입 홈. 가족 작품만, 상태 배지(C4)와 현재 단계.
 // 작품을 누르면 상태에 맞는 화면으로 간다(routeFor). 진행 중 작품이 있을 때만 폴링(R-12).
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { api } from '@/api/client';
 import type { BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
@@ -10,10 +11,12 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import { usePolling } from '@/composables/usePolling';
 import { ko } from '@/copy/ko';
+import NoticeBlock from '../components/NoticeBlock.vue';
 import { MOVING_STATES, blockOf, nextActionLabel, routeFor, type ArtworkSummary } from '../artwork';
 
 type Child = components['schemas']['Child'];
 
+const joined = useRoute().query.joined === '1'; // S1c 수락 뒤(UC15 BF6)
 const items = ref<ArtworkSummary[] | null>(null);
 const children = ref<Child[]>([]);
 const block = ref<Notice | null>(null);
@@ -38,6 +41,7 @@ onMounted(first);
       <RouterLink v-if="children.length" class="btn btn-primary" to="/app/upload">{{ ko.shell.appMenu.upload }}</RouterLink>
       <ReasonButton v-else-if="items" :label="ko.shell.appMenu.upload" disabled :reason="ko.child.needChild" />
     </div>
+    <NoticeBlock v-if="joined" :title="ko.family.joined" />
     <BlockNotice v-if="block" :notice="block" @action="first" />
 
     <section v-if="items && !items.length" class="stack">
