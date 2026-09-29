@@ -83,10 +83,10 @@
 
 ### 1.4 매뉴얼 탭 기동 예시 [추론]
 
-아래 명령은 매뉴얼 탭이 보여 줄 기동 절차의 형태를 보이는 [추론] 예시다. 파일 이름·경로·포트·환경 변수 이름은 원천에 없으며 `/speckit.plan`에서 확정한다(U7, U8, U14). 모든 주소는 내부망 주소다(BR-SRV-04).
+아래 명령은 매뉴얼 탭이 보여 줄 기동 절차의 형태를 보이는 [추론] 예시다. 파일 이름·경로·환경 변수 이름은 원천에 없으며 `/speckit.plan`에서 확정한다(U7, U8, U14). API 서버 포트는 9541로 확정했다(D19). 모든 주소는 내부망 주소다(BR-SRV-04).
 
 ```bash
-# [추론] 예시 — 이름·경로·포트는 확정 전이다 (U7, U8, U14)
+# [추론] 예시 — 이름·경로는 확정 전이다 (U7, U8, U14). API 서버 포트 9541은 확정(D19)
 
 # 1) 모델 런타임을 내부망에만 띄운다 (BR-SRV-04, BR-MDL-06)
 #    M3: 고정 이미지 + 다이제스트로 TorchServe 실행, 관리 API는 열지 않는다
@@ -106,11 +106,11 @@ export GPU_ENABLED=false               # false면 M5는 CPU 실행, M7은 비노
 # 4) 워커와 API 서버를 띄운다
 python -m workers.cpu_vision &         # M1·M2·M3·M4 비동기 큐
 python -m workers.gpu &                # M5(·M7) 전용 큐, 모델 상주
-uvicorn app.main:app --host <내부망 주소> --port <API 포트>
+uvicorn app.main:app --host <내부망 주소> --port 9541
 
 # 5) 생존·준비를 확인한다 (BR-OPS-01)
-curl http://<내부망 주소>:<API 포트>/live
-curl http://<내부망 주소>:<API 포트>/ready     # 모델별 준비 상태
+curl http://<내부망 주소>:9541/live
+curl http://<내부망 주소>:9541/ready     # 모델별 준비 상태
 ```
 
 ---
