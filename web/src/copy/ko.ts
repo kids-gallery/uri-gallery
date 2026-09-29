@@ -56,6 +56,7 @@ export const ko = {
     failed: '적재 실패 · 60초마다 다시 시도해요',
     cold: '내려감 짐작 · 첫 요청 때 올라가요',
     inactive_license: '비활성 · 라이선스 확인 전',
+    inactive_promote: '비활성 · 승격 전', // [추론] 활성 버전 없음(no_active_version)
     inactive_tier: '비활성 · P0.5 예정',
     cpu: 'CPU 실행',
     hidden: '비노출 · P1',

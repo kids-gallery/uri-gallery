@@ -8,7 +8,7 @@ import { ko } from '@/copy/ko';
 
 export interface LoadStatus {
   modelId: string; activeVersion?: string | null; execDevice?: string | null; licenseConfirmed: boolean; hint?: string | null;
-  load?: { state?: string; elapsedSeconds?: number | null; remainingSeconds?: number | null; expectedSeconds?: number | null; lastLoadSeconds?: number | null; overdue?: boolean } | null;
+  load?: { state?: string; elapsedSeconds?: number | null; remainingSeconds?: number | null; expectedSeconds?: number | null; lastLoadSeconds?: number | null; overdue?: boolean; diagnostic?: string | null } | null;
 }
 const props = withDefaults(defineProps<{ modelId: string; status?: LoadStatus | null; exposed?: boolean }>(), { status: null, exposed: false });
 
@@ -18,6 +18,8 @@ const view = computed<{ cls: string; text: string; bar?: number }>(() => {
   if (!s) return { cls: 'unknown', text: ko.model.unknown };
   const st = s.load?.state;
   if (props.modelId === 'M6' && (!s.load || st === 'unavailable')) return { cls: 'inactive', text: ko.model.inactive_tier };
+  // licenseConfirmed는 활성 버전 기준 — 활성 버전이 없으면(no_active_version) 라이선스 문제가 아니라 승격 전이다
+  if (st === 'disabled' && s.load?.diagnostic === 'no_active_version') return { cls: 'inactive', text: ko.model.inactive_promote };
   if (st === 'disabled') return s.licenseConfirmed ? { cls: 'not-ready', text: ko.model.not_loaded } : { cls: 'inactive', text: ko.model.inactive_license };
   if (st === 'loading') {
     const l = s.load!;

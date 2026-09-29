@@ -43,6 +43,7 @@ describe('C10 모델 상태 칩(T111)', () => {
       [{ status: null }, 'unknown', ko.model.unknown],
       [{ status: { modelId: 'M1', licenseConfirmed: false, load: { state: 'disabled' } } }, 'inactive', ko.model.inactive_license],
       [{ status: { modelId: 'M1', licenseConfirmed: true, load: { state: 'disabled' } } }, 'not-ready', ko.model.not_loaded],
+      [{ status: { modelId: 'M1', licenseConfirmed: false, load: { state: 'disabled', diagnostic: 'no_active_version' } } }, 'inactive', ko.model.inactive_promote],
       [{ status: { modelId: 'M1', licenseConfirmed: true, load: { state: 'failed' } } }, 'failed', ko.model.failed],
       [{ modelId: 'M5', status: { modelId: 'M5', licenseConfirmed: true, execDevice: 'cpu', load: { state: 'ready' } } }, 'cpu', ko.model.cpu],
       [{ modelId: 'M7', status: { modelId: 'M7', licenseConfirmed: true, load: { state: 'ready' } } }, 'hidden', ko.model.hidden],

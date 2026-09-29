@@ -48,6 +48,7 @@
 | `model.failed` | 적재 실패 · 60초마다 다시 시도해요 |
 | `model.cold` | 내려감 짐작 · 첫 요청 때 올라가요 (M6만) |
 | `model.inactive_license` | 비활성 · 라이선스 확인 전 |
+| `model.inactive_promote` | 비활성 · 승격 전 — 활성 버전 없음(`diagnostic: no_active_version`) [추론] |
 | `model.inactive_tier` | 비활성 · P0.5 예정 |
 | `model.cpu` | CPU 실행 |
 | `model.hidden` | 비노출 · P1 |
