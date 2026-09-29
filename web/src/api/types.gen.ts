@@ -733,6 +733,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/family/invites/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 초대 링크의 초대 이메일 — 가입 화면(S0) 미리 채움용 (UC15 A4·UC13 A4, SD_02 S1c)
+         * @description 초대 메일 링크의 토큰으로 초대받은 이메일을 돌려준다. 토큰을 쓰지 않는다(수락은 가입·수락 요청에서). 로그인 없이 부른다.
+         *     토큰은 초대받은 이메일로만 보낸 1회용 비밀값이라, 토큰을 가진 사람에게 그 이메일을 보여도 새로 드러나는 정보가 없다.
+         *     만료·사용·취소를 구분하지 않고 400 `token_invalid`(G28, BR-ACC-08). 가족 정보·초대한 사람은 싣지 않는다.
+         */
+        get: {
+            parameters: {
+                query: {
+                    token: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 초대 이메일(원문) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: email */
+                            email: string;
+                        };
+                    };
+                };
+                400: components["responses"]["TokenInvalid"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/family/invites/accept": {
         parameters: {
             query?: never;

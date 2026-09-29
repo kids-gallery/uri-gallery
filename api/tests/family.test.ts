@@ -24,6 +24,10 @@ describe('초대·수락(G28·G29)', () => {
     const inv = await owner.a.get('/v1/family/invites').expect(200);
     expect(inv.body).toHaveLength(1);
     expect(inv.body[0].emailMasked).toBe('Co***@Test.local');
+    // 가입 화면 미리 채움: 로그인 없이 토큰으로 초대 이메일(원문), 토큰은 쓰지 않는다. 무효 토큰은 400 token_invalid(G28)
+    expect((await request(t.app).get('/v1/family/invites/lookup').query({ token: lastInviteToken() }).expect(200)).body).toEqual({ email: 'Co@Test.local' });
+    expect((await request(t.app).get('/v1/family/invites/lookup').query({ token: 'nope-nope-nope' }).expect(400)).body).toMatchObject({ code: 'token_invalid', gate: 'G28' });
+    expect((await request(t.app).get('/v1/family/invites/lookup')).status).toBe(400);
     await request(t.app).post('/v1/auth/signup').send({ email: 'co@test.local', password: PW, passwordConfirm: PW, inviteToken: lastInviteToken() }).expect(202);
     expect(t.mailer.sent.filter((m) => m.kind === 'verify').length).toBe(1); // 만든 보호자 것만
     expect(await q('SELECT COUNT(*) n FROM family')).toEqual([{ n: 1 }]);

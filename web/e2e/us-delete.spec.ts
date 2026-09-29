@@ -34,7 +34,7 @@ test('작품 삭제: 지워지는 것·남는 것을 보이고, 확인 뒤에만
   await page.getByRole('alertdialog').getByRole('button', { name: ko.del.confirm, exact: true }).click();
   await expect(page.getByRole('alertdialog')).toContainText(ko.del.progress.done!, { timeout: 45_000 });
   await page.getByRole('alertdialog').getByRole('button', { name: ko.del.toList, exact: true }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/app\/works$/); // 작품 삭제 뒤 목록 = 작품 관리(D25)
   expect((await page.request.get(`/v1/artworks/${id}`)).status()).toBe(404);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

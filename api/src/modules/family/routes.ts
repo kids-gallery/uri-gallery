@@ -11,6 +11,7 @@ import { recordGate } from '../../lib/gateEvent.js';
 import type { Mailer } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from '../auth/rateLimit.js';
 import { maskEmail } from '../auth/routes.js';
+import { hashToken } from '../auth/tokens.js';
 import { lockInvite, newInvite } from './invites.js';
 
 export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
@@ -22,6 +23,19 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
     if (e instanceof Problem && e.gate) await recordGate(db, e.gate, kind, id, 'guardian', e.reason ?? e.code);
     throw e;
   };
+
+  // --- 초대 링크의 초대 이메일(S0 가입 미리 채움, UC15 A4·UC13 A4) — 로그인 없이, 토큰을 쓰지 않는 조회 ---
+  r.get('/v1/family/invites/lookup', async (req, res, next) => {
+    try {
+      const token = typeof req.query.token === 'string' ? req.query.token : '';
+      const [rows] = await db.query(
+        `SELECT email FROM family_invite
+          WHERE token_hash = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > UTC_TIMESTAMP()`, [hashToken(token)]);
+      const inv = (rows as { email: string }[])[0];
+      if (!token || !inv) throw new Problem('token_invalid', 'token_invalid', 'G28'); // 만료·사용·취소 구분 없음(BR-ACC-08)
+      res.json({ email: inv.email });
+    } catch (e) { next(e); }
+  });
 
   // --- 초대(G29: 만든 보호자만·자리 빔) ---
   r.get('/v1/family/invites', withFamily, async (req, res, next) => {

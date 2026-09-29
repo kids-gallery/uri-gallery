@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // S0 가입(T052, SD_02 §4-5, UC13, G26). 이메일·비밀번호·확인만 받는다. 응답은 가입 여부와 관계없이 늘 같은 "메일함을 확인해 주세요"(결정 ④).
 // 초대 링크로 온 가입(UC13 A4)은 ?invite= 토큰을 함께 보내고, 끝나면 로그인으로 보낸다.
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
 import BlockNotice from '@/components/BlockNotice.vue';
@@ -17,6 +17,12 @@ const router = useRouter();
 const invite = typeof route.query.invite === 'string' ? route.query.invite : undefined;
 
 const email = ref('');
+// 초대 링크로 온 가입은 초대받은 이메일을 미리 채운다(SD_02 S1c, UC15 A4) — 무효 토큰이면 빈 칸 그대로
+onMounted(async () => {
+  if (!invite) return;
+  const r = await api.get<{ email: string }>('/v1/family/invites/lookup', { query: { token: invite }, noRedirect: true }).catch(() => null);
+  if (r?.email && !email.value) email.value = r.email;
+});
 const password = ref('');
 const confirm = ref('');
 const touched = ref({ email: false, password: false, confirm: false });

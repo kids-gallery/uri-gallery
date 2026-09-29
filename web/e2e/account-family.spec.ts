@@ -51,6 +51,9 @@ test('S1b 초대 → 초대 링크로 가입 → 합류해 아이를 함께 봄 
   // 초대받은 사람: 다른 브라우저 — 링크 → 로그인 화면의 초대 가입 → 가입 → 로그인 → 합류
   const co = await (await browser.newContext({ ...info.project.use })).newPage();
   await co.goto(pathOf(await linkFor(coEmail, '/app/invite')));
+  // 처음 오는 브라우저라 입장 화면(S0w, D25)을 한 번 거친다 — 초대 링크(next)는 그대로 이어진다
+  await expect(co).toHaveURL(/\/app\/welcome\?next=/);
+  await co.getByRole('button', { name: ko.museum.enter, exact: true }).click();
   await expect(co).toHaveURL(/\/app\/login/);
   await co.getByRole('link', { name: ko.family.signupInvited }).click();
   await expect(co.getByRole('heading', { level: 1 })).toHaveText(ko.auth.signupTitle); // 로그인 화면에도 같은 이름의 칸이 있다
@@ -82,8 +85,8 @@ test('S1b 초대 → 초대 링크로 가입 → 합류해 아이를 함께 봄 
 });
 
 // SD_02 663·701(UC15 A4): 초대 링크로 온 가입은 초대받은 이메일을 미리 채운다. 2026-09-29 현재 SignupView는 빈 칸이고
-// 토큰으로 이메일을 알 API도 없다(계약 변경 필요) — 구현 쪽(이제민1)에 알림. 구현되면 fixme를 뗀다.
-test.fixme('초대 링크로 온 가입은 이메일이 미리 채워진다', async ({ page }, info) => {
+// 구현: GET /v1/family/invites/lookup?token=(계약 먼저, 2026-09-29 이제민1) · SignupView 미리 채움.
+test('초대 링크로 온 가입은 이메일이 미리 채워진다', async ({ page }, info) => {
   await guardianWithChild(page, `pre-${info.project.name}`);
   const coEmail = testEmail(`pre-co-${info.project.name}`);
   await page.request.post('/v1/family/invites', { data: { email: coEmail } });
