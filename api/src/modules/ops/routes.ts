@@ -4,7 +4,7 @@ import { Router } from 'express';
 import type { Pool } from 'mysql2/promise';
 import client from 'prom-client';
 import type { Config } from '../../config.js';
-import { staffAuth } from '../../auth/guards.js';
+import { requirePerm } from '../../auth/policy.js';
 import { STAFF_COOKIE, loadSession } from '../../auth/session.js';
 import { Problem } from '../../lib/problem.js';
 import type { ModelApi } from './modelApi.js';
@@ -120,7 +120,7 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
     };
   }
 
-  r.get('/v1/admin/metrics', staffAuth(db, ['operator', 'evaluator', 'integrator']), // D21: 세 역할 읽기(UC9 A1·UC11 A5)
+  r.get('/v1/admin/metrics', requirePerm(db, 'metrics.read'), // D21: 세 역할 읽기(UC9 A1·UC11 A5), D24
     async (req, res, next) => {
     try {
       const iso = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString().slice(0, 19).replace('T', ' ') : undefined);
@@ -129,7 +129,7 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
     } catch (e) { next(e); }
   });
 
-  r.get('/v1/admin/unreached', staffAuth(db, ['operator']), async (_req, res, next) => {
+  r.get('/v1/admin/unreached', requirePerm(db, 'unreached.read'), async (_req, res, next) => {
     try {
       const rows = await all<Record<string, unknown>>(db,
         `SELECT t.job_id, j.stage_kind, t.model_id, t.version_label, t.error_class, t.attempt_count, t.finished_at,
@@ -142,10 +142,10 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
   });
 
   // --- 모델 적재 상태(T143, A 모델적재 §4) ---
-  r.get('/v1/ops/models', staffAuth(db, ['operator', 'evaluator', 'integrator']), async (_req, res, next) => {
+  r.get('/v1/ops/models', requirePerm(db, 'models.read'), async (_req, res, next) => {
     try { res.json({ models: (await modelApi.models()) ?? [] }); } catch (e) { next(e); }
   });
-  r.post('/v1/ops/models/:id/warmup', staffAuth(db, ['operator', 'evaluator']), async (req, res, next) => {
+  r.post('/v1/ops/models/:id/warmup', requirePerm(db, 'models.warmup'), async (req, res, next) => {
     try {
       const out = await modelApi.warmup(req.params.id);
       if (!out) throw new Problem('not_saved', 'model_api_unreachable');
