@@ -5,8 +5,8 @@ claim:            { seconds: 60, heartbeat_s: 20 }
 priority:         { guardian: 10, eval: 50 }
 poll:             { idle_s: 2 }
 stages:
-  split:          { timeout_s: 60,  concurrency: 2 }
-  judge:          { timeout_s: 120, concurrency: 2 }
+  split:          { timeout_s: 60,  concurrency: 1 }   # stage-job §8 — M1 CPU 추론 RSS 8.5GB, 공유 호스트(A_팀서버_자원확인 §3)
+  judge:          { timeout_s: 120, concurrency: 1 }   # stage-job §8
   animate_render: { timeout_s: 600, concurrency: 1 }
   depth_relief:   { timeout_s: 180, timeout_s_cpu: 600, concurrency: 1 }
   frame_compose:  { timeout_s: 10,  concurrency: 4 }
