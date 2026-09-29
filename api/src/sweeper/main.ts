@@ -18,7 +18,9 @@ export async function sweepOnce(db: ReturnType<typeof createPool>, storage: Loca
   }
 }
 
-if (process.argv[1]?.endsWith('main.js') || process.argv[1]?.endsWith('main.ts')) {
+// pm2 fork 모드에서는 argv[1]이 pm2 컨테이너라서 pm_exec_path도 본다(DEPLOY §7 첫 배포에서 발견)
+const entry = process.env.pm_exec_path ?? process.argv[1];
+if (entry?.endsWith('main.js') || entry?.endsWith('main.ts')) {
   const cfg = loadConfig();
   const db = createPool(cfg.db);
   const storage = new LocalFsDriver(cfg.storageRoot);

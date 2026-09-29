@@ -63,7 +63,7 @@ ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api &
 
 | 날짜 | 커밋 | 한 사람 | 결과 |
 |---|---|---|---|
-| — | — | — | 대기 — 팀 서버 접속 정보·사양(U2·U14) 확인 뒤 첫 배포 |
+| 2026-09-29 | main(§7 구성) | A 최호준 | Studio-B, https://p1.sumzip.com — pm2 8개(app-api·model-api·worker-cpu·worker-gpu·sweeper·p1-nginx·mailpit·torchserve) online, 팀 DB 마이그레이션(테이블 35+1·트리거 15), `/live`·`/ready`·`/openapi.json` 200, `/v1/models/segment` 401, `/internal/*` 404. 모델은 U4 확정 전 비활성. 호스트 재부팅 뒤 자동 기동(`pm2 startup`)은 관리자 권한이 필요해 미설정 — 재부팅 뒤 `pm2 resurrect` |
 
 ## 7. p1.sumzip.com 구성 (2026-09-29, A 최호준 — 첫 배포)
 
@@ -72,9 +72,9 @@ Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p
 | 구성 | 값 |
 |---|---|
 | 입구 | `ops/p1/nginx.conf` — `listen 9501`(평문), `set_real_ip_from 192.168.0.19` + `real_ip_header X-Forwarded-For`로 실제 접속 IP를 앱에 넘긴다(요청 한도 G26·G27) |
-| 첫 화면 `/` | **웹 빌드(`web/dist`)가 생기기 전까지 SD_02 클릭 프로토타입**(`design/prototype/share/`). `web/dist/index.html`이 생기면 nginx가 그쪽을 먼저 내보낸다 |
-| API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541, `/internal/*` 404, `/metrics`는 로컬만 |
-| 프로세스 | `ops/p1/ecosystem.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.cjs` |
+| 첫 화면 `/` | **SD_02 클릭 프로토타입**(`design/prototype/share/`). 웹(`web/`)은 공유 폴더에서 작업 중인 빌드라, 작업 폴더의 `web/dist`를 그대로 공개하지 않는다(다시 빌드할 때마다 공개 화면이 바뀜). 보호자·운영 화면이 배포 가능해지면(C·B 확인) `web/dist`를 `.data/p1-web/`로 복사해 배포하고 nginx `root`를 그쪽으로 바꾼다 |
+| API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/metrics`는 로컬만 |
+| 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
 | `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`, `TORCHSERVE_URL=http://127.0.0.1:9561` |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
