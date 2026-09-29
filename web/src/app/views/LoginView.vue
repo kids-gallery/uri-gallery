@@ -39,7 +39,8 @@ async function submit() {
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(0, null);
     if (err.status === 409 && err.reason === 'no_family') { await router.replace('/app/no-family'); return; }
-    block.value = toBlock(err);
+    // 불일치 블록은 SD_02 S0a 와이어프레임대로 "막힘 G0"(API는 gate 없이 보낸다) — 메일 확인 G27 블록과 표기를 맞춘다
+    block.value = { ...toBlock(err), gate: err.gate ?? (err.reason === 'bad_credentials' ? 'G0' : null) };
     password.value = '';
   } finally { busy.value = false; }
 }
@@ -72,7 +73,8 @@ async function onAction(label: string) {
       <BlockNotice v-if="block" :notice="block" @action="onAction" />
       <div class="row-acts">
         <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" @click="submit" />
-        <RouterLink class="btn btn-tertiary" to="/app/recovery">{{ ko.auth.forgot }}</RouterLink>
+        <!-- 막힘 블록이 같은 링크를 다음 행동으로 주면 두 번 보이지 않게 숨긴다 -->
+        <RouterLink v-if="!block?.actions.includes(ko.auth.forgot)" class="btn btn-tertiary" to="/app/recovery">{{ ko.auth.forgot }}</RouterLink>
       </div>
     </form>
   </main>

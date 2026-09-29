@@ -114,6 +114,8 @@ describe('S0a 로그인(T053)', () => {
     await btn(w, ko.auth.login).trigger('click');
     await flushPromises();
     expect(w.find('.gblock').text()).toContain('이메일 또는 비밀번호가 맞지 않아요');
+    expect(w.find('[data-gate="G0"]').exists()).toBe(true);
+    expect(w.findAll('a, button').filter((x) => x.text() === ko.auth.forgot).length).toBe(1);
     expect((w.find('#li-pw').element as HTMLInputElement).value).toBe('');
     expect(router.currentRoute.value.path).toBe('/app/login');
     w.unmount();
