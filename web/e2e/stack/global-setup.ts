@@ -1,4 +1,4 @@
-// E2E 전용 스택(T044·T059·T075·T087·T138, R-19): 임시 MariaDB(소켓만) + 별도 app-api + 별도 Mailpit.
+// E2E 전용 스택(T044·T059·T075·T087·T138, R-19): 임시 MariaDB(소켓만) + 별도 app-api + 별도 Mailpit + CPU 워커.
 // 팀 DB·p1(app-api 9521, Mailpit 1025/8025, model-api 9541)에는 절대 붙지 않는다. model-api는 닫힌 포트를 가리킨다.
 // 포트: app-api E2E_API_PORT(9621) · Mailpit SMTP E2E_SMTP_PORT(1125) · 웹 수신함 E2E_MAIL_PORT(8125).
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
@@ -46,9 +46,17 @@ export default async function globalSetup() {
 
   procs.push(spawn(path.join(os.homedir(), '.local/bin/mailpit'), ['--smtp', `127.0.0.1:${SMTP_PORT}`, '--listen', `127.0.0.1:${MAIL_PORT}`, '--database', path.join(dir, 'mail.db')], { stdio: ['ignore', log('mailpit'), log('mailpit')] }));
   procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] }));
+  // 액자 경로(frame_compose)를 처리하는 CPU 워커 — 모델 없이 도는 단계만 실제로 돈다(활성 모델 없음, p1과 같음)
+  const run = path.join(dir, 'run');
+  fs.mkdirSync(run);
+  procs.push(spawn(path.join(ROOT, 'serving/.venv/bin/python'), ['-m', 'workers.main', '--group', 'cpu_vision'], {
+    cwd: path.join(ROOT, 'serving'), env: { ...env, UAM_RUN_DIR: run, GPU_ENABLED: 'false' }, stdio: ['ignore', log('worker'), log('worker')],
+  }));
   await waitFor(up(`http://127.0.0.1:${MAIL_PORT}/api/v1/info`), 'Mailpit');
   await waitFor(up(`http://127.0.0.1:${API_PORT}/live`), 'app-api');
 
+  process.env.E2E_DB_SOCKET = sock; // 흐름 시험이 상태를 직접 확인할 때만(쓰기 금지 원칙은 시험 파일에서)
+  process.env.E2E_DIR = dir;
   return async () => {
     // 끝나기를 기다린 뒤 지운다(MariaDB가 닫히며 파일을 쓰는 중이면 ENOTEMPTY)
     await Promise.all(procs.reverse().map((p) => new Promise<void>((r) => {

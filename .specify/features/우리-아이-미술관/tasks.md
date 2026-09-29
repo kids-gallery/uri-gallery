@@ -145,7 +145,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T056 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/intake-confirm.test.ts`) [P] [US2] 접수 계약 시험: `POST /v1/artworks` 202·멱등(같은 요청 번호 1건), 형식 400·용량 413·판독 불가 400(G5), 원본·기록 저장 실패 시 흔적 0(G6) — `api/tests/intake.test.ts` · 담당 B · 스킬 API · 근거 FR-2, Scenario 9, BR-INT-01~03
 - [x] T057 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/intake-confirm.test.ts`) [P] [US2] 확정 시험: 제안과 다른 확정 허용·`is_modified`, 제안 전 확정 `before`, 소진 `none`(G7), 이미 확정·삭제 중 409(G8), 노출 꺼진 `sculpture` 거부(G17), 응답에 점수 필드 없음 — `api/tests/confirm.test.ts` · 담당 B · 스킬 API · 근거 FR-3, FR-21, Scenario 3, D14
 - [x] T058 (A 완료 2026-09-29 — 17건: 집 그림 0.946·점수 단독 금지·관절 없음·분리 미달/소진 조합·제안 진리표. 기본 흐름은 test_stage_job_contract) [P] [US2] 분리·판정 워커 시험(가짜): split 성공·품질 미달(액자 권장)·소진, judge 제안 규칙(점수 단독 금지, 집 그림 0.946 사례) — `serving/tests/test_split_judge.py` · 담당 A · 스킬 — · 근거 Scenario 2, stage-job §5.1, BR-SUG-04
-- [ ] T059 [P] [US2] 올리기→확정 E2E: 선택지 즉시 표시·기본 선택 없음, "나중에 고르기" — `web/e2e/us2-intake-confirm.spec.ts` · 담당 C · 스킬 FD · 근거 S2, S3, U10 clarify
+- [x] T059 (완료 2026-09-29 이제민 보조 — 390·1440 통과. 활성 모델 없음: 움직임·2.5D C3 비활성, 세 칸 같은 크기, 나중에 고르기 뒤 재진입도 기본 선택 없음) [P] [US2] 올리기→확정 E2E: 선택지 즉시 표시·기본 선택 없음, "나중에 고르기" — `web/e2e/us2-intake-confirm.spec.ts` · 담당 C · 스킬 FD · 근거 S2, S3, U10 clarify
 
 #### 구현
 
@@ -206,7 +206,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T084 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/review-story-gallery.test.ts`) [P] [US4] 결정 시험: 회차당 1건(중복은 첫 결정 반환), 처리하지 못함은 액자·다시 찍기만(G9), use_lower → depth_relief·`processing`, retake → `deleting`+`deletion_request(retake)`, 원인 분류(D2·D14) — `api/tests/decision.test.ts` · 담당 B · 스킬 API · 근거 FR-6, Scenario 8·10, BR-APR-02~06
 - [x] T085 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/tests/review-story-gallery.test.ts`) [P] [US4] 이야기·전시 시험: 미래 제작일·연령 범위 거부(G11), 전시 중 필수 비우기 거부, 전시는 `v_exhibit_gate`만, 낮춤 원인 비노출, 3D는 노출 꺼지면 액자 — `api/tests/story-gallery.test.ts` · 담당 B · 스킬 API · 근거 FR-7, FR-8, Scenario 1·13, G12, BR-EXH-07
 - [x] T086 (B 완료 2026-09-28 — `b/api`, main 병합 전; `intake-confirm`·`review-story-gallery`·`captions` 시험에 나눠 둠) [P] [US4] 가족 교차 접근 시험: 목록·상세·파일 토큰·직접 주소 모두 0건 노출 — `api/tests/cross-family.test.ts` · 담당 B · 스킬 AUTH · 근거 Scenario 12, FR-9, G0
-- [ ] T087 [P] [US4] 확인→이야기→전시 E2E: 자동 재생 없음, 원본 보기, 점수·토스트 없음 — `web/e2e/us4-review-story-gallery.spec.ts` · 담당 C · 스킬 FD · 근거 S5, S6, S8
+- [x] T087 (완료 2026-09-29 이제민 보조 — 액자 경로를 실제 CPU 워커로 끝까지, 390·1440 통과. **움직임·2.5D 결과의 재생 토글·원본 나란히는 모델이 켜진 뒤 같은 파일에 덧붙임**) [P] [US4] 확인→이야기→전시 E2E: 자동 재생 없음, 원본 보기, 점수·토스트 없음 — `web/e2e/us4-review-story-gallery.spec.ts` · 담당 C · 스킬 FD · 근거 S5, S6, S8
 
 #### 구현
 
