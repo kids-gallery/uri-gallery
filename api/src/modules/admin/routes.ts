@@ -9,7 +9,7 @@ import YAML from 'yaml';
 import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
-import { staffAuth } from '../../auth/guards.js';
+import { requirePerm } from '../../auth/policy.js';
 import { Problem, isDup, parseSignal } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import type { StoragePort } from '../../storage/LocalFsDriver.js';
@@ -25,8 +25,8 @@ const hex64 = z.string().regex(/^[a-f0-9]{64}$/);
 
 export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifestPath: string): Router {
   const r = Router();
-  const evaluator = staffAuth(db, ['evaluator']);
-  const readers = staffAuth(db, ['evaluator', 'operator', 'integrator']);
+  const evaluator = requirePerm(db, 'models.manage'); // D24 — 권한표 api/src/auth/policy.ts
+  const readers = requirePerm(db, 'models.read');
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1 } });
 
   async function manifest(): Promise<Record<string, { weights_sha256?: string | null; config_hash?: string | null; license_confirmed?: boolean }> | null> {

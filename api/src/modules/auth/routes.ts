@@ -7,7 +7,8 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { Problem, isDup } from '../../lib/problem.js';
-import { guardianAuth, staffAuth } from '../../auth/guards.js';
+import { guardianAuth } from '../../auth/guards.js';
+import { requirePerm } from '../../auth/policy.js';
 import { GUARDIAN_COOKIE, IDLE_MINUTES, STAFF_COOKIE, createSession, destroyAllFor, destroySession } from '../../auth/session.js';
 import type { Mailer, MailMessage } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from './rateLimit.js';
@@ -204,6 +205,39 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
     } catch (e) { next(e); }
   });
 
+  // --- 로그인 상태 비밀번호 변경(UC14 A5, D24 ④) ---
+  // 현재 비밀번호 확인 → 재설정과 같은 규칙 → password_changed_at 갱신 + 세션 전부 삭제(다른 기기 끊김) → 이 기기에 새 세션.
+  // 현재 비밀번호 틀림은 422(401이면 화면이 로그아웃으로 오인), 로그인 실패와 같은 한도를 센다.
+  r.post('/v1/auth/password', guardianAuth(db, { requireFamily: false }), async (req, res, next) => {
+    try {
+      const b = parse(withConfirm({ currentPassword: z.string().min(1).max(200) }), req.body);
+      const g = req.guardian!;
+      const em = normEmail(g.email);
+      if (await rl.exceeded('login', { email: em })) throw new Problem('rate_limited', 'login_attempts');
+      const [rows] = await db.query(`SELECT password_hash FROM guardian_account WHERE account_id = ?`, [g.accountId]);
+      const cur = (rows as { password_hash: string }[])[0];
+      const ok = cur ? await argon2.verify(cur.password_hash, b.currentPassword).catch(() => false) : false;
+      if (!ok) {
+        await rl.record('login', { email: em });
+        throw new Problem('validation_failed', 'current_password_mismatch', undefined,
+          [{ name: 'currentPassword', reason: 'current_password_mismatch' }]);
+      }
+      const hash = await argon2.hash(b.password, { type: argon2.argon2id });
+      let sid: string;
+      try {
+        await withTx(db, async (conn) => {
+          await conn.query(`UPDATE guardian_account SET password_hash = ?, password_changed_at = UTC_TIMESTAMP(3) WHERE account_id = ?`, [hash, g.accountId]);
+          await destroyAllFor(conn, 'guardian', g.accountId); // 다른 기기 세션 끊기(이 기기 포함 지우고 아래에서 새로 발급)
+        });
+        sid = await createSession(db, 'guardian', g.accountId);
+      } catch {
+        throw new Problem('not_saved', 'password_change_failed');
+      }
+      setGuardianCookie(res, sid);
+      res.status(204).end();
+    } catch (e) { next(e); }
+  });
+
   // --- 로그인한 보호자 상태(U20, /v1/me) ---
   r.get('/v1/me', guardianAuth(db, { requireFamily: false }), (req, res) => {
     const g = req.guardian!;
@@ -237,7 +271,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
     } catch (e) { next(e); }
   });
 
-  r.get('/v1/ops/me', staffAuth(db, ['operator', 'evaluator', 'integrator']), async (req, res, next) => {
+  r.get('/v1/ops/me', requirePerm(db, 'staff.me'), async (req, res, next) => {
     try {
       const [rows] = await db.query(`SELECT email FROM team_member WHERE member_id = ?`, [req.staff!.memberId]);
       res.json({ emailMasked: maskEmail((rows as { email: string }[])[0].email), roles: req.staff!.roles });

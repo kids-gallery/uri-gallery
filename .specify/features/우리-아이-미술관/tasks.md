@@ -334,9 +334,9 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 ### RBAC 정리 (D24, 2026-09-29 최호준 요청)
 
-- [ ] T158 [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
-- [ ] T159 [P] 팀원 계정 관리 CLI를 넓힌다: `ops:staff add·grant·revoke·disable·enable·passwd·list`(정지·비밀번호 변경 시 그 팀원 세션 삭제, 원문 비밀번호는 표준 입력만) — `api/scripts/ops/staff.ts` · `ops/DEPLOY.md` §1 · 담당 A(최호준, 사용자 지시) · 스킬 — · 근거 D24 ③
-- [ ] T160 보호자 비밀번호 변경(로그인 상태) `POST /v1/auth/password` — 현재 비밀번호 확인·재설정과 같은 규칙·다른 기기 세션 무효·이 기기 새 세션·틀림은 로그인 실패 한도 — `api/src/modules/auth/routes.ts` · 시험 `api/tests/rbac.test.ts` · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24 ④, UC14 A5
+- [x] T158 (A 완료 2026-09-29 — 라우트 19개 requirePerm, 계약 x-permission, 시험 rbac 14건. D20 점검 경로 2개는 점검 기능 커밋 때 전환) [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
+- [x] T159 (A 완료 2026-09-29 — `api/src/auth/staffAdmin.ts` + CLI) [P] 팀원 계정 관리 CLI를 넓힌다: `ops:staff add·grant·revoke·disable·enable·passwd·list`(정지·비밀번호 변경 시 그 팀원 세션 삭제, 원문 비밀번호는 표준 입력만) — `api/scripts/ops/staff.ts` · `ops/DEPLOY.md` §1 · 담당 A(최호준, 사용자 지시) · 스킬 — · 근거 D24 ③
+- [x] T160 (A 완료 2026-09-29) 보호자 비밀번호 변경(로그인 상태) `POST /v1/auth/password` — 현재 비밀번호 확인·재설정과 같은 규칙·다른 기기 세션 무효·이 기기 새 세션·틀림은 로그인 실패 한도 — `api/src/modules/auth/routes.ts` · 시험 `api/tests/rbac.test.ts` · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24 ④, UC14 A5
 - [ ] T161 보호자 비밀번호 변경 화면(설정 메뉴에서, UC14 A5) — `web/src/app/views/*` · 담당 B(웹, 후속) · 스킬 FD · 근거 D24 ④
 
 ---

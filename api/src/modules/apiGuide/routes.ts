@@ -7,7 +7,7 @@ import type { Pool } from 'mysql2/promise';
 import YAML from 'yaml';
 import { z } from 'zod';
 import type { Config } from '../../config.js';
-import { staffAuth } from '../../auth/guards.js';
+import { requirePerm } from '../../auth/policy.js';
 import { Problem } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import type { StoragePort } from '../../storage/LocalFsDriver.js';
@@ -18,7 +18,7 @@ const MIME: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', heic
 
 export function apiGuideRouter(db: Pool, cfg: Config, storage: StoragePort): Router {
   const r = Router();
-  const readers = staffAuth(db, ['operator', 'integrator']);
+  const readers = requirePerm(db, 'apiGuide.use'); // D24
   const modelBase = cfg.modelApiUrl.replace(/\/$/, '');
   let appSpec: Spec | null = null;
   let lastModel: { spec: Spec; at: Date } | null = null;

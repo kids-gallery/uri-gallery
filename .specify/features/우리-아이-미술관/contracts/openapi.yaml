@@ -214,7 +214,6 @@ paths:
       description: 역할 목록으로 SD_02 §2-1 역할별 메뉴 표의 메뉴만 그린다.
       security: [{ staffSession: [operator, evaluator, integrator] }]
       x-permission: staff.me   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
-      x-permission: staff.me
       responses:
         '200':
           description: 팀원 상태
@@ -980,6 +979,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EvalRun' }
+        '404': { $ref: '#/components/responses/NotFound' }
     patch:
       tags: [관리]
       summary: 판단 기록 — 통과/보류와 근거 (UC9 8.6)
