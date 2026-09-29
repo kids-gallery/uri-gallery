@@ -158,7 +158,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 #### 실제 모델 (A — 가짜 흐름과 병행, 스토리 완료에는 가짜로 충분)
 
-- [ ] T068 [P] [US2] 팀 서버 자원·GPU를 확인하고 기록한다(U2·U14) — `docs/A_팀서버_자원확인.md` · 담당 A · 스킬 — · 근거 plan 단계 3
+- [x] T068 (A 완료 2026-09-29 — Studio-B 기준[추론, 팀 확인 필요], U2는 P0 범위(GPU 유무·M5 속도)만 닫고 M7은 P1 게이트, U14는 T081에서) [P] [US2] 팀 서버 자원·GPU를 확인하고 기록한다(U2·U14) — `docs/A_팀서버_자원확인.md` · 담당 A · 스킬 — · 근거 plan 단계 3
 - [ ] T069 [P] [US2] 모델 라이선스 확정 기록을 만든다(OpenCLIP 가중치 A2, Qwen3, TRELLIS 제외, AGPL 예비 모델) — `docs/A_모델_라이선스_확정.md` · 담당 A · 스킬 — · 근거 U4, BR-MDL-07, D17
 - [x] T070 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1 BiRefNet(`ZhengPeng7/BiRefNet`)·M2 OpenCLIP(`ViT-B-32` / `laion2b_s34b_b79k`)을 재현하고 HF 리비전·가중치 SHA-256·시간·메모리를 기록한다(M2는 A2 라이선스 기록 전 비활성) — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
 - [x] T071 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1·M2 실제 어댑터를 만든다 — `serving/adapters/m1_birefnet.py` · `serving/adapters/m2_openclip.py` · 담당 A · 스킬 — · 근거 BR-MDL-02
