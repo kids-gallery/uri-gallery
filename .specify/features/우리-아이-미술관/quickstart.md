@@ -79,6 +79,7 @@ npm run dev                                     # http://127.0.0.1:9521  (/live,
 
 # 웹
 cd ../web && npm ci && npm run dev              # http://127.0.0.1:9501  (/app, /ops)
+#   개발 서버(Vite)도 9501을 쓴다(D19) — 운영 nginx(9501)와 부딪히므로 팀 서버에서는 개발 서버를 띄우지 않는다(로컬 PC에서만)
 
 # 모델 API·워커 (가짜 모델로 먼저)
 cd ../serving
