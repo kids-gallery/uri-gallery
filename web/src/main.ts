@@ -1,8 +1,9 @@
-// 웹 진입점(T004). 글꼴·토큰(T011), API 클라이언트(T036), 라우터 가드(T040)는 각 작업에서 더한다.
+// 웹 진입점(T004·T011·T040).
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import './styles/index.css';
 import App from './App.vue';
-import { router } from './router';
+import { makeRouter } from './router';
 
-createApp(App).use(createPinia()).use(router).mount('#app');
+const app = createApp(App).use(createPinia());
+app.use(makeRouter()).mount('#app');
