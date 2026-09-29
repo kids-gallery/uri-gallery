@@ -54,7 +54,7 @@ def load_settings() -> Settings:
         fake_models=_bool("UAM_FAKE_MODELS"),
         fake_set=frozenset(x.strip() for x in os.environ.get("UAM_FAKE_MODELS", "").split(",") if x.strip().startswith("M")),
         gpu_enabled=_bool("GPU_ENABLED"),
-        torchserve_url=os.environ.get("TORCHSERVE_URL", "http://127.0.0.1:8080"),
+        torchserve_url=os.environ.get("TORCHSERVE_URL", "http://127.0.0.1:9561"),
         # Ollama 유저 가이드 §1.1: URL·모델 이름은 환경 변수로
         ollama_url=os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434"),
         ollama_chat_model=os.environ.get("OLLAMA_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
