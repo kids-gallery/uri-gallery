@@ -331,6 +331,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T141 (B 완료 2026-09-28; `docs/추적성.md`) 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
 - [x] T148 (C 완료 2026-09-29 — `.gitlab-ci.yml` web 작업, DEPLOY rsync) [P] 웹 CI·배포 경로를 맞춘다: `.gitlab-ci.yml`에 `web` 작업(lint·type·Vitest), DEPLOY의 `web/dist`를 nginx `root /srv/uam/web/dist`로 복사하는 단계(지금은 빌드만 하고 옮기지 않음) — `.gitlab-ci.yml` · `ops/DEPLOY.md` · 담당 C(D21) · 스킬 — · 근거 R-19, T140
 - [ ] T150 [P] 화면 문구 정본을 만든다(D22 ⑦): SD_02 문구를 화면·게이트·reason·근거 BR로 모은 `docs/C_화면문구.md` 초안 → 신지현 검토로 U10 닫음 — `docs/C_화면문구.md` · 담당 C · 스킬 — · 근거 U10, R-20
+- [ ] T160 [US4] 홈을 미술관 전시실로(D24, SD_02 §17-2): S0w 입장(첫 방문만) · 홈 "{별칭}의 미술관"(평면 안내도·N세관·흑백 액자·명패·월 라벨) · 빈 액자 걸이 · 전시 확정 때 걸리는 애니메이션 · 작품 목록은 "작품 관리"(`/app/works`) · S8은 홈으로 합침 — `web/src/app/views/MuseumView.vue` · `WelcomeView.vue` · `web/src/components/ArtFrame.vue` · 담당 B(이제민, 신지현 위임) · 스킬 FD, RL · 근거 D24
+- [ ] T161 [US4] 보호자 감상평(D24, BR-STY-04): SD_03 `story.guardian_note`(+기존 DB `ADD COLUMN IF NOT EXISTS`, `v_gallery`), 계약 `Story.guardianNote`·`GalleryItem.guardianNote`, app-api 이야기 저장·상세·전시, S6 선택 칸, 월 라벨 표시. AI 설명 입력(BR-CAP-01)·로그에 넣지 않음 — `design/uri_gallery_ddl.sql` · `api/src/modules/artworks/story.ts` · `web/src/app/views/StoryView.vue` · 담당 B(이제민) · 스킬 DB, API, FD · 근거 D24, UC_05·UC_06 개정
 
 ---
 

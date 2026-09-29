@@ -14,6 +14,7 @@
 -- 개정 (2026-09-28, B 구현 중 발견): 결정 frame(액자로 걸기)이면 v_gallery가 원본 액자로 보인다(결과 행을 만들지 않음, UC4 A2·A5)
 -- 개정 (2026-09-28, 1c460b0 사용자 결정 후속 — B): 가족당 공동 보호자 1명(uq_guardian_co_family), 대기 초대 1건
 --   (uq_invite_one_pending), 초대는 만든 보호자만·자리 차면 거부(trg_family_invite_bi), G29 이름 "보호자 관리 권한"
+-- 개정 (2026-09-29, D24 — B 이제민): story.guardian_note(보호자 감상평, BR-STY-04) + 기존 DB용 ADD COLUMN IF NOT EXISTS, v_gallery에 싣는다
 --
 -- 표준 SQL을 기준으로 썼다. 검증 DBMS는 MariaDB 12.0.2다. 아래는 MariaDB 때문에
 -- 표준에서 벗어난 곳이다(이탈 사유).
@@ -479,6 +480,7 @@ CREATE TABLE IF NOT EXISTS story (
   made_on          DATE         NULL,
   age_at_creation  SMALLINT     NULL,
   utterance        TEXT         NULL,   -- BR-STY-03: 입력 그대로. AI 설명과 다른 테이블
+  guardian_note    TEXT         NULL,   -- BR-STY-04(D24): 보호자 감상평. 입력 그대로, 전시 조건 아님, AI 설명 입력·로그에 넣지 않음
   updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_story PRIMARY KEY (artwork_id),
   CONSTRAINT fk_st_artwork FOREIGN KEY (artwork_id) REFERENCES artwork (artwork_id) ON DELETE CASCADE,
@@ -486,6 +488,8 @@ CREATE TABLE IF NOT EXISTS story (
   CONSTRAINT chk_st_age CHECK (age_at_creation IS NULL OR age_at_creation BETWEEN 0 AND 18),
   CONSTRAINT chk_st_title_nonblank CHECK (title IS NULL OR TRIM(title) <> '')
 );
+-- (D24, 2026-09-29) 이미 만든 DB에 감상평 칸을 더한다 — 이 파일을 다시 실행해도 안전(멱등). 뒤의 v_gallery가 이 칸을 읽는다
+ALTER TABLE story ADD COLUMN IF NOT EXISTS guardian_note TEXT NULL AFTER utterance;
 
 -- 작품 설명 (P0.5, H10) — 한마디와 다른 테이블(BR-STY-03)
 CREATE TABLE IF NOT EXISTS caption (
@@ -1045,7 +1049,7 @@ SELECT c.child_id, c.family_id, c.alias, COUNT(a.artwork_id) AS artwork_count
 -- S8 가족 전시 — 전시 중만, 연령 묶음 → 제작일 순. 3D는 노출 꺼지면 액자로(D10). 낮춤 원인 비노출(BR-EXH-07)
 CREATE OR REPLACE VIEW v_gallery AS
 SELECT a.family_id, a.child_id, a.artwork_id,
-       s.age_at_creation AS age_group, s.made_on, s.title, s.utterance,
+       s.age_at_creation AS age_group, s.made_on, s.title, s.utterance, s.guardian_note,
        -- 결정 frame("액자로 걸기", UC4 A2·A5)이면 원본 액자로 보인다. 결과 행은 만들지 않는다(모델 없음, 만든 결과는 보관만)
        CASE WHEN fd.artwork_id IS NOT NULL OR cr.result_kind IS NULL THEN 'frame'
             WHEN cr.result_kind = 'sculpture'
