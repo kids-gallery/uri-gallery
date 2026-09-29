@@ -8,7 +8,7 @@
 > 이 문서의 이전 초안(자체 스키마 21개 테이블)은 SD_03과 이름·구조가 달라 폐기했다.
 > **표기**: `[추론]` = 원천에 없고 계획에서 정함.
 
-## 1. 테이블 목록 (SD_03 영역 A~H, 33개 + 보완 2개)
+## 1. 테이블 목록 (SD_03 영역 A~H, 33개 + 보완 2개 + D20 1개 = 36개)
 
 | 영역 | 테이블 | 쓰기 주체 | 비고 |
 |---|---|---|---|
@@ -20,6 +20,7 @@
 | D 보호자 기록 | `decision`, `story`, `caption`, `caption_selected_tag`, `caption_check_failure` | app-api | 한마디(`story.utterance`)와 설명(`caption`)은 다른 테이블 |
 | E 삭제·집계 | `artwork_outcome`, `deletion_request` | app-api + sweeper | 삭제 뒤 남는 집계는 `artwork_outcome`(SET NULL) |
 | F 평가 | `eval_item`, `evaluation`, `eval_item_result`, `release_event` | app-api(관리) + 워커(평가 실행) | 승격 판정은 `v_promotion_eligibility` 한 곳 |
+| F 점검(D20) | `model_check` | app-api(생성·대기 초과 닫기·보관 정리) + 워커(점검 실행) | 평가 묶음 항목 한 장으로 모델 하나를 샘플 추론. 동작만 판정, 점수 없음(BR-OPS-06). 모델당 진행 중 1건(`uq_mc_one_inflight`), 모델당 최근 20건 [추론] |
 | G 외부 | `api_key`, `external_job`, `external_call_log` | model-api + 워커 | 키 종류 `team_internal`·`course_internal`·`external`·`test` |
 | H 추적 | `gate_event` | app-api·model-api·워커 | 게이트 차단·해제를 1급 기록으로(§5) |
 | **보완** | `app_session`, `auth_rate_event` | app-api | §6 — SD_03에 없음 |
@@ -47,7 +48,7 @@
 | 컬럼 | 값 |
 |---|---|
 | `stage_kind` | `split`(M1) · `judge`(M2+M3 관절+M4) · `animate_render`(M3) · `depth_relief`(M1 마스크+M5) · `frame_compose`(모델 없음) · `caption`(M6, P0.5) · `sculpture`(M7, P1) |
-| `origin` | `intake` · `confirm` · `use_lower` · `downgrade` · `caption` (+ 보완 `eval`, §6) |
+| `origin` | `intake` · `confirm` · `use_lower` · `downgrade` · `caption` (+ 보완 `eval`, §6 · D20 `check` — 점검 작업, `model_check_id`·`eval_item_id` 필수, 우선순위 30, 운영 지표·결과 미도달에서 제외) |
 | `serving_group` | `cpu_vision` · `gpu` · `llm` |
 | `status` | `queued` · `running` · `retry_wait` · `done` · `done_downgraded` · `failed`(재시도 소진) · `cancelled` |
 | `downgrade_cause` | `animated_to_relief` · `animated_to_frame`(마스크 없음) · `relief_to_frame` · `split_fail`(분리 품질 미달 → 액자) · `sculpture_to_relief` · `llm_to_template` |
@@ -104,6 +105,7 @@
 | `deletion_request` | 생성(`accepted`→`waiting_stop`) | — | — | `deleting_files`→`completed` 또는 `incomplete` |
 | `model_version`, `feature_setting`, `eval_item`, `evaluation`, `release_event` | 쓰기(평가 담당) | — | — | — |
 | `eval_item_result` | — | 쓰기(평가 실행) | — | — |
+| `model_check` (D20) | 생성(`queued`), 15분 넘게 시작 못 한 점검을 조회 때 `failed`·`model_not_ready`로 닫기, 모델당 20건 넘는 옛 기록과 그 점검 작업 삭제 | `running`→`passed`/`failed`, `outcome`·`fail_reason`·`processing_ms`·`memory_mb`·시각 | — | 점유 만료 점검을 `failed`·`engine_down`으로(재시도 없음) |
 | `api_key` | 발급·폐기(운영 CLI) | — | 읽기 | — |
 | `external_job`, `external_call_log` | — | 실행 컬럼 | 생성·전달·호출 기록 | 결과 만료 정리 |
 | `gate_event` | 보호자·운영 게이트 | G7·G9·G19 | G2·G24·G25 | G19 해제 |
@@ -127,6 +129,7 @@
 | 이야기 | G11·G12 | `story` UPSERT(트리거: 미래 제작일·삭제 중·전시 작품 필수 항목 비우기 거절). 전시 여부는 저장하지 않고 뷰로 |
 | 삭제 요청 | G18 | `artwork.status='deleting'`, `deleting_since` + 작품의 `stage_job.cancel_requested_at` + `deletion_request(accepted→waiting_stop)` → 202 |
 | 삭제 완료 | G19·H13 | sweeper: `v_deletion_hold`에 없음(또는 점유 만료+유예) 확인 → 파일 삭제 → `stored_object` 삭제 → `artwork` 삭제(연결 FK는 CASCADE/SET NULL, `artwork_outcome`·`stage_job`에는 집계만 남음) → `deletion_request` 연결 NULL + `completed`(트리거 `trg_deletion_bu`) |
+| 점검 요청(D20) | G30 | 버전 확인(지정 → 활성 → 가장 최근의 폐기 아닌 버전) · 항목 선택(지정 또는 자동: M3는 `person` 우선, M7은 `sculpture`, 그 밖은 사진 항목) → `model_check` INSERT(트리거 `trg_model_check_bi`가 G30 최종 판정, `uq_mc_one_inflight` 중복 → 409 `check_in_progress`) + `stage_job`(`origin='check'`, `model_check_id`, `eval_item_id`, 우선순위 30; M5는 GPU 없으면 `cpu_vision`) 한 트랜잭션. 같은 트랜잭션에서 그 모델의 21번째 이전 기록과 점검 작업 삭제 |
 
 ## 5. `gate_event` 기록 규칙
 
@@ -163,7 +166,7 @@ SD_03은 게이트를 1급 엔티티로 둔다. 구현은 **차단이 일어난 
 
 ## 8. 마이그레이션 순서
 
-1. `0001_sd03_baseline.sql` = `design/uri_gallery_ddl.sql` 그대로(D18·공동 보호자·보완 S1~S9 포함 판, 2026-09-28). 멱등.
+1. `0001_sd03_baseline.sql` = `design/uri_gallery_ddl.sql` 그대로(D18·공동 보호자·보완 S1~S9 포함 판, 2026-09-28 · D20 모델 점검 포함, 2026-09-29). 멱등. 이미 만든 DB는 체크섬이 바뀌어 0001이 다시 실행되고, 파일 안의 ALTER(`ADD COLUMN IF NOT EXISTS`·제약 지웠다 다시 걸기)로 D20이 들어간다(SD_03 §18-3에서 기존 DB 올리기 확인).
 2. 이후 스키마 변경은 SD_03 개정과 함께 `0002_…`부터 추가한다.
 3. 시드: 팀원 계정·역할(운영 CLI), 모델 버전(매니페스트 동기화 CLI).
 

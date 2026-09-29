@@ -51,7 +51,6 @@ describe('권한 정본과 계약이 같다(D24 ②)', () => {
 
 describe('역할별 허용·거부가 정본대로 동작한다(G1)', () => {
   // 권한마다 대표 요청 하나. 허용이면 401·403이 아니어야 하고(본문 결과는 다른 시험 몫), 거부면 403 role_missing.
-  // models.check·models.check.read(D20 점검 경로)는 점검 기능 커밋과 함께 대표 요청을 더한다.
   const probe: Partial<Record<StaffPermission, (a: ReturnType<typeof request.agent>) => request.Test>> = {
     'staff.me': (a) => a.get('/v1/ops/me'),
     'metrics.read': (a) => a.get('/v1/admin/metrics'),
@@ -60,6 +59,8 @@ describe('역할별 허용·거부가 정본대로 동작한다(G1)', () => {
     'models.warmup': (a) => a.post('/v1/ops/models/M1/warmup'),
     'models.manage': (a) => a.get('/v1/admin/eval-runs/999999'),
     'apiGuide.use': (a) => a.get('/v1/admin/api-guide/spec'),
+    'models.check': (a) => a.post('/v1/ops/models/M1/check').send({}), // D20
+    'models.check.read': (a) => a.get('/v1/ops/model-checks'),
   };
   for (const role of ROLES) {
     it(`${role} 한 역할만 가진 팀원`, async () => {
