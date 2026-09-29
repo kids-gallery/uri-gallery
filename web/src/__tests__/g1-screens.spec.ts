@@ -456,3 +456,35 @@ describe('S1b~S1d 공동 보호자(T107)', () => {
     w.unmount();
   });
 });
+
+describe('S0c 계정 - 비밀번호 변경(T161)', () => {
+  it('현재 비밀번호가 비면 사유 달린 비활성, 바꾸면 세 칸을 보내고 안내', async () => {
+    serve({ 'POST /v1/auth/password': () => new Response(null, { status: 204 }) });
+    const { default: AccountView } = await import('../app/views/AccountView.vue');
+    const w = await open(AccountView, '/app/account');
+    expect(btn(w, ko.auth.changePw)!.text()).toContain(ko.auth.needCurrent);
+    await w.find('#ac-cur').setValue('old-pass-123');
+    await w.find('#ac-pw').setValue('new-pass-456');
+    await w.find('#ac-pw2').setValue('new-pass-456');
+    await btn(w, ko.auth.changePw)!.trigger('click');
+    await flushPromises();
+    expect(JSON.parse(String(calls('POST', '/v1/auth/password')[0]![1]!.body))).toEqual({ currentPassword: 'old-pass-123', password: 'new-pass-456', passwordConfirm: 'new-pass-456' });
+    expect(w.text()).toContain(ko.auth.pwChanged);
+    w.unmount();
+  });
+  it('현재 비밀번호가 틀리면 C2 블록, [로그인 정보를 잊었어요]로 찾기', async () => {
+    serve({ 'POST /v1/auth/password': () => problem(422, { code: 'validation_failed', reason: 'current_password_mismatch' }) });
+    const { default: AccountView } = await import('../app/views/AccountView.vue');
+    const w = await open(AccountView, '/app/account');
+    await w.find('#ac-cur').setValue('wrong-pass');
+    await w.find('#ac-pw').setValue('new-pass-456');
+    await w.find('#ac-pw2').setValue('new-pass-456');
+    await btn(w, ko.auth.changePw)!.trigger('click');
+    await flushPromises();
+    expect(w.find('.gblock').text()).toContain('현재 비밀번호가 맞지 않아요');
+    await w.findAll('.gblock button').find((b) => b.text() === ko.auth.forgot)!.trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.path).toBe('/app/recovery');
+    w.unmount();
+  });
+});

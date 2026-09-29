@@ -23,9 +23,16 @@ const active = (to: string) => (to === '/app' ? route.path === '/app'
       </nav>
       <div class="nav-cta">
         <span v-if="shell === 'ops' && roles?.length" class="t-body-sm">역할: {{ roles.map((r) => ko.shell.role[r] ?? r).join(' · ') }}</span>
-        <span v-if="account" class="t-body-sm">{{ account }}</span>
+        <!-- 보호자 셸: 계정 표시를 누르면 S0c 계정(비밀번호 변경, T161). 운영 셸은 표시만 -->
+        <RouterLink v-if="account && shell === 'app'" class="t-body-sm account-link" to="/app/account" :title="ko.auth.myAccount"
+          :aria-label="`${ko.auth.myAccount} - ${account}`">{{ account }}</RouterLink>
+        <span v-else-if="account" class="t-body-sm">{{ account }}</span>
         <button class="btn btn-secondary" type="button" @click="emit('logout')">{{ ko.auth.logout }}</button>
       </div>
     </div>
   </header>
 </template>
+
+<style scoped>
+.account-link{text-decoration:underline;text-underline-offset:4px}
+</style>

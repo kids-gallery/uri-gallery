@@ -124,6 +124,9 @@ export const ko = {
     newPassword: '새 비밀번호',
     newPasswordConfirm: '새 비밀번호 확인',
     save: '저장',
+    // S0c 계정 - 비밀번호 변경(T161, UC14 A5, docs/C_화면문구.md §4 S0c)
+    changePwTitle: '비밀번호 바꾸기', currentPassword: '현재 비밀번호', changePw: '바꾸기', needCurrent: '현재 비밀번호를 적어 주세요', // [추론]
+    pwChanged: '비밀번호를 바꿨어요 - 다른 기기에서는 다시 로그인해야 해요', myAccount: '내 계정', // [추론]
   },
   /** 보호자 여정 레일(C1 여정 변형, SD_02 §2-3 · S0 와이어프레임). */
   journey: {
@@ -335,6 +338,12 @@ export const ko = {
     noRollback: '되돌릴 후보가 없어요',
     deactivateConfirm: '이 모델이 필요한 선택지가 보호자 화면에서 막혀요. 비활성화할까요?',
     readOnly: '읽기 전용이에요 - 조작은 평가 담당만', // [추론]
+    // S11 모델 점검(T157, D20 — docs/C_화면문구.md "S11 모델 점검 구현 문구")
+    colCheck: '마지막 점검', check: '점검', checking: '점검 중이에요', checkRunning: '점검 중', checkQueued: '점검 대기', checkNone: '점검 없음', // [추론] 대기·없음
+    checkPassed: (sec: string, ago: string) => `통과 - ${sec}초 - ${ago}`, checkFailed: (why: string) => `실패 - ${why}`,
+    ago: (min: number) => (min < 1 ? '방금' : min < 60 ? `${min}분 전` : `${Math.floor(min / 60)}시간 전`), // [추론] 방금·시간 전
+    failReason: { engine_down: '엔진 다운', timeout: '시간 초과', storage: '저장소', db: 'DB', model_not_ready: '모델 미준비', bad_output: '출력 형식 불량' } as Record<string, string>,
+    checkNotPromotion: '점검 통과는 승격 근거가 아니에요', // [추론]
     colItem: '평가 항목', colStatus: '상태', colExpected: '기대', colActual: '결과', colDowngradeReason: '낮춤', colMisclass: '오인', colTime: '시간', // [추론]
   },
   shell: {
@@ -353,6 +362,13 @@ const P: Record<string, ProblemCopy> = {
   'G0:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
   '-:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] },
   '-:email_unverified': { variant: 'block', summary: '메일 확인 전이에요', reason: '메일 확인을 아직 하지 않았어요', releaser: '보호자', self: true, actions: ['확인 메일 다시 받기'] },
+  'G30:no_check_sample': { variant: 'block', summary: '점검할 사진 없음', reason: '점검할 평가 묶음 사진이 없어요', releaser: '평가 담당 - 평가 묶음 항목 등록', self: false, actions: [] },
+  'G30:not_check_sample': { variant: 'block', summary: '점검할 사진 없음', reason: '이 모델에 맞는 평가 묶음 사진이 아니에요', releaser: '평가 담당 - 평가 묶음 항목 등록', self: false, actions: [] }, // [추론]
+  'G30:version_retired': { variant: 'block', summary: '점검할 수 없어요', reason: '폐기한 버전은 점검할 수 없어요', releaser: '평가 담당 - 다른 버전 고르기', self: false, actions: [] }, // [추론]
+  '-:check_in_progress': { variant: 'hold', summary: '점검 중', reason: '점검 중이에요', releaser: '시스템 - 점검이 끝나면 풀림', self: false, actions: [] },
+  '-:check_runner_missing': { variant: 'block', summary: '점검 준비 전', reason: '점검을 아직 쓸 수 없어요', releaser: '서비스 운영자 - 점검 실행기 배포', self: false, actions: [] }, // [추론]
+  '-:no_version': { variant: 'block', summary: '점검할 버전 없음', reason: '점검할 버전이 없어요', releaser: '평가 담당 - 후보 버전 등록', self: false, actions: [] }, // [추론]
+  '-:current_password_mismatch': { variant: 'block', summary: '바꾸지 못했어요', reason: '현재 비밀번호가 맞지 않아요', releaser: SELF, self: true, actions: ['다시 입력하기', '로그인 정보를 잊었어요'] }, // [추론] S0c
   '-:login_attempts': { variant: 'hold', summary: '잠시 기다려 주세요', reason: '로그인 시도가 많아요. 잠시 뒤 다시 해 주세요', releaser: '시스템 - 시간이 지나면 풀림', self: false, actions: ['로그인 정보를 잊었어요'] }, // [추론]
   'G1:role_missing': { variant: 'block', summary: '역할 없음', reason: '이 화면을 볼 역할이 없어요', releaser: '서비스 운영자 - 운영 CLI로 역할 부여', self: false, actions: ['다른 계정으로 로그인'] },
   'G1:bad_credentials': { variant: 'block', summary: '로그인하지 못했어요', reason: '이메일 또는 비밀번호가 맞지 않아요', releaser: '팀원 - 지금 이 화면', self: true, actions: ['다시 입력하기'] },

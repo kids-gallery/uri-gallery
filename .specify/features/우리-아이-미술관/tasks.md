@@ -343,14 +343,14 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T154 (D 완료 2026-09-29) app-api: 점검 경로 3개(역할·G30·진행 중 1건·버전·항목 선택·15분 대기 닫기·모델당 20건), `/ready` `lastCheck`, 지표에서 점검 작업 제외, sweeper가 점유 만료 점검을 재시도 없이 닫음, `MODEL_CHECK_ENABLED`(기본 꺼짐 → 503 `check_runner_missing`) — `api/src/modules/ops/modelCheck.ts` · `api/src/modules/ops/routes.ts` · `api/src/sweeper/takeover.ts` · `api/tests/model-check.test.ts`(12) · 담당 D · 근거 SD_01 7.8~7.10
 - [ ] T155 serving 점검 실행기: 보호자 점유 조건을 `origin NOT IN ('eval','check')`로, 점유 순서 보호자 → 점검 → 평가, 모델 어댑터 한 번 실행(M3 관절까지·M5 깊이까지), 출력 형식 확인(SD_01 §10-4 표), `model_check` 결과·처리 시간·메모리 기록, 임시 파일 삭제, `priority.check: 30`. 배포 뒤 app-api `MODEL_CHECK_ENABLED=true` — `serving/workers/runner.py` · `serving/workers/stages/check.py` · `serving/config/limits.yaml` · `serving/tests/` · 담당 A · 근거 stage-job §13, SD_04 §8
 - [ ] T156 (P0.5) M6 점검: app-api가 설명 입력 항목으로 llm-server `/v1/caption`을 동기 호출해 `model_check`에 기록(`m6_check_p05` 해제) — `api/src/modules/ops/modelCheck.ts` · 담당 D · 근거 D20 ⑧, stage-job §11
-- [ ] T157 [P] S11 화면: 모델 상태 표에 "마지막 점검" 열(`GET /v1/ops/model-checks`)·[점검] 버튼(운영자·평가 담당, M1·M2·M3·M5·M7), 폴링 3→6→10초, 409 `check_in_progress` C3, G30 C2(해제 주체 평가 담당), 503 `check_runner_missing` C2, S10 준비 표에 `lastCheck` 읽기 — `web/src/ops/views/*` · `web/src/copy/ko.ts` · 담당 B · 근거 SD_02 §14 · §16 G30
+- [x] T157 (이제민 완료 2026-09-29, `web/src/ops/modelCheck.ts`·ModelsView(마지막 점검 열·[점검]·점검 중 C3·G30·check_runner_missing C2)·OpsStatusView(마지막 점검 읽기); 폴링은 모델 상태 표 2초 주기에 함께; 시험 `ops-screens.spec.ts` 3건) [P] S11 화면: 모델 상태 표에 "마지막 점검" 열(`GET /v1/ops/model-checks`)·[점검] 버튼(운영자·평가 담당, M1·M2·M3·M5·M7), 폴링 3→6→10초, 409 `check_in_progress` C3, G30 C2(해제 주체 평가 담당), 503 `check_runner_missing` C2, S10 준비 표에 `lastCheck` 읽기 — `web/src/ops/views/*` · `web/src/copy/ko.ts` · 담당 B · 근거 SD_02 §14 · §16 G30
 
 ### RBAC 정리 (D24, 2026-09-29 최호준 요청)
 
 - [x] T158 (A 완료 2026-09-29 — 라우트 19개 requirePerm, 계약 x-permission, 시험 rbac 14건. D20 점검 경로 2개는 점검 기능 커밋 때 전환) [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
 - [x] T159 (A 완료 2026-09-29 — `api/src/auth/staffAdmin.ts` + CLI) [P] 팀원 계정 관리 CLI를 넓힌다: `ops:staff add·grant·revoke·disable·enable·passwd·list`(정지·비밀번호 변경 시 그 팀원 세션 삭제, 원문 비밀번호는 표준 입력만) — `api/scripts/ops/staff.ts` · `ops/DEPLOY.md` §1 · 담당 A(최호준, 사용자 지시) · 스킬 — · 근거 D24 ③
 - [x] T160 (A 완료 2026-09-29) 보호자 비밀번호 변경(로그인 상태) `POST /v1/auth/password` — 현재 비밀번호 확인·재설정과 같은 규칙·다른 기기 세션 무효·이 기기 새 세션·틀림은 로그인 실패 한도 — `api/src/modules/auth/routes.ts` · 시험 `api/tests/rbac.test.ts` · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24 ④, UC14 A5
-- [ ] T161 보호자 비밀번호 변경 화면(설정 메뉴에서, UC14 A5) — `web/src/app/views/*` · 담당 B(웹, 후속) · 스킬 FD · 근거 D24 ④
+- [x] T161 (이제민 완료 2026-09-29, `web/src/app/views/AccountView.vue` S0c `/app/account` — 헤더 계정 표시에서 연다, 배치는 신지현 디자인 확인 대상; 시험 `g1-screens.spec.ts` 2건) 보호자 비밀번호 변경 화면(설정 메뉴에서, UC14 A5) — `web/src/app/views/*` · 담당 B(웹, 후속) · 스킬 FD · 근거 D24 ④
 
 ---
 

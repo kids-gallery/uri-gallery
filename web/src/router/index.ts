@@ -37,6 +37,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'artworks/:id/story', component: () => import('@/app/views/StoryView.vue') },
       { path: 'upload', component: () => import('@/app/views/UploadView.vue') },
       { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
+      { path: 'account', component: () => import('@/app/views/AccountView.vue') }, // S0c 비밀번호 변경(T161)
       { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
       { path: 'gallery', redirect: (to) => ({ path: '/app', query: to.query }) }, // S8은 홈 전시실로 합침
     ],

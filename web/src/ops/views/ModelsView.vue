@@ -13,6 +13,7 @@ import ReasonButton from '@/components/ReasonButton.vue';
 import { usePolling } from '@/composables/usePolling';
 import { ko, problemCopy } from '@/copy/ko';
 import { useSession } from '@/stores/session';
+import { CHECKABLE, checkBusy, checkText, loadChecks, type ModelCheck } from '../modelCheck';
 
 type Manifest = components['schemas']['ModelManifest'];
 type Version = components['schemas']['ModelVersion'];
@@ -51,6 +52,8 @@ async function loadManifest() {
 }
 async function tickLoads(): Promise<boolean> {
   loads.value = await api.get<{ models: LoadStatus[] }>('/v1/ops/models').then((x) => x.models).catch(() => null);
+  // 마지막 점검(D20, T157) — 같은 주기로 다시 읽는다. 못 읽으면 마지막 값 유지(§17)
+  checks.value = await loadChecks().catch(() => checks.value);
   // 평가 중인 기록은 같은 주기로 진행을 다시 읽는다
   if (isEval.value) {
     const live = Object.values(runs.value).filter((r) => r.id && (r.itemDone ?? 0) < (r.itemTotal ?? 0));
@@ -72,6 +75,13 @@ async function act(fn: () => Promise<unknown>) {
   finally { busy.value = false; }
 }
 const warmup = (id: string) => act(() => api.post(`/v1/ops/models/${id}/warmup`));
+// 점검: 버전·사진은 서버가 고른다(활성, 없으면 최근 후보). 결과는 폴링으로 "마지막 점검" 칸에(SD_02 §14-3)
+const checks = ref<ModelCheck[]>([]);
+const checkOf = (id: string) => checks.value.find((c) => c.modelId === id) ?? null;
+const runCheck = (id: string) => act(async () => {
+  const c = await api.post<ModelCheck>(`/v1/ops/models/${id}/check`);
+  checks.value = [c, ...checks.value.filter((x) => x.modelId !== id)];
+});
 const evaluate = (m: Manifest, v: Version) => act(async () => {
   const r = await api.post<EvalRun>(`/v1/admin/models/${m.modelId}/evaluate`, { body: { versionId: v.id } });
   if (r.id) runs.value[r.id] = r;
@@ -123,18 +133,22 @@ const candidates = (m: Manifest) => byState(m, 'candidate');
     <!-- 모델 상태 -->
     <section class="stack-sm" aria-labelledby="md-state">
       <h2 id="md-state" class="t-card-title">{{ ko.ops.statusTitle }}</h2>
+      <p class="t-body-sm">{{ ko.ops.checkNotPromotion }}</p>
       <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.statusTitle">
         <table class="plain">
-          <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colDevice }}</th><th>{{ ko.ops.colLoad }}</th><th>{{ ko.ops.colQueue }}</th><th>{{ ko.ops.colAction }}</th></tr></thead>
+          <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colDevice }}</th><th>{{ ko.ops.colLoad }}</th><th>{{ ko.ops.colQueue }}</th><th>{{ ko.ops.colCheck }}</th><th>{{ ko.ops.colAction }}</th></tr></thead>
           <tbody>
             <tr v-for="id in ['M1', 'M2', 'M3', 'M5', 'M6', 'M7']" :key="id">
               <td>{{ ko.ops.longName[id] }}</td>
               <td>{{ loadOf(id)?.execDevice ? loadOf(id)!.execDevice!.toUpperCase() : '' }}</td>
               <td><ModelStatusChip :model-id="id" :status="loads ? loadOf(id) : null" :exposed="manifest?.find((m) => m.modelId === id)?.exposed ?? false" /></td>
               <td class="num">{{ (loadOf(id) as { queue?: { waiting?: number } } | null)?.queue?.waiting ?? '' }}</td>
-              <td>
+              <td class="t-body-sm" :data-check="checkOf(id)?.status ?? 'none'">{{ CHECKABLE.includes(id) ? checkText(checkOf(id)) : '' }}</td>
+              <td class="acts">
                 <button v-if="canWarm && id !== 'M6' && ['not_loaded', 'failed'].includes(loadOf(id)?.load?.state ?? '')" class="btn btn-secondary btn-sm" type="button"
                   :disabled="busy" @click="warmup(id)">{{ ko.ops.warmup }}</button>
+                <ReasonButton v-if="canWarm && CHECKABLE.includes(id)" :label="ko.ops.check" variant="secondary"
+                  :disabled="checkBusy(checkOf(id)) || busy" :reason="checkBusy(checkOf(id)) ? ko.ops.checking : busy ? ko.upload.sending : ''" @click="runCheck(id)" />
               </td>
             </tr>
           </tbody>

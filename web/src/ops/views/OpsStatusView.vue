@@ -9,6 +9,7 @@ import ModelStatusChip, { type LoadStatus } from '@/components/ModelStatusChip.v
 import { usePolling } from '@/composables/usePolling';
 import { ko } from '@/copy/ko';
 import { useSession } from '@/stores/session';
+import { CHECKABLE, checkText, loadChecks, type ModelCheck } from '../modelCheck';
 
 type Metrics = components['schemas']['Metrics'];
 type Manifest = components['schemas']['ModelManifest'];
@@ -26,6 +27,7 @@ const period = ref<'d7' | 'd30' | 'all'>('d7');
 const tab = ref<'models' | 'causes' | 'unreached'>('models');
 const staleAt = ref<string | null>(null);
 const lastOk = ref<Date | null>(null);
+const checks = ref<ModelCheck[]>([]); // 마지막 점검(D20) — 읽기만, 점검 실행은 S11
 
 const MODELS = ['M1', 'M2', 'M3', 'M5', 'M6', 'M7'];
 const loadOf = (id: string) => loads.value?.find((m) => m.modelId === id) ?? null;
@@ -57,6 +59,7 @@ async function tick(): Promise<boolean> {
       isOperator.value ? api.get<Unreached[]>('/v1/admin/unreached') : Promise.resolve([] as Unreached[]),
     ]);
     loads.value = l; metrics.value = m; manifest.value = man; unreached.value = u;
+    checks.value = await loadChecks().catch(() => checks.value);
     lastOk.value = new Date(); staleAt.value = null;
   } catch {
     staleAt.value = lastOk.value ? timeText(lastOk.value) : '-';
@@ -85,13 +88,14 @@ watch(period, () => void tick());
       <h2 id="st-ready" class="t-card-title">{{ ko.ops.readyTitle }}</h2>
       <div class="table-wrap" tabindex="0" role="region" :aria-label="ko.ops.readyTitle">
         <table class="plain">
-          <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colGroup }}</th><th>{{ ko.ops.colState }}</th><th>{{ ko.ops.colImpact }}</th></tr></thead>
+          <thead><tr><th>{{ ko.ops.colModel }}</th><th>{{ ko.ops.colGroup }}</th><th>{{ ko.ops.colState }}</th><th>{{ ko.ops.colImpact }}</th><th>{{ ko.ops.colCheck }}</th></tr></thead>
           <tbody>
             <tr v-for="id in MODELS" :key="id">
               <td>{{ ko.ops.shortName[id] }}</td>
               <td>{{ ko.ops.group[groupOf(id)] ?? '' }}</td>
               <td><ModelStatusChip :model-id="id" :status="loads ? loadOf(id) : null" :exposed="exposedOf(id)" /></td>
               <td class="t-body-sm">{{ impact(id) }}</td>
+              <td class="t-body-sm">{{ CHECKABLE.includes(id) ? checkText(checks.find((c) => c.modelId === id)) : '' }}</td>
             </tr>
           </tbody>
         </table>
