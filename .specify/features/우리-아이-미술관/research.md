@@ -37,12 +37,12 @@
   - M3 전용 환경 `serving/.venv-m3` = **conda-forge 접두사 환경**(`conda create -p`, 사용자 폴더 안). AD 저장소 `torchserve/setup_macos.sh` 기준으로 Python 3.8.13 · torch 1.13.0 · mmcv-full 1.7.0 · mmdet 2.27.0 · mmpose 0.29.0 · torchserve · AD 패키지(`pip install -e`)를 넣는다. conda 쪽은 `serving/conda-m3.lock`(`conda list --explicit --md5`), pip 쪽은 `serving/requirements-m3.lock`(설치 결과 고정)으로 잠근다. **2026-09-29 개정**
   - **Java 17과 OSMesa도 같은 conda 환경에 넣는다**(conda-forge `openjdk=17`, `mesalib<25.1` — Mesa 25.1부터 OSMesa가 빠짐). 여러 사용자가 함께 쓰는 호스트의 Homebrew에는 아무것도 설치하지 않는다(Homebrew 공용 패키지 변경이 다른 사용자에게 번지는 것을 막음). **2026-09-29 개정**
   - AD 저장소는 커밋 `b859684857519c7424da51a0b0862fbd1fd258f4`(2025-09-03 보관 시점)로 고정해 `$MODEL_ROOT/m3/AnimatedDrawings`에 두고, `.mar` 2종은 AD 릴리스 v0.0.1에서 받아 `$MODEL_ROOT/m3/model-store`에 둔다(저장소에 넣지 않음).
-  - TorchServe는 `torchserve --start --ncs --ts-config ops/torchserve/config.properties`로 네이티브 실행한다. 설정: `inference_address=http://127.0.0.1:8080`, `management_address=http://127.0.0.1:8081`, `metrics_address=http://127.0.0.1:8082`(모두 루프백), **`default_workers_per_model=1`**(기본값은 CPU 코어 수만큼 워커를 띄워 모델 2종이 워커마다 따로 올라감 — 공유 호스트 메모리 보호), `load_models=all`(모델 저장 위치는 설정 파일이 아니라 기동 인자 `--model-store "$MODEL_ROOT/m3/model-store"`로 준다), 토큰 인증은 가능 버전이면 켠다. pm2에 등록할 때 `max_memory_restart`로 메모리 상한을 둔다. **2026-09-29 개정**
+  - TorchServe는 `torchserve --start --ncs --ts-config ops/torchserve/config.properties`로 네이티브 실행한다. 설정: `inference_address=http://127.0.0.1:9561`, `management_address=http://127.0.0.1:9562`, `metrics_address=http://127.0.0.1:9563`(모두 루프백. **2026-09-29 개정**: TorchServe 기본 8080·8081은 Studio-B에서 다른 사용자 서비스가 이미 쓰고 있어(8080 컨테이너 UI, 8081 Express 기본 인증) 팀 포트 대역 95xx(D19)의 9561~9563으로 옮긴다), **`default_workers_per_model=1`**(기본값은 CPU 코어 수만큼 워커를 띄워 모델 2종이 워커마다 따로 올라감 — 공유 호스트 메모리 보호), `load_models=all`(모델 저장 위치는 설정 파일이 아니라 기동 인자 `--model-store "$MODEL_ROOT/m3/model-store"`로 준다), **토큰 인증은 끈다**(`disable_token_auth=true` — AD 저장소 스크립트 `image_to_annotations.py`가 토큰 없이 `localhost:8080`을 부르므로 켜면 렌더가 깨진다. 보호는 루프백 바인딩·방화벽이 맡는다. 2026-09-29 개정). pm2에 등록할 때 `max_memory_restart`로 메모리 상한을 둔다. **2026-09-29 개정**
   - **헤드리스 렌더는 OSMesa**(AD 설정 `view.USE_MESA: True`). 서비스 계정은 SSH로만 접속해 macOS 창 서버(GLFW 창)를 쓸 수 없다. **2026-09-29 실측 사실**: Studio-B 콘솔 사용자는 다른 계정이고 pioneer1은 SSH 세션만 있다.
-  - 워커는 `M3_AD_PYTHON=serving/.venv-m3/bin/python`, `M3_AD_ROOT=$MODEL_ROOT/m3/AnimatedDrawings`로 렌더 스크립트를 부른다(`serving/adapters/m3_render.py`).
+  - 워커는 `M3_AD_PYTHON=serving/.venv-m3/bin/python`, `M3_AD_ROOT=$MODEL_ROOT/m3/AnimatedDrawings`로 렌더 실행기 `serving/adapters/m3_ad_run.py`를 부른다. AD 스크립트는 `http://localhost:8080`을 코드에 박아 두었으므로 실행기가 그 주소를 `TORCHSERVE_URL`로 바꿔 보낸다. 실행기는 AD `examples`의 `image_to_annotations`로 주석을 만든 뒤 `view.USE_MESA: True`를 넣은 mvc 설정으로 `animated_drawings.render.start`를 부른다(AD 예제 `image_to_animation.py`는 창 모드 고정이라 그대로 쓰지 않음). PyOpenGL이 conda 환경의 `libOSMesa`를 찾도록 `DYLD_FALLBACK_LIBRARY_PATH=serving/.venv-m3/lib`를 준다.
   - `.mar` 파일 2개(검출·자세)의 SHA-256을 매니페스트에 기록한다.
   - 매니페스트의 `image_digest` 필드는 컨테이너 이미지 대신 **실행 환경 다이제스트**(`requirements-*.lock` + 런타임 설정 파일 + `.mar` 해시를 이은 SHA-256)를 담는다. 필드 이름은 BR-MDL-01·SD_03과 맞추려고 유지한다.
-- **Rationale**: 격리의 목적(외부 접근 차단, 고정 버전, 변조 탐지)은 루프백 바인딩·해시 잠금·체크섬으로 같은 수준을 지킨다. 관리 포트(8081)는 외부로 열지 않고 방화벽으로도 막는다.
+- **Rationale**: 격리의 목적(외부 접근 차단, 고정 버전, 변조 탐지)은 루프백 바인딩·해시 잠금·체크섬으로 같은 수준을 지킨다. 관리 포트(9562)는 외부로 열지 않고 방화벽으로도 막는다.
 - **확인 필요(위험)**: Animated Drawings의 렌더는 OpenGL을 쓴다. 개인 PC 실측(53~62초)은 Docker 기반이었으므로 **네이티브 macOS/Linux 헤드리스 렌더 재현을 1~2일차에 먼저 확인**한다(A 담당, `docs/A_모델재현기록.md`). 실패하면 예비안(그림 전용 YOLOv8 자세 모델 ONNX, AGPL → U4 결정 전 비활성)으로 가지 않고, M3를 `model_not_ready`로 두어 움직임 경로만 인프라 재시도 규칙을 따르게 한다(FR-12). 이때도 2.5D·액자 경로는 동작한다.
 - **Alternatives considered**: Docker 예외 허용(Intent-Plan 위반), TorchServe 없이 Animated Drawings 파이썬 API 직접 호출(검출·자세 모델이 TorchServe `.mar` 전제로 배포되어 재포장 비용이 큼).
 
@@ -283,7 +283,7 @@
 | U5 | 열림 | 임계값을 `serving/config/thresholds.yaml`로 두고 평가 1차 측정 뒤 채움. 그 전에는 어댑터가 "명백한 실패"(마스크 면적 0, 인물 미검출, 렌더 파일 없음, 깊이맵 분산 0)만 `quality_below`로 낸다 `[추론]` |
 | U6 | 일부 | 움직임 렌더 10분만 원천. 나머지 시간 상한 기본값 `[추론]`: 분리 60초·판정 120초·깊이 180초(CPU 600초)·설명 30초. 재현 뒤 교체 |
 | U7 | **닫음** | R-01 |
-| U8 | **닫음** | R-08(인증), R-10(경로·형식), R-12(폴링). 포트: app-api 9521, model-api 9541, TorchServe 8080~8082, Ollama 11434(모두 127.0.0.1) |
+| U8 | **닫음** | R-08(인증), R-10(경로·형식), R-12(폴링). 포트: app-api 9521, model-api 9541, TorchServe 9561~9563(R-03 2026-09-29 개정), Ollama 11434(모두 127.0.0.1) |
 | U9 | **닫음** | R-07 |
 | U10 | 열림 | 문구를 `web/src/copy/ko.ts`로 모음. 제안 지연 시 화면은 SD_02 S3(`[나중에 고르기]`, G7 문구) 채택 |
 | U11 | 열림 | P0.5 착수 전 |

@@ -98,7 +98,7 @@
                         │     └─▶ STORAGE_ROOT/family, tmp  ◀── 워커 읽기·쓰기             │
                         │                                                                │
                         │  [큐 워커 — stage_job 점유]                                     │
-                        │  worker-cpu : M1·M2·M3(→TorchServe :8080)·M4·frame_compose       │
+                        │  worker-cpu : M1·M2·M3(→TorchServe :9561)·M4·frame_compose       │
                         │               [+M5 if no GPU]                                   │
                         │  worker-gpu : M5·(P1)M7  (모델 상주)                             │
                         │  [동기 서버 — 큐 없음]                                          │

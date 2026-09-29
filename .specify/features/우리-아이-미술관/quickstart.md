@@ -55,7 +55,7 @@ STORAGE_ROOT=/srv/uam/store        # 로컬 개발은 ./.data/store
 MODEL_ROOT=/srv/uam/models         # U14 — 팀 서버 확인 후
 GPU_ENABLED=false                  # U2
 UAM_FAKE_MODELS=1                  # 모델 없이 흐름 개발·장애 주입 시험
-TORCHSERVE_URL=http://127.0.0.1:8080
+TORCHSERVE_URL=http://127.0.0.1:9561
 OLLAMA_URL=http://127.0.0.1:11434  # P0.5
 LLM_SERVER_URL=http://127.0.0.1:8200 # P0.5 llm-server
 MAIL_SMTP_URL=smtp://127.0.0.1:1025 # P0 Mailpit (U19 확정 시 교체)
@@ -100,7 +100,7 @@ python -m serving.tools.verify_manifest ../models/manifest.yaml
 conda activate ./.venv-m3   # conda 접두사 환경(R-03)
 torchserve --start --ncs --ts-config ../ops/torchserve/config.properties \
   --model-store "$MODEL_ROOT/m3/model-store" --models drawn_humanoid_detector.mar drawn_humanoid_pose_estimator.mar
-curl -s http://127.0.0.1:8080/ping              # {"status": "Healthy"}
+curl -s http://127.0.0.1:9561/ping              # {"status": "Healthy"}
 ```
 
 ## 4. pm2로 함께 띄우기
@@ -128,7 +128,7 @@ nginx(`ops/nginx.conf`) 핵심 라우팅:
 | `/v1/*`, `/live`, `/ready`, `/openapi.json` | app-api `127.0.0.1:9521` |
 | `/metrics` | app-api, 내부망 allow 목록만 |
 | `/_files/*` | `internal;` — app-api의 `X-Accel-Redirect`로만 |
-| TorchServe 8080~8082, Ollama 11434, llm-server 8200, `/internal/*` | 노출 안 함 |
+| TorchServe 9561~9563, Ollama 11434, llm-server 8200, `/internal/*` | 노출 안 함 |
 
 `client_max_body_size 21m;`(20MB 상한 + 여유, BR-INT-01).
 
