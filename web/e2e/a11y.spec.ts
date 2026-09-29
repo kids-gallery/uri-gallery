@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { drawingPng, guardianWithChild } from './stack/guardian';
+import { STAFF } from './stack/ports';
 
 async function check(page: Page, where: string) {
   await page.waitForLoadState('networkidle');
@@ -71,4 +72,14 @@ test.fixme('움직임 줄이기 설정이면 버튼 전환 효과가 없다', as
   await page.goto('/app/login');
   const d = await page.getByRole('button', { name: ko.auth.login, exact: true }).evaluate((e) => getComputedStyle(e).transitionDuration);
   expect(d.split(',').every((x) => parseFloat(x) === 0)).toBe(true);
+});
+
+test('운영 화면 — 로그인·상태·모델·API활용(model-api 없음 = 확인 불가 상태)', async ({ page }) => {
+  await page.goto('/ops/login');
+  await check(page, '/ops/login');
+  await page.getByLabel(ko.auth.email, { exact: true }).fill(STAFF.email);
+  await page.getByLabel(ko.auth.password, { exact: true }).fill(STAFF.password);
+  await page.getByRole('button', { name: ko.auth.login, exact: true }).click();
+  await expect(page).toHaveURL(/\/ops\/status/);
+  for (const p of ['/ops/status', '/ops/models', '/ops/api-guide']) { await page.goto(p); await check(page, p); }
 });
