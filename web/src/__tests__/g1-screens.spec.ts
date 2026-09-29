@@ -258,19 +258,51 @@ describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
     expect(w.text()).toContain(ko.museum.preparing(1));
     w.unmount();
   });
-  it('작품을 누르면 월 라벨: 결과 종류·한마디(그대로), 움직이는 그림은 누를 때만 재생 토글', async () => {
+  it('작품을 누르면 작품 앞(?art=): 전시 해설(작품명·작가 줄·규칙 문장·한마디 원문), 움직이는 그림은 누를 때만 재생 토글', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
     const w = await open(MuseumView, '/app');
     await flushPromises();
     await w.findAll('button.piece')[1]!.trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.query.art).toBe('7');
     expect(w.find('.wl-title').text()).toBe('강아지');
+    expect(w.find('.wl-artist').text()).toBe(ko.museum.artist('하늘', 6, '2026'));
+    expect(w.find('.wl-artist').text()).toBe('하늘 (6세 작, 2026)');
     expect(w.find('.wl-kind').text()).toBe(ko.museum.kind.frame);
+    expect(w.find('.wl-desc').text()).toBe('「강아지」는 하늘이 6살이던 2026년 9월에 그린 작품입니다. 작가는 이 그림을 두고 “멍멍이가 웃어”라고 말했습니다.');
     expect(w.find('.wl-words').text()).toBe('멍멍이가 웃어');
     expect(btn(w, ko.museum.play)).toBeUndefined();
-    await btn(w, ko.museum.back)!.trigger('click');
+    await w.find('.wl-back').trigger('click');
+    await flushPromises(); await new Promise((r) => setTimeout(r, 0)); await flushPromises();
+    expect(router.currentRoute.value.query.art).toBeUndefined();
     await w.findAll('button.piece')[0]!.trigger('click');
+    await flushPromises();
     expect(w.find('.wl-kind').text()).toBe(ko.museum.kind.animated);
+    expect(w.find('.wl-desc').text()).toContain(ko.museum.kindLine.animated!);
     expect(btn(w, ko.museum.play)!.attributes('aria-pressed')).toBe('false');
+    w.unmount();
+  });
+  it('주소 ?art=로 바로 들어오면 작품 앞, Esc면 전시실로(주소에서 art 빠짐)', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
+    const w = await open(MuseumView, '/app?child=1&art=8');
+    await flushPromises();
+    expect(w.find('.wl-title').text()).toBe('해님');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await flushPromises();
+    expect(router.currentRoute.value.query.art).toBeUndefined();
+    expect(w.find('.wl-title').exists()).toBe(false);
+    expect(w.find('.banner-title').text()).toBe(ko.museum.hall('하늘'));
+    w.unmount();
+  });
+  it('로비: 받침대에 최근 작품(금박 액자)과 소장 작품 명판, 세관은 금박 액자', async () => {
+    serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
+    const w = await open(MuseumView, '/app');
+    await flushPromises();
+    expect(w.find('.pedestal-piece').attributes('aria-label')).toBe(ko.museum.latest); // 세관의 같은 작품 버튼과 이름이 겹치지 않게
+    expect(w.find('.pedestal-piece img').attributes('alt')).toBe('강아지');
+    expect(w.find('.collection').text()).toBe(ko.museum.collection(2));
+    expect(w.findAll('.room .artframe.gold')).toHaveLength(2);
+    expect(w.findAll('[role="region"]').map((r) => r.attributes('aria-label'))).toEqual([ko.museum.hangOf(5), ko.museum.hangOf(6)]);
     w.unmount();
   });
   it('전시 작품이 없으면 빈 액자 걸이와 "첫 그림을 걸어 볼까요?"', async () => {

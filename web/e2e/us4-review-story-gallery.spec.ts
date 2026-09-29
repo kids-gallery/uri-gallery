@@ -49,5 +49,16 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
   await expect(page.getByRole('button', { name: ko.museum.back })).toBeVisible();
   await expect(page.locator('.wl-kind')).toHaveText(ko.museum.kind.frame!);
   await expect(page.locator('button[aria-pressed]')).toHaveCount(0);
+  // 전시 해설(D25 ⑥): 작가 줄 "{별칭} ({나이}세 작, {해})" · 규칙 문장 해설 — 뒤로가기는 브라우저 뒤로 · Esc · [← 전시실로]
+  await expect(page.locator('.wl-artist')).toHaveText(ko.museum.artist('별이', 6, '2026'));
+  await expect(page.locator('.wl-desc')).toContainText('「빨간 해」는 별이가 6살이던 2026년 9월에 그린 작품입니다.');
+  await expect(page).toHaveURL(/[?&]art=/);
   await noScoreNoToast(page);
+  await page.goBack();
+  await expect(page).not.toHaveURL(/[?&]art=/);
+  await expect(room.getByRole('button', { name: '빨간 해' })).toBeFocused();
+  await room.getByRole('button', { name: '빨간 해' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/[?&]art=/);
+  await expect(page.getByRole('heading', { name: ko.museum.room(6) })).toBeVisible();
 });

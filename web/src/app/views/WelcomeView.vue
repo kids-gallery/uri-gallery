@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // S0w 입장(D25, SD_02 §17-2) — 로그인 전 첫 방문 한 번만. 밝은 그랜드 홀: 유리 아치 천장 · 양옆 기둥 회랑 · 걸린 배너 ·
 // 벽에 걸린 아이 그림 액자 · 반사 바닥 · 가운데 조명 받은 대표 액자, 그 위 간판과 [입장하기] → S0a(next 유지).
-// 장면은 인라인 SVG로 직접 그린다(외부 이미지 없음), 색은 스타일가이드 토큰. 빛·배너 움직임은 움직임 줄이기면 멈춘다(motion.css).
+// 장면은 인라인 SVG로 직접 그린다(외부 이미지 없음). 르네상스 전시관(D25 ⑥): 보르도 다마스크 벽 · 금박 몰딩과 액자 · 대리석 기둥과 바닥 —
+// 색은 museum.css 전용 팔레트. 빛·배너 움직임은 움직임 줄이기면 멈춘다(motion.css).
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ko } from '@/copy/ko';
@@ -50,12 +51,12 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
           <stop offset="1" stop-color="var(--color-canvas)" />
         </linearGradient>
         <linearGradient id="w-stone" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="var(--color-block-cream)" />
-          <stop offset="1" stop-color="var(--color-surface-soft)" />
+          <stop offset="0" stop-color="var(--museum-stone-2)" />
+          <stop offset="1" stop-color="var(--museum-stone)" />
         </linearGradient>
         <linearGradient id="w-floor" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="var(--color-canvas)" />
-          <stop offset="1" stop-color="var(--color-block-cream)" />
+          <stop offset="0" stop-color="var(--museum-marble-2)" />
+          <stop offset="1" stop-color="var(--museum-marble-1)" />
         </linearGradient>
         <radialGradient id="w-door" cx="0.5" cy="0.6" r="0.6">
           <stop offset="0" stop-color="var(--color-canvas)" />
@@ -72,30 +73,30 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
       <rect width="1440" height="900" fill="url(#w-stone)" />
       <!-- 유리 아치 천장과 볼트 -->
       <path d="M -200 360 Q 720 -300 1640 360 L 1640 -10 L -200 -10 Z" fill="url(#w-glass)" />
-      <g fill="none" stroke="var(--color-canvas)" stroke-width="6" opacity=".95">
+      <g fill="none" stroke="var(--museum-gold-2)" stroke-width="6" opacity=".95">
         <path v-for="(d, i) in VAULTS" :key="i" :d="d" />
       </g>
       <g stroke="var(--color-canvas)" stroke-width="3" opacity=".8">
         <line v-for="k in 9" :key="k" :x1="720" :y1="330" :x2="-200 + (k - 1) * 230" :y2="-10" />
       </g>
       <!-- 안쪽 벽과 빛나는 아치문 -->
-      <rect x="560" y="300" width="320" height="270" fill="var(--color-block-cream)" />
+      <rect x="560" y="300" width="320" height="270" fill="var(--museum-green)" />
       <path d="M 640 565 L 640 420 Q 720 330 800 420 L 800 565 Z" fill="url(#w-door)" />
       <!-- 양옆 벽 -->
-      <polygon points="0,300 610,470 610,565 0,900" fill="color-mix(in srgb,var(--color-block-cream) 88%,var(--color-ink))" />
-      <polygon points="1440,300 830,470 830,565 1440,900" fill="color-mix(in srgb,var(--color-block-cream) 88%,var(--color-ink))" />
+      <polygon points="0,300 610,470 610,565 0,900" fill="var(--museum-bordeaux)" />
+      <polygon points="1440,300 830,470 830,565 1440,900" fill="color-mix(in srgb,var(--museum-bordeaux) 85%,var(--museum-ink))" />
       <!-- 벽 위 몰딩 · 걸레받이 -->
-      <g stroke="var(--color-canvas)" stroke-width="10" stroke-linecap="round">
+      <g stroke="var(--museum-gold-2)" stroke-width="10" stroke-linecap="round">
         <line x1="0" y1="330" x2="610" y2="476" /><line x1="1440" y1="330" x2="830" y2="476" />
       </g>
-      <g stroke="color-mix(in srgb,var(--color-ink) 55%,var(--color-block-cream))" stroke-width="12">
+      <g stroke="var(--museum-gold-3)" stroke-width="12">
         <line x1="0" y1="880" x2="610" y2="560" /><line x1="1440" y1="880" x2="830" y2="560" />
       </g>
       <!-- 벽의 아이 그림 액자(왼쪽·오른쪽 대칭) -->
       <g v-for="side in [1, -1]" :key="side" :transform="side === -1 ? 'translate(1440 0) scale(-1 1)' : undefined">
         <g v-for="(f, i) in FRAMES" :key="i">
-          <rect :x="f.x - 3" :y="f.y - 3" :width="f.w + 6" :height="f.h + 6" fill="var(--color-ink)" />
-          <rect :x="f.x" :y="f.y" :width="f.w" :height="f.h" fill="var(--color-canvas)" />
+          <rect :x="f.x - 4" :y="f.y - 4" :width="f.w + 8" :height="f.h + 8" fill="var(--museum-gold-2)" stroke="var(--museum-gold-3)" stroke-width="1.5" />
+          <rect :x="f.x" :y="f.y" :width="f.w" :height="f.h" fill="var(--museum-marble-1)" />
           <circle v-if="f.kind === 0" :cx="f.x + f.w * 0.5" :cy="f.y + f.h * 0.5" :r="Math.min(f.w, f.h) * 0.28" :fill="`var(--color-block-${f.color})`" />
           <polygon v-else-if="f.kind === 1" :points="`${f.x + f.w * .2},${f.y + f.h * .8} ${f.x + f.w * .5},${f.y + f.h * .25} ${f.x + f.w * .8},${f.y + f.h * .8}`" :fill="`var(--color-block-${f.color})`" />
           <rect v-else :x="f.x + f.w * .2" :y="f.y + f.h * .35" :width="f.w * .6" :height="f.h * .4" :fill="`var(--color-block-${f.color})`" />
@@ -104,30 +105,30 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
       <!-- 기둥 회랑 -->
       <g v-for="side in [1, -1]" :key="`c${side}`" :transform="side === -1 ? 'translate(1440 0) scale(-1 1)' : undefined">
         <g v-for="(c, i) in COLS" :key="i">
-          <rect :x="c.x" :y="c.top + 10" :width="c.width" :height="c.bottom - c.top - 10" fill="var(--color-canvas)" />
-          <rect :x="c.x + c.width * .72" :y="c.top + 10" :width="c.width * .28" :height="c.bottom - c.top - 10" fill="var(--color-block-cream)" />
+          <rect :x="c.x" :y="c.top + 10" :width="c.width" :height="c.bottom - c.top - 10" fill="var(--museum-marble-1)" />
+          <rect :x="c.x + c.width * .72" :y="c.top + 10" :width="c.width * .28" :height="c.bottom - c.top - 10" fill="var(--museum-marble-2)" />
           <line v-for="k in 3" :key="k" :x1="c.x + c.width * (k / 4)" :x2="c.x + c.width * (k / 4)" :y1="c.top + 24" :y2="c.bottom - 16"
-            stroke="var(--color-hairline)" :stroke-width="Math.max(1, c.width / 30)" />
-          <rect :x="c.x - c.width * .15" :y="c.top" :width="c.width * 1.3" :height="Math.max(6, c.width * .35)" fill="var(--color-canvas)" />
-          <rect :x="c.x - c.width * .12" :y="c.bottom - Math.max(6, c.width * .3)" :width="c.width * 1.24" :height="Math.max(6, c.width * .3)" fill="var(--color-canvas)" />
+            stroke="var(--museum-stone-2)" :stroke-width="Math.max(1, c.width / 30)" />
+          <rect :x="c.x - c.width * .15" :y="c.top" :width="c.width * 1.3" :height="Math.max(6, c.width * .35)" fill="var(--museum-gold-2)" />
+          <rect :x="c.x - c.width * .12" :y="c.bottom - Math.max(6, c.width * .3)" :width="c.width * 1.24" :height="Math.max(6, c.width * .3)" fill="var(--museum-marble-2)" />
         </g>
       </g>
       <!-- 천장에서 늘어진 배너 -->
       <g class="banners">
         <g class="sway">
           <line x1="250" y1="120" x2="250" y2="160" stroke="var(--color-ink)" stroke-width="2" /><line x1="316" y1="130" x2="316" y2="165" stroke="var(--color-ink)" stroke-width="2" />
-          <path d="M 236 160 L 330 165 L 330 420 L 283 395 L 236 420 Z" fill="var(--color-block-lime)" />
-          <circle cx="283" cy="235" r="26" fill="var(--color-canvas)" /><circle cx="283" cy="235" r="12" fill="var(--color-block-pink)" />
+          <path d="M 236 160 L 330 165 L 330 420 L 283 395 L 236 420 Z" fill="var(--museum-navy)" stroke="var(--museum-gold-2)" stroke-width="3" />
+          <circle cx="283" cy="235" r="26" fill="var(--museum-gold-1)" /><circle cx="283" cy="235" r="12" fill="var(--museum-navy)" />
         </g>
         <g class="sway late">
           <line x1="1190" y1="120" x2="1190" y2="160" stroke="var(--color-ink)" stroke-width="2" /><line x1="1124" y1="130" x2="1124" y2="165" stroke="var(--color-ink)" stroke-width="2" />
-          <path d="M 1204 160 L 1110 165 L 1110 420 L 1157 395 L 1204 420 Z" fill="var(--color-block-pink)" />
-          <circle cx="1157" cy="235" r="26" fill="var(--color-canvas)" /><circle cx="1157" cy="235" r="12" fill="var(--color-block-lilac)" />
+          <path d="M 1204 160 L 1110 165 L 1110 420 L 1157 395 L 1204 420 Z" fill="var(--museum-green)" stroke="var(--museum-gold-2)" stroke-width="3" />
+          <circle cx="1157" cy="235" r="26" fill="var(--museum-gold-1)" /><circle cx="1157" cy="235" r="12" fill="var(--museum-green)" />
         </g>
       </g>
       <!-- 바닥: 반사되는 줄눈 -->
       <polygon points="0,900 610,565 830,565 1440,900" fill="url(#w-floor)" />
-      <g stroke="var(--color-hairline)" stroke-width="2" clip-path="url(#w-floor-clip)">
+      <g stroke="var(--museum-stone-2)" stroke-width="2" clip-path="url(#w-floor-clip)">
         <line v-for="x in FLOOR_RAYS" :key="x" :x1="720" :y1="FLOOR_Y" :x2="x" :y2="900" />
         <line v-for="y in FLOOR_ROWS" :key="y" x1="0" :x2="1440" :y1="y" :y2="y" />
       </g>
@@ -138,10 +139,10 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
       </g>
       <!-- 가운데 대표 작품: 받침대 + 조명 받은 액자 -->
       <ellipse cx="720" cy="640" rx="210" ry="120" fill="url(#w-spot)" />
-      <rect x="668" y="690" width="104" height="120" fill="var(--color-canvas)" /><rect x="652" y="682" width="136" height="16" fill="var(--color-canvas)" />
-      <rect x="760" y="690" width="12" height="120" fill="var(--color-block-cream)" />
-      <rect x="640" y="540" width="160" height="136" fill="var(--color-ink)" />
-      <rect x="650" y="550" width="140" height="116" fill="var(--color-canvas)" />
+      <rect x="668" y="690" width="104" height="120" fill="var(--museum-marble-1)" /><rect x="652" y="682" width="136" height="16" fill="var(--museum-gold-2)" />
+      <rect x="760" y="690" width="12" height="120" fill="var(--museum-marble-2)" />
+      <rect x="638" y="538" width="164" height="140" fill="var(--museum-gold-2)" stroke="var(--museum-gold-3)" stroke-width="3" />
+      <rect x="650" y="550" width="140" height="116" fill="var(--museum-marble-1)" />
       <circle cx="752" cy="578" r="16" fill="var(--color-block-lime)" />
       <path d="M 668 650 L 668 612 L 700 590 L 732 612 L 732 650 Z" fill="none" stroke="var(--color-block-coral)" stroke-width="5" stroke-linejoin="round" />
       <line x1="660" y1="652" x2="780" y2="652" stroke="var(--color-block-mint)" stroke-width="6" stroke-linecap="round" />
@@ -158,7 +159,7 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
 </template>
 
 <style scoped>
-.welcome{position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;justify-items:center;background:var(--color-block-cream);word-break:keep-all}
+.welcome{position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;justify-items:center;background:var(--museum-stone);word-break:keep-all}
 .scene{position:absolute;inset:0;width:100%;height:100%}
 .rays{animation:shimmer 6s ease-in-out infinite alternate}
 .sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 7s ease-in-out infinite alternate}
@@ -167,7 +168,7 @@ const FLOOR_ROWS = Array.from({ length: 7 }, (_, k) => FLOOR_Y + (900 - FLOOR_Y)
 @keyframes sway{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
 /* 입체 간판 — 흰 글자 + 검은 외곽선 + 아래로 쌓인 그림자 */
 .sign{position:relative;margin-top:clamp(24px,7vh,72px);text-align:center;padding:0 var(--s-md);animation:rise .9s .2s ease-out both}
-.eyebrow{display:inline-block;background:var(--color-inverse-canvas);color:var(--color-inverse-ink);font:540 16px/1 var(--font-sans);padding:10px 18px;border-radius:var(--r-pill);box-shadow:var(--elev-2)}
+.eyebrow{display:inline-block;background:var(--museum-bordeaux);color:var(--museum-gold-1);border:1px solid var(--museum-gold-2);font:540 16px/1 var(--font-sans);padding:10px 18px;border-radius:var(--r-pill);box-shadow:var(--elev-2)}
 .title{margin:14px 0 0;color:var(--color-canvas);font:800 clamp(44px,8.5vw,112px)/1.02 var(--font-sans);letter-spacing:-.02em;
   -webkit-text-stroke:clamp(2px,.35vw,5px) var(--color-ink);paint-order:stroke fill;
   text-shadow:0 4px 0 var(--color-ink),0 8px 0 var(--color-ink),0 16px 28px rgba(0,0,0,.28)}

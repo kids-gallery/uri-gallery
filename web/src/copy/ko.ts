@@ -235,6 +235,17 @@ export const ko = {
     kind: { animated: '움직이는 그림 - 누르면 움직여요', relief: '입체 부조', frame: '액자 작품', sculpture: '3D 조각' } as Record<string, string>, // [추론] 움직이는 그림·액자 작품
     play: '움직여 보기', stop: '멈추기', showOriginal: '원본 보기', showWork: '작품 보기', back: '전시실로', // [추론]
     childWords: '아이의 한마디', guardianNote: '보호자 감상평', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
+    // 전시 해설(월 라벨, SD_02 §17-2 — 규칙 문장, AI 아님). 한마디는 원문 그대로 따옴표 안에(화면에서 끼운다)
+    label: '전시 해설',
+    artist: (alias: string, age: number, year: string) => `${alias} (${age}세 작, ${year})`, // [추론]
+    intro: (title: string, alias: string, age: number, year: string, month: number) =>
+      `「${title}」${josa(title, '은/는').slice(title.length)} ${josa(alias, '이/가')} ${age}살이던 ${year}년 ${month}월에 그린 작품입니다.`, // [추론]
+    wordsBefore: '작가는 이 그림을 두고 “', wordsAfter: '”라고 말했습니다.', // [추론]
+    kindLine: { animated: '종이에 그린 그림이 움직이는 작품으로 걸렸습니다.', relief: '종이 그림이 입체 부조로 걸렸습니다.', sculpture: '종이 그림이 3D 조각으로 걸렸습니다.' } as Record<string, string>, // [추론]
+    // 건축 평면도·로비(D25 ⑥)
+    floorPlan: '평면도', lobby: '로비', corridor: '회랑', north: '북', // [추론]
+    collection: (n: number) => `소장 작품 ${n}점`, latest: '최근에 걸린 작품', // [추론]
+    hangOf: (age: number) => `${age}살 때 그린 작품`, // [추론] 세관 벽(옆으로 넘기는 영역) 이름
   },
   /** S1b~S1d 공동 보호자(docs/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
