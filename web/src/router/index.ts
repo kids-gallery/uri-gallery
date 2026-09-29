@@ -1,9 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
+// 라우터 골격(T004). 보호자 /app 과 운영 /ops 를 나눈다(UX8). 역할 가드·메뉴·next 복귀는 T040.
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 
-// T004 골격용 최소 라우터. /app·/ops 분리, 역할 가드, 레이아웃은 T040에서 이 파일을 채운다.
-export const router = createRouter({
-  history: createWebHistory(),
-  routes: [
-    { path: '/', component: () => import('./StartView.vue') },
-  ],
-})
+export const routes: RouteRecordRaw[] = [
+  { path: '/', redirect: '/app' },
+  { path: '/app', name: 'app-home', component: () => import('@/views/ShellPlaceholder.vue'), props: { shell: 'app' } },
+  { path: '/ops', name: 'ops-home', component: () => import('@/views/ShellPlaceholder.vue'), props: { shell: 'ops' } },
+  { path: '/:pathMatch(.*)*', redirect: '/app' },
+];
+
+export const router = createRouter({ history: createWebHistory(), routes });

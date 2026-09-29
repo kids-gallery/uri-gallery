@@ -1,13 +1,15 @@
-# web/ — 보호자 웹(/app) · 운영 웹(/ops) (담당 C 신지현 · /ops 화면 B 이제민)
+# web — 보호자 앱(/app) · 운영 화면(/ops) (담당 C 신지현)
 
-Vue 3 · TypeScript · Vite 5 · Pinia · Vue Router 4. 화면 기준은 SD_02, 모양 기준은 `../design/style-guide/스타일가이드_우리아이미술관.html`(R-20). 계약: `../contracts/openapi.yaml`.
+Vue 3.5 · Vite 8 · TypeScript 5.9 · Pinia 3 · Vue Router 4.6 · Vitest 5 · Playwright (D23, Node 22 LTS 이상).
+화면 기준은 `design/SD_02_UIUX설계서_우리아이미술관.md`, 모양은 `design/style-guide/스타일가이드_우리아이미술관.html`, 문구는 `docs/C_화면문구.md`.
+API는 `contracts/openapi.yaml`에 있는 것만 부른다. 모델·DB를 직접 부르지 않는다.
 
-```bash
-npm ci
-npm run dev          # http://127.0.0.1:9501 — 로컬 PC에서만(팀 서버의 9501은 운영 nginx 몫, D19)
-npm test             # Vitest + Vue Test Utils
-npm run test:e2e     # Playwright 390px·1440px (빌드 후 preview로 띄움, WEB_PORT로 포트 변경)
-npm run build        # web/dist → nginx가 /, /app/*, /ops/* 로 내보냄
-```
+| 명령 | 하는 일 |
+|---|---|
+| `npm run dev` | 개발 서버 `http://127.0.0.1:9501` — `/v1`·`/live`·`/ready`·`/openapi.json`은 app-api `127.0.0.1:9521`로 프록시(D19). 팀 서버에서는 띄우지 않는다(9501은 운영 nginx) |
+| `npm run build` | 타입 검사 뒤 `dist/` — 배포는 `ops/DEPLOY.md`가 `/srv/uam/web/dist`로 옮긴다 |
+| `npm test` | 단위 시험(Vitest, jsdom) |
+| `npm run e2e` | Playwright 390px·1440px. 다른 포트는 `WEB_PORT=9511 npm run e2e` |
+| `npm run gen:api` | 계약에서 API 타입 생성(T036) |
 
-경계: `src/app/`(보호자) · `src/ops/`(팀원) · `src/components/`(공통 C1~C10, /ops도 그대로 씀) · `src/styles/`(토큰) · `src/copy/`(문구) · `src/api/`(계약 타입·클라이언트). 개발 서버는 `/v1/models/*` → 9541, 그 밖의 `/v1/*` → 9521로 넘긴다.
+로컬 app-api는 `.env`에 `APP_PORT=9521`, `APP_BASE_URL=http://127.0.0.1:9501`, `SECURE_COOKIES=0`(http 개발)을 둔다.

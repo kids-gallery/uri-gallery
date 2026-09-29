@@ -1,6 +1,6 @@
 # api/ — 보호자 앱 API · 운영/관리 API · sweeper (담당 B 이제민)
 
-Node 20 · Express 4 · TypeScript · mysql2(ORM 없음). 모델을 import하지 않는다(BR-MDL-02) — 모델 일은 `stage_job` 등록과 model-api·llm-server 호출로만.
+Node 22 · Express 4 · TypeScript · mysql2(ORM 없음). 모델을 import하지 않는다(BR-MDL-02) — 모델 일은 `stage_job` 등록과 model-api·llm-server 호출로만.
 계약: `../contracts/openapi.yaml` · 스키마: `../db/migrations/0001_sd03_baseline.sql`(= SD_03).
 
 ```bash

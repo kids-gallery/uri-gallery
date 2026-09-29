@@ -2,10 +2,10 @@
   "name": "uam-app-api",
   "private": true,
   "version": "0.1.0",
-  "description": "우리 아이 미술관 앱 API (B) — Node 20 + Express 4 + mysql2",
+  "description": "우리 아이 미술관 앱 API (B) — Node 22 + Express 4 + mysql2",
   "type": "module",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",

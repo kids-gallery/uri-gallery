@@ -3,7 +3,7 @@ stages: [check]
 
 api:
   stage: check
-  image: node:20
+  image: node:22
   script:
     - cd api && npm ci && npm run lint
     # DB 시험은 임시 MariaDB가 필요하다 — 러너에 mariadb-server가 있을 때만
@@ -11,12 +11,19 @@ api:
 
 contracts:
   stage: check
-  image: node:20
+  image: node:22
   script:
     - npx @redocly/cli@latest lint .specify/features/우리-아이-미술관/contracts/openapi.yaml .specify/features/우리-아이-미술관/contracts/model-api.openapi.yaml
     # 루트 사본과 정본이 같은지(T134)
     - diff -r -x README.md .specify/features/우리-아이-미술관/contracts contracts
     # app-api /openapi.json과 model-api /v1/models/openapi.json은 이 계약 파일을 그대로 내보낸다(BR-API-08) — 사본 일치가 곧 명세 일치
+
+web:
+  stage: check
+  image: node:22
+  script:
+    # 웹(T148, D23) — 타입·단위 시험·빌드. E2E(Playwright)는 브라우저가 필요해 로컬에서 돌린다
+    - cd web && npm ci && npm run lint && npm test && npx vite build
 
 serving:
   stage: check

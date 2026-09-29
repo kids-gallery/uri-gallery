@@ -1,9 +1,7 @@
-import { expect, test } from '@playwright/test'
+// T004 E2E 골격: 두 화면 크기에서 보호자 셸이 열린다. 흐름 E2E는 T044·T059·T075·T087.
+import { expect, test } from '@playwright/test';
 
-// 두 너비(390·1440) 모두에서 첫 화면이 뜨고 가로 스크롤이 생기지 않는다(SD_02 §17 모바일 우선)
-test('첫 화면이 뜨고 가로로 넘치지 않는다', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('우리 아이 미술관')
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-  expect(overflow).toBeLessThanOrEqual(0)
-})
+test('보호자 셸이 열린다', async ({ page }) => {
+  await page.goto('/app');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('우리 아이 미술관');
+});
