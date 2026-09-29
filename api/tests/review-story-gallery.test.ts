@@ -94,7 +94,7 @@ describe('이야기·전시(UC5·UC6)', () => {
     expect(JSON.stringify(g.body)).not.toMatch(/downgrade|cause|score/);
     expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: null })).status).toBe(422);
   });
-  it('보호자 감상평(D24, BR-STY-04): 선택·원문 그대로 저장, 상세와 전시에 한마디와 따로, 1000자 넘으면 422, 전시 조건 아님', async () => {
+  it('보호자 감상평(D25, BR-STY-04): 선택·원문 그대로 저장, 상세와 전시에 한마디와 따로, 1000자 넘으면 422, 전시 조건 아님', async () => {
     const f = await reviewed('s-note@test.local', 'relief');
     await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
     await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200); // 감상평 없이도 전시

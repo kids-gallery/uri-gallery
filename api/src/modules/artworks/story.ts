@@ -10,7 +10,7 @@ export const storySchema = z.object({
   madeOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   ageAtMaking: z.number().int().min(0).max(18).nullable().optional(),
   childWords: z.string().max(2000).nullable().optional(),
-  guardianNote: z.string().max(1000).nullable().optional(), // D24 보호자 감상평 — 전시 조건 아님
+  guardianNote: z.string().max(1000).nullable().optional(), // D25 보호자 감상평 — 전시 조건 아님
   baseUpdatedAt: z.string().datetime().nullable().optional(),
 }).strict();
 

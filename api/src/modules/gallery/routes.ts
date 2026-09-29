@@ -39,7 +39,7 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
           originalUrl: url(g.original_id as number | null),
           title: g.title, madeOn: new Date(g.made_on as Date).toISOString().slice(0, 10), ageAtMaking: Number(g.age_group),
           childWords: g.utterance ?? null,
-          guardianNote: g.guardian_note ?? null, // D24 — 한마디와 따로
+          guardianNote: g.guardian_note ?? null, // D25 — 한마디와 따로
           aiCaption: cfg.captionEnabled && g.caption_body ? { body: g.caption_body, aiAuthored: Boolean(g.ai_badge) } : null,
           backsideEstimated: kind === 'sculpture',
         };

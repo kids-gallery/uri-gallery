@@ -17,7 +17,7 @@
 | F 모델 | `model_version`, `feature_setting` | app-api(관리) | 모델당 활성 1건 `uq_mv_one_active`, 라이선스·해시 없으면 활성 불가 |
 | B 작품·판정 | `artwork`, `stored_object`, `artwork_original`, `judgment`, `tag_candidate`, `result` | app-api(접수·확정) + 워커(판정·결과) | 파일 참조는 모두 `stored_object` |
 | C 처리 | `stage_job` | app-api(생성·취소) + 워커(실행) | 큐 겸 기록 |
-| D 보호자 기록 | `decision`, `story`, `caption`, `caption_selected_tag`, `caption_check_failure` | app-api | 한마디(`story.utterance`)·보호자 감상평(`story.guardian_note`, D24)과 설명(`caption`)은 다른 테이블 |
+| D 보호자 기록 | `decision`, `story`, `caption`, `caption_selected_tag`, `caption_check_failure` | app-api | 한마디(`story.utterance`)·보호자 감상평(`story.guardian_note`, D25)과 설명(`caption`)은 다른 테이블 |
 | E 삭제·집계 | `artwork_outcome`, `deletion_request` | app-api + sweeper | 삭제 뒤 남는 집계는 `artwork_outcome`(SET NULL) |
 | F 평가 | `eval_item`, `evaluation`, `eval_item_result`, `release_event` | app-api(관리) + 워커(평가 실행) | 승격 판정은 `v_promotion_eligibility` 한 곳 |
 | G 외부 | `api_key`, `external_job`, `external_call_log` | model-api + 워커 | 키 종류 `team_internal`·`course_internal`·`external`·`test` |

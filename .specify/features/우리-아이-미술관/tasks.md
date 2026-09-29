@@ -325,14 +325,21 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T135 (2026-09-28 완료 — SD_03 §18-2, 검증 17/17) SD_03에 구현 보완 S1~S9(재시도 시각·우선순위·평가 작업·외부 점유·팀원 비밀번호·세션·요청 한도·장치 표기·비활성화 `release_event.kind='deactivate'`)와 `infra_failure` 결과 원인 정의를 역반영한다(DDL 검증 3종 재실행) — `design/uri_gallery_ddl.sql` · `design/SD_03_데이터베이스설계서_우리아이미술관.md` · 담당 B · 스킬 DB · 근거 data-model §6
 - [x] T136 (B 완료 2026-09-28; `docs/B_통합시험.md` — 성능 1차·웹 흐름은 팀 서버·C 화면 뒤) 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
 - [ ] T137 [P] 평가 묶음 1차 측정과 임계값 제안(U5)·시간 상한 교체(U6) — `docs/A_평가묶음_1차측정.md` · `serving/config/thresholds.yaml` · `serving/config/limits.yaml` · 담당 A · 스킬 — · 근거 FR-17, U5, U6
-- [ ] T138 (**일부** 2026-09-29 이제민 보조 — `web/e2e/a11y.spec.ts`: 공개 3화면·보호자 S1~S8·S1b를 390·1440에서 axe WCAG 2.1 AA 위반 0, 가로 스크롤 0, 키보드만으로 S3 확정, 비활성 사유가 접근 가능한 설명으로 읽힘, 점수·미리 선택·토스트 0. 대비는 390px 메뉴 줄 끝 링크만 가려져 axe 판정 보류(같은 색 다른 링크 통과). **남음: 움직임 줄이기 미구현(fixme), 운영 화면 /ops, 모델 켜진 뒤 재생·시차 토글**) [P] 접근성·반응형 점검: 390px·1440px, 키보드만 조작, 비활성 버튼 사유 낭독, 대비 4.5:1, 움직임 줄이기, 점수·미리 선택·토스트 0 — `web/e2e/a11y.spec.ts` · 담당 C · 스킬 RL, FD · 근거 SD_02 §17
+- [ ] T138 (**일부** 2026-09-29 이제민 보조 — `web/e2e/a11y.spec.ts`: 공개 3화면·보호자 S1~S8·S1b를 390·1440에서 axe WCAG 2.1 AA 위반 0, 가로 스크롤 0, 키보드만으로 S3 확정, 비활성 사유가 접근 가능한 설명으로 읽힘, 점수·미리 선택·토스트 0. 대비는 390px 메뉴 줄 끝 링크만 가려져 axe 판정 보류(같은 색 다른 링크 통과). 운영 화면 로그인·상태·모델·API활용 추가(390px /ops/api-guide 표 가로 스크롤 영역 키보드 초점 불가 — axe scrollable-region-focusable, 구현 쪽에 알림). **남음: 움직임 줄이기 미구현(fixme), .table-wrap 초점, 모델 켜진 뒤 재생·시차 토글**) [P] 접근성·반응형 점검: 390px·1440px, 키보드만 조작, 비활성 버튼 사유 낭독, 대비 4.5:1, 움직임 줄이기, 점수·미리 선택·토스트 0 — `web/e2e/a11y.spec.ts` · 담당 C · 스킬 RL, FD · 근거 SD_02 §17
 - [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
 - [x] T140 (B 완료 2026-09-28; `ops/DEPLOY.md` 절차 — 첫 배포는 팀 서버 확인(U2·U14) 뒤) 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
 - [x] T141 (B 완료 2026-09-28; `docs/추적성.md`) 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
 - [x] T148 (C 완료 2026-09-29 — `.gitlab-ci.yml` web 작업, DEPLOY rsync) [P] 웹 CI·배포 경로를 맞춘다: `.gitlab-ci.yml`에 `web` 작업(lint·type·Vitest), DEPLOY의 `web/dist`를 nginx `root /srv/uam/web/dist`로 복사하는 단계(지금은 빌드만 하고 옮기지 않음) — `.gitlab-ci.yml` · `ops/DEPLOY.md` · 담당 C(D21) · 스킬 — · 근거 R-19, T140
 - [ ] T150 [P] 화면 문구 정본을 만든다(D22 ⑦): SD_02 문구를 화면·게이트·reason·근거 BR로 모은 `docs/C_화면문구.md` 초안 → 신지현 검토로 U10 닫음 — `docs/C_화면문구.md` · 담당 C · 스킬 — · 근거 U10, R-20
-- [ ] T160 [US4] 홈을 미술관 전시실로(D24, SD_02 §17-2): S0w 입장(첫 방문만) · 홈 "{별칭}의 미술관"(평면 안내도·N세관·흑백 액자·명패·월 라벨) · 빈 액자 걸이 · 전시 확정 때 걸리는 애니메이션 · 작품 목록은 "작품 관리"(`/app/works`) · S8은 홈으로 합침 — `web/src/app/views/MuseumView.vue` · `WelcomeView.vue` · `web/src/components/ArtFrame.vue` · 담당 B(이제민, 신지현 위임) · 스킬 FD, RL · 근거 D24
-- [ ] T161 [US4] 보호자 감상평(D24, BR-STY-04): SD_03 `story.guardian_note`(+기존 DB `ADD COLUMN IF NOT EXISTS`, `v_gallery`), 계약 `Story.guardianNote`·`GalleryItem.guardianNote`, app-api 이야기 저장·상세·전시, S6 선택 칸, 월 라벨 표시. AI 설명 입력(BR-CAP-01)·로그에 넣지 않음 — `design/uri_gallery_ddl.sql` · `api/src/modules/artworks/story.ts` · `web/src/app/views/StoryView.vue` · 담당 B(이제민) · 스킬 DB, API, FD · 근거 D24, UC_05·UC_06 개정
+- [ ] T160 [US4] 홈을 미술관 전시실로(D25, SD_02 §17-2): S0w 입장(첫 방문만) · 홈 "{별칭}의 미술관"(평면 안내도·N세관·흑백 액자·명패·월 라벨) · 빈 액자 걸이 · 전시 확정 때 걸리는 애니메이션 · 작품 목록은 "작품 관리"(`/app/works`) · S8은 홈으로 합침 — `web/src/app/views/MuseumView.vue` · `WelcomeView.vue` · `web/src/components/ArtFrame.vue` · 담당 B(이제민, 신지현 위임) · 스킬 FD, RL · 근거 D25
+- [ ] T161 [US4] 보호자 감상평(D25, BR-STY-04): SD_03 `story.guardian_note`(+기존 DB `ADD COLUMN IF NOT EXISTS`, `v_gallery`), 계약 `Story.guardianNote`·`GalleryItem.guardianNote`, app-api 이야기 저장·상세·전시, S6 선택 칸, 월 라벨 표시. AI 설명 입력(BR-CAP-01)·로그에 넣지 않음 — `design/uri_gallery_ddl.sql` · `api/src/modules/artworks/story.ts` · `web/src/app/views/StoryView.vue` · 담당 B(이제민) · 스킬 DB, API, FD · 근거 D25, UC_05·UC_06 개정
+
+### RBAC 정리 (D24, 2026-09-29 최호준 요청)
+
+- [ ] T158 [P] 팀원 권한 정본 `api/src/auth/policy.ts`(권한 이름 → 역할)를 두고 팀원 라우트를 `requirePerm`으로 바꾼다. 계약 팀원 경로에 `x-permission`, `/v1/ops/me` 보안 범위 보충 — 시험 `api/tests/rbac.test.ts`(정본·계약·역할별 허용·거부 대조) · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24, SD_02 §2-1, BR-ACC-05, G1
+- [ ] T159 [P] 팀원 계정 관리 CLI를 넓힌다: `ops:staff add·grant·revoke·disable·enable·passwd·list`(정지·비밀번호 변경 시 그 팀원 세션 삭제, 원문 비밀번호는 표준 입력만) — `api/scripts/ops/staff.ts` · `ops/DEPLOY.md` §1 · 담당 A(최호준, 사용자 지시) · 스킬 — · 근거 D24 ③
+- [ ] T160 보호자 비밀번호 변경(로그인 상태) `POST /v1/auth/password` — 현재 비밀번호 확인·재설정과 같은 규칙·다른 기기 세션 무효·이 기기 새 세션·틀림은 로그인 실패 한도 — `api/src/modules/auth/routes.ts` · 시험 `api/tests/rbac.test.ts` · 담당 A(최호준, 사용자 지시) · 스킬 API · 근거 D24 ④, UC14 A5
+- [ ] T161 보호자 비밀번호 변경 화면(설정 메뉴에서, UC14 A5) — `web/src/app/views/*` · 담당 B(웹, 후속) · 스킬 FD · 근거 D24 ④
 
 ---
 

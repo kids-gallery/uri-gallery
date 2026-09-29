@@ -63,7 +63,7 @@ async function save() {
   const body = {
     title: sent.title.trim() || null, madeOn: sent.madeOn || null,
     ageAtMaking: sent.age === '' ? null : Number(sent.age), childWords: sent.words === '' ? null : sent.words,
-    guardianNote: sent.note === '' ? null : sent.note, baseUpdatedAt: base.value, // D24 보호자 감상평 — 원문 그대로
+    guardianNote: sent.note === '' ? null : sent.note, baseUpdatedAt: base.value, // D25 보호자 감상평 — 원문 그대로
   };
   try {
     const d = await api.put<ArtworkDetail>(`/v1/artworks/${encodeURIComponent(id)}/story`, { body });

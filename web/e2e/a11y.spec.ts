@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { drawingPng, guardianWithChild } from './stack/guardian';
+import { STAFF } from './stack/ports';
 
 async function check(page: Page, where: string) {
   await page.waitForLoadState('networkidle');
@@ -57,7 +58,7 @@ test('보호자 화면 한 바퀴 — 키보드로 확정, 비활성 사유 낭�
   await page.getByRole('button', { name: ko.story.save, exact: true }).click();
   await expect(page.getByText(ko.story.exhibited)).toBeVisible();
   await page.goto('/app');
-  await check(page, '홈 전시실(D24)');
+  await check(page, '홈 전시실(D25)');
   await page.getByRole('button', { name: '파란 집' }).click();
   await check(page, '작품 앞 월 라벨');
   await page.goto('/app/works');
@@ -74,4 +75,14 @@ test('움직임 줄이기 설정이면 버튼 전환 효과가 없다', async ({
   // 비활성 버튼은 이름 뒤에 사유가 붙는다(C3) — 이름이 '로그인'으로 시작하는 버튼
   const d = await page.getByRole('button', { name: new RegExp(`^${ko.auth.login}`) }).evaluate((e) => getComputedStyle(e).transitionDuration);
   expect(d.split(',').every((x) => parseFloat(x) === 0)).toBe(true);
+});
+
+test('운영 화면 — 로그인·상태·모델·API활용(model-api 없음 = 확인 불가 상태)', async ({ page }) => {
+  await page.goto('/ops/login');
+  await check(page, '/ops/login');
+  await page.getByLabel(ko.auth.email, { exact: true }).fill(STAFF.email);
+  await page.getByLabel(ko.auth.password, { exact: true }).fill(STAFF.password);
+  await page.getByRole('button', { name: ko.auth.login, exact: true }).click();
+  await expect(page).toHaveURL(/\/ops\/status/);
+  for (const p of ['/ops/status', '/ops/models', '/ops/api-guide']) { await page.goto(p); await check(page, p); }
 });

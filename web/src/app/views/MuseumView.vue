@@ -37,7 +37,7 @@ const rooms = computed(() => g.value?.groups ?? []);
 const count = computed(() => rooms.value.reduce((n, r) => n + r.items.length, 0));
 
 const WALLS = ['cream', 'mint', 'lilac', 'pink', 'lime', 'coral'];
-// D24 ⑤ 전시실 예외: 토큰 파스텔을 석조 톤과 반씩 섞어 채도를 낮춘다(미술관 벽처럼 차분하게)
+// D25 ⑤ 전시실 예외: 토큰 파스텔을 석조 톤과 반씩 섞어 채도를 낮춘다(미술관 벽처럼 차분하게)
 const wallOf = (i: number) => `color-mix(in srgb,var(--color-block-${WALLS[i % WALLS.length]}) 50%,var(--stone))`;
 
 function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }

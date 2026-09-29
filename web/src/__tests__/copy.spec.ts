@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ko, problemCopy, problemKeys } from '../copy/ko';
+import { josa } from '../copy/josa';
 
 const doc = readFileSync(resolve(process.cwd(), '../docs/C_화면문구.md'), 'utf8');
 
@@ -24,5 +25,22 @@ describe('화면 문구(T035)', () => {
   });
   it('모르는 사유는 기본 문구', () => {
     expect(problemCopy({ reason: 'zzz' }).reason).toContain('잠시 뒤');
+  });
+  it('바뀌는 값 뒤 조사는 받침에 맞춘다(문서 §0-7)', () => {
+    expect(josa('움직임', '을/를')).toBe('움직임을');
+    expect(josa('입체 부조', '을/를')).toBe('입체 부조를');
+    expect(josa('별이', '과/와')).toBe('별이와');
+    expect(josa('하늘', '과/와')).toBe('하늘과');
+    expect(josa('별이', '이/가')).toBe('별이가');
+    expect(josa('원본 액자', '으로/로')).toBe('원본 액자로');
+    expect(josa('3D 조각', '으로/로')).toBe('3D 조각으로');
+    expect(josa('하늘', '으로/로')).toBe('하늘로');
+    expect(josa('Mia', '이/가')).toBe('Mia이(가)');
+    expect(josa('7', '을/를')).toBe('7을');
+    const [from, to] = ko.downgrade.animated_to_frame!;
+    expect(ko.downgradeNote(from, to)).toBe('움직임을 만들지 못해 원본 액자로 바꿨어요. 원본 액자로 걸 수도 있어요');
+    expect(ko.notDelivered.reason('판정')).toContain('판정을 만들지');
+    expect(ko.child.dup('별이')).toContain('같은 별칭 별이가 이미');
+    expect(ko.del.childItems('하늘', 2)).toBe('하늘과 작품 2개가 모두 지워져요');
   });
 });

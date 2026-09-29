@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API_PORT, MAIL_PORT, SMTP_PORT, WEB_PORT } from './ports';
+import { API_PORT, MAIL_PORT, SMTP_PORT, STAFF, WEB_PORT } from './ports';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const API = path.join(ROOT, 'api');
@@ -43,6 +43,9 @@ export default async function globalSetup() {
     MODEL_API_INTERNAL_URL: 'http://127.0.0.1:9', LLM_SERVER_URL: 'http://127.0.0.1:9', CAPTION_ENABLED: 'false',
   };
   execFileSync(path.join(API, 'node_modules/.bin/tsx'), ['scripts/migrate.ts'], { cwd: API, env, stdio: 'ignore' });
+  // 운영 화면 시험용 팀원(세 역할 모두) — 운영 CLI 그대로(T018), 비밀번호는 표준 입력
+  execFileSync(path.join(API, 'node_modules/.bin/tsx'), ['scripts/ops/staff.ts', 'add', '--email', STAFF.email, '--role', 'operator,evaluator,integrator'],
+    { cwd: API, env, input: STAFF.password, stdio: ['pipe', 'ignore', 'ignore'] });
 
   procs.push(spawn(path.join(os.homedir(), '.local/bin/mailpit'), ['--smtp', `127.0.0.1:${SMTP_PORT}`, '--listen', `127.0.0.1:${MAIL_PORT}`, '--database', path.join(dir, 'mail.db')], { stdio: ['ignore', log('mailpit'), log('mailpit')] }));
   procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] }));

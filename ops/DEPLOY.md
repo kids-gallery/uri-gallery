@@ -16,7 +16,7 @@
 | `.env` | 저장소 루트에 `.env.example`을 복사해 채운다 | `DB_*`·`SESSION_SECRET`·`AUTH_HMAC_SECRET`(각각 `openssl rand -hex 32`)·`STORAGE_ROOT`·`MODEL_ROOT`[U14]·`GPU_ENABLED`[U2]·`MODEL_MANIFEST`·`API_GUIDE_TEST_KEY`(아래 4) · 운영 `APP_BASE_URL=https://<도메인>:9501`(메일 링크 기준, nginx 입구 D19) |
 | Python 가상환경 | `cd serving && python3.11 -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.lock -r requirements-models.lock` | M3는 `.venv-m3` + TorchServe(A 문서) |
 | DB 스키마 | `cd api && npm ci && npm run build && npm run db:migrate` | `0001_sd03_baseline`(= `design/uri_gallery_ddl.sql`) 재실행 안전. **팀 DB에 시험을 돌리지 않는다**(시험은 임시 MariaDB) |
-| 팀원 계정 | `npm run ops:staff -- add --email <메일> --role operator[,evaluator,integrator]` (비밀번호는 표준 입력) | |
+| 팀원 계정 | `npm run ops:staff -- add --email <메일> --role operator[,evaluator,integrator]` (비밀번호는 표준 입력) · 역할 `grant`/`revoke --email <메일> --role <역할>` · 정지·해제 `disable`/`enable --email <메일>` · 비밀번호 `passwd --email <메일>`(표준 입력) · 목록 `list`(D24 ③). 정지·비밀번호 변경은 그 팀원 세션을 모두 지운다. 역할 회수·정지는 다음 요청부터 반영된다 | G1 · BR-ACC-05 |
 | 모델 버전 | `cd serving && .venv/bin/python -m ops.models check <Mx>` → `digest <Mx> --write`(실행 환경 다이제스트, R-03·SD_04 §9-2) → `register <Mx> --label …`이 출력한 JSON 본문으로 평가 담당이 `POST /v1/admin/models/<Mx>/versions`(G1) → 평가·승격은 운영 화면(S11). CLI는 DB에 쓰지 않는다 | G21·G22 |
 
 ## 2. 매번: 배포

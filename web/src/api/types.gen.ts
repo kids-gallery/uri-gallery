@@ -1341,7 +1341,7 @@ export interface paths {
         get?: never;
         /**
          * 이야기 기록 (UC5, FR-7, BR-STY-01~03, G11·G12)
-         * @description 부분 저장 허용. 승인됨 + 필수 3항목이 채워지면 `exhibited`로 전환. 보호자 감상평(`guardianNote`, D24)은 선택이고 전시 조건이 아니다.
+         * @description 부분 저장 허용. 승인됨 + 필수 3항목이 채워지면 `exhibited`로 전환. 보호자 감상평(`guardianNote`, D25)은 선택이고 전시 조건이 아니다.
          *     `exhibited` 작품의 필수 항목을 비우는 요청은 422. `childWords`는 받은 그대로 저장한다(트림·교정 없음).
          *     공동 보호자 동시 수정: `baseUpdatedAt`이 저장된 `updatedAt`과 다르면 저장하지 않고 409 `story_conflict`("다른 보호자가 먼저 고쳤어요") — 화면은 최신 이야기를 다시 불러온다.
          */
@@ -2689,7 +2689,7 @@ export interface components {
             madeOn?: string | null;
             ageAtMaking?: number | null;
             childWords?: string | null;
-            /** @description 보호자 감상평(D24, BR-STY-04) — 선택, 입력 그대로 저장. 전시 조건 아님, AI 설명 입력에 넣지 않음 */
+            /** @description 보호자 감상평(D25, BR-STY-04) — 선택, 입력 그대로 저장. 전시 조건 아님, AI 설명 입력에 넣지 않음 */
             guardianNote?: string | null;
         };
         StoryInput: components["schemas"]["Story"] & {
@@ -2746,7 +2746,7 @@ export interface components {
             madeOn: string;
             ageAtMaking: number;
             childWords?: string | null;
-            /** @description 보호자 감상평(D24) — 월 라벨에 한마디와 따로 */
+            /** @description 보호자 감상평(D25) — 월 라벨에 한마디와 따로 */
             guardianNote?: string | null;
             aiCaption?: null | {
                 body?: string;

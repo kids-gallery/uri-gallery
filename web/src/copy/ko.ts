@@ -1,5 +1,6 @@
 // 화면 문구 사전(T035, U10, R-20). 정본은 docs/C_화면문구.md — 문구를 바꿀 때는 그 문서 → SD_02 → 이 파일 순서로 고친다(D22 ⑦).
 // [추론] 표시 문구는 문서와 같은 검토 대상이다.
+import { josa } from './josa';
 
 /** 차단 블록 변형(SD_02 C2 · §17). */
 export type BlockVariant = 'block' | 'hold' | 'final';
@@ -145,7 +146,7 @@ export const ko = {
     needChild: '아이를 먼저 등록해 주세요',
     empty: '아직 등록한 아이가 없어요', // [추론]
     dupTitle: '같은 별칭',
-    dup: (alias: string) => `같은 별칭 ${alias}이 이미 있어요. 그대로 둘까요, 고칠까요?`,
+    dup: (alias: string) => `같은 별칭 ${josa(alias, '이/가')} 이미 있어요. 그대로 둘까요, 고칠까요?`,
     dupSaved: '저장은 됐어요',
     dupWhy: '아이는 시스템이 따로 구분해요 - 이용자 중복은 이메일 계정으로 막아요',
     keep: '그대로 두기',
@@ -158,7 +159,7 @@ export const ko = {
     animated_to_relief: ['움직임', '입체 부조'], animated_to_frame: ['움직임', '원본 액자'], relief_to_frame: ['입체 부조', '원본 액자'],
     split_fail: ['입체 부조', '원본 액자'], sculpture_to_relief: ['3D 조각', '입체 부조'],
   } as Record<string, readonly [string, string]>,
-  downgradeNote: (from: string, to: string) => `${from}를 만들지 못해 ${to}로 바꿨어요. 원본 액자로 걸 수도 있어요`,
+  downgradeNote: (from: string, to: string) => `${josa(from, '을/를')} 만들지 못해 ${josa(to, '으로/로')} 바꿨어요. 원본 액자로 걸 수도 있어요`,
   stageName: {
     split: '분리', judge: '판정', animate_render: '움직임 만들기', depth_relief: '깊이 부조', frame_compose: '액자', sculpture: '3D 조각', caption: '설명',
   } as Record<string, string>,
@@ -176,7 +177,7 @@ export const ko = {
   },
   notDelivered: {
     summary: '결과를 만들지 못했어요',
-    reason: (what: string) => `서버 문제로 ${what}를 만들지 못했어요 - 낮춘 결과가 아니에요`,
+    reason: (what: string) => `서버 문제로 ${josa(what, '을/를')} 만들지 못했어요 - 낮춘 결과가 아니에요`,
     releaser: '보호자 - 원본 액자로 걸기 또는 다시 찍기',
   },
   upload: {
@@ -214,7 +215,7 @@ export const ko = {
     exhibitTitle: '전시 조건', condReview: '결과 확인 완료', condStory: '제목 - 그린 날 - 나이 저장', condNote: '두 가지가 갖춰지면 전시에 걸려요',
     fixDate: '그린 날을 고쳐 주세요', ageRange: '나이는 0살부터 18살까지예요', titleLong: '제목은 100자까지예요', // [추론] 나이·제목
     mine: '내가 적은 내용', // [추론]
-    // D24 보호자 감상평(docs/C_화면문구.md 전시실 홈 절)
+    // D25 보호자 감상평(docs/C_화면문구.md 전시실 홈 절)
     note: '보호자 감상평 - 선택 - 적은 그대로 보여요', noteHint: '작품을 보고 느낀 점을 적어 주세요', noteLong: '감상평은 1000자까지예요', // [추론]
   },
   gallery: {
@@ -265,7 +266,7 @@ export const ko = {
     artwork: '작품 삭제', child: '아이 삭제',
     title: '되돌릴 수 없어요 - 지워지는 것',
     artworkItems: ['원본 사진 - 잘라 낸 그림 - 깊이 정보 - 결과물', '이야기 - 작품 설명 - 임시 파일'],
-    childItems: (alias: string, n: number) => `${alias}과 작품 ${n}개가 모두 지워져요`, // [추론]
+    childItems: (alias: string, n: number) => `${josa(alias, '과/와')} 작품 ${n}개가 모두 지워져요`, // [추론]
     keeps: '통계용 숫자만 남고 누구의 작품인지는 남지 않아요',
     confirm: '삭제', cancel: '취소',
     progress: { accepted: '접수했어요', waiting_stop: '만들던 작업이 멈추기를 기다리는 중이에요', deleting_files: '파일을 지우는 중이에요', done: '삭제했어요' } as Record<string, string>,

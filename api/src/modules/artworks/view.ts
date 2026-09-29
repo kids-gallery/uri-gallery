@@ -93,7 +93,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
       madeOn: st?.made_on ? new Date(st.made_on).toISOString().slice(0, 10) : null,
       ageAtMaking: st?.age_at_creation ?? null,
       childWords: st?.utterance ?? null,
-      guardianNote: st?.guardian_note ?? null, // D24 보호자 감상평
+      guardianNote: st?.guardian_note ?? null, // D25 보호자 감상평
       updatedAt: st?.updated_at ? new Date(st.updated_at).toISOString() : null,
     },
     // (P0.5) 설명·키워드 후보 — 후보는 판정 근거로 보이지 않는다(BR-SUG-02)
