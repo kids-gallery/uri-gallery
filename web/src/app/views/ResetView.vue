@@ -66,7 +66,7 @@ async function onAction() {
         <p id="rs-pw2-h" class="hint">{{ hint('confirm') }}</p>
       </div>
       <BlockNotice v-if="block" :notice="block" @action="onAction" />
-      <div><ReasonButton :label="ko.auth.save" :disabled="!!firstErr || busy || !token" :reason="firstErr || (!token ? block?.reason : '')" @click="save" @blocked="touched = { password: true, confirm: true }" /></div>
+      <div><ReasonButton :label="ko.auth.save" :disabled="!!firstErr || busy || !token" :reason="firstErr || (!token ? block?.reason : '')" type="submit" @blocked="touched = { password: true, confirm: true }" /></div>
     </form>
   </main>
 </template>

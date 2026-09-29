@@ -37,6 +37,18 @@ test('S0b 로그인 정보 찾기 → 재설정 → 새 비밀번호로만 로�
   await expect(page).not.toHaveURL(/\/app\/login/);
 });
 
+test('S0a 입력 칸에서 Enter로 로그인(SD_02 C3 폼 제출) — 비밀번호가 비면 Enter도 막힘', async ({ page }, info) => {
+  const { email } = await guardianWithChild(page, `enter-${info.project.name}`);
+  await page.context().clearCookies();
+  await page.goto('/app/login');
+  await page.getByLabel(ko.auth.email, { exact: true }).fill(email);
+  await page.getByLabel(ko.auth.email, { exact: true }).press('Enter');
+  await expect(page).toHaveURL(/\/app\/login/);
+  await page.getByLabel(ko.auth.password, { exact: true }).fill(PW);
+  await page.getByLabel(ko.auth.password, { exact: true }).press('Enter');
+  await expect(page).not.toHaveURL(/\/app\/login/);
+});
+
 test('S1b 초대 → 초대 링크로 가입 → 합류해 아이를 함께 봄 → 나가기', async ({ page, browser }, info) => {
   await guardianWithChild(page, `owner-${info.project.name}`, '하늘');
   const coEmail = testEmail(`co-${info.project.name}`);

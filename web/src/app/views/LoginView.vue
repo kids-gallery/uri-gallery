@@ -77,7 +77,7 @@ async function onAction(label: string) {
       </div>
       <BlockNotice v-if="block" :notice="block" @action="onAction" />
       <div class="row-acts">
-        <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" @click="submit" />
+        <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" type="submit" />
         <!-- 막힘 블록이 같은 링크를 다음 행동으로 주면 두 번 보이지 않게 숨긴다 -->
         <RouterLink v-if="!block?.actions.includes(ko.auth.forgot)" class="btn btn-tertiary" to="/app/recovery">{{ ko.auth.forgot }}</RouterLink>
       </div>

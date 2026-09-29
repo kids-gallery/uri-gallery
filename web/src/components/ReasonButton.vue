@@ -4,8 +4,10 @@
 import { computed, useId } from 'vue';
 import { ko } from '@/copy/ko';
 
-const props = withDefaults(defineProps<{ label: string; disabled?: boolean; reason?: string; variant?: 'primary' | 'secondary' }>(), {
-  disabled: false, reason: '', variant: 'primary',
+// type="submit"(SD_02 C3 폼 제출): 입력 칸 Enter가 이 버튼을 누른 것과 같다. 활성이면 폼 submit이 처리하고
+// (부모는 @click 대신 form @submit을 쓴다), 비활성이면 preventDefault로 제출을 막고 blocked를 알린다.
+const props = withDefaults(defineProps<{ label: string; disabled?: boolean; reason?: string; variant?: 'primary' | 'secondary'; type?: 'button' | 'submit' }>(), {
+  disabled: false, reason: '', variant: 'primary', type: 'button',
 });
 const emit = defineEmits<{ click: [ev: MouseEvent]; blocked: [] }>();
 const id = useId();
@@ -18,7 +20,7 @@ function onClick(ev: MouseEvent) {
 
 <template>
   <button
-    type="button"
+    :type="type"
     class="btn"
     :class="`btn-${variant}`"
     :aria-disabled="disabled ? 'true' : undefined"

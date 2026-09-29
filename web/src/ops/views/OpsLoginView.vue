@@ -55,7 +55,7 @@ function onAction() { emailEl.value?.focus(); }
       </div>
       <BlockNotice v-if="block" :notice="block" @action="onAction" />
       <div>
-        <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" @click="submit" />
+        <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" type="submit" />
       </div>
     </form>
   </main>

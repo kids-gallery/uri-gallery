@@ -95,7 +95,7 @@ function onBlockAction() { emailEl.value?.focus(); }
       <p class="t-body-sm">{{ ko.auth.notCollected }}</p>
       <BlockNotice v-if="block" :notice="block" @action="onBlockAction" />
       <div>
-        <ReasonButton :label="ko.auth.signup" :disabled="!!firstErr || busy" :reason="firstErr" @click="submit" @blocked="touched = { email: true, password: true, confirm: true }" />
+        <ReasonButton :label="ko.auth.signup" :disabled="!!firstErr || busy" :reason="firstErr" type="submit" @blocked="touched = { email: true, password: true, confirm: true }" />
       </div>
     </form>
   </main>

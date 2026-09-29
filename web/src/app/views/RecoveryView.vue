@@ -37,7 +37,7 @@ async function send() {
           :aria-invalid="touched && err ? 'true' : undefined" aria-describedby="rc-email-h" @blur="touched = true">
         <p id="rc-email-h" class="hint">{{ (touched && err) || ko.auth.recoveryIdHint }}</p>
       </div>
-      <div><ReasonButton :label="ko.auth.recoverySend" :disabled="!!err || busy" :reason="err" @click="send" @blocked="touched = true" /></div>
+      <div><ReasonButton :label="ko.auth.recoverySend" :disabled="!!err || busy" :reason="err" type="submit" @blocked="touched = true" /></div>
     </form>
     <NoticeBlock v-if="sent" :title="ko.auth.recoverySent">
       <p>{{ ko.auth.recoverySentBody }}</p>

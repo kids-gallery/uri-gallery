@@ -1,5 +1,5 @@
 // T038·T039 시험: 차단 블록 세 줄·포커스·변형, 비활성 버튼 사유·blocked, 진행 레일 변형, 배지 문구, 헤더 역할 메뉴.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import BlockNotice from '../components/BlockNotice.vue';
@@ -42,6 +42,21 @@ describe('C3 ReasonButton', () => {
     await w.trigger('click');
     expect(w.emitted('blocked')).toHaveLength(1);
     expect(w.emitted('click')).toBeUndefined();
+  });
+  it('type=submit: 활성이면 폼 제출, 비활성이면 제출 막고 blocked(Enter 제출, SD_02 C3)', async () => {
+    const onSubmit = vi.fn((e: Event) => e.preventDefault());
+    const form = document.createElement('form');
+    form.addEventListener('submit', onSubmit);
+    document.body.appendChild(form);
+    const off = mount(ReasonButton, { props: { label: '로그인', type: 'submit', disabled: true, reason: '비밀번호를 입력해 주세요' }, attachTo: form });
+    expect(off.attributes('type')).toBe('submit');
+    (off.element as HTMLButtonElement).click();
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(off.emitted('blocked')).toHaveLength(1);
+    await off.setProps({ disabled: false });
+    (off.element as HTMLButtonElement).click();
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    off.unmount(); form.remove();
   });
   it('활성이면 click', async () => {
     const w = mount(ReasonButton, { props: { label: '저장' } });
