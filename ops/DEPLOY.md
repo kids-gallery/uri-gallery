@@ -76,7 +76,7 @@ Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p
 | 첫 화면 `/` | **SD_02 클릭 프로토타입**(`design/prototype/share/`). 웹(`web/`)은 공유 폴더에서 작업 중인 빌드라, 작업 폴더의 `web/dist`를 그대로 공개하지 않는다(다시 빌드할 때마다 공개 화면이 바뀜). 보호자·운영 화면이 배포 가능해지면(C·B 확인) `web/dist`를 `.data/p1-web/`로 복사해 배포하고 nginx `root`를 그쪽으로 바꾼다 |
 | API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/metrics`는 로컬만 |
 | 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
-| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`, `TORCHSERVE_URL=http://127.0.0.1:9561` |
+| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A_모델재현기록.md` M3 절 |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
 | 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`로 켠다 |
