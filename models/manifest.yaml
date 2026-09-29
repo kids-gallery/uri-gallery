@@ -9,14 +9,14 @@ models:
     config_hash: 556ba0a1493221de68303b6f92ffc121186e1ff8cd28cbe1b4652fa5a937f2d4
     runtime: torch-2.4.1-cpu
     exec_device: cpu
-    license_confirmed: false
+    license_confirmed: true
     size_mb: 444
     load:
       expected_seconds: 2.0
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
     note: CPU만(MPS에 deform_conv2d 없음). HF 원격 코드 — revision 고정 필수. CPU 추론 중 RSS 8.5GB.
-      라이선스 MIT 계열 — 확정 기록 필요
+      라이선스 MIT — U4 팀 확정 2026-09-29(켬)
     image_digest: sha256:c2a660901204cbb81ca1cdc7729dae303ea719223780321b6f7f93c046a9b947
   M2:
     source: laion/CLIP-ViT-B-32-laion2B-s34B-b79K
@@ -33,7 +33,8 @@ models:
       expected_seconds: 3.49
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
-    note: open_clip_model.safetensors를 직접 읽는다(pickle .bin 쓰지 않음). A2 라이선스 기록 전 비활성(BR-MDL-07)
+    note: 'open_clip_model.safetensors를 직접 읽는다(pickle .bin 쓰지 않음). A2 라이선스 기록 전 비활성(BR-MDL-07)
+      · U4 팀 확정 2026-09-29: 보류(모델 카드 배포 권고, T137 오인율 뒤 재검토)'
     image_digest: sha256:2989b05a1dbe5857558bc78495d55c0da45cf263dc66cd4ac5883327945f966f
   M3:
     source: facebookresearch/AnimatedDrawings
@@ -42,7 +43,7 @@ models:
     config_hash: fb97342f1b116bf1cfa1ff74b3b4471418f0a8a171636e91939b3011612fef0d
     runtime: torchserve-0.12.0-native
     exec_device: cpu
-    license_confirmed: false
+    license_confirmed: true
     size_mb: 702
     load:
       expected_seconds: 128.0
@@ -52,7 +53,8 @@ models:
       = SHA-256(검출 .mar 해시 + 줄바꿈 + 자세 .mar 해시 + 줄바꿈)[추론 — 파일 2개를 한 값으로]. image_digest
       = 실행 환경 다이제스트(conda-m3.lock + requirements-m3.lock + config.properties + .mar
       해시). load.expected_seconds = TorchServe 기동부터 두 모델 READY까지(수동 실측, ops.models
-      measure는 M3에서 ping만 잼). 보관 처리 엔진 — 내부망 격리(BR-MDL-06)'
+      measure는 M3에서 ping만 잼). 보관 처리 엔진 — 내부망 격리(BR-MDL-06) · U4 라이선스 팀 확정 2026-09-29(켬,
+      내부망 격리 조건)'
     mar_sha256:
       drawn_humanoid_detector: 1a2654c8c4fc52faeeeb9cb2f12ba7ecd01f01f5aeef7ff6723cd0a18133abfb
       drawn_humanoid_pose_estimator: 40ebdc69f1727dfe475161ae751fb066013e590f8894fe0016f0b69b336ee42f
@@ -64,14 +66,15 @@ models:
     config_hash: 89c6ee7ac0b7779cef58e4854f175b2f1f5e44a4ef892a312d1557e1d84c4af3
     runtime: torch-2.4.1-mps
     exec_device: gpu
-    license_confirmed: false
+    license_confirmed: true
     size_mb: 99
     load:
       expected_seconds: 1.47
       measured_on: Studio-B.local
       measured_at: '2026-09-28'
     note: MPS(exec_device=gpu, runtime에 mps). 비정사각 입력의 bicubic은 PYTORCH_ENABLE_MPS_FALLBACK로
-      CPU. Apache-2.0 — 팀 확정 기록 뒤 license_confirmed=true
+      CPU. Apache-2.0 — 팀 확정 기록 뒤 license_confirmed=true · U4 라이선스 팀 확정 2026-09-29(켬,
+      Small만)
     image_digest: sha256:f472b77ab3ca38f69d45a6cd0575a540a57db1ff431c0a5311701cc2b7a1ed75
   M6:
     source: Qwen/Qwen3-4B-Instruct-2507
