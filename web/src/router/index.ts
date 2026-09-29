@@ -17,11 +17,11 @@ const pending = (screen: string, title: string, task: string) => ({ component: P
 export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/app' },
   // 보호자 — 로그인 전
-  { path: '/app/login', ...pending('S0a', '로그인', 'T053'), meta: { shell: 'app', public: true } },
-  { path: '/app/signup', ...pending('S0', '가입', 'T052'), meta: { shell: 'app', public: true } },
-  { path: '/app/verify', ...pending('S0', '메일 확인', 'T052'), meta: { shell: 'app', public: true } },
-  { path: '/app/recovery', ...pending('S0b', '로그인 정보 찾기', 'T053'), meta: { shell: 'app', public: true } },
-  { path: '/app/reset', ...pending('S0b', '새 비밀번호', 'T053'), meta: { shell: 'app', public: true } },
+  { path: '/app/login', component: () => import('@/app/views/LoginView.vue'), meta: { shell: 'app', public: true } },
+  { path: '/app/signup', component: () => import('@/app/views/SignupView.vue'), meta: { shell: 'app', public: true } },
+  { path: '/app/verify', component: () => import('@/app/views/VerifyView.vue'), meta: { shell: 'app', public: true } },
+  { path: '/app/recovery', component: () => import('@/app/views/RecoveryView.vue'), meta: { shell: 'app', public: true } },
+  { path: '/app/reset', component: () => import('@/app/views/ResetView.vue'), meta: { shell: 'app', public: true } },
   // 보호자 — 가족 없어도 되는 화면
   { path: '/app/invite', ...pending('S1c', '초대 수락', 'T107'), meta: { shell: 'app', noFamilyOk: true } },
   { path: '/app/no-family', ...pending('S1d', '가족 없음', 'T107'), meta: { shell: 'app', noFamilyOk: true } },
@@ -36,7 +36,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'artworks/:id/review', ...pending('S5', '결과 확인', 'T094') },
       { path: 'artworks/:id/story', ...pending('S6', '이야기 쓰기', 'T095') },
       { path: 'upload', ...pending('S2', '작품 올리기', 'T066') },
-      { path: 'children', ...pending('S1', '우리 아이', 'T054') },
+      { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
       { path: 'family', ...pending('S1b', '가족 보호자', 'T107') },
       { path: 'gallery', ...pending('S8', '가족 전시', 'T096') },
     ],

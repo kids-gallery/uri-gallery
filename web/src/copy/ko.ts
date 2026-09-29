@@ -98,6 +98,58 @@ export const ko = {
     checkMailboxBody: '확인 링크를 보냈어요. 이미 가입한 주소라면 안내 메일이 가요',
     verified: '이제 아이를 등록해 주세요',
     resetDone: '이메일과 새 비밀번호로 로그인해 주세요',
+    // S0·S0b 화면(T052·T053, docs/C_화면문구.md §4 S0 — 2026-09-29 추가)
+    signupTitle: '이메일로 가입',
+    signupLead: '이메일과 비밀번호만 받아요',
+    mailboxHint: '메일이 없으면 스팸함을 보거나 잠시 뒤 다시 받아 주세요',
+    resendVerify: '확인 메일 다시 받기',
+    haveAccount: '이미 가입하셨나요? 로그인',
+    needEmail: '이메일을 적어 주세요', // [추론]
+    badEmail: '이메일 형식을 확인해 주세요', // [추론]
+    needPassword: '비밀번호를 적어 주세요', // [추론]
+    shortPassword: '비밀번호는 8자 이상이에요', // [추론 — U19 예시값]
+    mismatch: '비밀번호 확인이 같지 않아요', // [추론]
+    verifying: '메일을 확인하고 있어요', // [추론]
+    recoveryTitle: '로그인 정보 찾기',
+    recoveryEmail: '가입한 이메일',
+    recoverySend: '메일 받기',
+    recoveryIdHint: '로그인 아이디는 가입한 이메일이에요',
+    recoverySent: '가입된 이메일이면 메일을 보냈어요',
+    recoverySentBody: '메일의 링크로 비밀번호를 새로 정해 주세요',
+    recoveryOnce: '링크는 한 번만 - 정해진 시간 안에만 쓸 수 있어요',
+    recoveryAgain: '메일 다시 받기',
+    toLogin: '로그인으로',
+    resetTitle: '새 비밀번호 정하기', // [추론]
+    newPassword: '새 비밀번호',
+    newPasswordConfirm: '새 비밀번호 확인',
+    save: '저장',
+  },
+  /** 보호자 여정 레일(C1 여정 변형, SD_02 §2-3 · S0 와이어프레임). */
+  journey: {
+    signup: '가입', verify: '메일 확인', child: '아이 등록', upload: '작품 올리기',
+    confirm: '확정', review: '결과 확인', story: '이야기', exhibit: '전시',
+  },
+  /** S1 아이 관리(T054, docs/C_화면문구.md §4 S1). */
+  child: {
+    title: '우리 아이',
+    count: (n: number) => `우리 아이 ${n}명`,
+    colAlias: '별칭', colArtworks: '작품 수', colActions: '조작',
+    edit: '별칭 고치기', remove: '아이 삭제',
+    addTitle: '아이 추가 - 별칭만 받아요',
+    alias: '별칭',
+    aliasHint: '실명 대신 가족이 부르는 별칭을 적어 주세요',
+    remaining: (n: number) => `남은 글자 ${n}/20`,
+    notCollected: '실명 - 생년월일 - 출생연도는 받지 않아요',
+    save: '저장',
+    toUpload: '작품 올리기로',
+    needChild: '아이를 먼저 등록해 주세요',
+    empty: '아직 등록한 아이가 없어요', // [추론]
+    dupTitle: '같은 별칭',
+    dup: (alias: string) => `같은 별칭 ${alias}이 이미 있어요. 그대로 둘까요, 고칠까요?`,
+    dupSaved: '저장은 됐어요',
+    dupWhy: '아이는 시스템이 따로 구분해요 - 이용자 중복은 이메일 계정으로 막아요',
+    keep: '그대로 두기',
+    cancel: '취소',
   },
   shell: {
     appName: '우리 아이 미술관',
