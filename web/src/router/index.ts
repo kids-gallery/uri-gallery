@@ -49,8 +49,8 @@ export const routes: RouteRecordRaw[] = [
     meta: { shell: 'ops' },
     children: [
       { path: '', redirect: '/ops/status' },
-      { path: 'status', ...pending('S10', '서비스 상태와 모델별 지표', 'T112'), meta: { roles: OPS_ROLES.status } },
-      { path: 'models', ...pending('S11', '모델 평가와 승격', 'T119'), meta: { roles: OPS_ROLES.models } },
+      { path: 'status', component: () => import('@/ops/views/OpsStatusView.vue'), meta: { roles: OPS_ROLES.status } },
+      { path: 'models', component: () => import('@/ops/views/ModelsView.vue'), meta: { roles: OPS_ROLES.models } },
       { path: 'api-guide', ...pending('S12', 'API활용', 'T125'), meta: { roles: OPS_ROLES.apiGuide } },
       { path: 'forbidden', component: () => import('@/views/OpsForbiddenView.vue') },
     ],

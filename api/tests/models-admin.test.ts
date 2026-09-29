@@ -80,6 +80,9 @@ describe('평가 → 판단 → 승격 → 롤백 → 비활성화(G21·G22, D5)
     writeManifest({ M5: { w: C, c: D, lic: true } });
     const ev = await a.post('/v1/admin/models/M5/evaluate').send({ versionId: vid }).expect(202);
     expect(ev.body).toMatchObject({ itemTotal: 2, doneCount: 0, eligible: false, verdict: null });
+    // 새로 고친 뒤에도 이어 가도록 매니페스트에 가장 최근 평가 기록 번호가 실린다(ModelVersion.latestEvalRunId)
+    const man = (await a.get('/v1/admin/models').expect(200)).body as { modelId: string; versions: { id: string; latestEvalRunId: string | null }[] }[];
+    expect(man.find((m) => m.modelId === 'M5')!.versions.find((v) => v.id === String(vid))!.latestEvalRunId).toBe(String(ev.body.id));
     const [jobs] = await t.db.query(`SELECT origin, stage_kind, priority, artwork_id FROM stage_job WHERE evaluation_id = ?`, [ev.body.id]);
     expect(jobs).toEqual([{ origin: 'eval', stage_kind: 'depth_relief', priority: 50, artwork_id: null }, { origin: 'eval', stage_kind: 'depth_relief', priority: 50, artwork_id: null }]);
   });

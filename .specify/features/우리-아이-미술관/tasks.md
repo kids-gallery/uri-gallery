@@ -261,8 +261,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T109 (A 완료 — `a/model-serving`, main 병합 전) [US7] model-api 내부 준비 확인을 만든다(`GET /internal/ready`, 모델별 활성 버전·장치) — `serving/model_api/internal.py` · 담당 A · 스킬 API · 근거 FR-12
 - [x] T110 (B 완료 2026-09-28 — `b/api`, main 병합 전) [US7] 운영 API를 만든다: `/ready`(DB·저장소·model-api), `/metrics`(prom-client, 뷰 기반, p95는 여기서만), `/v1/admin/metrics`, `/v1/admin/unreached` — `api/src/modules/ops/` · 담당 B · 스킬 API · 근거 R-17, SD_03 §2-3
 - [x] T143 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/ops/routes.ts`·`artworks/view.ts`) [US7] 모델 적재 상태를 붙인다(A `docs/A_모델적재_화면요구.md` §4): `/ready`에 `models[]` 요약(`anyLoading`, 공개 응답엔 버전·장치 없음), 운영 경로 `GET /v1/ops/models`·`POST /v1/ops/models/{id}/warmup`(model-api `/internal/models*` 프록시, M6는 409 `m6_preload_at_start_only`), 보호자 `GET /v1/artworks/{id}` 단계에 `waitingForModel`·`etaSeconds`만 — `api/src/modules/ops/models.ts` · `api/src/modules/artworks/detail.ts` · 담당 B · 스킬 API · 근거 FR-12, T109, contracts/openapi.yaml — **A 인계로 추가(T143)**
-- [ ] T111 [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 SD_02 §3-4 · **D21 보정(2026-09-29)**: 상태 추가: 불러오는 중(`loading`, 경과·남은 시간, 1.5배 초과 문구)·적재 실패(`failed`)·내려감 짐작(`cold`, M6) — SD_02 C10·§3-5
-- [ ] T112 [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S10 · **D21 보정(2026-09-29)**: 역할별: 미도달 추적 탭은 운영자에게만(§2-1)
+- [x] T111 (이제민 완료 2026-09-29, `web/src/components/ModelStatusChip.vue` — 상태 10종 문구+모양; 시험 `web/src/__tests__/ops-screens.spec.ts`) [P] [US7] C10 모델 상태 칩을 만든다 — `web/src/components/ModelStatusChip.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD · 근거 SD_02 §3-4 · **D21 보정(2026-09-29)**: 상태 추가: 불러오는 중(`loading`, 경과·남은 시간, 1.5배 초과 문구)·적재 실패(`failed`)·내려감 짐작(`cold`, M6) — SD_02 C10·§3-5
+- [x] T112 (이제민 완료 2026-09-29, `web/src/ops/views/OpsStatusView.vue` — 미도달 탭 운영자만, 10초 갱신·갱신 불가 표시; 시험 `web/src/__tests__/ops-screens.spec.ts`) [US7] S10 운영 화면을 만든다(생존·준비 요약 행, 지표, 원인 5분류, 미도달 추적) — `web/src/ops/views/OpsStatusView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S10 · **D21 보정(2026-09-29)**: 역할별: 미도달 추적 탭은 운영자에게만(§2-1)
 
 **Checkpoint**: US7 독립 검증 기준 통과.
 
@@ -277,7 +277,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T116 (B 완료 2026-09-28 — `b/api`, main 병합 전; `api/src/modules/artworks/models.ts`) [US8] 확정 화면·확정 API가 비활성 모델의 선택지를 이유와 함께 막도록 연결한다(판정 모델 비활성이면 제안 없이 직접 확정) — `api/src/modules/artworks/confirm.ts` · `web/src/app/views/ConfirmView.vue` · 담당 B·C · 스킬 API, FD · 근거 spec clarify(첫 버전 비활성화), BR-FBK-04
 - [x] T117 (A 완료 2026-09-29 — stage-job §12 설계 먼저, 워커 점유 순서 보호자→평가→외부, 모델별 result_path, timeout 재시도 없음, 처리 시간·메모리, 이어받기 incomplete 채움, `eval/runner.py run·report`, 시험 17건. M6(P0.5)·M7(P1) 평가는 해당 구간에서) [US8] 평가 실행기를 만든다(같은 어댑터로 항목별 결과·시간·메모리, 인프라 소진은 평가 미완료) — `eval/runner.py` · `serving/workers/stages/eval.py` · 담당 A · 스킬 — · 근거 UC9 BF4, FR-17
 - [ ] T118 (A 부분 2026-09-29 — `eval/items/manifest.yaml` 틀·구성 목표[추론]·등록 방법까지. 팀원 제작 작품 제작·등록이 남음) [P] [US8] 평가 묶음을 만든다(팀원 제작: 사람·비인물·촬영 조건·입체·설명 입력, 기대 경로) — `eval/items/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-17, BR-MDL-04
-- [ ] T119 [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S11 · **D21 보정(2026-09-29)**: 모델 상태 표 2초 폴링(`GET /v1/ops/models`)·지금 불러오기(운영자·평가 담당만)·M6 "첫 요청 때 올라가요", 롤백 후보 없으면 비활성화(clarify), 운영자·연동 개발은 읽기 전용
+- [x] T119 (이제민 완료 2026-09-29, `web/src/ops/views/ModelsView.vue` — 계약 보완 `ModelVersion.latestEvalRunId`(새로 고친 뒤 평가 이어 가기), 조작은 평가 담당만; 시험 `web/src/__tests__/ops-screens.spec.ts`) [US8] S11 모델 평가·승격 화면을 만든다(매니페스트 표, 진행, G22 차단, 롤백·비활성화) — `web/src/ops/views/ModelsView.vue` · 담당 B(4인 분담 2026-09-29) · 스킬 FD, RL · 근거 S11 · **D21 보정(2026-09-29)**: 모델 상태 표 2초 폴링(`GET /v1/ops/models`)·지금 불러오기(운영자·평가 담당만)·M6 "첫 요청 때 올라가요", 롤백 후보 없으면 비활성화(clarify), 운영자·연동 개발은 읽기 전용
 
 **Checkpoint**: US8 독립 검증 기준 통과.
 

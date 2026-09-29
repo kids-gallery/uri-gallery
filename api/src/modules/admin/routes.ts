@@ -37,13 +37,17 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
     const models = await all<{ model_id: string; role_name: string; serving_group: string; phase: string }>(db,
       `SELECT model_id, role_name, serving_group, phase FROM model ${modelId ? 'WHERE model_id = ?' : ''} ORDER BY model_id`, modelId ? [modelId] : []);
     const vers = await all<Record<string, unknown>>(db, `SELECT * FROM model_version ORDER BY version_id`);
+    // 버전별 가장 최근 평가 기록 — S11이 새로 고친 뒤에도 평가를 이어 간다(계약 ModelVersion.latestEvalRunId)
+    const runs = await all<{ version_id: number; run: number }>(db, `SELECT version_id, MAX(evaluation_id) run FROM evaluation GROUP BY version_id`);
+    const lastRun = new Map(runs.map((x) => [Number(x.version_id), String(x.run)]));
     const [fs0] = await all<{ enabled: number }>(db, `SELECT enabled FROM feature_setting WHERE setting_key = 'sculpture_exposure'`);
     return models.map((m) => ({
       modelId: m.model_id, roleName: m.role_name, tier: m.phase, servingGroup: m.serving_group,
       exposed: m.model_id === 'M7' ? Boolean(fs0?.enabled) : true,
       versions: vers.filter((v) => v.model_id === m.model_id).map((v) => ({
         id: String(v.version_id), version: v.version_label, weightsSha256: v.weights_sha256, runtime: v.runtime, imageDigest: v.image_digest,
-        configHash: v.config_hash, device: v.exec_device, filePath: v.model_path, licenseConfirmed: Boolean(v.license_confirmed), releaseState: v.release_state })),
+        configHash: v.config_hash, device: v.exec_device, filePath: v.model_path, licenseConfirmed: Boolean(v.license_confirmed), releaseState: v.release_state,
+        latestEvalRunId: lastRun.get(Number(v.version_id)) ?? null })),
     }));
   }
   const mid = (s: string) => { if (!MODELS.includes(s)) throw new Problem('not_found'); return s; };

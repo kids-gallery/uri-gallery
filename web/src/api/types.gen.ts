@@ -2853,6 +2853,8 @@ export interface components {
             licenseConfirmed?: boolean;
             /** @enum {string} */
             releaseState?: "candidate" | "active" | "rollback_candidate" | "retired";
+            /** @description 이 버전의 가장 최근 평가 기록(evaluation.evaluation_id). S11이 새로 고친 뒤에도 진행·판단·승격을 이어 가게 한다(2026-09-29 이제민). 평가 전이면 null */
+            latestEvalRunId?: string | null;
         };
         ModelManifest: {
             modelId?: string;

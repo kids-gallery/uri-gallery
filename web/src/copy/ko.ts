@@ -221,6 +221,47 @@ export const ko = {
     empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
     toList: '목록으로', toUpload: '작품 올리기',
   },
+  /** S10·S11 운영(docs/C_화면문구.md §4 "S10~S11 구현 문구", 2026-09-29 이제민). 비율은 소수 둘째 자리(퍼센트 기호 없음). */
+  ops: {
+    alive: '생존', aliveOk: '응답함', aliveNo: '응답 없음', // [추론] 응답 없음
+    ready: '준비', readyAll: '준비됨', readySome: '일부 모델 미준비', readyNo: '준비 안 됨', // [추론] 준비됨·준비 안 됨
+    period: '기간', periods: { d7: '최근 7일', d30: '최근 30일', all: '전체' } as Record<string, string>, // [추론] 30일·전체
+    readyTitle: '준비 - 모델별', colModel: '모델', colGroup: '서빙군', colState: '상태', colImpact: '영향',
+    group: { cpu_vision: 'CPU 비전', gpu: 'GPU', llm: 'LLM', external: '외부' } as Record<string, string>,
+    shortName: { M1: 'M1 분리', M2: 'M2 판정', M3: 'M3 움직임', M5: 'M5 깊이', M6: 'M6 설명', M7: 'M7 3D' } as Record<string, string>,
+    longName: { M1: 'M1 BiRefNet', M2: 'M2 OpenCLIP', M3: 'M3 Animated Drawings', M5: 'M5 Depth Anything', M6: 'M6 Qwen3-4B', M7: 'M7 TripoSR' } as Record<string, string>,
+    impact: {
+      M1: '잘라 내기 없이 원본으로', M2: '제안 없이 확정', M3: '움직임 - 액자 경로는 동작', M5: '입체 부조 - 액자 경로는 동작',
+      M6: '설명 - 기본 문장·직접 쓰기', M7: '3D 비노출', cpu: '처리 시간 증가',
+    } as Record<string, string>, // [추론] M1·M5·M6·M7
+    metricsTitle: '지표 - 정의와 검증 계획이며 실적 아님',
+    firstApproval: '첫 결과 승인율', modifyRate: '판정 수정률', unreached: '결과 미도달 수 - 목표 0', delIncomplete: '삭제 미완료 수',
+    captionFail: '설명 규칙 검사 실패율 - P0.5', na: '해당 없음',
+    tabs: { models: '모델별', causes: '원인 5분류', unreached: '결과 미도달 추적' } as Record<string, string>,
+    colVersion: '버전', colAttempts: '시도', colDowngrade: '낮춤률', colP95: 'p95', colRetry: '재시도율',
+    colWaiting: '대기', colOldest: '가장 오래 기다림', colFunction: '기능', colCalls: '호출', colRejected: '한도 초과', // [추론] 가장 오래 기다림
+    causes: { guardianChoice: '보호자 선택', modelDowngrade: '모델 낮춤', guardianSwitch: '보호자 전환', infraFailure: '인프라 실패', unreached: '결과 미도달' } as Record<string, string>, // [추론] 보호자 전환
+    colJob: '단계 작업 번호', colModelVersion: '모델 버전', colErrorClass: '오류 분류',
+    errorClass: { engine_down: '엔진 다운', timeout: '시간 초과', storage: '저장소', db: 'DB', model_not_ready: '모델 미준비' } as Record<string, string>, // [추론] 엔진 다운 외
+    noFamilyPath: '운영 화면에는 가족 사진과 이야기로 가는 경로가 없어요',
+    // S11
+    colActive: '활성', colRollback: '롤백 후보', colCandidate: '후보', colLicense: '라이선스', colHash: '해시',
+    licenseOk: '확인', licenseNo: '확인 전', none: '없음',
+    statusTitle: '모델 상태', colDevice: '장치', colLoad: '적재', colQueue: '대기', colAction: '동작',
+    warmup: '지금 불러오기', lastLoad: (n: number) => `마지막 적재 ${n}초`,
+    loading: (e: number, r: number | null) => (r != null ? `${e}초 - 남은 약 ${r}초` : `${e}초`),
+    evalTitle: (m: string, v: string) => `${m} 후보 ${v} 평가`,
+    evalProgress: (d: number, t: number, inc: number) => `진행 ${d} / ${t} 완료 - 평가 미완료 ${inc}`,
+    evalNone: '평가 전이에요', // [추론]
+    evalRequest: '평가 요청', report: '보고서 열기', judge: '판단 기록', verdict: { pass: '통과', hold: '보류' } as Record<string, string>, // [추론] 통과·보류
+    rationale: '판단 근거', promote: '승격', rollback: '롤백', deactivate: '비활성화', reason: '사유', // [추론] 판단 근거·사유
+    needRationale: '판단 근거를 적어 주세요', needReason: '사유를 적어 주세요', pickVerdict: '통과 또는 보류를 골라 주세요', // [추론]
+    notEligible: '평가 미완료 또는 통과 판단 전이에요', // [추론]
+    noRollback: '되돌릴 후보가 없어요',
+    deactivateConfirm: '이 모델이 필요한 선택지가 보호자 화면에서 막혀요. 비활성화할까요?',
+    readOnly: '읽기 전용이에요 - 조작은 평가 담당만', // [추론]
+    colItem: '평가 항목', colStatus: '상태', colExpected: '기대', colActual: '결과', colDowngradeReason: '낮춤', colMisclass: '오인', colTime: '시간', // [추론]
+  },
   shell: {
     appName: '우리 아이 미술관',
     opsName: '운영 화면',
