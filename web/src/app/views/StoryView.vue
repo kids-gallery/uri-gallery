@@ -106,7 +106,7 @@ function dropDraft() { draft.value = null; clearDraft(); }
         <div class="hang-anim"><ArtFrame size="sm" :src="resultImage(a).still" :alt="a.story?.title ?? ''" /></div>
       </div>
       <NoticeBlock v-if="done" :title="done === 'exhibited' ? ko.story.exhibited : ko.story.saved">
-        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" to="/app">{{ ko.list.toGallery }}</RouterLink></template>
+        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" to="/app/hall">{{ ko.list.toGallery }}</RouterLink></template>
       </NoticeBlock>
 
       <form class="card stack story-form" novalidate @submit.prevent="save">

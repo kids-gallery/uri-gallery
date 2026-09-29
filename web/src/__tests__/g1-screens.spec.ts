@@ -241,17 +241,18 @@ describe('S6 이야기(T095)', () => {
   });
 });
 
-describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
+describe('전시실 /app/hall(SD_02 §17-2 내용 · §17-4 모양)', () => {
   const gal = { childId: '1', groups: [
     { ageAtMaking: 5, items: [{ id: '8', kind: 'animated', originalUrl: '/v1/files/o8', primaryUrl: '/v1/files/v8', title: '해님', madeOn: '2026-03-01', ageAtMaking: 5, childWords: null }] },
     { ageAtMaking: 6, items: [{ id: '7', kind: 'frame', originalUrl: '/v1/files/o', title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '멍멍이가 웃어' }] },
   ] };
-  it('배너 "{별칭}의 미술관", 평면 안내도와 N세관, 명패(제목·그린 날·나이), 낮춤 표시 없음, 준비 중 작품 수', async () => {
+  it('머리 "{별칭}의 전시실", 평면도와 N세관, 명패(제목·그린 날·나이), 낮춤 표시 없음, 준비 중 작품 수', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal,
       '/v1/artworks': [{ id: '7', childId: '1', state: 'exhibited', updatedAt: 'x' }, { id: '9', childId: '1', state: 'processing', updatedAt: 'x' }] });
-    const w = await open(MuseumView, '/app');
+    const w = await open(MuseumView, '/app/hall');
     await flushPromises();
-    expect(w.find('.banner-title').text()).toBe(ko.museum.hall('하늘'));
+    expect(w.find('.hall-title').text()).toBe(ko.museum.hallTitle('하늘'));
+    expect(w.find('.room-meta').text()).toBe(ko.museum.roomMeta(1, '2026-03-01'));
     expect(w.findAll('.plan-room').map((b) => b.find('b').text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
     expect(w.findAll('.signplate').map((h) => h.text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
     expect(w.text()).toContain(ko.museum.plaque('2026-09-01', 6));
@@ -261,7 +262,7 @@ describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
   });
   it('작품을 누르면 작품 앞(?art=): 전시 해설(작품명·작가 줄·규칙 문장·한마디 원문), 움직이는 그림은 누를 때만 재생 토글', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
-    const w = await open(MuseumView, '/app');
+    const w = await open(MuseumView, '/app/hall');
     await flushPromises();
     await w.findAll('button.piece')[1]!.trigger('click');
     await flushPromises();
@@ -285,30 +286,28 @@ describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
   });
   it('주소 ?art=로 바로 들어오면 작품 앞, Esc면 전시실로(주소에서 art 빠짐)', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
-    const w = await open(MuseumView, '/app?child=1&art=8');
+    const w = await open(MuseumView, '/app/hall?child=1&art=8');
     await flushPromises();
     expect(w.find('.wl-title').text()).toBe('해님');
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await flushPromises();
     expect(router.currentRoute.value.query.art).toBeUndefined();
     expect(w.find('.wl-title').exists()).toBe(false);
-    expect(w.find('.banner-title').text()).toBe(ko.museum.hall('하늘'));
+    expect(w.find('.hall-title').text()).toBe(ko.museum.hallTitle('하늘'));
     w.unmount();
   });
-  it('로비: 받침대에 최근 작품(금박 액자)과 소장 작품 명판, 세관은 금박 액자', async () => {
+  it('세관은 흰 매트 액자, 세관 벽은 이름 있는 넘김 영역, [← 홈으로]', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
-    const w = await open(MuseumView, '/app');
+    const w = await open(MuseumView, '/app/hall');
     await flushPromises();
-    expect(w.find('.pedestal-piece').attributes('aria-label')).toBe(ko.museum.latest); // 세관의 같은 작품 버튼과 이름이 겹치지 않게
-    expect(w.find('.pedestal-piece img').attributes('alt')).toBe('강아지');
-    expect(w.find('.collection').text()).toBe(ko.museum.collection(2));
-    expect(w.findAll('.room .artframe.gold')).toHaveLength(2);
+    expect(w.find('.to-home').attributes('href')).toBe('/app');
+    expect(w.findAll('.room .artframe')).toHaveLength(2);
     expect(w.findAll('[role="region"]').map((r) => r.attributes('aria-label'))).toEqual([ko.museum.hangOf(5), ko.museum.hangOf(6)]);
     w.unmount();
   });
   it('전시 작품이 없으면 빈 액자 걸이와 "첫 그림을 걸어 볼까요?"', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': { childId: '1', groups: [] }, '/v1/artworks': [] });
-    const w = await open(MuseumView, '/app');
+    const w = await open(MuseumView, '/app/hall');
     await flushPromises();
     expect(w.text()).toContain(ko.museum.emptyTitle);
     expect(w.findAll('.artframe.empty').length).toBeGreaterThan(0);
@@ -316,30 +315,30 @@ describe('홈 = 전시실(제안 SD_02 §17-2, S8 확장)', () => {
   });
 });
 
-describe('홈 시안 — 아날로그 감성(D26, SD_02 §17-3)', () => {
+describe('홈 /app — 아날로그 감성(D26 ⑥, SD_02 §17-3)', () => {
   const gal = { childId: '1', groups: [
     { ageAtMaking: 5, items: [{ id: '8', kind: 'frame', originalUrl: '/v1/files/o8', title: '해님', madeOn: '2025-03-01', ageAtMaking: 5, childWords: '해가 웃어' }] },
     { ageAtMaking: 6, items: [{ id: '7', kind: 'frame', originalUrl: '/v1/files/o', title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: null }] },
   ] };
-  it('시안 띠, 첫 화면에 최근 작품, 숫자 줄(작품 수·세관 수·첫 그림), 작품 줄은 제작일 순, 한마디 패널', async () => {
+  it('첫 화면에 최근 작품, 숫자 줄(작품 수·세관 수·첫 그림), 작품 줄은 제작일 순, 한마디 패널, 누르면 전시실 작품 앞', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': gal, '/v1/artworks': [] });
-    const w = await open(PaperHomeView, '/app/draft/paper');
+    const w = await open(PaperHomeView, '/app');
     await flushPromises();
-    expect(w.find('.draftbar').text()).toContain(ko.paper.draft);
     expect(w.find('.title').text()).toBe(ko.museum.hall('하늘'));
-    expect(w.find('.hero-art').attributes('aria-label')).toBe('강아지');
+    expect(w.find('.hero-art').attributes('aria-label')).toBe(`${ko.museum.latest} - 강아지`);
     expect(w.findAll('.stats b').map((b) => b.text())).toEqual(['2점', '2개', '2025.03']);
     expect(w.findAll('.polaroid').map((b) => b.attributes('aria-label'))).toEqual(['해님', '강아지']);
     expect(w.find('.words').text()).toBe('“해가 웃어”');
     expect(w.text()).not.toContain('바꿨어요');
     await w.find('.hero-art').trigger('click');
     await flushPromises();
+    expect(router.currentRoute.value.path).toBe('/app/hall');
     expect(router.currentRoute.value.query).toMatchObject({ art: '7', child: '1' });
     w.unmount();
   });
   it('작품이 없으면 빈 폴라로이드와 "첫 그림을 걸어 볼까요?", 숫자 줄·작품 줄은 없음', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], '/v1/gallery': { childId: '1', groups: [] }, '/v1/artworks': [] });
-    const w = await open(PaperHomeView, '/app/draft/paper');
+    const w = await open(PaperHomeView, '/app');
     await flushPromises();
     expect(w.text()).toContain(ko.museum.emptyTitle);
     expect(w.find('.stats').exists()).toBe(false);

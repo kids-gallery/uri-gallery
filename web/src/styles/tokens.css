@@ -1,14 +1,14 @@
 /* 토큰·타이포 역할 — design/style-guide/스타일가이드_우리아이미술관.html 에서 그대로 옮김(T011, R-20, D22). 고칠 때는 스타일가이드를 먼저 고친다. */
 :root{
-  /* colors */
-  --color-primary:#000000; --color-on-primary:#ffffff;
-  --color-ink:#000000; --color-canvas:#ffffff;
-  --color-inverse-canvas:#000000; --color-inverse-ink:#ffffff; --color-on-inverse-soft:#ffffff;
-  --color-hairline:#e6e6e6; --color-hairline-soft:#f1f1f1; --color-surface-soft:#f7f7f5;
-  --color-block-lime:#dceeb1; --color-block-lilac:#c5b0f4; --color-block-cream:#f4ecd6;
-  --color-block-pink:#efd4d4; --color-block-mint:#c8e6cd; --color-block-coral:#f3c9b6;
-  --color-block-navy:#1f1d3d; --color-accent-magenta:#ff3d8b;
-  --color-semantic-success:#1ea64a; --color-overlay-scrim:#000000;
+  /* colors — v2(D26 ⑥, 2026-09-29): 아이보리 · 블러시 · 빨강 한 계열(참고 스튜디오카일). 매뉴얼 §4.1 */
+  --color-primary:#c8301f; --color-on-primary:#fffeef;
+  --color-ink:#b8291b; --color-canvas:#fffeef;
+  --color-inverse-canvas:#c8301f; --color-inverse-ink:#fffeef; --color-on-inverse-soft:#fffeef;
+  --color-hairline:#f2c6b9; --color-hairline-soft:#fbe0d5; --color-surface-soft:#ffe8da;
+  --color-block-lime:#fff1b8; --color-block-lilac:#fcdde6; --color-block-cream:#fff6dc;
+  --color-block-pink:#ffe8da; --color-block-mint:#ffeede; --color-block-coral:#ffd6c8;
+  --color-block-navy:#8f1f14; --color-accent-magenta:#e43828;
+  --color-semantic-success:#2e7d4f; --color-overlay-scrim:#3a0d08;
 
   /* type families — figmaSans/figmaMono 대체: Inter(+Pretendard 한글) / JetBrains Mono */
   --font-sans:"Inter Variable","Inter","Pretendard Variable",Pretendard,"SF Pro Display",system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
@@ -21,8 +21,8 @@
   --s-hair:1px; --s-xxs:4px; --s-xs:8px; --s-sm:12px; --s-md:16px; --s-lg:24px; --s-xl:32px; --s-xxl:48px; --s-section:96px;
 
   /* elevation */
-  --elev-2:0 4px 16px rgba(0,0,0,.06);
-  --elev-3:0 16px 48px rgba(0,0,0,.18);
+  --elev-2:0 4px 16px rgba(184,41,27,.08);
+  --elev-3:0 16px 48px rgba(184,41,27,.18);
 
   --container:1280px;
   --gutter:var(--s-xxl);
@@ -30,9 +30,9 @@
 @media (max-width:768px){ :root{ --gutter:var(--s-md); } }
 
 /* ---------- 타이포 역할 (DESIGN.md typography) ---------- */
-.t-display-xl{font:340 86px/1.00 var(--font-sans);letter-spacing:-1.72px}
-.t-display-lg{font:340 64px/1.10 var(--font-sans);letter-spacing:-.96px}
-.t-headline{font:540 26px/1.35 var(--font-sans);letter-spacing:-.26px}
+.t-display-xl{font:750 86px/1.00 var(--font-sans);letter-spacing:-1.72px}
+.t-display-lg{font:750 64px/1.10 var(--font-sans);letter-spacing:-.96px}
+.t-headline{font:700 26px/1.35 var(--font-sans);letter-spacing:-.26px}
 .t-subhead{font:340 26px/1.35 var(--font-sans);letter-spacing:-.26px}
 .t-card-title{font:700 24px/1.45 var(--font-sans);letter-spacing:0}
 .t-body-lg{font:330 20px/1.40 var(--font-sans);letter-spacing:-.14px}

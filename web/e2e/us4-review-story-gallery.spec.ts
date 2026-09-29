@@ -42,7 +42,7 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
 
   // 전시 = 홈 전시실(D25): N세관 안에 걸리고, 열면 월 라벨과 정지 화면(액자는 원본·재생 토글 없음)
   await page.getByRole('link', { name: ko.list.toGallery }).click();
-  await expect(page).toHaveURL(/\/app(\?|$)/);
+  await expect(page).toHaveURL(/\/app\/hall(\?|$)/);
   const room = page.getByRole('region', { name: ko.museum.room(6) });
   await expect(room.getByText('빨간 해')).toBeVisible();
   await room.getByRole('button', { name: '빨간 해' }).click();

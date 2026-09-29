@@ -9,7 +9,7 @@ defineProps<{ shell: 'app' | 'ops'; account?: string; roles?: string[]; menu: Me
 const emit = defineEmits<{ logout: [] }>();
 const route = useRoute();
 // 셸 첫 메뉴(/app·/ops)는 하위 경로 전체에 켜지면 다른 메뉴와 겹쳐 보인다 — /app(미술관)은 그 화면만, 작품 화면(/app/artworks/*)은 "작품 관리"에 둔다
-const active = (to: string) => (to === '/app' ? route.path === '/app'
+const active = (to: string) => (to === '/app' ? route.path === '/app' || route.path === '/app/hall' // 전시실(/app/hall)도 미술관 아래(SD_02 §17-4)
   : to === '/app/works' ? route.path === '/app/works' || route.path.startsWith('/app/artworks') // 작품 화면은 작품 관리 아래
   : route.path === to || route.path.startsWith(`${to}/`));
 </script>

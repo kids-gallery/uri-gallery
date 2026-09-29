@@ -267,6 +267,10 @@ export const ko = {
     floorPlan: '평면도', lobby: '로비', corridor: '회랑', north: '북', // [추론]
     collection: (n: number) => `소장 작품 ${n}점`, latest: '최근에 걸린 작품', // [추론]
     hangOf: (age: number) => `${age}살 때 그린 작품`, // [추론] 세관 벽(옆으로 넘기는 영역) 이름
+    // 전시실 /app/hall · 입장(D26 ⑥, SD_02 §17-4)
+    hallTitle: (alias: string) => `${alias}의 전시실`, toHome: '홈으로', // [추론]
+    roomMeta: (n: number, from: string) => `${n}점 · ${from} ~`, // [추론]
+    intro1: '아이가 그린 그림을 가족의 미술관에 걸어요', intro2: '작품마다 아이의 한마디와 이야기를 함께 남겨요', // [추론]
   },
   /** 홈 시안(D26, SD_02 §17-3 — 시안, docs/C_화면문구.md). */
   paper: {

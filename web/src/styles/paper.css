@@ -2,9 +2,10 @@
    아이보리 바탕 · 블러시 구획 · 빨강 한 가지 계열. 스타일가이드 토큰(tokens.css)은 바꾸지 않는다.
    대비: 본문 --paper-ink 아이보리 6.1:1 · 블러시 5.3:1, 보조 --paper-ink-2 5.3:1 · 4.6:1, --paper-accent는 24px 이상 큰 글자·선·문양만. */
 .paper{
-  --paper-bg:#fffeef; --paper-blush:#ffe8da; --paper-card:#fffffa; --paper-mat:#ffffff;
-  --paper-ink:#b8291b; --paper-ink-2:#c8301f; --paper-accent:#e43828; --paper-line:#e43828;
-  --paper-btn:#c8301f; --paper-btn-ink:#ffffff; --paper-tape:rgba(255,200,185,.7);
+  /* D26 ⑥: 토큰 v2와 같은 값 — 토큰을 따른다 */
+  --paper-bg:var(--color-canvas); --paper-blush:var(--color-surface-soft); --paper-card:var(--color-canvas); --paper-mat:#ffffff;
+  --paper-ink:var(--color-ink); --paper-ink-2:var(--color-primary); --paper-accent:var(--color-accent-magenta); --paper-line:var(--color-accent-magenta);
+  --paper-btn:var(--color-primary); --paper-btn-ink:#ffffff; --paper-tape:rgba(255,200,185,.7);
   --paper-shadow:rgba(184,41,27,.16);
   background:var(--paper-bg);color:var(--paper-ink);
 }

@@ -29,7 +29,8 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { shell: 'app' },
     children: [
-      { path: '', name: 'app-home', component: () => import('@/app/views/MuseumView.vue') }, // 홈 = 전시실(제안 SD_02 §17-2)
+      { path: '', name: 'app-home', component: () => import('@/app/views/PaperHomeView.vue') }, // 홈(D26 ⑥, SD_02 §17-3)
+      { path: 'hall', name: 'app-hall', component: () => import('@/app/views/MuseumView.vue') }, // 전시실 — 평면도 · N세관 · 작품 앞 ?art=(SD_02 §17-4)
       { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리
       { path: 'artworks/:id', component: () => import('@/app/views/ArtworkDetailView.vue') },
       { path: 'artworks/:id/confirm', component: () => import('@/app/views/ConfirmView.vue') },
@@ -39,8 +40,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
       { path: 'account', component: () => import('@/app/views/AccountView.vue') }, // S0c 비밀번호 변경(T161)
       { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
-      { path: 'draft/paper', name: 'app-draft-paper', component: () => import('@/app/views/PaperHomeView.vue') }, // 홈 시안(D26, SD_02 §17-3)
-      { path: 'gallery', redirect: (to) => ({ path: '/app', query: to.query }) }, // S8은 홈 전시실로 합침
+      { path: 'draft/paper', redirect: (to) => ({ path: '/app', query: to.query }) }, // 시안 경로는 홈으로(D26 ⑥)
+      { path: 'gallery', redirect: (to) => ({ path: '/app/hall', query: to.query }) }, // S8 = 전시실(SD_02 §17-4)
     ],
   },
   // 팀원

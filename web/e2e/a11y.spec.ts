@@ -59,7 +59,7 @@ test('보호자 화면 한 바퀴 — 키보드로 확정, 비활성 사유 낭�
   await expect(page.getByText(ko.story.exhibited)).toBeVisible();
   await page.goto('/app');
   await check(page, '홈 전시실(D25)');
-  await page.getByRole('button', { name: '파란 집' }).click();
+  await page.getByRole('button', { name: '파란 집', exact: true }).click();
   await check(page, '작품 앞 월 라벨');
   await page.goto('/app/works');
   await check(page, 'S4 작품 관리');

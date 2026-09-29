@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 홈 시안 — 아날로그 감성의 현대 디스플레이(SD_02 §17-3, D26 시안 · 신지현 검토 전). 경로 /app/draft/paper, 메뉴에는 없음.
+// 홈 /app — 아날로그 감성의 현대 디스플레이(SD_02 §17-3, D26 ⑥ 확정). 전시실은 /app/hall(§17-4).
 // 파낸 모서리 첫 화면(최근 작품 매트 액자 + 마스킹테이프) → 강조색 숫자 줄 → 원통으로 휜 폴라로이드 작품 줄 → 모듈 패널.
-// 데이터는 지금 홈(MuseumView)과 같다: GET /v1/children · /v1/gallery · /v1/artworks. 카드를 누르면 지금 홈의 작품 앞(/app?art=).
+// 데이터는 전시실(MuseumView)과 같다: GET /v1/children · /v1/gallery · /v1/artworks. 카드를 누르면 전시실의 작품 앞(/app/hall?art=).
 // 색은 paper.css(--paper-*)만 — 아이보리 · 블러시 · 빨강 한 계열(D26 ⑤). 3D 엔진·외부 이미지 없음(CSS rotateY · scale). 움직임 줄이기면 전환 애니메이션만 끈다.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -54,7 +54,7 @@ onMounted(async () => {
 });
 watch(childId, (id) => { if (id) void router.replace({ query: { ...route.query, child: id } }); void load(); });
 
-function openArt(it: Item) { void router.push({ path: '/app', query: { child: childId.value, art: it.id } }); }
+function openArt(it: Item) { void router.push({ path: '/app/hall', query: { child: childId.value, art: it.id } }); }
 
 // ---- 원통으로 휜 작품 줄: 가운데에서 떨어진 정도(--d)로 기울기·크기를 정한다 ----
 const reel = ref<HTMLElement | null>(null);
@@ -99,7 +99,6 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
 
 <template>
   <main class="paper ph">
-    <p class="draftbar"><span>{{ ko.paper.draft }}</span> <RouterLink to="/app">{{ ko.paper.toCurrent }}</RouterLink></p>
     <div class="container">
       <BlockNotice v-if="block" :notice="block" @action="load" />
     </div>
@@ -117,7 +116,7 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
           <svg class="ornament o2" viewBox="0 0 220 220" focusable="false"><path :d="SPIRO" /></svg>
         </div>
         <div class="stage">
-          <button v-if="latest" class="hero-art" type="button" :aria-label="latest.title" @click="openArt(latest)">
+          <button v-if="latest" class="hero-art" type="button" :aria-label="`${ko.museum.latest} - ${latest.title}`" @click="openArt(latest)">
             <span class="paper-tape tape-l" aria-hidden="true"></span><span class="paper-tape tape-r" aria-hidden="true"></span>
             <span class="mat"><img :src="still(latest) ?? ''" :alt="latest.title"></span>
             <span class="caption">{{ latest.title }} · {{ ko.museum.plaque(latest.madeOn, latest.ageAtMaking) }}</span>
@@ -129,7 +128,7 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
           </div>
         </div>
         <div class="notch-br">
-          <RouterLink v-if="latest" class="paper-stamp" to="/app">{{ ko.paper.enterHall }} <span aria-hidden="true">↗</span></RouterLink>
+          <RouterLink v-if="latest" class="paper-stamp" :to="{ path: '/app/hall', query: { child: childId } }">{{ ko.paper.enterHall }} <span aria-hidden="true">↗</span></RouterLink>
           <RouterLink v-else class="paper-stamp" :to="children?.length ? '/app/upload' : '/app/children'">{{ ko.museum.upload }} <span aria-hidden="true">↗</span></RouterLink>
         </div>
       </div>
@@ -170,7 +169,7 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
         <article class="panel">
           <h2 class="panel-h">{{ ko.museum.plan }}</h2>
           <ul class="tickets">
-            <li v-for="r in rooms" :key="r.ageAtMaking"><RouterLink class="ticket" :to="{ path: '/app', query: { child: childId } }"><b>{{ ko.museum.room(r.ageAtMaking) }}</b><span>{{ r.items.length }}</span></RouterLink></li>
+            <li v-for="r in rooms" :key="r.ageAtMaking"><RouterLink class="ticket" :to="{ path: '/app/hall', query: { child: childId } }"><b>{{ ko.museum.room(r.ageAtMaking) }}</b><span>{{ r.items.length }}</span></RouterLink></li>
           </ul>
         </article>
         <article v-if="lastWords" class="panel quote">
@@ -192,10 +191,6 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
 
 <style scoped>
 .ph{min-height:100vh;padding-bottom:var(--s-section);word-break:keep-all;overflow-x:clip}
-.draftbar{display:flex;justify-content:center;gap:var(--s-sm);flex-wrap:wrap;padding:8px var(--s-md);font:400 13px/1.4 var(--font-mono);letter-spacing:.3px;
-  border-bottom:1px solid var(--paper-line);color:var(--paper-ink)}
-.draftbar a{color:var(--paper-ink);text-underline-offset:3px}
-
 /* ---- 1 파낸 모서리 첫 화면 ---- */
 .hero{margin-top:var(--s-xl)}
 .board{--r:28px;--cut:var(--paper-bg);position:relative;border-radius:var(--r);min-height:clamp(440px,52vw,620px);background:var(--paper-blush)}
