@@ -9,5 +9,5 @@
 .navlinks a.is-active{background:var(--color-inverse-canvas);color:var(--color-inverse-ink)}
 .nav-cta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .nav-cta .btn{font-size:16px;min-height:44px;padding:6px 16px}
-@media (max-width:768px){ .shell-menu{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap} }
+@media (max-width:768px){ .shell-menu{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap} .shell-menu a{white-space:nowrap;flex-shrink:0} }
 .page{padding-top:var(--s-xl);padding-bottom:var(--s-section)}

@@ -109,10 +109,10 @@ async function onBlock(label: string) {
 
       <section class="stack-sm" aria-labelledby="cf-how">
         <h2 id="cf-how" class="t-card-title">{{ ko.confirm.howTitle }}</h2>
-        <div ref="optsEl" class="suggest" role="group" :aria-label="ko.confirm.howTitle">
+        <div ref="optsEl" class="suggest opts" role="group" :aria-label="ko.confirm.howTitle">
           <template v-for="o in options" :key="o.kind">
             <button v-if="o.ok" class="chip-opt" type="button" :aria-pressed="picked === o.kind" @click="choose(o)">{{ ko.kind[o.kind] }}</button>
-            <ReasonButton v-else :label="ko.kind[o.kind] ?? o.kind" disabled :reason="o.reason" variant="secondary" @blocked="disabledBlock(o)" />
+            <ReasonButton v-else class="chip-opt" :label="ko.kind[o.kind] ?? o.kind" disabled :reason="o.reason" variant="secondary" @blocked="disabledBlock(o)" />
           </template>
         </div>
       </section>
@@ -133,4 +133,7 @@ async function onBlock(label: string) {
 .frame img{width:100%;height:100%;object-fit:contain}
 .stack-sm{display:grid;gap:var(--s-sm);align-content:start}
 .acts{display:flex;flex-wrap:wrap;gap:var(--s-sm)}
+/* UX2 같은 크기: 쓸 수 있는 칸·비활성 칸 모두 같은 칩, 줄마다 같은 폭·같은 높이(SD_02 §3-5 S3 선택지) */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));grid-auto-rows:1fr}
+.opts .chip-opt{width:100%;justify-content:center;text-align:center;word-break:keep-all}
 </style>
