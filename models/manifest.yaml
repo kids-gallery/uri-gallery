@@ -37,7 +37,7 @@ models:
     source: facebookresearch/AnimatedDrawings
     revision: b859684857519c7424da51a0b0862fbd1fd258f4
     weights_sha256: a739c0670a2d38e9ca0ab71c0e7e174fc55312066347e3d60c80534e86f7f868
-    config_hash: 677c843a1fbb45736362a712fa1ff2240ece3c57b33cd32df43e7cc1a439534c
+    config_hash: fb97342f1b116bf1cfa1ff74b3b4471418f0a8a171636e91939b3011612fef0d
     runtime: torchserve-0.12.0-native
     exec_device: cpu
     license_confirmed: false

@@ -126,7 +126,13 @@ curl -s http://127.0.0.1:9561/ping    # {"status": "Healthy"}
 - 개인 PC Docker 실측(한 장 53~62초, 렌더 약 40초)보다 **렌더가 약 3배 느리다.** OSMesa는 CPU 소프트웨어 렌더라서다. 시간 상한 `animate_render.timeout_s: 600`(limits.yaml) 안에는 들어온다. U6(시간 상한)은 T137에서 팀원 그림으로 다시 잰다.
 - 렌더 중 CPU 사용률이 높다(user 293초 / real 125초 ≈ 2.3코어). worker-cpu 동시 처리 1(limits.yaml `animate_render.concurrency: 1`)을 유지한다.
 
-### 확인한 것 · 어댑터에 넘길 것(T072·T083)
+### 어댑터 연결(T072·T083, 2026-09-29)
+
+- `serving/adapters/m3_joints.py`(관절, 긴 변 1000px) + `serving/adapters/m3_render.py`(렌더 → `m3_ad_run.py` 하위 프로세스, OSMesa 환경 변수 전달). 매니페스트 M3 `config_hash`는 설정(모션 `dab`·리타깃 `fair1_ppf`·`osmesa`·`max_side 1000`) 반영으로 `fb97342f…`로 바뀌었다.
+- 실제 시험 `tests/test_real_m3.py`(UAM_REAL_MODELS=1, TorchServe 기동 상태): 관절 2.8~8.0초(점수 0.998, M4 `geometry_pass=True`), **렌더→MP4 59.1초 ~ 108초**(같은 그림, 호스트 부하에 따라 달라짐). 같은 실행에서 M1·M2·M5 실제 시험도 통과(6/6).
+- 공유 `serving/.venv`에 `requirements-models.lock`이 빠져 있어(numpy·torch·imageio-ffmpeg 없음) MP4 변환이 깨진 Homebrew ffmpeg로 넘어가 실패했다. README 절차대로 `--require-hashes`로 다시 설치해 고쳤다.
+
+### 확인한 것 · 어댑터에 넘길 것(T072·T083) — 반영 완료
 
 - **요청 크기**: TorchServe 기본 요청 상한은 6.5MB다. 어댑터 `joints()`가 원본을 그대로 PNG로 다시 저장하면 12MP 사진이 약 19MB가 되어 연결이 끊긴다. AD 스크립트처럼 **긴 변 1000px로 줄여 보내야 한다.** 그래야 관절 좌표도 AD `char_cfg`와 같은 좌표계가 된다.
 - **렌더 호출**: 어댑터 `render()`는 지금 AD `examples/image_to_animation.py`(창 모드 고정)를 부른다. `m3_ad_run.py`를 부르고 `DYLD_FALLBACK_LIBRARY_PATH`·`TORCHSERVE_URL`·`M3_AD_ROOT`를 넘기도록 바꾼다.

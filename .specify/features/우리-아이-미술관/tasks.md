@@ -162,7 +162,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [x] T069 (A 완료 2026-09-29 — 기록·권고까지. 팀 확정 칸(§4) 채운 뒤 U4 닫음. M2는 모델 카드 배포 권고로 보류 권고, TRELLIS 제외, YOLOv8 비채택) [P] [US2] 모델 라이선스 확정 기록을 만든다(OpenCLIP 가중치 A2, Qwen3, TRELLIS 제외, AGPL 예비 모델) — `docs/A_모델_라이선스_확정.md` · 담당 A · 스킬 — · 근거 U4, BR-MDL-07, D17
 - [x] T070 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1 BiRefNet(`ZhengPeng7/BiRefNet`)·M2 OpenCLIP(`ViT-B-32` / `laion2b_s34b_b79k`)을 재현하고 HF 리비전·가중치 SHA-256·시간·메모리를 기록한다(M2는 A2 라이선스 기록 전 비활성) — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
 - [x] T071 (A 완료 — `a/model-serving`, main 병합 전) [US2] M1·M2 실제 어댑터를 만든다 — `serving/adapters/m1_birefnet.py` · `serving/adapters/m2_openclip.py` · 담당 A · 스킬 — · 근거 BR-MDL-02
-- [ ] T072 (A 부분 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤) [US2] M3 관절 추출(렌더 없이)과 M4 규칙 실제 어댑터를 만든다 — `serving/adapters/m3_joints.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 FR-21
+- [x] T072 (A 완료 2026-09-29 — `m3_joints.py` 분리, 긴 변 1000px(AD 좌표계·요청 상한), 실제 TorchServe 시험 통과, M4 `rules/m4_geometry.py` 기존) [US2] M3 관절 추출(렌더 없이)과 M4 규칙 실제 어댑터를 만든다 — `serving/adapters/m3_joints.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 FR-21
 
 **Checkpoint**: US2 독립 검증 기준 통과(가짜 모델). US1과 함께 "가입 → 올리기 → 확정"이 이어진다.
 
@@ -190,7 +190,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [x] T081 (A 완료 2026-09-29 — TorchServe 9561 두 모델 READY 128초·RSS 약 2GB, 관절 7~9초, OSMesa 헤드리스 렌더 125초(GIF 339프레임), 잠금 파일·매니페스트 M3 해시, U14 닫음[팀 확인]) [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 conda 환경 `serving/.venv-m3`(Python 3.8·Java 17·OSMesa, Homebrew 미사용) + TorchServe 네이티브 127.0.0.1·워커 1개, OSMesa 헤드리스 렌더, 잠금 파일·체크섬(R-03 2026-09-29 개정) — `docs/A_모델재현기록.md` · `ops/torchserve/config.properties` · `serving/conda-m3.lock` · `serving/requirements-m3.lock` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
 - [x] T082 (A 완료 — `a/model-serving`, main 병합 전) [US3] M5 Depth Anything V2 Small(`depth-anything/Depth-Anything-V2-Small-hf`)을 재현하고 CPU·MPS(`exec_device='gpu'`, runtime에 mps 표기)·GPU 시간을 잰다 — `docs/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
-- [ ] T083 (A 부분 — M3 어댑터는 가짜 TorchServe·가짜 AD로만 시험, 실제는 T081 뒤) [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
+- [x] T083 (A 완료 2026-09-29 — M3 렌더를 `m3_ad_run.py`(OSMesa)로, 실제 렌더→MP4 59~108초, M5 실제 시험 통과(MPS)) [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
 
 **Checkpoint**: US3 독립 검증 기준 통과.
 
