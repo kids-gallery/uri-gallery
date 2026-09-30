@@ -17,7 +17,10 @@ describe('C2 BlockNotice', () => {
   it('제목·사유·해제 주체·다음 행동을 보이고 제목에 포커스', async () => {
     const w = mount(BlockNotice, { props: { notice: notice() }, attachTo: document.body });
     await new Promise((r) => setTimeout(r));
-    expect(w.find('.head').text()).toContain('막힘G11');
+    // 보호자 화면은 G번호를 글자로 보이지 않고 data-gate에만(D34 ④, SD_02 §17-8)
+    expect(w.find('.head').text()).toContain('막힘');
+    expect(w.find('.head').text()).not.toContain('G11');
+    expect(w.attributes('data-gate')).toBe('G11');
     expect(w.find('dl').text()).toContain('그린 날은 오늘 이후일 수 없어요');
     expect(w.find('dl').text()).toContain('보호자 - 지금 이 화면');
     expect(document.activeElement).toBe(w.find('.head').element);
@@ -69,26 +72,29 @@ describe('C3 ReasonButton', () => {
 
 describe('C1 JourneyRail', () => {
   it('기본: 현재 단계만 is-now', () => {
+    // 보호자 레일은 세 칸(D34 ④): 확정 대기는 "액자에 담는 중"
     const w = mount(JourneyRail, { props: { current: 'awaiting_confirm' } });
-    expect(w.findAll('li.is-now').map((l) => l.text())).toEqual(['확정 대기']);
-    expect(w.findAll('li')).toHaveLength(7);
+    expect(w.findAll('li.is-now').map((l) => l.text())).toEqual([ko.guardian.steps.frame]);
+    expect(w.findAll('li').map((l) => l.text())).toEqual(['올리는 중', '액자에 담는 중', '걸었어요']);
   });
   it('막힘: 게이트 ID와 막힌 자리 보기', async () => {
     const w = mount(JourneyRail, { props: { current: 'processing', variant: 'blocked', gate: 'G9', blockedLabel: '처리하지 못함' } });
-    expect(w.find('li.is-blocked').text()).toBe('처리하지 못함G9');
+    expect(w.find('li.is-blocked').text()).toBe('처리하지 못함');
+    expect(w.find('li.is-blocked').attributes('data-rail-gate')).toBe('G9');
     await w.find('a').trigger('click');
     expect(w.emitted('showBlock')).toHaveLength(1);
   });
   it('대기: 닫아도 계속, 종결: 삭제 중만', () => {
     expect(mount(JourneyRail, { props: { current: 'processing', variant: 'waiting' } }).text()).toContain('화면을 닫아도 계속돼요');
     const f = mount(JourneyRail, { props: { current: 'x', variant: 'final' } });
-    expect(f.findAll('li').map((l) => l.text())).toEqual(['삭제 중']);
+    expect(f.findAll('li').map((l) => l.text())).toEqual([ko.guardian.chip.deleting]);
   });
 });
 
 describe('C4 StatusBadge · C9 RoleHeader', () => {
   it('배지 문구', () => {
-    expect(mount(StatusBadge, { props: { state: 'not_delivered' } }).text()).toBe('처리하지 못함');
+    expect(mount(StatusBadge, { props: { state: 'not_delivered' } }).text()).toBe('담지 못했어요');
+    expect(mount(StatusBadge, { props: { state: 'awaiting_review' } }).text()).toBe('확인해 주세요');
     expect(mount(StatusBadge, { props: { state: 'retry_wait', kind: 'stage' } }).text()).toBe('다시 시도 중');
   });
   it('운영 헤더: 역할 표시, 주어진 메뉴만, 보호자 앱 링크 없음', async () => {

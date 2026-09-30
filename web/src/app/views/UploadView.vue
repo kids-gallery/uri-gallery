@@ -61,7 +61,6 @@ function pick(ev: Event) {
   if (f.size > MAX_BYTES) { block.value = gate5('over_20mb'); return; }
   if (f.type !== 'image/heic' && f.type !== 'image/heif' && !/\.hei[cf]$/i.test(f.name)) preview.value = URL.createObjectURL(f); // HEIC는 브라우저가 못 그리므로 파일 이름만
 }
-const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)}MB`;
 
 async function submit() {
   if (reason.value || !file.value) return;
@@ -109,8 +108,7 @@ function onBlock(label: string) {
         </div>
         <input ref="cameraEl" class="hidden-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true" @change="pick">
         <input ref="albumEl" class="hidden-input" type="file" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif" tabindex="-1" aria-hidden="true" @change="pick">
-        <p class="hint">{{ ko.upload.rule }}</p>
-        <p v-if="file" class="t-body-sm num">{{ file.name }} - {{ mb(file.size) }}</p>
+        <!-- 형식 목록 · 파일 이름 · 크기는 보호자에게 보이지 않는다(D34 ④, SD_02 §17-8) — 검사는 그대로 -->
         <img v-if="preview && !tooBig" :src="preview" alt="" class="preview">
       </fieldset>
 

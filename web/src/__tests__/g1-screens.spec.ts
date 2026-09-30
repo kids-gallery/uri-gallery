@@ -89,7 +89,7 @@ describe('S4 목록·상세(T080)', () => {
     });
     const w = await open(ArtworksView, '/app');
     expect(w.text()).toContain('하늘');
-    expect(w.text()).toContain(ko.state.not_delivered);
+    expect(w.text()).toContain(ko.guardian.chip.not_delivered);
     expect(w.find('a[href="/app/artworks/7/confirm"]').exists()).toBe(true);
     expect(w.text()).toContain(ko.list.toConfirm);
     w.unmount();
@@ -98,7 +98,9 @@ describe('S4 목록·상세(T080)', () => {
     serve({ '/v1/artworks/7': { ...base, state: 'failed', confirmedKind: 'relief', stages: [{ stage: 'depth_relief', status: 'failed', attempt: 3 }] } });
     const w = await open(ArtworkDetailView, '/app/artworks/7');
     expect(w.find('[data-gate="G9"]').text()).toContain('낮춘 결과가 아니에요');
-    expect(w.text()).toContain(ko.list.retried(2));
+    // 모델 단계 표(다시 시도 횟수)는 보호자에게 보이지 않는다(D34 ④, SD_02 §17-8)
+    expect(w.text()).not.toContain(ko.list.retried(2));
+    expect(w.find('table').exists()).toBe(false);
     w.unmount();
   });
 });

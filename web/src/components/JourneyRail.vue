@@ -7,18 +7,20 @@ import { ko } from '@/copy/ko';
 export type RailVariant = 'default' | 'blocked' | 'waiting' | 'hold' | 'final';
 export interface RailStep { key: string; label: string }
 
-const ARTWORK: RailStep[] = (['received', 'judging', 'awaiting_confirm', 'processing', 'awaiting_review', 'approved', 'exhibited'] as const)
-  .map((k) => ({ key: k, label: ko.state[k] }));
+// 보호자에게는 세 칸(D34 ④, SD_02 §17-8): 올리는 중 · 액자에 담는 중 · 걸었어요. 내부 상태는 그 칸으로 모은다.
+const ARTWORK: RailStep[] = (['upload', 'frame', 'hung'] as const).map((k) => ({ key: k, label: ko.guardian.steps[k]! }));
+const STEP_OF: Record<string, string> = { received: 'upload', judging: 'frame', awaiting_confirm: 'frame', processing: 'frame', awaiting_review: 'frame', approved: 'frame', exhibited: 'hung', failed: 'frame', not_delivered: 'frame' };
 
 const props = withDefaults(defineProps<{ current: string; variant?: RailVariant; gate?: string | null; steps?: RailStep[]; blockedLabel?: string }>(), {
   variant: 'default', gate: null, steps: undefined, blockedLabel: undefined,
 });
 const emit = defineEmits<{ showBlock: [] }>();
 const list = computed(() => props.steps ?? ARTWORK);
+/** 작품 레일이면 내부 상태를 세 칸 중 하나로 */
+const cur = computed(() => (props.steps ? props.current : STEP_OF[props.current] ?? props.current));
 const label = (s: RailStep) => {
-  if (s.key !== props.current) return s.label;
+  if (s.key !== cur.value) return s.label;
   if (props.variant === 'blocked' && props.blockedLabel) return props.blockedLabel;
-  if (props.variant === 'waiting' && s.key === 'processing') return ko.state.processing_queued;
   return s.label;
 };
 </script>
@@ -29,14 +31,15 @@ const label = (s: RailStep) => {
       <li
         v-for="s in list"
         :key="s.key"
-        :class="{ 'is-now': s.key === current && variant !== 'blocked', 'is-blocked': s.key === current && variant === 'blocked' }"
-        :aria-current="s.key === current ? 'step' : undefined"
+        :class="{ 'is-now': s.key === cur && variant !== 'blocked', 'is-blocked': s.key === cur && variant === 'blocked' }"
+        :aria-current="s.key === cur ? 'step' : undefined"
+        :data-rail-gate="s.key === cur && gate ? gate : undefined"
       >
-        {{ label(s) }}<span v-if="s.key === current && gate && (variant === 'blocked' || variant === 'hold')" class="gate">{{ gate }}</span>
+        {{ label(s) }}
       </li>
     </ol>
     <ol v-else class="rail" aria-label="진행">
-      <li class="is-blocked" aria-current="step">{{ ko.state.deleting }}</li>
+      <li class="is-blocked" aria-current="step">{{ ko.guardian.chip.deleting }}</li>
     </ol>
     <p v-if="variant === 'blocked'" class="t-body-sm"><a href="#" @click.prevent="emit('showBlock')">{{ ko.rail.showBlock }}</a></p>
     <p v-else-if="variant === 'waiting'" class="t-body-sm">{{ ko.rail.leaveOk }}</p>

@@ -5,7 +5,8 @@ import { ko } from '@/copy/ko';
 
 const props = withDefaults(defineProps<{ state: string; kind?: 'artwork' | 'stage' }>(), { kind: 'artwork' });
 const text = computed(() => {
-  const dict: Record<string, string> = props.kind === 'stage' ? ko.stage : ko.state;
+  // 작품 배지는 보호자 말(D34 ④, SD_02 §17-8), 단계 배지는 운영용 그대로
+  const dict: Record<string, string> = props.kind === 'stage' ? ko.stage : ko.guardian.chip;
   return dict[props.state] ?? props.state;
 });
 const quiet = computed(() => ['received', 'queued', 'cancelled'].includes(props.state));

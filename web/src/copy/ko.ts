@@ -36,6 +36,13 @@ export const ko = {
     not_delivered: '처리하지 못함',
     deleting: '삭제 중',
   },
+  /** 보호자에게 보이는 3단계(D34 ④, SD_02 §17-8) — 내부 상태 이름 대신. 운영 화면은 state 그대로 */
+  guardian: {
+    steps: { upload: '올리는 중', frame: '액자에 담는 중', hung: '걸었어요' } as Record<string, string>,
+    chip: { received: '올리는 중', judging: '액자에 담는 중', processing: '액자에 담는 중', approved: '액자에 담는 중', awaiting_confirm: '골라 주세요',
+      awaiting_review: '확인해 주세요', exhibited: '걸었어요', failed: '담지 못했어요', not_delivered: '담지 못했어요', deleting: '지우고 있어요' } as Record<string, string>, // [추론]
+    done: '됐어요', notYet: '아직이에요', // [추론]
+  },
   stage: {
     queued: '대기',
     running: '진행 중',
@@ -157,7 +164,7 @@ export const ko = {
     cancel: '취소',
   },
   /** S2~S8 구현 문구(docs/C/C_화면문구.md §4 "S2~S8 구현 문구", 2026-09-29 이제민 — 신지현 위임). */
-  kind: { animated: '움직임', relief: '2.5D 입체 부조', frame: '원본 액자', sculpture: '3D 조각' } as Record<string, string>,
+  kind: { animated: '움직이는 그림', relief: '입체 그림', frame: '원본 액자', sculpture: '입체 조각' } as Record<string, string>, // D34 ④(SD_02 §17-8)
   /** 낮춤 안내(C6)에 쓰는 결과 이름 — 앞 결과를 만들지 못해 뒤 결과로 바꿨다 */
   downgrade: {
     animated_to_relief: ['움직임', '입체 부조'], animated_to_frame: ['움직임', '원본 액자'], relief_to_frame: ['입체 부조', '원본 액자'],
@@ -188,14 +195,14 @@ export const ko = {
     whose: '누구의 작품인가요', child: '아이', photo: '사진',
     camera: '사진 찍기', album: '앨범에서 고르기', rule: 'JPEG - PNG - HEIC  한 장 20MB 이하',
     submit: '올리기',
-    afterTitle: '올린 뒤', after1: '접수 완료되면 작품을 살펴보기 시작해요', after2: '기다리지 않고 화면을 닫아도 계속돼요',
+    afterTitle: '올린 뒤', after1: '올리면 바로 액자에 담기 시작해요', after2: '기다리지 않고 화면을 닫아도 계속돼요',
     needChild: '아이를 골라 주세요', // [추론]
     needPhoto: '사진을 골라 주세요',
-    tooBig: '20MB 이하 사진을 골라 주세요',
+    tooBig: '더 작은 사진을 골라 주세요', // D34 ④ 숫자 없음
     sending: '올리는 중이에요', // [추론]
   },
   confirm: {
-    cutout: '잘라 낸 작품', originalFallback: '원본 사진 - 액자 권장',
+    cutout: '그림 부분', originalFallback: '원본 사진 - 액자 권장',
     suggestionTitle: '제안', judging: '살펴보는 중', noSuggestion: '제안을 준비하지 못했어요 - 직접 골라 주세요',
     suggestion: { animated: '움직일 수 있을 것 같아요', relief: '입체 부조로 만들어 볼까요?', frame: '원본 액자로 걸어 볼까요?' } as Record<string, string>, // U10 [추론 — UC 문구]
     howTitle: '어떻게 걸까요', submit: '확정하기', pickOne: '하나를 골라 주세요', later: '나중에 고르기',
@@ -216,7 +223,7 @@ export const ko = {
     words: '아이의 한마디 - 선택 - 적은 그대로 보여요',
     save: '저장', saved: '저장했어요', // [추론] 저장했어요
     exhibited: '전시에 걸렸어요',
-    exhibitTitle: '전시 조건', condReview: '결과 확인 완료', condStory: '제목 - 그린 날 - 나이 저장', condNote: '두 가지가 갖춰지면 전시에 걸려요',
+    exhibitTitle: '전시 조건', condReview: '결과 확인', condStory: '제목 · 그린 날 · 나이', condNote: '두 가지가 갖춰지면 전시에 걸려요',
     fixDate: '그린 날을 고쳐 주세요', ageRange: '나이는 0살부터 18살까지예요', titleLong: '제목은 100자까지예요', // [추론] 나이·제목
     mine: '내가 적은 내용', // [추론]
     // D25 보호자 감상평(docs/C/C_화면문구.md 전시실 홈 절)
@@ -453,7 +460,7 @@ const P: Record<string, ProblemCopy> = {
   'G5:format': { variant: 'block', summary: '올릴 수 없는 사진', reason: '이 사진은 올릴 수 없어요 - 형식을 확인해 주세요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
   'G5:unreadable': { variant: 'block', summary: '올릴 수 없는 사진', reason: '이 사진은 읽을 수 없어요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
   'G5:missing_photo': { variant: 'block', summary: '사진 없음', reason: '사진을 골라 주세요', releaser: SELF, self: true, actions: ['다른 사진 고르기'] }, // [추론 세부]
-  'G5:over_20mb': { variant: 'block', summary: '용량 초과', reason: '사진이 20MB보다 커요', releaser: SELF, self: true, actions: ['20MB 이하 사진 고르기'] },
+  'G5:over_20mb': { variant: 'block', summary: '사진이 너무 커요', reason: '사진이 너무 커요', releaser: SELF, self: true, actions: ['더 작은 사진 고르기'] }, // D34 ④ 파일 크기 숫자 없음
   'G6:intake_failed': { variant: 'block', summary: '접수되지 않았어요', reason: '접수되지 않았어요, 다시 올려 주세요', releaser: SELF, self: true, actions: ['다시 올리기'] },
   'G8:already_processing': { variant: 'block', summary: '확정할 수 없어요', reason: '이미 만들기 시작했어요', releaser: '보호자 - 결과 확인에서 결정', self: false, actions: ['결과 확인으로'] },
   'G8:deleting': { variant: 'final', summary: '삭제 중', reason: '삭제 중이에요', releaser: '없음', self: false, actions: ['목록으로'] },

@@ -58,18 +58,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <NoticeBlock v-if="started" :title="ko.confirm.started"><p>{{ ko.rail.leaveOk }}</p></NoticeBlock>
       <h1 class="t-headline">{{ ko.list.detailTitle(a.story?.title || ko.list.untitled) }}</h1>
 
-      <div v-if="a.stages.length" class="table-wrap" tabindex="0" role="region" :aria-label="ko.list.progress">
-        <table class="plain">
-          <thead><tr><th>{{ ko.list.colStep }}</th><th>{{ ko.list.colStepState }}</th><th>{{ ko.list.colNote }}</th></tr></thead>
-          <tbody>
-            <tr v-for="(s, i) in a.stages" :key="i">
-              <td>{{ ko.stageName[s.stage] ?? '' }}</td>
-              <td><StatusBadge kind="stage" :state="s.status === 'waiting' ? 'queued' : s.status === 'retrying' ? 'retry_wait' : s.status" /></td>
-              <td class="t-body-sm">{{ stageNote(s) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- 모델 단계 표는 보호자에게 보이지 않는다(D34 ④, SD_02 §17-8) — 운영 화면에서 본다 -->
 
       <DowngradeNote v-if="a.downgrade" :path="a.downgrade" />
       <BlockNotice v-if="g9" :notice="g9" @action="onBlock" />
