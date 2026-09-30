@@ -37,6 +37,9 @@ test('설명을 적고 올리면 곧바로 아이 미술관에 걸리고, 이야
   await page.goto(`/app/artworks/${id}/story`);
   await expect(page.getByRole('heading', { name: '해바라기', level: 1 })).toBeVisible();
   await expect(page.getByText('해가 웃어요')).toBeVisible();
+  // 1440에서 액자가 글 칸을 덮지 않는다(판별 B2-1)
+  const [art, words] = [await page.locator('.sv-art .artframe').boundingBox(), await page.locator('.sv-words').boundingBox()];
+  if (art!.y + art!.height > words!.y && words!.y + words!.height > art!.y) expect(art!.x + art!.width).toBeLessThanOrEqual(words!.x + 1);
   await expect(page.getByText(ko.up2.lockNote)).toBeVisible();
   await expect(page.locator('.sv-wall form, .sv-wall input, .sv-wall textarea')).toHaveCount(0); // 이야기는 보기만(댓글 입력은 따로)
   // 서버도 막는다(D46 ①)

@@ -70,7 +70,7 @@ function no() { remember('no'); close(); }
 const buttons = () => [...(box.value?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [])];
 function focusFirst() { buttons()[0]?.focus({ preventScroll: true }); }
 function onKey(e: KeyboardEvent) {
-  if (!props.overlay || !show.value) return;
+  if (!props.overlay || !show.value || verdict.value !== 'yes') return; // 대화상자일 때만(판정 기다리는 작은 알약은 문서 Tab을 막지 않는다)
   if (e.key === 'Escape') { e.preventDefault(); close(); return; } // 나중에 — 기억하지 않는다
   if (e.key !== 'Tab') return;
   const b = buttons(); if (!b.length) { e.preventDefault(); return; }

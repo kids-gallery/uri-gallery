@@ -226,9 +226,10 @@ async function autoStory(conn: PoolConnection, artworkId: number, childId: numbe
   const [nr] = await conn.query(
     `SELECT COUNT(*) n FROM story s JOIN artwork a ON a.artwork_id = s.artwork_id WHERE a.child_id = ? AND s.title_auto`, [childId]);
   const n = Number((nr as { n: number }[])[0].n) + 1;
+  // 그린 날 기본값 · 상한 = 한국 날짜(세션 시간대는 +00:00이라 CURRENT_DATE는 한국 0~9시에 어제가 된다)
   await conn.query(
     `INSERT INTO story (artwork_id, title, title_auto, made_on, age_at_creation, utterance, guardian_note, updated_at)
-     VALUES (?, ?, ?, LEAST(COALESCE(?, CURRENT_DATE), CURRENT_DATE), ?, ?, ?, CURRENT_TIMESTAMP)`,
+     VALUES (?, ?, ?, LEAST(COALESCE(?, DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), ?, ?, ?, CURRENT_TIMESTAMP)`,
     [artworkId, up.title ?? `제목 없는 그림 ${n}`, up.title === null, up.madeOn ?? capturedOn, age, up.childWords, up.guardianNote]);
 }
 

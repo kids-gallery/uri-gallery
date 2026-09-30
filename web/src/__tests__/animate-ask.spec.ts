@@ -121,4 +121,17 @@ describe('움직임 질문(D49)', () => {
     expect(w.find('[role="dialog"]').exists()).toBe(false);
     w.unmount();
   });
+  it('판정 기다리는 작은 알약일 때는 Tab · Esc를 가로채지 않는다(overlay)', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(async () => json({ ...base, suggestion: null }));
+    const w = mount(AnimateAsk, { props: { artworkId: '15', overlay: true }, attachTo: document.body });
+    await flushPromises();
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true });
+    document.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(false);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    await flushPromises();
+    expect(w.emitted('closed')).toBeFalsy();
+    w.unmount();
+  });
 });

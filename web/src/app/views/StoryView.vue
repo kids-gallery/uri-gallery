@@ -8,7 +8,6 @@ import ArtFrame from '@/components/ArtFrame.vue';
 import CommentPanel from '@/components/CommentPanel.vue';
 import { ko } from '@/copy/ko';
 import { type BlockNotice as Notice } from '@/api/client';
-import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, loadArtwork, type ArtworkDetail } from '../artwork';
 import { koDate } from '../localDate';
 import CaptionPanel from './CaptionPanel.vue';
@@ -18,7 +17,6 @@ const router = useRouter();
 const id = String(route.params.id);
 const a = ref<ArtworkDetail | null>(null);
 const block = ref<Notice | null>(null);
-const approvedNow = route.query.approved === '1';
 const s = computed(() => a.value?.story ?? {});
 const photo = computed(() => (a.value as { photoUrl?: string | null } | null)?.photoUrl ?? a.value?.originalUrl ?? null);
 const plaque = computed(() => [s.value.madeOn ? koDate(s.value.madeOn) : '', s.value.ageAtMaking == null ? '' : ko.story.ageLine(s.value.ageAtMaking)].filter(Boolean).join(' · '));
@@ -37,7 +35,6 @@ async function onBlock(label: string) {
   <main class="container page stack sv">
     <BlockNotice v-if="block && !a" :notice="block" @action="onBlock" />
     <template v-if="a">
-      <NoticeBlock v-if="approvedNow" :title="ko.review.afterApprove" />
       <section class="sv-wall" aria-label="작품 이야기">
         <figure class="sv-art" :style="{ viewTransitionName: `art-${a.id}` }">
           <ArtFrame size="lg" variant="gold" :src="photo" :alt="s.title || ko.list.untitled" />
@@ -63,7 +60,12 @@ async function onBlock(label: string) {
 .sv-wall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,4vw,48px);align-items:center;
   padding:clamp(18px,4vw,40px);border-radius:24px;background:linear-gradient(180deg,#fbf5ea,#f4ead8);box-shadow:inset 0 0 0 1px rgba(201,165,82,.35)}
 @media (max-width:760px){.sv-wall{grid-template-columns:1fr}}
-.sv-art{margin:0;display:grid;gap:14px;justify-items:center}
+.sv-art{margin:0;display:grid;gap:14px;justify-items:center;min-width:0}
+/* 액자가 칸 폭을 넘어 글 칸을 덮지 않게(ArtViewer 9c89555와 같은 규칙) */
+.sv-art :deep(.is-lg){--art-max-w:100%}
+.sv-art :deep(.artframe){width:100%;box-sizing:border-box}
+.sv-art :deep(.mat img){max-width:100%;height:auto}
+.sv-words{min-width:0}
 .sv-plaque{background:linear-gradient(180deg,#e9d18f,#c9a552);border-radius:6px;padding:8px 16px;text-align:center;box-shadow:0 6px 14px -8px rgba(90,62,30,.6);max-width:100%}
 .sv-title{margin:0;font:700 clamp(18px,2.4vw,22px)/1.3 var(--mc-serif,serif);color:#3a2a1f;word-break:keep-all;overflow-wrap:anywhere}
 .sv-meta{margin:2px 0 0;font:600 13px/1.3 var(--font-sans);color:#4a3526}

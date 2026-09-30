@@ -90,8 +90,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         </div>
       </div>
       <div class="fx-acts">
-        <button class="btn btn-secondary" type="button" @click="turn(-90)">↺ {{ ko.fix.left }}</button>
-        <button class="btn btn-secondary" type="button" @click="turn(90)">↻ {{ ko.fix.right }}</button>
+        <button class="btn btn-secondary" type="button" @click="turn(-90)" :aria-label="ko.fix.left">↺ <span class="fx-long">{{ ko.fix.left }}</span><span class="fx-short">{{ ko.up2.left }}</span></button>
+        <button class="btn btn-secondary" type="button" @click="turn(90)" :aria-label="ko.fix.right">↻ <span class="fx-long">{{ ko.fix.right }}</span><span class="fx-short">{{ ko.up2.right }}</span></button>
         <button class="btn btn-tertiary" type="button" @click="reset">{{ ko.fix.reset }}</button>
         <span class="sp"></span>
         <button class="btn btn-secondary" type="button" @click="emit('close')">{{ ko.walk.close }}</button>
@@ -126,9 +126,12 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 .fx-prev{max-width:100%;max-height:40vh;background:#fffeef;padding:10px;border-radius:2px;box-shadow:0 0 0 8px #d8b766,0 20px 30px -18px rgba(0,0,0,.6)}
 .fx-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fx-acts .sp{flex:1}
 .fx-acts .btn{min-height:44px}
+.fx-short{display:none}
+@media (max-width:760px){.fx-short{display:inline}}
 /* 휴대폰: 버튼 줄을 판 아래에 붙여 첫 화면에서 [돌리기] · [이대로 쓰기]가 보이게 */
 @media (max-width:760px){.fx-photo{max-height:48vh}.fx-prev{max-height:22vh}
   .fx-acts{position:sticky;bottom:calc(-1 * clamp(14px,3vw,28px));margin:0 calc(-1 * clamp(14px,3vw,28px));padding:10px clamp(14px,3vw,28px);background:#fbf6ee;box-shadow:0 -8px 16px -12px rgba(0,0,0,.35)}
-  .fx-acts .sp{display:none}.fx-acts .btn{flex:1 1 30%}}
+  .fx-acts .sp{display:none}.fx-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.fx-acts .btn{white-space:nowrap;padding-inline:8px;font-size:14px}
+  .fx-acts .btn:last-child{grid-column:span 2}.fx-long{display:none}}
 .fx-msg{margin:0;min-height:1.3em;font:500 14px/1.3 var(--font-sans);color:#8a2b2b}
 </style>

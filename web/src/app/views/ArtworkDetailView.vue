@@ -31,11 +31,17 @@ const g9 = computed(() => (a.value?.state === 'failed' ? notDeliveredBlock(a.val
 const waitingQueue = computed(() => a.value?.state === 'processing' && a.value.stages.some((s) => s.status === 'waiting') && !a.value.stages.some((s) => s.status === 'running'));
 const next = computed(() => (a.value ? nextActionLabel(a.value.state) : ''));
 // 걸린 채 다시 만드는 중(D34 ② · D49 [예] 뒤): 단계 표는 숨기므로(D34 ④) 지금 무엇을 하는지 한 줄로 알린다
+// 걸린 채(exhibited) 다시 만드는 중이면 진행 줄은 "걸었어요"에 두고 [전시 보기]도 남긴다(원본 액자는 그대로 걸려 있음)
+const hungNow = computed(() => !!a.value?.exhibited && a.value.state === 'processing');
+const askOpen = ref(false); // 질문 카드가 "만들기 시작했어요"를 보이는 동안 같은 말을 두 번 하지 않는다
 const remaking = computed(() => {
-  if (a.value?.state !== 'processing') return '';
-  if (waitingQueue.value) return ko.state.processing_queued;
-  return a.value.stages.some((s) => s.status === 'retrying') ? ko.state.retrying : ko.state.processing;
+  if (a.value?.state !== 'processing' || askOpen.value) return '';
+  const what = ko.kind[a.value.confirmedKind ?? 'animated'] ?? '';
+  if (waitingQueue.value) return ko.animAsk.remakeQueued(what);
+  return a.value.stages.some((s) => s.status === 'retrying') ? ko.animAsk.remakeRetry(what) : ko.animAsk.remaking(what);
 });
+const shownRail = computed(() => (hungNow.value ? { current: 'exhibited', variant: 'default' as const, gate: null } : rail.value));
+const nextShown = computed(() => (hungNow.value ? nextActionLabel('exhibited') : next.value));
 
 async function load(): Promise<boolean> {
   a.value = await loadArtwork(id);
@@ -70,7 +76,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <p class="bench-lock">🔒 {{ ko.up2.lockNote }}</p><!-- D46: 올린 작품은 전부 고정 · 삭제만 -->
     </figure>
     <section class="card stack bench-card">
-      <JourneyRail :current="rail.current" :variant="waitingQueue ? 'waiting' : rail.variant" :gate="rail.gate" :blocked-label="rail.blockedLabel" />
+      <JourneyRail :current="shownRail!.current" :variant="waitingQueue && !hungNow ? 'waiting' : shownRail!.variant" :gate="shownRail!.gate" :blocked-label="rail.blockedLabel" />
       <NoticeBlock v-if="started" :title="ko.confirm.started"><p>{{ ko.rail.leaveOk }}</p></NoticeBlock>
       <NoticeBlock v-if="remaking && !started" :title="remaking"><p>{{ ko.animAsk.remakeHint }}</p></NoticeBlock>
       <h1 class="t-headline">{{ ko.list.detailTitle(a.story?.title || ko.list.untitled) }}</h1>
@@ -80,10 +86,10 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <DowngradeNote v-if="a.downgrade" :path="a.downgrade" />
       <BlockNotice v-if="g9" :notice="g9" @action="onBlock" />
       <div class="acts">
-        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? `/app/museum/${a.childId}` : routeFor(a)">{{ next }}</RouterLink>
+        <RouterLink v-if="nextShown && !g9" class="btn btn-primary" :to="a.state === 'exhibited' || hungNow ? `/app/museum/${a.childId}` : routeFor(a)">{{ nextShown }}</RouterLink>
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
-      <AnimateAsk v-if="!deleting" :artwork-id="id" @started="first" /><!-- D49 움직임 질문(삭제 확인 중엔 숨김) -->
+      <AnimateAsk v-if="!deleting" :artwork-id="id" @started="askOpen = true; first()" @closed="askOpen = false" /><!-- D49 움직임 질문(삭제 확인 중엔 숨김) -->
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
       <CommentPanel :artwork-id="id" /><!-- D46 ④ 부모 댓글 -->
     </section>
