@@ -1,0 +1,11 @@
+# Mailpit 자동 중계 설정 예시(R-23 2026-09-30) — 이 파일에는 값을 채우지 않는다.
+# 쓰는 법: cp ops/p1/mailpit-relay.example.yaml .data/mailpit-relay.yaml && chmod 600 .data/mailpit-relay.yaml
+#          → 아래 username·password·override-from을 채운다 → pm2 restart mailpit
+# .data/는 git 제외. 비밀번호는 Gmail "앱 비밀번호"(2단계 인증 켠 계정에서 발급) — 계정 비밀번호가 아니다.
+host: smtp.gmail.com
+port: 587
+starttls: true
+auth: plain
+username: ""            # 보내는 Gmail 주소
+password: ""            # 앱 비밀번호 16자리
+override-from: ""       # 보내는 Gmail 주소와 같게(앱의 MAIL_FROM을 덮어쓴다)

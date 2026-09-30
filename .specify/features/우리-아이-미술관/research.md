@@ -245,6 +245,11 @@
   - 로그에는 메일 종류·결과 코드만. 수신 주소·토큰·링크는 남기지 않는다(BR-PRV-01).
 - **Rationale**: 결정 ⑤(B 선정, P0는 Mailpit). 팀 내부 검증 단계에서 실제 발송 서비스 계약·도메인 인증(SPF/DKIM) 없이 흐름을 끝까지 시험할 수 있다.
 - **Alternatives considered**: Gmail SMTP(개인 계정 자격 증명 공유 필요, 발송 한도), 상용 발송 API(계약·키 필요 — U19 확정 뒤).
+- **Decision update (2026-09-30, 이제민 — U19 중 발송 경로 닫음)**: p1에 실제 가입자가 생겨(확인 메일이 Mailpit에 갇혀 가입이 막힘) **Mailpit 자동 중계 → Gmail SMTP**로 실제 받은편지함에 보낸다.
+  - 앱은 그대로(nodemailer → `127.0.0.1:1025` Mailpit). Mailpit이 `--smtp-relay-config <파일> --smtp-relay-all`로 새 메일을 모두 `smtp.gmail.com:587`(STARTTLS, 앱 비밀번호)로 넘긴다 — Mailpit 화면에 기록이 남아 발송 확인·재전송(Release)이 된다.
+  - 중계 설정 파일 `.data/mailpit-relay.yaml`(git 제외, 권한 600)에만 계정·앱 비밀번호를 둔다. 실행 인자에는 파일 경로만(비밀값을 인자로 넘기지 않는다 — API 점검 D8). 파일이 없으면 지금처럼 Mailpit에만 쌓인다(서비스는 깨지지 않음).
+  - 발신 주소: Gmail은 인증 계정으로 보내므로 `override-from`에 그 Gmail 주소를 둔다(앱의 `MAIL_FROM`은 바꾸지 않아도 된다). 한도 하루 약 500통 — 요청 한도(R-24)보다 넉넉하다.
+  - 남은 U19: 도메인 발신(no-reply@p1.sumzip.com, SPF·DKIM)·상용 발송 서비스는 운영 전 다시 정한다.
 
 ## R-24. 보호자 가입·확인·찾기·재설정 (FR-31·32, UC13·UC14, G26·G27, D18)
 

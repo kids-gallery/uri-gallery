@@ -21,6 +21,7 @@ function readEnv(file) {
 }
 
 const ENV = readEnv(path.join(ROOT, '.env'));
+const RELAY = path.join(ROOT, '.data', 'mailpit-relay.yaml');
 
 const apps = base.apps.map((a) => ({ ...a, env: { ...(a.env || {}), ...ENV } }));
 
@@ -34,7 +35,10 @@ apps.push(
   {
     name: 'mailpit',
     script: path.join(HOME, '.local', 'bin', 'mailpit'),
-    args: ['--smtp', '127.0.0.1:1025', '--listen', '127.0.0.1:8025', '--database', path.join(ROOT, '.data', 'mailpit.db')],
+    // 실제 발송(R-23 2026-09-30): .data/mailpit-relay.yaml(git 제외, 600)이 있을 때만 새 메일을 모두 Gmail SMTP로 중계한다.
+    // 인자에는 파일 경로만 — 비밀값은 인자로 넘기지 않는다(API 점검 D8). 파일이 없으면 지금처럼 Mailpit에만 쌓인다.
+    args: ['--smtp', '127.0.0.1:1025', '--listen', '127.0.0.1:8025', '--database', path.join(ROOT, '.data', 'mailpit.db'),
+      ...(fs.existsSync(RELAY) ? ['--smtp-relay-config', RELAY, '--smtp-relay-all'] : [])],
     interpreter: 'none',
   },
 );
