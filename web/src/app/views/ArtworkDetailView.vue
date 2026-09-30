@@ -30,6 +30,12 @@ const rail = computed(() => (a.value ? railOf(a.value.state) : null));
 const g9 = computed(() => (a.value?.state === 'failed' ? notDeliveredBlock(a.value) : null));
 const waitingQueue = computed(() => a.value?.state === 'processing' && a.value.stages.some((s) => s.status === 'waiting') && !a.value.stages.some((s) => s.status === 'running'));
 const next = computed(() => (a.value ? nextActionLabel(a.value.state) : ''));
+// 걸린 채 다시 만드는 중(D34 ② · D49 [예] 뒤): 단계 표는 숨기므로(D34 ④) 지금 무엇을 하는지 한 줄로 알린다
+const remaking = computed(() => {
+  if (a.value?.state !== 'processing') return '';
+  if (waitingQueue.value) return ko.state.processing_queued;
+  return a.value.stages.some((s) => s.status === 'retrying') ? ko.state.retrying : ko.state.processing;
+});
 
 async function load(): Promise<boolean> {
   a.value = await loadArtwork(id);
@@ -66,6 +72,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
     <section class="card stack bench-card">
       <JourneyRail :current="rail.current" :variant="waitingQueue ? 'waiting' : rail.variant" :gate="rail.gate" :blocked-label="rail.blockedLabel" />
       <NoticeBlock v-if="started" :title="ko.confirm.started"><p>{{ ko.rail.leaveOk }}</p></NoticeBlock>
+      <NoticeBlock v-if="remaking && !started" :title="remaking"><p>{{ ko.animAsk.remakeHint }}</p></NoticeBlock>
       <h1 class="t-headline">{{ ko.list.detailTitle(a.story?.title || ko.list.untitled) }}</h1>
 
       <!-- 모델 단계 표는 보호자에게 보이지 않는다(D34 ④, SD_02 §17-8) — 운영 화면에서 본다 -->
@@ -76,7 +83,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
         <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ next }}</RouterLink>
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
-      <AnimateAsk :artwork-id="id" @started="first" /><!-- D49 움직임 질문 -->
+      <AnimateAsk v-if="!deleting" :artwork-id="id" @started="first" /><!-- D49 움직임 질문(삭제 확인 중엔 숨김) -->
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
       <CommentPanel :artwork-id="id" /><!-- D46 ④ 부모 댓글 -->
     </section>

@@ -1,4 +1,5 @@
 // 사진 촬영일(D34 ③ capturedOn): JPEG EXIF DateTimeOriginal(0x9003)에서 날짜만 읽는다. 위치 · 기기 정보는 읽지도 보내지도 않는다.
+import { localToday } from '../localDate';
 // JPEG가 아니거나 없으면 null — 서버가 올린 날로 채운다.
 export async function exifDate(f: Blob): Promise<string | null> {
   try {
@@ -24,5 +25,5 @@ function readTiff(b: DataView, t: number): string | null {
   const m = /^(\d{4}):(\d{2}):(\d{2})$/.exec(s);
   if (!m || m[1] === '0000') return null;
   const d = `${m[1]}-${m[2]}-${m[3]}`;
-  return d > new Date().toISOString().slice(0, 10) ? null : d;
+  return d > localToday() ? null : d;
 }

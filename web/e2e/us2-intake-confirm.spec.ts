@@ -1,44 +1,21 @@
-// T059 [US2] 올리기 → 확정 E2E(390·1440px): 선택지 즉시 표시 · 기본 선택 없음 · "나중에 고르기".
-// E2E 스택에는 활성 모델이 없다(p1과 같은 상태) — 움직임·2.5D는 이유 달린 비활성(C3), 액자만 고를 수 있다.
+// T059 [US2] 올리기 E2E(390·1440px) — D34 · D46 개정: 올리면 확정 화면 없이 원본 액자로 곧바로 걸리고(기본 선택 없음),
+// 움직임 · 입체는 걸린 뒤 권유로만(D49 질문은 d46-upload-hang). 확정하지 않은 작품은 원본 액자로 걸린 채 남는다.
 import { expect, test } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { drawingPng, guardianWithChild } from './stack/guardian';
 
-test('올리면 바로 확정 화면, 기본 선택 없음, 나중에 고르기 → 다시 와서 액자로 확정', async ({ page }, info) => {
+test('올리면 확정 화면 없이 원본 액자로 걸리고, 아무것도 확정되지 않는다', async ({ page }, info) => {
   await guardianWithChild(page, `us2-${info.project.name}`);
-
   await page.goto('/app/upload');
   await page.locator('input[type=file][accept^="image/jpeg"]').setInputFiles({ name: 'drawing.png', mimeType: 'image/png', buffer: drawingPng() });
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await page.getByRole('button', { name: ko.upload.submit, exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/artworks\/[^/]+\/confirm$/);
-  const confirmUrl = new URL(page.url()).pathname;
-
-  // 선택지 즉시 표시(판정을 기다리지 않음) · 순서 고정 · 기본 선택 없음
-  const opts = page.getByRole('group', { name: ko.confirm.howTitle }).getByRole('button');
-  await expect(opts).toHaveCount(3);
-  await expect(opts.nth(0)).toContainText(ko.kind.animated!);
-  await expect(opts.nth(1)).toContainText(ko.kind.relief!);
-  await expect(opts.nth(2)).toHaveText(ko.kind.frame!);
-  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
-  for (const i of [0, 1]) {
-    await expect(opts.nth(i)).toHaveAttribute('aria-disabled', 'true');
-    await expect(opts.nth(i)).toContainText(ko.review.unavailable.model_disabled!);
-  }
-  // 세 칸 같은 크기(UX2)
-  const boxes = await opts.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
-  expect(new Set(boxes.map((b) => b.join('x'))).size).toBe(1);
-  // 고르기 전 확정은 이유 달린 비활성
-  await expect(page.getByRole('button', { name: new RegExp(`^${ko.confirm.submit}`) })).toContainText(ko.confirm.pickOne);
+  const id = String(((await (await res).json()) as { id: string | number }).id);
+  await expect(page).toHaveURL(/\/app\/museum\/\d+/);
+  expect(page.url()).not.toContain('/confirm');
+  const d = await (await page.request.get(`/v1/artworks/${id}`)).json() as { confirmedKind: string | null; exhibited: boolean; hungResultKind: string | null };
+  expect(d.confirmedKind).toBeNull();
+  expect(d.exhibited).toBe(true);
+  expect(d.hungResultKind).toBe('frame');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-
-  // 나중에 고르기 → 목록, 다시 들어오면 여전히 기본 선택 없음
-  await page.getByRole('link', { name: ko.confirm.later }).click();
-  await expect(page).toHaveURL(/\/app\/works$/); // 나중에 고르기 → 작품 관리(D25)
-  await page.goto(confirmUrl);
-  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
-
-  await opts.nth(2).click();
-  await expect(opts.nth(2)).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: ko.confirm.submit, exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/artworks\/[^/]+\?started=1$/);
 });

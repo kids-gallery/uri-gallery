@@ -9,6 +9,7 @@ const props = defineProps<{ artworkId: string }>();
 const list = ref<Comment[]>([]);
 const open = ref(false);
 const until = ref<string | null>(null);
+const failed = ref(false); // 불러오기 실패 — "기간이 끝났어요"와 다르다
 const text = ref('');
 const busy = ref(false);
 const msg = ref('');
@@ -16,8 +17,8 @@ const when = (iso: string) => new Date(iso).toLocaleString('ko-KR', { month: 'nu
 // 7일 기한(D46 ④): 걸린 뒤 7일만 쓰고 지운다. 그 뒤로는 보기만(서버도 409 comments_closed).
 const daysLeft = computed(() => (until.value ? Math.max(1, Math.ceil((Date.parse(until.value) - Date.now()) / 86400000)) : 0));
 async function load() {
-  try { const r = await api.get<{ items: Comment[]; open: boolean; openUntil: string }>(`/v1/artworks/${props.artworkId}/comments`); list.value = r.items; open.value = r.open; until.value = r.openUntil; }
-  catch { list.value = []; open.value = false; }
+  try { const r = await api.get<{ items: Comment[]; open: boolean; openUntil: string }>(`/v1/artworks/${props.artworkId}/comments`); list.value = r.items; open.value = r.open; until.value = r.openUntil; failed.value = false; }
+  catch { list.value = []; open.value = false; failed.value = true; }
 }
 async function send() {
   if (!text.value.trim() || busy.value) return;
@@ -27,7 +28,9 @@ async function send() {
   busy.value = false;
 }
 async function del(c: Comment) {
-  try { await api.del(`/v1/artworks/${props.artworkId}/comments/${c.id}`); list.value = list.value.filter((x) => x.id !== c.id); } catch { /* 그대로 둔다 */ }
+  msg.value = '';
+  try { await api.del(`/v1/artworks/${props.artworkId}/comments/${c.id}`); list.value = list.value.filter((x) => x.id !== c.id); }
+  catch (e) { if (e instanceof ApiError && e.reason === 'comments_closed') { open.value = false; msg.value = ko.comment.closed; } else msg.value = ko.comment.delFail; }
 }
 onMounted(load);
 </script>
@@ -42,8 +45,9 @@ onMounted(load);
           <button v-if="c.mine && open" class="cm-del" type="button" @click="del(c)">{{ ko.comment.del }}</button></p>
       </li>
     </ul>
-    <p v-else class="cm-empty">{{ ko.comment.empty }}</p>
-    <p class="cm-when">{{ open ? ko.comment.left(daysLeft) : ko.comment.closed }}</p>
+    <p v-else-if="!failed" class="cm-empty">{{ ko.comment.empty }}</p>
+    <p v-if="failed" class="cm-when">{{ ko.comment.loadFail }} <button class="cm-del" type="button" @click="load">{{ ko.comment.retry }}</button></p>
+    <p v-else class="cm-when">{{ open ? ko.comment.left(daysLeft) : ko.comment.closed }}</p>
     <form v-if="open" class="cm-form" @submit.prevent="send">
       <label class="sr-only" for="cm-in">{{ ko.comment.ph }}</label>
       <textarea id="cm-in" v-model="text" class="input" rows="2" maxlength="500" :placeholder="ko.comment.ph"></textarea>
@@ -61,7 +65,7 @@ onMounted(load);
 .cm-item.mine{background:#fff6e4}
 .cm-body{margin:0;white-space:pre-wrap;font:500 15px/1.5 var(--font-sans);color:var(--color-ink)}
 .cm-meta{margin:4px 0 0;font:500 12px/1.3 var(--font-sans);color:#7a6555;display:flex;gap:8px;align-items:center}
-.cm-del{border:0;background:none;color:var(--color-primary);font:700 12px/1 var(--font-sans);cursor:pointer;padding:6px;min-height:32px}
+.cm-del{border:0;background:none;color:var(--color-primary);font:700 13px/1 var(--font-sans);cursor:pointer;padding:6px 10px;min-height:44px;min-width:44px}
 .cm-when{margin:0;font:500 12px/1.3 var(--font-sans);color:#7a6555}
 .cm-empty{margin:0;font:500 14px/1.4 var(--font-sans);color:#7a6555}
 .cm-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}

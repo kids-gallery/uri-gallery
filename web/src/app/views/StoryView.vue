@@ -1,17 +1,17 @@
 <script setup lang="ts">
 // S6 작품 이야기(T095, SD_02 §9 · §17-14 D46): 올린 작품은 고정 — 이야기는 올릴 때 함께 적고, 여기서는 보기만 한다.
-// 걸린 뒤 설명은 큐레이션(규칙 캡션 · AI 해설 · 들려주기)이 맡고, 가족 보호자는 댓글을 7일 동안 남긴다(그 뒤 보기 · 작품 삭제만).
+// 흰 표 대신 금빛 액자 + 명패(제목 · 그린 날 · 나이) + 아이의 한마디 · 부모 감상. 설명은 큐레이션(CaptionPanel), 가족 댓글은 걸린 뒤 7일.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import BlockNotice from '@/components/BlockNotice.vue';
-import ExhibitCheck from '@/components/ExhibitCheck.vue';
-import JourneyRail from '@/components/JourneyRail.vue';
+import ArtFrame from '@/components/ArtFrame.vue';
+import CommentPanel from '@/components/CommentPanel.vue';
 import { ko } from '@/copy/ko';
 import { type BlockNotice as Notice } from '@/api/client';
 import NoticeBlock from '../components/NoticeBlock.vue';
-import { blockOf, loadArtwork, railOf, type ArtworkDetail } from '../artwork';
+import { blockOf, loadArtwork, type ArtworkDetail } from '../artwork';
+import { koDate } from '../localDate';
 import CaptionPanel from './CaptionPanel.vue';
-import CommentPanel from '@/components/CommentPanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,16 +19,9 @@ const id = String(route.params.id);
 const a = ref<ArtworkDetail | null>(null);
 const block = ref<Notice | null>(null);
 const approvedNow = route.query.approved === '1';
-const rail = computed(() => (a.value ? railOf(a.value.state) : null));
-const reviewed = computed(() => a.value?.state === 'approved' || a.value?.state === 'exhibited');
-const storyDone = computed(() => !!(a.value?.story?.title && a.value.story.madeOn && a.value.story.ageAtMaking != null));
-const rows = computed(() => {
-  const s = a.value?.story ?? {};
-  return [
-    [ko.story.madeOn, s.madeOn], [ko.story.age, s.ageAtMaking == null ? null : String(s.ageAtMaking)],
-    [ko.story.words, s.childWords], [ko.story.note, s.guardianNote],
-  ].filter((r): r is [string, string] => !!r[1]);
-});
+const s = computed(() => a.value?.story ?? {});
+const photo = computed(() => (a.value as { photoUrl?: string | null } | null)?.photoUrl ?? a.value?.originalUrl ?? null);
+const plaque = computed(() => [s.value.madeOn ? koDate(s.value.madeOn) : '', s.value.ageAtMaking == null ? '' : ko.story.ageLine(s.value.ageAtMaking)].filter(Boolean).join(' · '));
 
 async function load() {
   try { a.value = await loadArtwork(id); block.value = null; } catch (e) { block.value = blockOf(e); }
@@ -41,31 +34,45 @@ async function onBlock(label: string) {
 </script>
 
 <template>
-  <main class="container page stack">
+  <main class="container page stack sv">
     <BlockNotice v-if="block && !a" :notice="block" @action="onBlock" />
-    <template v-if="a && rail">
-      <JourneyRail :current="rail.current" :variant="rail.variant" :gate="rail.gate">
-        <template #hold><ExhibitCheck :reviewed="reviewed" :story-done="storyDone" /></template>
-      </JourneyRail>
+    <template v-if="a">
       <NoticeBlock v-if="approvedNow" :title="ko.review.afterApprove" />
-      <section class="card stack story-view" aria-label="작품 이야기">
-        <h1 class="t-headline">{{ a.story?.title || ko.list.untitled }}</h1>
-        <dl v-if="rows.length" class="story-dl">
-          <template v-for="[k, v] in rows" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></template>
-        </dl>
-        <p class="lock" role="note">🔒 {{ ko.up2.lockNote }}</p>
+      <section class="sv-wall" aria-label="작품 이야기">
+        <figure class="sv-art" :style="{ viewTransitionName: `art-${a.id}` }">
+          <ArtFrame size="lg" variant="gold" :src="photo" :alt="s.title || ko.list.untitled" />
+          <figcaption class="sv-plaque">
+            <h1 class="sv-title">{{ s.title || ko.list.untitled }}</h1>
+            <p v-if="plaque" class="sv-meta">{{ plaque }}</p>
+          </figcaption>
+        </figure>
+        <div class="sv-words">
+          <blockquote v-if="s.childWords" class="sv-quote"><p>“{{ s.childWords }}”</p><footer>{{ ko.up2.words }}</footer></blockquote>
+          <div v-if="s.guardianNote" class="sv-note"><h2>{{ ko.up2.note }}</h2><p>{{ s.guardianNote }}</p></div>
+          <p class="sv-lock" role="note">🔒 {{ ko.up2.lockNote }}</p>
+        </div>
       </section>
-      <section class="card stack"><CommentPanel :artwork-id="id" /></section><!-- D46 ④ 부모 댓글(7일) -->
-      <ExhibitCheck v-if="rail.variant !== 'hold'" :reviewed="reviewed" :story-done="storyDone" />
       <CaptionPanel :artwork="a" />
+      <section class="card sv-cm"><CommentPanel :artwork-id="id" /></section><!-- D46 ④ 부모 댓글(7일) -->
     </template>
   </main>
 </template>
 
 <style scoped>
-.story-view{max-width:640px}
-.story-dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
-.story-dl dt{font:600 14px/1.5 var(--font-sans);color:#7a6555}
-.story-dl dd{margin:0;white-space:pre-wrap;font:500 15px/1.5 var(--font-sans);color:var(--color-ink)}
-.lock{margin:0;font:500 13px/1.4 var(--font-sans);color:#7a6555}
+.sv{max-width:1040px}
+.sv-wall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,4vw,48px);align-items:center;
+  padding:clamp(18px,4vw,40px);border-radius:24px;background:linear-gradient(180deg,#fbf5ea,#f4ead8);box-shadow:inset 0 0 0 1px rgba(201,165,82,.35)}
+@media (max-width:760px){.sv-wall{grid-template-columns:1fr}}
+.sv-art{margin:0;display:grid;gap:14px;justify-items:center}
+.sv-plaque{background:linear-gradient(180deg,#e9d18f,#c9a552);border-radius:6px;padding:8px 16px;text-align:center;box-shadow:0 6px 14px -8px rgba(90,62,30,.6);max-width:100%}
+.sv-title{margin:0;font:700 clamp(18px,2.4vw,22px)/1.3 var(--mc-serif,serif);color:#3a2a1f;word-break:keep-all;overflow-wrap:anywhere}
+.sv-meta{margin:2px 0 0;font:600 13px/1.3 var(--font-sans);color:#4a3526}
+.sv-words{display:grid;gap:14px}
+.sv-quote{margin:0;font:600 clamp(18px,2.2vw,22px)/1.55 var(--mc-serif,serif);color:#4a3526;word-break:keep-all}
+.sv-quote p{margin:0;white-space:pre-wrap}
+.sv-quote footer{margin-top:4px;font:500 13px/1.3 var(--font-sans);color:#7a6555}
+.sv-note h2{margin:0 0 4px;font:700 14px/1.3 var(--font-sans);color:#7a6555}
+.sv-note p{margin:0;white-space:pre-wrap;font:500 15px/1.6 var(--font-sans);color:var(--color-ink)}
+.sv-lock{margin:0;font:500 13px/1.45 var(--font-sans);color:#7a6555;word-break:keep-all}
+.sv-cm{max-width:none}
 </style>

@@ -206,7 +206,8 @@ function uploadStory(b: Record<string, unknown>): UploadStory {
   const bad: { name: string; reason: string }[] = [];
   const title = str(b.title); if (title !== null && (!title.trim() || title.length > 100)) bad.push({ name: 'title', reason: title.trim() ? 'too_long' : 'blank' });
   const madeOn = str(b.madeOn); if (madeOn !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(madeOn) || Number.isNaN(Date.parse(madeOn)))) bad.push({ name: 'madeOn', reason: 'format' });
-  if (madeOn && madeOn > new Date().toISOString().slice(0, 10)) throw new Problem('validation_failed', 'made_on_in_future', 'G11', [{ name: 'madeOn', reason: 'future' }]); // 안내 문장 재사용
+  // '오늘'은 서비스 지역(한국, UTC+9) 기준 — UTC로 자르면 한국 0~9시에 오늘 그린 그림이 '미래'가 된다
+  if (madeOn && madeOn > new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10)) throw new Problem('validation_failed', 'made_on_in_future', 'G11', [{ name: 'madeOn', reason: 'future' }]); // 안내 문장 재사용
   const ageRaw = str(b.ageAtMaking); const age = ageRaw === null ? null : Number(ageRaw);
   if (age !== null && !(Number.isInteger(age) && age >= 0 && age <= 18)) bad.push({ name: 'ageAtMaking', reason: 'range' });
   const childWords = str(b.childWords); if (childWords && childWords.length > 2000) bad.push({ name: 'childWords', reason: 'too_long' });

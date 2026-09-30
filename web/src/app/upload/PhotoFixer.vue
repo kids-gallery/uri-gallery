@@ -4,7 +4,7 @@
 // (D39 올린 뒤 사진 고치기는 D46으로 폐기)
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { ko } from '@/copy/ko';
-import { detectPaper, warpQuad } from './autocrop';
+import { warpQuad } from './autocrop';
 
 const props = defineProps<{ src: string; initial?: [number, number][] | null }>();
 const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number] }>();
@@ -25,9 +25,8 @@ onMounted(async () => {
   const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d')!.drawImage(bm, 0, 0);
   const im = new Image(); im.src = c.toDataURL('image/jpeg', 0.95); await im.decode(); img.value = im;
   W.value = im.naturalWidth; H.value = im.naturalHeight;
-  const d = props.initial ? { quad: props.initial } : detectPaper(im, W.value, H.value);
-  const g = ((d as { quad?: P[] | null; guess?: P[] | null }).quad ?? (d as { guess?: P[] | null }).guess ?? null) as P[] | null;
-  quad.value = g ?? [[0, 0], [W.value, 0], [W.value, H.value], [0, H.value]];
+  // 자동 펴기가 찾은 네 모서리가 있으면 그것부터, 없으면 사진 전체(추정 사각형으로 시작하면 그대로 저장했을 때 그림이 잘린다)
+  quad.value = props.initial ? props.initial.map((p) => [p[0], p[1]] as P) : [[0, 0], [W.value, 0], [W.value, H.value], [0, H.value]];
   await nextTick(); draw(); dialog.value?.querySelector<HTMLElement>('button')?.focus();
 });
 const pts = computed(() => quad.value.map(([x, y]) => `${x},${y}`).join(' '));
@@ -65,17 +64,18 @@ async function save() {
     const g = c.getContext('2d')!; g.translate(c.width / 2, c.height / 2); g.rotate((rot.value * Math.PI) / 180); g.drawImage(flat, -flat.width / 2, -flat.height / 2);
     const blob = await new Promise<Blob>((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error('blob'))), 'image/jpeg', 0.92));
     emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value);
-  } catch { msg.value = ko.fix.fail; }
+  } catch { msg.value = ko.up2.fixFail; }
   busy.value = false;
 }
 function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); emit('close'); } }
 </script>
 
 <template>
+  <Teleport to="body"><!-- 화면 틀(움직임 · 변형)의 쌓임 맥락 밖 — 고정 메뉴 줄 위에 뜬다 -->
   <div class="fx-scrim" @click.self="emit('close')">
     <div ref="dialog" class="fx" role="dialog" aria-modal="true" aria-labelledby="fx-t" @keydown="trap">
-      <h2 id="fx-t" class="fx-t">{{ ko.fix.title }}</h2>
-      <p class="fx-hint">{{ ko.fix.hint }}</p>
+      <h2 id="fx-t" class="fx-t">{{ ko.up2.fix }}</h2>
+      <p class="fx-hint">{{ ko.up2.fixHint }}</p>
       <div class="fx-body">
         <div v-if="img" ref="box" class="fx-photo" :style="{ aspectRatio: `${W} / ${H}` }" @pointermove="move" @pointerup="up" @pointercancel="up">
           <img :src="img.src" alt="" draggable="false">
@@ -95,15 +95,16 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         <button class="btn btn-tertiary" type="button" @click="reset">{{ ko.fix.reset }}</button>
         <span class="sp"></span>
         <button class="btn btn-secondary" type="button" @click="emit('close')">{{ ko.walk.close }}</button>
-        <button class="btn btn-primary" type="button" :disabled="busy || !img" @click="save">{{ busy ? ko.save.busy : ko.fix.save }}</button>
+        <button class="btn btn-primary" type="button" :disabled="busy || !img" @click="save">{{ busy ? ko.save.busy : ko.up2.fixUse }}</button>
       </div>
       <p class="fx-msg" role="status" aria-live="polite">{{ msg }}</p>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <style scoped>
-.fx-scrim{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
+.fx-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
 @keyframes fx-in{from{opacity:0}}
 .fx{width:min(1040px,100%);max-height:calc(100dvh - 24px);overflow:auto;background:#fbf6ee;border-radius:22px;padding:clamp(14px,3vw,28px);display:grid;gap:12px;
   box-shadow:0 0 0 1px rgba(201,165,82,.5),0 40px 80px -30px rgba(0,0,0,.6);animation:fx-up var(--dur-3,800ms) var(--ease-spring,ease) both}
@@ -125,5 +126,9 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 .fx-prev{max-width:100%;max-height:40vh;background:#fffeef;padding:10px;border-radius:2px;box-shadow:0 0 0 8px #d8b766,0 20px 30px -18px rgba(0,0,0,.6)}
 .fx-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fx-acts .sp{flex:1}
 .fx-acts .btn{min-height:44px}
+/* 휴대폰: 버튼 줄을 판 아래에 붙여 첫 화면에서 [돌리기] · [이대로 쓰기]가 보이게 */
+@media (max-width:760px){.fx-photo{max-height:48vh}.fx-prev{max-height:22vh}
+  .fx-acts{position:sticky;bottom:calc(-1 * clamp(14px,3vw,28px));margin:0 calc(-1 * clamp(14px,3vw,28px));padding:10px clamp(14px,3vw,28px);background:#fbf6ee;box-shadow:0 -8px 16px -12px rgba(0,0,0,.35)}
+  .fx-acts .sp{display:none}.fx-acts .btn{flex:1 1 30%}}
 .fx-msg{margin:0;min-height:1.3em;font:500 14px/1.3 var(--font-sans);color:#8a2b2b}
 </style>

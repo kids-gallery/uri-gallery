@@ -57,7 +57,7 @@ describe('움직임 질문(D49)', () => {
     const w = mount(AnimateAsk, { props: { artworkId: '9' } });
     await flushPromises();
     expect(w.text()).not.toContain(ko.animAsk.q);
-    expect(w.emitted('close')).toBeTruthy();
+    expect(w.emitted('closed')).toBeTruthy();
     w.unmount();
   });
   it('판정 전이면 기다렸다가 제안이 오면 묻는다', async () => {
@@ -70,6 +70,55 @@ describe('움직임 질문(D49)', () => {
     await vi.advanceTimersByTimeAsync(3100);
     await flushPromises();
     expect(w.text()).toContain(ko.animAsk.q);
+    w.unmount();
+  });
+  it('판정이 30초 안에 오지 않으면 묻지 않고 닫는다', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(async () => json({ ...base, suggestion: null }));
+    const w = mount(AnimateAsk, { props: { artworkId: '11' } });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(33_000);
+    await flushPromises();
+    expect(w.text()).not.toContain(ko.animAsk.q);
+    expect(w.emitted('closed')).toBeTruthy();
+    w.unmount();
+  });
+  it('[예]가 409(이미 확정)면 다시 읽게 알리고 닫는다 — "만들 수 없어요"로 남지 않음', async () => {
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => ((init?.method ?? 'GET') === 'POST'
+      ? json({ type: 'about:blank', title: 'conflict', status: 409, code: 'conflict', reason: 'already_processing', gate: 'G8' }, 409) : json(base)));
+    const w = mount(AnimateAsk, { props: { artworkId: '12' } });
+    await flushPromises();
+    await btn(w, ko.animAsk.yes)!.trigger('click');
+    await flushPromises();
+    expect(w.text()).not.toContain(ko.animAsk.fail);
+    expect(w.emitted('started')).toBeTruthy();
+    expect(w.emitted('closed')).toBeTruthy();
+    w.unmount();
+  });
+  it('overlay는 ready가 된 뒤에만 보이고, 대화상자 · 첫 버튼 초점 · Esc = 나중에(기억 안 함)', async () => {
+    serve(base);
+    const w = mount(AnimateAsk, { props: { artworkId: '13', overlay: true, ready: false }, attachTo: document.body });
+    await flushPromises();
+    expect(document.body.textContent).not.toContain(ko.animAsk.q);
+    await w.setProps({ ready: true });
+    await flushPromises();
+    const dlg = w.find('[role="dialog"]');
+    expect(dlg.exists()).toBe(true);
+    expect(dlg.attributes('aria-labelledby')).toBe(w.find('h2').attributes('id'));
+    expect(document.activeElement?.textContent).toBe(ko.animAsk.yes);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await flushPromises();
+    expect(w.emitted('closed')).toBeTruthy();
+    expect(localStorage.getItem('uam.animAsk.13')).toBeNull();
+    w.unmount();
+  });
+  it('인라인(작품 상세)은 대화상자가 아니라 구역이고, 판정 전이면 "살펴보는 중" 작은 글자', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(async () => json({ ...base, suggestion: null }));
+    const w = mount(AnimateAsk, { props: { artworkId: '14' } });
+    await flushPromises();
+    expect(w.find('[role="status"]').text()).toContain(ko.animAsk.judging);
+    expect(w.find('[role="dialog"]').exists()).toBe(false);
     w.unmount();
   });
 });

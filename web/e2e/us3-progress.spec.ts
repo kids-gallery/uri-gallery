@@ -1,4 +1,5 @@
 // T075 [US3] 진행 확인 E2E(390·1440px): 대기 · 다시 시도 중 · 낮춤 안내 · 처리하지 못함 블록(S4).
+// D34 ④: 모델 단계 표는 보호자에게 보이지 않는다 — 단계 줄 대신 상태 문구 · 안내만 본다.
 // 활성 모델이 없어 워커가 이 상태들을 만들 수 없다 — 임시 DB에 단계 작업 행을 직접 두고 화면만 본다.
 // 낮춤은 액자 합성(frame_compose)을 실제 CPU 워커가 처리해 결과가 생기는 것까지 본다.
 import { expect, test, type Page } from '@playwright/test';
@@ -13,11 +14,14 @@ test.afterAll(async () => { await db?.end(); });
 async function uploaded(page: Page): Promise<string> {
   await page.goto('/app/upload');
   await page.locator('input[type=file][accept^="image/jpeg"]').setInputFiles({ name: 'drawing.png', mimeType: 'image/png', buffer: drawingPng() });
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await page.getByRole('button', { name: ko.upload.submit, exact: true }).click();
-  await expect(page).toHaveURL(/\/confirm$/);
-  return page.url().match(/artworks\/([^/]+)\/confirm/)![1]!;
+  const r = await res;
+  expect(r.status(), await r.text()).toBeLessThan(300);
+  const id = String(((await r.json()) as { id: string | number }).id);
+  await expect(page).toHaveURL(/\/app\/museum\//); // D34: 올리면 곧바로 걸림
+  return id;
 }
-const row = (page: Page, stage: string) => page.getByRole('row').filter({ hasText: ko.stageName[stage]! });
 const fits = async (page: Page) => expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
 test('대기 · 다시 시도 중 · 낮춤 안내 · 처리하지 못함', async ({ page }, info) => {
@@ -27,7 +31,6 @@ test('대기 · 다시 시도 중 · 낮춤 안내 · 처리하지 못함', asyn
   const a1 = await uploaded(page);
   await animatedJobs(db, a1, (v) => db.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id) VALUES (?, 'animate_render', 'confirm', 'gpu', ?)`, [a1, v]).then(() => undefined));
   await page.goto(`/app/artworks/${a1}`);
-  await expect(row(page, 'animate_render')).toContainText(ko.stageStatus.waiting!);
   await expect(page.getByText(ko.state.processing_queued)).toBeVisible();
   await expect(page.getByText(ko.rail.leaveOk)).toBeVisible();
   await fits(page);
@@ -37,8 +40,7 @@ test('대기 · 다시 시도 중 · 낮춤 안내 · 처리하지 못함', asyn
   await animatedJobs(db, a2, (v) => db.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id, status, attempt_count, error_class, available_at)
     VALUES (?, 'animate_render', 'confirm', 'gpu', ?, 'retry_wait', 2, 'engine_down', UTC_TIMESTAMP() + INTERVAL 1 DAY)`, [a2, v]).then(() => undefined));
   await page.goto(`/app/artworks/${a2}`);
-  await expect(row(page, 'animate_render')).toContainText(ko.stageStatus.retrying!);
-  await expect(row(page, 'animate_render')).toContainText(ko.list.retried(1));
+  await expect(page.getByText(ko.state.retrying, { exact: true })).toBeVisible();
   await fits(page);
 
   // 3) 낮춤 안내: 움직임 품질 미달 → 액자 합성(실제 워커) → 결과 확인 대기, C6 문구
@@ -65,7 +67,6 @@ test('대기 · 다시 시도 중 · 낮춤 안내 · 처리하지 못함', asyn
   const g9 = page.locator('[data-gate="G9"]');
   await expect(g9).toBeVisible();
   await expect(g9).toContainText(ko.notDelivered.summary);
-  await expect(page.getByText(ko.list.retried(2))).toBeVisible();
   await expect(page.getByText(/낮춘 결과가 아니에요/)).toBeVisible();
   await fits(page);
 });

@@ -18,6 +18,7 @@ import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
 import PhotoFixer from '@/app/upload/PhotoFixer.vue';
 import { detectPaper, warpQuad } from '@/app/upload/autocrop';
 import { exifDate } from '@/app/upload/exifDate';
+import { localToday } from '@/app/localDate';
 import { DEFAULT_COLOR, DEFAULT_KIND, type CharacterColor, type CharacterKind } from '@/app/character/names';
 import { ko, problemCopy } from '@/copy/ko';
 import { JOURNEY_FROM_CHILD } from '../authForm';
@@ -64,9 +65,20 @@ function onFixed(b: Blob, q: [number, number][]) { quadInit.value = q; setFlat(b
 const making = ref(false);
 const story = ref({ title: '', madeOn: '', ageAtMaking: '', childWords: '', guardianNote: '' });
 const capturedOn = ref<string | null>(null);
-const today = new Date().toISOString().slice(0, 10);
+const today = localToday();
 const outSize = computed(() => outputSize(snap(rect.value, size.value.w, size.value.h)));
 watch(rect, () => { if (file.value) key.value = crypto.randomUUID(); }, { deep: true }); // 다른 영역 = 다른 사진(BR-INT-03)
+// 나이 미리 채움(D46 · SD_02 §17-14): 그 아이의 가장 최근 기록(전시의 가장 많은 나이). 보호자가 적었으면 건드리지 않는다
+const lastAge = ref<number | null>(null);
+watch(childId, async (id) => {
+  if (!id) return;
+  try {
+    const g = await api.get<{ groups: { ageAtMaking?: number | null }[] }>('/v1/gallery', { query: { child: id } });
+    const ages = g.groups.map((x) => x.ageAtMaking).filter((a): a is number => typeof a === 'number');
+    const prev = lastAge.value; lastAge.value = ages.length ? Math.max(...ages) : null;
+    if (story.value.ageAtMaking === '' || story.value.ageAtMaking === String(prev ?? '')) story.value.ageAtMaking = lastAge.value == null ? '' : String(lastAge.value);
+  } catch { /* 미리 채우지 못해도 비워 두면 서버가 채운다 */ }
+}, { immediate: true });
 
 const tooBig = computed(() => !!file.value && file.value.size > MAX_BYTES);
 const reason = computed(() => (!childId.value ? ko.upload.needChild : !file.value ? ko.upload.needPhoto
@@ -237,9 +249,9 @@ function onBlock(label: string) {
       <!-- 작품 이야기(D46) — 올린 뒤에는 고칠 수 없다 -->
       <fieldset v-if="file && !tooBig" class="field up-story">
         <legend class="t-card-title">{{ ko.up2.storyTitle }}</legend>
-        <div class="kind" role="radiogroup" :aria-label="ko.up2.kindLegend">
-          <button type="button" role="radio" :aria-checked="!making" class="pill" :class="{ on: !making }" @click="making = false">🖍 {{ ko.up2.drawing }}</button>
-          <button type="button" role="radio" :aria-checked="making" class="pill" :class="{ on: making }" @click="making = true">🧸 {{ ko.up2.making }}</button>
+        <div class="kind" role="radiogroup" :aria-label="ko.up2.kindLegend"><!-- 네이티브 radio: 화살표로 옮기고 Tab은 한 번만 멈춘다 -->
+          <label class="pill" :class="{ on: !making }"><input v-model="making" class="sr-only" type="radio" name="up-kind" :value="false"> 🖍 {{ ko.up2.drawing }}</label>
+          <label class="pill" :class="{ on: making }"><input v-model="making" class="sr-only" type="radio" name="up-kind" :value="true"> 🧸 {{ ko.up2.making }}</label>
         </div>
         <label for="up-title">{{ ko.up2.title }}</label>
         <input id="up-title" v-model="story.title" class="input" maxlength="100" :placeholder="ko.up2.titlePh">
@@ -247,10 +259,13 @@ function onBlock(label: string) {
           <div><label for="up-made">{{ ko.up2.madeOn }}</label><input id="up-made" v-model="story.madeOn" class="input" type="date" :max="today"></div>
           <div><label for="up-age">{{ ko.up2.age }}</label><input id="up-age" v-model="story.ageAtMaking" class="input" type="number" min="0" max="18" inputmode="numeric" :placeholder="ko.up2.agePh"></div>
         </div>
-        <label for="up-words">{{ ko.up2.words }}</label>
-        <textarea id="up-words" v-model="story.childWords" class="input" rows="2" maxlength="2000"></textarea>
-        <label for="up-note">{{ ko.up2.note }}</label>
-        <textarea id="up-note" v-model="story.guardianNote" class="input" rows="2" maxlength="1000"></textarea>
+        <details class="more" :open="!!(story.childWords || story.guardianNote)">
+          <summary>✎ {{ ko.up2.more }}</summary>
+          <label for="up-words">{{ ko.up2.words }}</label>
+          <textarea id="up-words" v-model="story.childWords" class="input" rows="2" maxlength="2000"></textarea>
+          <label for="up-note">{{ ko.up2.note }}</label>
+          <textarea id="up-note" v-model="story.guardianNote" class="input" rows="2" maxlength="1000"></textarea>
+        </details>
         <p class="lock" role="note">🔒 {{ ko.up2.lockNote }}</p>
       </fieldset>
 
@@ -276,6 +291,11 @@ function onBlock(label: string) {
 .up-story{display:grid;gap:8px}
 .up-story .kind{display:flex;gap:8px;flex-wrap:wrap}
 .up-story .pill{min-height:44px;padding:10px 16px;border-radius:999px;border:2px solid #d9b566;background:#fffdf8;font:700 15px/1 var(--font-sans);cursor:pointer;color:var(--color-ink)}
+.up-story .pill{display:inline-flex;align-items:center;gap:6px}
+.up-story .pill:has(input:focus-visible){outline:3px solid var(--color-primary);outline-offset:2px}
+.up-story .more{display:grid;gap:6px}
+.up-story .more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:700 15px/1.2 var(--font-sans);color:#7a5a2e}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .up-story .pill.on{background:#fbecc4;border-color:#b08a3e;box-shadow:inset 0 0 0 2px #fff}
 .up-story .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .up-story .lock{margin:4px 0 0;font:600 14px/1.45 var(--font-sans);color:#7a4a1f;background:#fff4df;border-radius:10px;padding:8px 12px}
