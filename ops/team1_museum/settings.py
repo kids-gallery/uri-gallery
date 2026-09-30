@@ -18,7 +18,7 @@ class Settings(BaseSettings):
                               "사람 그림·동물 그림·집 그림·사물 그림 중 하나로 답한다. 확신이 낮으면 판단보류. "
                               "점수는 돌려주지 않는다(BR-SUG-02).")
     model_dir: str = "model"                               # 가중치 지문(weights.json)·프롬프트(m2_prompts.yaml)
-    hf_cache: str = str(HERE.parent / "models" / "hf")     # 가중치 파일은 우리 서빙이 받아 둔 캐시를 오프라인으로 읽는다
+    hf_cache: str = str(HERE.parents[1] / "models" / "hf")  # 가중치 파일은 우리 서빙이 받아 둔 캐시를 오프라인으로 읽는다(저장소 루트 = ops/의 위)
     # TAU — 네 종류 중 가장 높은 확률이 이 값보다 낮으면 판단보류. 근거: 네 갈래 균등 확률이 0.25라서
     # «절반 이상 확신할 때만 답한다»는 보수적 값 0.5 [추론]. 평가 묶음 1차 측정(T137, U5) 뒤 측정값으로 바꾼다.
     tau: float = 0.5

@@ -20,7 +20,7 @@ MS 과정 API 서비스 점검(`docs/B/API_서비스_점검.pdf` 5쪽)의 **수�
 ## 띄우기
 
 ```bash
-cd team1_museum
+cd ops/team1_museum
 python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt   # 한 번
 .venv/bin/python -m pytest -q test_app.py                                # 배포 전 3분 — 5 passed
 .venv/bin/uvicorn app:app --host 127.0.0.1 --port <포트> --root-path /model-api --workers 1

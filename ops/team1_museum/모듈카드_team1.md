@@ -2,7 +2,7 @@
 
 | # | 칸 | 내용 |
 |---|---|---|
-| 1 | 팀 · 폴더 | 1팀 · `team1_museum/` (저장소 최상위) |
+| 1 | 팀 · 폴더 | 1팀 · `ops/team1_museum/` (2026-09-30 저장소 최상위에서 옮김, 폴더 이름 그대로) |
 | 2 | 포트 · 외부 주소 | 수업 규칙 9541 · https://p1.sumzip.com/model-api — **지금 9541은 서비스 model-api가 사용, 외부 `/model-api`는 공개 범위 팀 결정(A·D) 전이라 404** |
 | 3 | 모델 | M2 OpenCLIP ViT-B-32 / laion2b_s34b_b79k (`M2-1a25a44-u4`, 서비스 활성 버전과 같은 가중치 sha256 `ac4f8c4b…`) |
 | 4 | 입력 | `image_base64` 한 칸 — PNG·JPEG, 20MB 이하, 짧은 변 64px 이상. 모르는 칸은 422(`extra="forbid"`) |
