@@ -778,6 +778,38 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
 
+  /v1/artworks/{artworkId}/photo:
+    parameters:
+      - $ref: '#/components/parameters/ArtworkId'
+    put:
+      tags: [보호자 앱]
+      summary: 사진 고치기 (D39, SD_02 §17-12)
+      description: |
+        보호자가 브라우저에서 고친 사진(네 모서리 펴기 · 90° 돌리기)을 올린다. **원본은 그대로**(BR-INT-04) 두고 고친 사진을 따로 건다
+        (`stored_object.object_kind = display`). 다시 고치면 이전 고친 사진은 지운다. 원본 액자 · 전시 · 저장하기는 `photoUrl`(고친 사진)을 쓴다.
+        움직이는 그림 · 입체 그림은 다시 만들지 않는다. 형식 · 용량 · 판독 검사는 올리기와 같다(G5).
+      security: [{ guardianSession: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo: { type: string, format: binary, description: 'PNG · JPEG · HEIC, 20MB 이하' }
+      responses:
+        '200':
+          description: 고쳤음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArtworkDetail' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '503': { $ref: '#/components/responses/NotSaved' }
+
   /v1/artworks/{artworkId}/captions:
     parameters:
       - $ref: '#/components/parameters/ArtworkId'
@@ -1614,6 +1646,8 @@ components:
           oneOf: [{ $ref: '#/components/schemas/ResultKind' }, { type: 'null' }]
         queued: { type: boolean, description: '판정 중(대기) 표시용' }
         originalUrl: { type: [string, 'null'] }
+        photoUrl: { type: [string, 'null'], description: '(D39) 액자 · 전시 · 저장에 쓰는 사진 — 고쳤으면 고친 사진, 아니면 원본' }
+        photoEdited: { type: boolean, description: '(D39) 보호자가 사진을 고쳤음' }
         cutoutUrl: { type: [string, 'null'] }
         suggestion:
           description: '제안 문구 코드만. 점수·확률·순위 없음(BR-SUG-02). null=제안 전'
@@ -1745,6 +1779,7 @@ components:
         auxUrl: { type: [string, 'null'] }
         posterUrl: { type: [string, 'null'] }
         originalUrl: { type: string }
+        photoUrl: { type: [string, 'null'], description: '(D39) 원본 액자 그림 — 고쳤으면 고친 사진' }
         title: { type: string }
         titleAuto: { type: boolean, description: '(D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다' }
         madeOn: { type: string, format: date }

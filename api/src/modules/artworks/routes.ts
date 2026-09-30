@@ -152,6 +152,46 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
     } catch (e) { next(e); }
   });
 
+  // --- 사진 고치기(D39, SD_02 §17-12): 원본은 그대로(BR-INT-04), 고친 사진(display)을 따로 건다. 다시 고치면 이전 것은 지운다 ---
+  r.put('/v1/artworks/:id/photo', auth, (req, res, next) => {
+    upload.single('photo')(req, res, (err: unknown) => {
+      if (!err) return next();
+      next((err as { code?: string })?.code === 'LIMIT_FILE_SIZE' ? new Problem('payload_too_large', 'over_20mb', 'G5') : new Problem('invalid_input', 'bad_multipart', 'G5'));
+    });
+  }, async (req, res, next) => {
+    const familyId = req.guardian!.familyId!;
+    const id = Number(req.params.id);
+    try {
+      const [rows] = await db.query(`SELECT status FROM artwork WHERE artwork_id = ? AND family_id = ?`, [id, familyId]);
+      const a = (rows as { status: string }[])[0];
+      if (!a) throw new Problem('not_found');
+      if (a.status === 'deleting') throw new Problem('conflict', 'deleting');
+      const type = await validateUpload(req.file?.buffer);
+      const key = LocalFsDriver.newKey(LocalFsDriver.newArtworkPrefix(), 'display', type.ext);
+      try { await storage.putNew(key, req.file!.buffer); } catch { throw new Problem('not_saved', 'photo_not_saved', 'G6'); }
+      let oldKey: string | null = null;
+      try {
+        await withTx(db, async (conn) => {
+          const [lk] = await conn.query(
+            `SELECT a.status, a.display_object_id, so.object_key FROM artwork a LEFT JOIN stored_object so ON so.object_id = a.display_object_id
+              WHERE a.artwork_id = ? AND a.family_id = ? FOR UPDATE`, [id, familyId]);
+          const cur = (lk as { status: string; display_object_id: number | null; object_key: string | null }[])[0];
+          if (!cur || cur.status === 'deleting') throw new Problem('conflict', 'deleting');
+          const [so] = await conn.query(
+            `INSERT INTO stored_object (owner_kind, family_id, artwork_id, object_kind, object_key) VALUES ('family', ?, ?, 'display', ?)`, [familyId, id, key]);
+          await conn.query(`UPDATE artwork SET display_object_id = ? WHERE artwork_id = ?`, [(so as { insertId: number }).insertId, id]);
+          if (cur.display_object_id) { await conn.query(`DELETE FROM stored_object WHERE object_id = ?`, [cur.display_object_id]); oldKey = cur.object_key; }
+        });
+      } catch (e) {
+        await storage.delete(key).catch(() => undefined);
+        if (e instanceof Problem) throw e;
+        throw new Problem('not_saved', 'photo_not_saved', 'G6');
+      }
+      if (oldKey) await storage.delete(oldKey).catch(() => undefined);
+      res.json(await detail(familyId, id));
+    } catch (e) { next(e); }
+  });
+
   // --- 이야기(G11·G12, UC5, T142) ---
   r.put('/v1/artworks/:id/story', auth, async (req, res, next) => {
     const familyId = req.guardian!.familyId!;

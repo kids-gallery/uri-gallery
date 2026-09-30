@@ -17,6 +17,7 @@
 -- 개정 (2026-09-29, 통합 결정 D20 — 모델 점검): model_check 신설(테이블 36), stage_job.origin 'check'·model_check_id,
 --   trg_model_check_bi(G30 점검 입력, 트리거 16), 점검 작업을 운영 뷰에서 뺌(BR-OPS-05), 게이트 G30 시드(31개)
 -- 개정 (2026-09-29, D25 — B 이제민): story.guardian_note(보호자 감상평, BR-STY-04) + 기존 DB용 ADD COLUMN IF NOT EXISTS, v_gallery에 싣는다
+-- 개정 (2026-09-30, D39 — B 이제민): 사진 고치기 — stored_object.object_kind 'display'(고친 사진), artwork.display_object_id(FK, 지우면 NULL). 원본(artwork_original)은 그대로
 -- 개정 (2026-09-30, D34 — B 이제민): artwork.hung_result_id·hung_at(걸린 결과, 트리거 17번째 trg_artwork_hung_bu), result.job_id frame만 NULL(chk_rs_job),
 --   story.title_auto, G12 = 걸림 + 제목·그린 날(v_exhibit_gate), v_gallery는 걸린 결과, trg_story_bu 개정, 파일 끝 옮기기(멱등)
 -- 개정 (2026-09-30, 이제민 결정 — 카카오 로그인, research R-26): guardian_account.kakao_id(카카오 회원번호, UNIQUE) 추가,
@@ -341,7 +342,7 @@ CREATE TABLE IF NOT EXISTS stored_object (
   CONSTRAINT fk_so_artwork FOREIGN KEY (artwork_id) REFERENCES artwork (artwork_id),
   CONSTRAINT uq_so_key UNIQUE (object_key),
   CONSTRAINT chk_so_kind CHECK (object_kind IN ('original','mask','cutout','joints','depth',
-    'result_animated','result_relief','result_frame','result_glb','temp','eval_input')),
+    'result_animated','result_relief','result_frame','result_glb','temp','eval_input','display')), -- D39 display = 보호자가 고친 사진(원본은 그대로)
   -- BR-MDL-04 · BR-API-09: 평가 묶음 객체는 가족 데이터와 섞이지 않는다
   CONSTRAINT chk_so_owner CHECK (
        (owner_kind = 'family'   AND family_id IS NOT NULL AND artwork_id IS NOT NULL AND object_kind <> 'eval_input')
@@ -527,6 +528,12 @@ ALTER TABLE artwork ADD CONSTRAINT fk_artwork_hung FOREIGN KEY IF NOT EXISTS (hu
 ALTER TABLE result MODIFY job_id BIGINT NULL;
 ALTER TABLE result ADD CONSTRAINT IF NOT EXISTS chk_rs_job CHECK (job_id IS NOT NULL OR result_kind = 'frame');
 ALTER TABLE story ADD COLUMN IF NOT EXISTS title_auto BOOLEAN NOT NULL DEFAULT FALSE AFTER title;
+-- (D39, 2026-09-30) 사진 고치기 — 원본은 그대로 두고 고친 사진(object_kind 'display')을 따로 건다(멱등). 원본 액자 · 전시 · 저장하기는 고친 사진을 쓴다
+ALTER TABLE stored_object DROP CONSTRAINT IF EXISTS chk_so_kind;
+ALTER TABLE stored_object ADD CONSTRAINT chk_so_kind CHECK (object_kind IN ('original','mask','cutout','joints','depth',
+    'result_animated','result_relief','result_frame','result_glb','temp','eval_input','display'));
+ALTER TABLE artwork ADD COLUMN IF NOT EXISTS display_object_id BIGINT NULL AFTER hung_at;
+ALTER TABLE artwork ADD CONSTRAINT fk_artwork_display FOREIGN KEY IF NOT EXISTS (display_object_id) REFERENCES stored_object (object_id) ON DELETE SET NULL;
 
 -- 작품 설명 (P0.5, H10) — 한마디와 다른 테이블(BR-STY-03)
 CREATE TABLE IF NOT EXISTS caption (
