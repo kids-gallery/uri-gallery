@@ -61,6 +61,19 @@ const quadInit = ref<[number, number][] | null>(null);
 const fixing = ref(false);
 function setFlat(b: Blob | null) { if (flatUrl.value) URL.revokeObjectURL(flatUrl.value); flat.value = b; flatUrl.value = b ? URL.createObjectURL(b) : null; if (file.value) key.value = crypto.randomUUID(); }
 function onFixed(b: Blob, q: [number, number][]) { quadInit.value = q; setFlat(b); fixing.value = false; }
+// 누운 사진(외부 피드백 4차): 편 판을 한 번 눌러 90° 돌린다 — 위아래는 모델 없이 알 수 없어 저절로 돌리지 않는다
+const turning = ref(false);
+async function turnFlat(deg: 90 | -90) {
+  if (!flat.value || turning.value) return;
+  turning.value = true;
+  try {
+    const bm = await createImageBitmap(flat.value);
+    const c = document.createElement('canvas'); c.width = bm.height; c.height = bm.width;
+    const g = c.getContext('2d')!; g.translate(c.width / 2, c.height / 2); g.rotate((deg * Math.PI) / 180); g.drawImage(bm, -bm.width / 2, -bm.height / 2);
+    const b = await new Promise<Blob | null>((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
+    if (b) setFlat(b);
+  } catch { /* 돌리지 못하면 편집판에서 돌린다 */ } finally { turning.value = false; }
+}
 // 작품 이야기(D46): 올린 뒤에는 고칠 수 없으니 여기서 함께 — 모두 선택
 const making = ref(false);
 const story = ref({ title: '', madeOn: '', ageAtMaking: '', childWords: '', guardianNote: '' });
@@ -230,6 +243,8 @@ function onBlock(label: string) {
         <legend class="t-card-title">{{ ko.up2.flatTitle }}</legend>
         <img :src="flatUrl" alt="" class="preview flat">
         <div class="acts">
+          <button class="btn btn-secondary turn" type="button" :disabled="turning" :aria-label="ko.fix.left" @click="turnFlat(-90)">↺</button>
+          <button class="btn btn-secondary turn" type="button" :disabled="turning" :aria-label="ko.fix.right" @click="turnFlat(90)">↻</button>
           <button class="btn btn-secondary" type="button" @click="fixing = true">✎ {{ ko.up2.fix }}</button>
           <button class="btn btn-tertiary" type="button" @click="setFlat(null)">{{ ko.up2.useWhole }}</button>
         </div>
@@ -293,6 +308,7 @@ function onBlock(label: string) {
 .up-story .pill{min-height:44px;padding:10px 16px;border-radius:999px;border:2px solid #d9b566;background:#fffdf8;font:700 15px/1 var(--font-sans);cursor:pointer;color:var(--color-ink)}
 .up-story .pill{display:inline-flex;align-items:center;gap:6px}
 .up-story .pill:has(input:focus-visible){outline:3px solid var(--color-primary);outline-offset:2px}
+.up-flat .turn{min-width:52px;font-size:20px}
 .up-story .more{display:grid;gap:6px}
 .up-story .more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:700 15px/1.2 var(--font-sans);color:#7a5a2e}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

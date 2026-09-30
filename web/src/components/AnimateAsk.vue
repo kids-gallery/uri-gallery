@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 움직임 질문(D49, SD_02 §17-9): 판정이 움직임을 제안한 그림이면 한 번 더 묻는다 — "애니메이션으로 만드시겠습니까?" [예] · [아니오].
-// 대상 = 그림(making 아님) · suggestion animated · choices에 animated · 아직 확정 안 함. 판정이 아직이면 "살펴보는 중" 작은 글자와 함께 최대 30초.
+// 대상 = 그림(making 아님) · suggestion animated · choices에 animated · 아직 확정 안 함. 판정이 아직이면 "살펴보는 중" 상태 카드(미술관)나 작은 줄(상세)로 최대 30초.
 // [예] → POST confirm animated(원본 액자는 그대로 걸림, 확인 뒤 [좋아요]로 바꿔 건다) · [아니오] → 이 기기에서 그 작품은 다시 묻지 않는다.
 // overlay = 걸리는 장면 뒤 가운데 대화상자: 부모가 장면 끝(ready)을 알려야 보인다 · 첫 버튼 초점 · Tab 가두기 · Esc = 나중에(기억 안 함) · 닫히면 원래 초점.
 // 인라인(작품 상세) = 작은 구역(heading). 어떤 길로 닫혀도 emit('closed').
@@ -91,7 +91,15 @@ onBeforeUnmount(() => { alive = false; if (timer) clearTimeout(timer); document.
 <template>
   <template v-if="show">
     <!-- 판정 전: 작은 글자만(대화상자 아님) -->
-    <p v-if="verdict === 'wait'" :class="overlay ? 'aa-wait-float' : 'aa-wait'" role="status" aria-live="polite">🔎 {{ ko.animAsk.judging }}</p>
+    <p v-if="verdict === 'wait' && !overlay" class="aa-wait" role="status" aria-live="polite">🔎 {{ ko.animAsk.judging }}</p>
+    <!-- 미술관: 질문 카드가 뜰 자리에 같은 모양의 상태 카드(떠 있다 사라지는 알약 = 토스트는 쓰지 않는다). 판정이 오면 그 자리에서 질문으로 바뀐다 -->
+    <div v-else-if="verdict === 'wait'" class="aa-float">
+      <section class="aa aa-status" role="status" aria-live="polite">
+        <p class="aa-spark" aria-hidden="true">🔎</p>
+        <p class="aa-q">{{ ko.animAsk.judging }}</p>
+        <div class="aa-acts one"><button class="btn btn-secondary aa-btn" type="button" @click="close">{{ ko.animAsk.later }}</button></div>
+      </section>
+    </div>
     <div v-else :class="overlay ? 'aa-scrim' : 'aa-inline'">
       <section ref="box" class="aa" :role="overlay ? 'dialog' : 'region'" :aria-modal="overlay ? 'true' : undefined" :aria-labelledby="qId">
         <template v-if="phase === 'ask'">
@@ -128,9 +136,9 @@ onBeforeUnmount(() => { alive = false; if (timer) clearTimeout(timer); document.
 .aa-btn{min-height:52px;font-size:17px}
 .aa-msg{margin:0;min-height:1.2em;font:500 13px/1.3 var(--font-sans);color:#8a2b2b}
 .aa-wait{margin:12px 0 0;font:500 13px/1.4 var(--font-sans);color:#7a6555}
-.aa-wait-float{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;margin:0;
-  padding:8px 14px;border-radius:999px;background:#fffdf8;box-shadow:0 0 0 1px rgba(201,165,82,.45),0 10px 30px -14px rgba(90,62,30,.5);
-  font:600 13px/1.3 var(--font-sans);color:#4a3526;white-space:nowrap}
+.aa-float{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;pointer-events:none}
+.aa-float .aa{pointer-events:auto}
+.aa-status .aa-q{font-size:18px}
 @keyframes aa-in{from{opacity:0}to{opacity:1}}
 @keyframes aa-pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.aa-scrim,.aa-scrim .aa{animation:none}}

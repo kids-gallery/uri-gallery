@@ -17,6 +17,7 @@ import { MOVING_STATES, blockOf, nextActionLabel, routeFor, type ArtworkSummary 
 type Child = components['schemas']['Child'];
 
 const joined = useRoute().query.joined === '1'; // S1c 수락 뒤(UC15 BF6)
+const deleted = useRoute().query.deleted === '1'; // 작품을 지운 뒤(외부 피드백 4차) — 다음 이동 때 없어진다
 const items = ref<ArtworkSummary[] | null>(null);
 const children = ref<Child[]>([]);
 const block = ref<Notice | null>(null);
@@ -42,6 +43,7 @@ onMounted(first);
       <ReasonButton v-else-if="items" :label="ko.shell.appMenu.upload" disabled :reason="ko.child.needChild" />
     </div>
     <NoticeBlock v-if="joined" :title="ko.family.joined" />
+    <NoticeBlock v-if="deleted" :title="ko.del.deleted" />
     <BlockNotice v-if="block" :notice="block" @action="first" />
 
     <section v-if="items && !items.length" class="stack">

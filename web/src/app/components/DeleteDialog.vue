@@ -25,7 +25,7 @@ onMounted(() => nextTick(() => box.value?.focus()));
 async function tick(): Promise<boolean> {
   const r = await api.get<{ state: string }>(`${base.value}/deletion`);
   state.value = r.state;
-  if (r.state === 'done') emit('done');
+  if (r.state === 'done') { emit('done'); if (props.kind === 'artwork') { poll.stop(); emit('close'); void router.push({ path: '/app/works', query: { deleted: '1' } }); } } // 끝나면 목록에서 "지웠어요"
   return r.state !== 'done';
 }
 const poll = usePolling(tick);
@@ -44,14 +44,14 @@ async function remove() {
     block.value = err.status === 404 ? toBlock(err) : { ...problemCopy({ gate: 'G18', reason: 'deletion_not_saved' }), actions: [...problemCopy({ gate: 'G18', reason: 'deletion_not_saved' }).actions], gate: 'G18', fields: [] };
   }
 }
-async function toList() { poll.stop(); emit('close'); await router.push(props.kind === 'artwork' ? '/app/works' : '/app/children'); }
+async function toList() { poll.stop(); emit('close'); await router.push(props.kind === 'artwork' ? { path: '/app/works', query: state.value === 'done' ? { deleted: '1' } : {} } : '/app/children'); }
 function onBlock(label: string) { if (label === ko.del.toList || label === '목록으로') void toList(); else void remove(); }
 </script>
 
 <template>
   <section ref="box" class="gblock is-final dlg stack-sm" role="alertdialog" aria-labelledby="dl-t" tabindex="-1">
     <template v-if="phase !== 'progress'">
-      <p id="dl-t" class="head">{{ ko.del.title }}</p>
+      <p id="dl-t" class="head">{{ kind === 'artwork' ? ko.del.artworkTitle : ko.del.title }}</p>
       <ul class="items">
         <template v-if="kind === 'artwork'"><li v-for="t in ko.del.artworkItems" :key="t">{{ t }}</li></template>
         <li v-else>{{ ko.del.childItems(alias, count) }}</li>

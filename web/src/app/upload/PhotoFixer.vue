@@ -21,7 +21,7 @@ const dialog = ref<HTMLElement | null>(null);
 
 onMounted(async () => {
   const r = await fetch(props.src);
-  const bm = await createImageBitmap(await r.blob());
+  const bm = await createImageBitmap(await r.blob(), { imageOrientation: 'from-image' }); // 사진 방향 정보(EXIF) 먼저
   const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d')!.drawImage(bm, 0, 0);
   const im = new Image(); im.src = c.toDataURL('image/jpeg', 0.95); await im.decode(); img.value = im;
   W.value = im.naturalWidth; H.value = im.naturalHeight;

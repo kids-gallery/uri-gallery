@@ -3,26 +3,26 @@ import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { drawingPng, guardianWithChild } from './stack/guardian';
 
+/** D34: 올리면 원본 액자로 곧바로 걸린다 — 올린 작품 id를 돌려주고 작품 상세로 간다 */
 async function framedArtwork(page: Page): Promise<string> {
   await page.goto('/app/upload');
   await page.locator('input[type=file][accept^="image/jpeg"]').setInputFiles({ name: 'drawing.png', mimeType: 'image/png', buffer: drawingPng() });
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await page.getByRole('button', { name: ko.upload.submit, exact: true }).click();
-  await expect(page).toHaveURL(/\/confirm$/);
-  await page.getByRole('button', { name: ko.kind.frame, exact: true }).click();
-  await page.getByRole('button', { name: ko.confirm.submit, exact: true }).click();
-  await expect(page).toHaveURL(/started=1$/);
-  await expect(page.getByRole('link', { name: ko.list.toReview })).toBeVisible({ timeout: 30_000 });
-  return page.url().match(/artworks\/([^/?]+)/)![1]!;
+  const id = String(((await (await res).json()) as { id: string | number }).id);
+  await expect(page).toHaveURL(/\/app\/museum\//);
+  await page.goto(`/app/artworks/${id}`);
+  return id;
 }
 
-test('작품 삭제: 지워지는 것·남는 것을 보이고, 확인 뒤에만 지우며 끝나면 삭제했어요', async ({ page }, info) => {
+test('작품 삭제: 한 줄로 지워지는 것을 알리고, 확인 뒤에만 지우며 끝나면 작품 관리에 "지웠어요"(외부 피드백 4차)', async ({ page }, info) => {
   test.setTimeout(90_000);
   await guardianWithChild(page, `del-${info.project.name}`);
   const id = await framedArtwork(page);
 
   await page.getByRole('button', { name: ko.del.artwork, exact: true }).click();
   const dlg = page.getByRole('alertdialog');
-  await expect(dlg).toContainText(ko.del.title);
+  await expect(dlg).toContainText(ko.del.artworkTitle);
   for (const t of ko.del.artworkItems) await expect(dlg).toContainText(t);
   await expect(dlg).toContainText(ko.del.keeps);
   // 취소하면 아무것도 지워지지 않는다
@@ -32,9 +32,8 @@ test('작품 삭제: 지워지는 것·남는 것을 보이고, 확인 뒤에만
 
   await page.getByRole('button', { name: ko.del.artwork, exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: ko.del.confirm, exact: true }).click();
-  await expect(page.getByRole('alertdialog')).toContainText(ko.del.progress.done!, { timeout: 45_000 });
-  await page.getByRole('alertdialog').getByRole('button', { name: ko.del.toList, exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/works$/); // 작품 삭제 뒤 목록 = 작품 관리(D25)
+  await expect(page).toHaveURL(/\/app\/works\?deleted=1$/, { timeout: 45_000 }); // 끝나면 저절로 작품 관리로(D25)
+  await expect(page.getByText(ko.del.deleted, { exact: true })).toBeVisible();
   expect((await page.request.get(`/v1/artworks/${id}`)).status()).toBe(404);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

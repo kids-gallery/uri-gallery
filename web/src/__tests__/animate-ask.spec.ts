@@ -134,4 +134,18 @@ describe('움직임 질문(D49)', () => {
     expect(w.emitted('closed')).toBeFalsy();
     w.unmount();
   });
+  it('미술관(overlay) 판정 기다림은 질문 카드 자리의 상태 카드(토스트 아님) — [나중에]로 닫고, 판정이 오면 그 자리에서 질문', async () => {
+    vi.useFakeTimers();
+    let n = 0;
+    fetchMock.mockImplementation(async () => json(++n < 2 ? { ...base, suggestion: null } : base));
+    const w = mount(AnimateAsk, { props: { artworkId: '16', overlay: true }, attachTo: document.body });
+    await flushPromises();
+    expect(w.find('.aa-status').text()).toContain(ko.animAsk.judging);
+    expect(btn(w, ko.animAsk.later)).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(3100);
+    await flushPromises();
+    expect(w.find('.aa-status').exists()).toBe(false);
+    expect(w.find('[role="dialog"]').text()).toContain(ko.animAsk.q);
+    w.unmount();
+  });
 });

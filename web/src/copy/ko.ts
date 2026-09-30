@@ -337,7 +337,7 @@ export const ko = {
   comment: { title: '가족 코멘트', ph: '코멘트를 남겨 주세요', send: '남기기', del: '지우기', empty: '아직 코멘트가 없어요', me: '나', owner: '보호자', co: '공동 보호자', gone: '보호자', fail: '코멘트를 남기지 못했어요 — 다시 해 볼까요?', delFail: '지우지 못했어요 — 다시 해 볼까요?', loadFail: '코멘트를 불러오지 못했어요', retry: '다시 불러오기' }, // D46 ⑨: 7일 기한은 내부 규칙 — 화면 안내 없음
   /** 저장하기(D37, SD_02 §17-10 · docs/C/C_화면문구.md) [추론] */
   /** 움직임 질문(D49, SD_02 §17-9) — 문구는 이제민 지시 그대로 */
-  animAsk: { q: '애니메이션으로 만드시겠습니까?', yes: '예', no: '아니오', hint: '만드는 동안 지금 액자는 그대로 걸려 있어요',
+  animAsk: { q: '애니메이션으로 만드시겠습니까?', yes: '예', no: '아니오', later: '나중에', hint: '만드는 동안 지금 액자는 그대로 걸려 있어요',
     judging: '그림을 살펴보는 중이에요', started: '만들기 시작했어요', startedHint: '다 되면 작품 목록에서 [좋아요]를 눌러 바꿔 걸어요', close: '닫기',
     remakeHint: '지금 액자는 그대로 걸려 있어요. 다 되면 [좋아요]를 눌러 바꿔 걸어요',
     remaking: (k: string) => `${josa(k, '을/를')} 만드는 중이에요`, remakeQueued: (k: string) => `${josa(k, '을/를')} 만들 차례를 기다리는 중이에요`, remakeRetry: (k: string) => `${josa(k, '을/를')} 다시 만들어 보는 중이에요`, fail: '지금은 만들 수 없어요 - 잠시 뒤 작품 화면에서 다시 해 볼까요?' },
@@ -406,12 +406,12 @@ export const ko = {
   /** S9 삭제(docs/C/C_화면문구.md §4 "S9 구현 문구", T101). */
   del: {
     artwork: '작품 삭제', child: '아이 삭제',
-    title: '되돌릴 수 없어요 - 지워지는 것',
-    artworkItems: ['원본 사진 - 잘라 낸 그림 - 입체용 자료 - 결과물', '이야기 - 작품 설명 - 임시 파일'],
+    title: '아이를 지울까요? 되돌릴 수 없어요', artworkTitle: '이 작품을 지울까요?', // 외부 피드백 4차(SD_02 §17-14)
+    artworkItems: ['사진과 만든 결과, 이야기가 모두 지워져요 · 되돌릴 수 없어요'],
     childItems: (alias: string, n: number) => `${josa(alias, '과/와')} 작품 ${n}개가 모두 지워져요`, // [추론]
     keeps: '통계용 숫자만 남고 누구의 작품인지는 남지 않아요',
-    confirm: '삭제', cancel: '취소',
-    progress: { accepted: '접수했어요', waiting_stop: '만들던 작업이 멈추기를 기다리는 중이에요', deleting_files: '파일을 지우는 중이에요', done: '삭제했어요' } as Record<string, string>,
+    confirm: '지우기', cancel: '그만두기', deleted: '지웠어요',
+    progress: { accepted: '접수했어요', waiting_stop: '만들던 작업이 멈추기를 기다리는 중이에요', deleting_files: '파일을 지우는 중이에요', done: '지웠어요' } as Record<string, string>,
     noWait: '기다리지 않아도 돼요', toList: '목록으로',
     locked: '삭제 중 - 이 작품의 모든 조작이 잠겼어요',
   },
