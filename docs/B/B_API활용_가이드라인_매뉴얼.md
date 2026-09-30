@@ -1,6 +1,6 @@
 # API활용 메뉴 — 가이드라인 · 매뉴얼 본문 (S12 탭 원천)
 
-> 작성: 2026-09-29 B 이제민 · 쓰는 곳: 운영 화면 S12 "가이드라인"·"매뉴얼" 탭(`web/src/ops/apiGuideContent.ts`가 이 문서를 그대로 옮긴다) · 근거: UC11 §1 표(BR-API-07), `serving/config/limits.yaml`, `serving/config/ext-limits.yaml`, `ops/DEPLOY.md`
+> 작성: 2026-09-29 B 이제민 · 쓰는 곳: 운영 화면 S12 "가이드라인"·"매뉴얼" 탭(`web/src/ops/apiGuideContent.ts`가 이 문서를 그대로 옮긴다) · 근거: UC11 §1 표(BR-API-07), `serving/config/limits.yaml`, `serving/config/ext-limits.yaml`, `ops/server/DEPLOY.md`
 > 값이 바뀌면 이 문서 → 화면 순서로 고친다. `[예시값]`은 U12 확정 전 값이다.
 
 ## 가이드라인 — 부르는 규칙

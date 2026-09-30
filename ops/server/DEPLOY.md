@@ -28,11 +28,11 @@ ssh <team-server> 'cd ~/project2610 && git pull --ff-only \
   && (cd web && npm ci && npm run build) \
   && rsync -a --delete web/dist/ /srv/uam/web/dist/ \
   && (cd serving && .venv/bin/pip install --require-hashes -r requirements.lock) \
-  && pm2 reload ops/ecosystem.config.cjs && pm2 save'
+  && pm2 reload ops/server/ecosystem.config.cjs && pm2 save'
 ```
 
 - `pm2 reload`는 app-api를 무중단으로 바꾼다. 워커는 `kill_timeout 10000` 안에 진행 중 작업을 끝내거나, 끝내지 못하면 sweeper 이어받기(BR-PRC-05)가 다시 잡는다.
-- P0.5 llm-server는 설명 기능을 열 때만: `pm2 start ops/ecosystem.config.cjs --only llm-server`(주석 해제 뒤) + `.env`에 `CAPTION_ENABLED=true`. 공유 Ollama는 `http://127.0.0.1:11434`(IPv4)로만 부른다.
+- P0.5 llm-server는 설명 기능을 열 때만: `pm2 start ops/server/ecosystem.config.cjs --only llm-server`(주석 해제 뒤) + `.env`에 `CAPTION_ENABLED=true`. 공유 Ollama는 `http://127.0.0.1:11434`(IPv4)로만 부른다.
 
 ## 3. 배포 뒤 확인
 
@@ -56,7 +56,7 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://<도메인>:950
 ## 5. 되돌리기
 
 ```bash
-ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api && npm ci && npm run build) && (cd web && npm ci && npm run build) && pm2 reload ops/ecosystem.config.cjs'
+ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api && npm ci && npm run build) && (cd web && npm ci && npm run build) && pm2 reload ops/server/ecosystem.config.cjs'
 ```
 
 - DB 스키마는 되돌리지 않는다(마이그레이션은 추가만, 재실행 안전). 스키마를 바꾸는 배포는 먼저 `mariadb-dump`로 백업한다(백업 보존 정책은 U15).
@@ -71,15 +71,15 @@ ssh <team-server> 'cd ~/project2610 && git checkout <이전 커밋> && (cd api &
 
 ## 7. p1.sumzip.com 구성 (2026-09-29, A 최호준 — 첫 배포)
 
-Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p01.conf`)가 `https://p1.sumzip.com`의 TLS를 풀고 `http://192.168.0.19:9501`로 넘긴다. 공유 nginx 설정은 고치지 않는다. 그래서 팀 입구 9501(D19)은 **pioneer1 계정의 nginx 인스턴스**가 평문 HTTP로 연다(§1의 `ops/nginx.conf`는 9501에서 TLS를 직접 여는 단독 서버용).
+Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p01.conf`)가 `https://p1.sumzip.com`의 TLS를 풀고 `http://192.168.0.19:9501`로 넘긴다. 공유 nginx 설정은 고치지 않는다. 그래서 팀 입구 9501(D19)은 **pioneer1 계정의 nginx 인스턴스**가 평문 HTTP로 연다(§1의 `ops/server/nginx.conf`는 9501에서 TLS를 직접 여는 단독 서버용).
 
 | 구성 | 값 |
 |---|---|
 | 입구 | `ops/p1/nginx.conf` — `listen 9501`(평문), `set_real_ip_from 192.168.0.19` + `real_ip_header X-Forwarded-For`로 실제 접속 IP를 앱에 넘긴다(요청 한도 G26·G27) |
 | 첫 화면 `/` | **main에서 implement한 웹 빌드(`web/`)만 올린다. SD_02 클릭 프로토타입(`design/prototype`)은 절대 연결하지 않는다**(2026-09-29 최호준 지시). 공유 작업 폴더의 `web/`에는 커밋 전 작업이 섞이므로, `ops/p1/deploy-web.sh`가 main 커밋을 `git archive`로 `.data/p1-build/`에 풀어 `npm ci && npm run build`하고 결과를 `.data/p1-web/`에 바꿔 넣는다. nginx `root`는 `.data/p1-web`, SPA라 없는 경로는 `index.html`로 보낸다. 어느 커밋을 올렸는지는 `.data/p1-web/DEPLOYED_COMMIT`에 남긴다 |
 | 사진 자산 | `/museum/photos/` 1년 immutable 캐시, `manifest.json`은 no-cache, 없는 파일은 SPA로 떨어지지 않고 404(SD_04 §3-3 사진 자산) |
-| API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/model-api`·`/model-api/*` 404 problem+json, 본문 상한(`client_max_body_size 21m`) 초과는 nginx 기본 HTML 대신 413 problem+json(`payload_too_large`, 계약 PayloadTooLarge — 2026-09-30 점검)(SPA 대체로 떨어지지 않게 — 공개 범위 팀 결정 전, SD_04 §내부망 배치), `/metrics`는 로컬만 |
-| 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
+| API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/server/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/model-api`·`/model-api/*` 404 problem+json, 본문 상한(`client_max_body_size 21m`) 초과는 nginx 기본 HTML 대신 413 problem+json(`payload_too_large`, 계약 PayloadTooLarge — 2026-09-30 점검)(SPA 대체로 떨어지지 않게 — 공개 범위 팀 결정 전, SD_04 §내부망 배치), `/metrics`는 로컬만 |
+| 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/server/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
 | `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A/A_모델재현기록.md` M3 절 |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) · **실제 발송은 Gmail SMTP 자동 중계**(R-23 2026-09-30): `ops/p1/mailpit-relay.example.yaml`을 `.data/mailpit-relay.yaml`로 복사해 계정·앱 비밀번호를 채우고 `chmod 600` → `pm2 restart mailpit`(파일이 있을 때만 중계 인자가 붙는다). 확인은 `ops/checklist/check-mail-relay.sh` |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |

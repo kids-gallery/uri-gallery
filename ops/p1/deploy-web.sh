@@ -1,5 +1,5 @@
 #!/bin/zsh
-# p1.sumzip.com 웹 배포(ops/DEPLOY.md §7) — main 커밋을 빌드해 .data/p1-web에 바꿔 넣는다.
+# p1.sumzip.com 웹 배포(ops/server/DEPLOY.md §7) — main 커밋을 빌드해 .data/p1-web에 바꿔 넣는다.
 # 공유 작업 폴더의 web/(커밋 전 작업)는 쓰지 않는다. 프로토타입(design/prototype)은 절대 올리지 않는다.
 # 사용: ops/p1/deploy-web.sh [커밋, 기본 main]
 set -euo pipefail

@@ -2,7 +2,7 @@
 // 서빙 진입점은 A 구현(serving/, a/model-serving) 기준. 워커는 프로세스당 작업 1건 — 동시 처리는 instances로 맞춘다.
 // worker-cpu는 팀 서버 RAM 확인(T068) 전까지 1개(M1 CPU 추론 RSS 8.5GB, A 실측).
 const path = require('node:path');
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', '..'); // ops/server/ → 저장소 루트
 const PY = path.join(ROOT, 'serving', '.venv', 'bin', 'python');
 const M3 = path.join(ROOT, 'serving', '.venv-m3');                          // M3 전용 conda 접두사 환경(R-03)
 const MODEL_ROOT = process.env.MODEL_ROOT || path.join(ROOT, 'models');     // U14 — 코드 기본값과 같다

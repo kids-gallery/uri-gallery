@@ -7,7 +7,7 @@ API는 `contracts/openapi.yaml`에 있는 것만 부른다. 모델·DB를 직접
 | 명령 | 하는 일 |
 |---|---|
 | `npm run dev` | 개발 서버 `http://127.0.0.1:9501` — `/v1`·`/live`·`/ready`·`/openapi.json`은 app-api `127.0.0.1:9521`로 프록시(D19). 팀 서버에서는 띄우지 않는다(9501은 운영 nginx) |
-| `npm run build` | 타입 검사 뒤 `dist/` — 배포는 `ops/DEPLOY.md`가 `/srv/uam/web/dist`로 옮긴다 |
+| `npm run build` | 타입 검사 뒤 `dist/` — 배포는 `ops/server/DEPLOY.md`가 `/srv/uam/web/dist`로 옮긴다 |
 | `npm test` | 단위 시험(Vitest, jsdom) |
 | `npm run e2e` | Playwright 390px·1440px. 다른 포트는 `WEB_PORT=9511 npm run e2e` |
 | `npm run gen:api` | 계약에서 API 타입 생성(T036) |

@@ -45,8 +45,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T005 [P] 서빙 Python 프로젝트를 초기화한다: Python 3.11 venv, FastAPI · uvicorn · PyMySQL · structlog · pillow · pillow-heif · pytest, 해시 잠금 파일 — `serving/pyproject.toml` · `serving/requirements.lock` · 담당 A · 스킬 API · 근거 R-01, R-03
 - [ ] T006 [P] 환경 변수 견본과 비밀 제외를 둔다: `DB_HOST`·`DB_PORT`·`DB_USER`·`DB_NAME`·`DB_PASSWORD`·`SESSION_SECRET`·`STORAGE_ROOT`·`MODEL_ROOT`·`MODEL_API_INTERNAL_URL`·`UAM_FAKE_MODELS`·`GPU_ENABLED`·`SMTP_*`, `.gitignore`에 `.env` — `.env.example` · `.gitignore` · 담당 B · 스킬 — · 근거 R-21
 - [ ] T007 [P] 계약 정본을 루트로 복사하고 lint를 건다: `.specify/…/contracts/*` → `contracts/`, Redocly 설정, `npm run contracts:lint` — `contracts/` · `redocly.yaml` · 담당 B · 스킬 API · 근거 plan Phase 1
-- [ ] T008 [P] pm2 구성을 만든다: `app-api`(:3000) · `model-api`(:8100) · `worker-cpu` · `worker-gpu` · `sweeper`, `llm-server`(:8200)는 P0.5 주석 처리, 모두 127.0.0.1 — `ops/ecosystem.config.cjs` · 담당 B · 스킬 — · 근거 R-02
-- [ ] T009 [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :8100, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :3000, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
+- [ ] T008 [P] pm2 구성을 만든다: `app-api`(:3000) · `model-api`(:8100) · `worker-cpu` · `worker-gpu` · `sweeper`, `llm-server`(:8200)는 P0.5 주석 처리, 모두 127.0.0.1 — `ops/server/ecosystem.config.cjs` · 담당 B · 스킬 — · 근거 R-02
+- [ ] T009 [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :8100, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :3000, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/server/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
 - [ ] T010 [P] GitLab CI를 lint·타입 검사·단위 시험·계약 lint만 돌게 만든다(배포 없음) — `.gitlab-ci.yml` · 담당 B · 스킬 — · 근거 R-02
 - [ ] T011 [P] 디자인 토큰과 글꼴을 옮긴다: `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20
 - [ ] T012 `Intent-Plan.md`의 평문 DB 비밀번호 처리(교체 또는 문서 정리)를 팀에 결정 요청하고 결과를 기록한다 — `docs/공통/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
@@ -318,7 +318,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T137 [P] 평가 묶음 1차 측정과 임계값 제안(U5)·시간 상한 교체(U6) — `docs/A_평가묶음_1차측정.md` · `serving/config/thresholds.yaml` · `serving/config/limits.yaml` · 담당 A · 스킬 — · 근거 FR-17, U5, U6
 - [ ] T138 [P] 접근성·반응형 점검: 390px·1440px, 키보드만 조작, 비활성 버튼 사유 낭독, 대비 4.5:1, 움직임 줄이기, 점수·미리 선택·토스트 0 — `web/e2e/a11y.spec.ts` · 담당 C · 스킬 RL, FD · 근거 SD_02 §17
 - [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/C/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
-- [ ] T140 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
+- [ ] T140 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/server/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
 - [ ] T141 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/공통/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
 
 ---

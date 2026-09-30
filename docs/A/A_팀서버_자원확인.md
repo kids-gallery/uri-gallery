@@ -70,4 +70,4 @@ U2 = "팀 서버 GPU 유무 — M5 속도, M7(P1) 가능 여부".
 
 - `.env.example`의 `MODEL_ROOT=/srv/uam/models`와 `GPU_ENABLED=false`가 이 서버 실측과 다르다. U14·U2 확정 뒤 B(이제민, `.env.example` 담당)에게 고쳐 달라고 요청한다.
 - `serving/config/limits.yaml`의 split 동시 처리 2는 이 서버에서는 부담이 된다(§3). U6 확정(T137) 때 함께 고친다.
-- `ops/DEPLOY.md`의 "팀 서버 사양·GPU·모델 경로 칸"은 이 문서가 확정된 뒤에 채운다.
+- `ops/server/DEPLOY.md`의 "팀 서버 사양·GPU·모델 경로 칸"은 이 문서가 확정된 뒤에 채운다.

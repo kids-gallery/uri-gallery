@@ -119,7 +119,7 @@ pm2 status && pm2 logs --lines 50
 pm2 save && pm2 startup                          # 재부팅 시 자동 시작(launchd)
 ```
 
-nginx(`ops/nginx.conf`) 핵심 라우팅:
+nginx(`ops/server/nginx.conf`) 핵심 라우팅:
 
 | 경로 | 대상 |
 |---|---|
@@ -204,7 +204,7 @@ ssh <team-server> 'cd ~/project2610 && git pull --ff-only \
   && (cd api && npm ci && npm run build && npm run db:migrate) \
   && (cd web && npm ci && npm run build) \
   && (cd serving && .venv/bin/pip install -r requirements.lock --require-hashes) \
-  && pm2 reload ops/ecosystem.config.cjs'
+  && pm2 reload ops/server/ecosystem.config.cjs'
 ```
 
 팀 서버 사양·GPU·모델 경로는 `docs/A/A_팀서버_자원확인.md`(U2·U14) 확인 뒤 이 절을 갱신한다.

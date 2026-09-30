@@ -12,7 +12,7 @@
 2. `Intent-Plan.md` 작업 사본의 비밀번호는 `.env` 참조 문장으로 바꿨다(2026-09-28, B).
 3. 원문이 남아 있던 추적 안 되는 백업(`Intent-Plan-backup.md`)은 2026-09-30 정리 때 **지웠다**(이제민 지시). 원문은 이제 `.env`에만 있다.
 4. 시험은 팀 DB가 아니라 임시 MariaDB로만 돌린다(api `tests/helpers/globalSetup`, serving `tests/conftest.py`).
-5. 문서·계획서·quickstart·`ops/DEPLOY.md`는 `DB_PASSWORD=` 빈 값과 "문서·커밋에 적지 않음"만 적는다.
+5. 문서·계획서·quickstart·`ops/server/DEPLOY.md`는 `DB_PASSWORD=` 빈 값과 "문서·커밋에 적지 않음"만 적는다.
 
 ## 남은 일
 
