@@ -5,7 +5,8 @@ import cookieParser from 'cookie-parser';
 import type { Pool } from 'mysql2/promise';
 import type { Config } from './config.js';
 import { log } from './lib/logger.js';
-import { Problem, parseSignal } from './lib/problem.js';
+import { ZodError } from 'zod';
+import { Problem, parseSignal, zodFields } from './lib/problem.js';
 import { paramGuard } from './lib/paramGuard.js';
 import type { StoragePort } from './storage/LocalFsDriver.js';
 import { filesRouter } from './modules/files/routes.js';
@@ -39,6 +40,7 @@ export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDe
   app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
     let p: Problem;
     if (err instanceof Problem) p = err;
+    else if (err instanceof ZodError) p = new Problem('validation_failed', 'invalid_fields', undefined, zodFields(err)); // 본문 검사 실패는 503이 아니다(계약 머리말)
     else if ((err as { type?: string }).type === 'entity.parse.failed') p = new Problem('invalid_input', 'bad_json');
     else if ((err as { type?: string }).type === 'entity.too.large') p = new Problem('payload_too_large');
     else {

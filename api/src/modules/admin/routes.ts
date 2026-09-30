@@ -10,7 +10,7 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { requirePerm } from '../../auth/policy.js';
-import { Problem, isDup, parseSignal } from '../../lib/problem.js';
+import { Problem, isDup, parseSignal, zodFields } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import type { StoragePort } from '../../storage/LocalFsDriver.js';
 import { validateUpload, MAX_BYTES } from '../artworks/validateUpload.js';
@@ -61,8 +61,8 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
     try {
       const m = mid(req.params.mid);
       const b = z.object({ version: z.string().min(1).max(40), weightsSha256: hex64, runtime: z.string().max(80), imageDigest: hex64,
-        configHash: hex64, device: z.enum(['cpu', 'gpu']), filePath: z.string().max(400).optional(), licenseRecord: z.string().max(200).optional() }).safeParse(req.body);
-      if (!b.success) throw new Problem('validation_failed', 'version_fields');
+        configHash: hex64, device: z.enum(['cpu', 'gpu']), filePath: z.string().max(400).optional(), licenseRecord: z.string().max(200).optional() }).strict().safeParse(req.body);
+      if (!b.success) throw new Problem('validation_failed', 'version_fields', undefined, zodFields(b.error));
       const man = (await manifest())?.[m];
       try {
         await db.query(`INSERT INTO model_version (model_id, version_label, weights_sha256, runtime, image_digest, config_hash, model_path, exec_device, license_confirmed)
@@ -79,7 +79,7 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
     try {
       const m = mid(req.params.mid);
       if (!EVAL_STAGE[m]) throw new Problem('conflict', 'rule_not_evaluated', 'G21');
-      const versionId = Number(z.object({ versionId: z.string() }).parse(req.body).versionId);
+      const versionId = Number(z.object({ versionId: z.string().regex(/^[1-9][0-9]{0,17}$/) }).strict().parse(req.body).versionId);
       const [v] = await all<{ version_id: number; weights_sha256: string | null; config_hash: string | null; release_state: string }>(db,
         `SELECT version_id, weights_sha256, config_hash, release_state FROM model_version WHERE version_id = ? AND model_id = ?`, [versionId, m]);
       if (!v) throw new Problem('not_found');
@@ -127,8 +127,8 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
   });
   r.patch('/v1/admin/eval-runs/:runId', evaluator, async (req, res, next) => {
     try {
-      const b = z.object({ verdict: z.enum(['pass', 'hold']), rationale: z.string().min(1).max(2000) }).safeParse(req.body);
-      if (!b.success) throw new Problem('validation_failed', 'verdict_rationale');
+      const b = z.object({ verdict: z.enum(['pass', 'hold']), rationale: z.string().trim().min(1).max(2000) }).strict().safeParse(req.body);
+      if (!b.success) throw new Problem('validation_failed', 'verdict_rationale', undefined, zodFields(b.error));
       const [u] = await db.query(`UPDATE evaluation SET verdict = ?, rationale = ?, judged_by = ?, judged_at = CURRENT_TIMESTAMP WHERE evaluation_id = ?`,
         [b.data.verdict, b.data.rationale, req.staff!.memberId, Number(req.params.runId)]);
       if ((u as { affectedRows: number }).affectedRows === 0) throw new Problem('not_found');
@@ -140,7 +140,7 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
   r.post('/v1/admin/models/:mid/promote', evaluator, async (req, res, next) => {
     try {
       const m = mid(req.params.mid);
-      const b = z.object({ versionId: z.string(), evalRunId: z.string() }).parse(req.body);
+      const b = z.object({ versionId: z.string().regex(/^[1-9][0-9]{0,17}$/), evalRunId: z.string().regex(/^[1-9][0-9]{0,17}$/) }).strict().parse(req.body);
       const to = Number(b.versionId), ev = Number(b.evalRunId);
       await withTx(db, async (conn) => {
         const [[v]] = (await conn.query(`SELECT version_id, license_confirmed, release_state FROM model_version WHERE version_id = ? AND model_id = ? FOR UPDATE`, [to, m])) as unknown as [{ version_id: number; license_confirmed: number; release_state: string }[]];
@@ -167,8 +167,8 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
   r.post('/v1/admin/models/:mid/rollback', evaluator, async (req, res, next) => {
     try {
       const m = mid(req.params.mid);
-      const b = z.object({ reason: z.string().min(1).max(500) }).safeParse(req.body);
-      if (!b.success) throw new Problem('validation_failed', 'reason');
+      const b = z.object({ reason: z.string().trim().min(1).max(500) }).strict().safeParse(req.body);
+      if (!b.success) throw new Problem('validation_failed', 'reason', undefined, zodFields(b.error));
       await withTx(db, async (conn) => {
         const [[rb]] = (await conn.query(`SELECT version_id FROM model_version WHERE model_id = ? AND release_state = 'rollback_candidate' FOR UPDATE`, [m])) as unknown as [{ version_id: number }[]];
         if (!rb) throw new Problem('conflict', 'no_rollback_candidate'); // UC9 E8 "첫 버전이라 되돌릴 후보가 없어요"
@@ -185,8 +185,8 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
   r.post('/v1/admin/models/:mid/deactivate', evaluator, async (req, res, next) => {
     try {
       const m = mid(req.params.mid);
-      const b = z.object({ reason: z.string().min(1).max(500) }).safeParse(req.body);
-      if (!b.success) throw new Problem('validation_failed', 'reason');
+      const b = z.object({ reason: z.string().trim().min(1).max(500) }).strict().safeParse(req.body);
+      if (!b.success) throw new Problem('validation_failed', 'reason', undefined, zodFields(b.error));
       await withTx(db, async (conn) => {
         const [[cur]] = (await conn.query(`SELECT version_id FROM model_version WHERE model_id = ? AND release_state = 'active' FOR UPDATE`, [m])) as unknown as [{ version_id: number }[]];
         if (!cur) throw new Problem('conflict', 'no_active_version');
@@ -209,10 +209,10 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
     try {
       const b = z.object({ category: z.enum(['person', 'non_person', 'capture_condition', 'sculpture', 'caption_input']),
         expectedPath: z.enum(['animated', 'relief', 'frame', 'sculpture', 'caption']), makerAttested: z.enum(['true']),
-        inputText: z.string().max(2000).optional() }).safeParse(req.body);
+        inputText: z.string().max(2000).optional() }).strict().safeParse(req.body);
       if (!b.success) {
         await recordGate(db, 'G20', 'eval_item', null, 'evaluator', 'maker_or_fields');
-        throw new Problem('validation_failed', 'maker_or_fields', 'G20');
+        throw new Problem('validation_failed', 'maker_or_fields', 'G20', zodFields(b.error));
       }
       const isCaption = b.data.category === 'caption_input';
       if (isCaption ? !b.data.inputText || req.file : !req.file) throw new Problem('validation_failed', 'input_mismatch', 'G20');

@@ -6,7 +6,7 @@ import type { Pool } from 'mysql2/promise';
 import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
-import { Problem, isDup } from '../../lib/problem.js';
+import { Problem, isDup, zodFields } from '../../lib/problem.js';
 import { guardianAuth } from '../../auth/guards.js';
 import { requirePerm } from '../../auth/policy.js';
 import { GUARDIAN_COOKIE, IDLE_MINUTES, STAFF_COOKIE, createSession, destroyAllFor, destroySession } from '../../auth/session.js';
@@ -22,14 +22,13 @@ const DUMMY_HASH = argon2.hash('timing-equalizer-not-a-password');
 function parse<T>(schema: z.ZodType<T>, body: unknown): T {
   const r = schema.safeParse(body);
   if (!r.success) {
-    throw new Problem('validation_failed', 'invalid_fields', undefined,
-      r.error.issues.map((i) => ({ name: String(i.path[0] ?? ''), reason: i.code === 'custom' ? i.message : i.code })));
+    throw new Problem('validation_failed', 'invalid_fields', undefined, zodFields(r.error));
   }
   return r.data;
 }
 
 const withConfirm = <T extends z.ZodRawShape>(shape: T) =>
-  z.object({ ...shape, password, passwordConfirm: z.string() })
+  z.object({ ...shape, password, passwordConfirm: z.string() }).strict()
     .refine((v) => v.password === v.passwordConfirm, { path: ['passwordConfirm'], message: 'password_mismatch' });
 
 export function maskEmail(e: string): string {
@@ -107,7 +106,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 이메일 확인(G27) — 성공하면 세션 발급(UC13 BF5) ---
   r.post('/v1/auth/email/verify', async (req, res, next) => {
     try {
-      const { token } = parse(z.object({ token: z.string() }), req.body); // 형식이 어긋난 토큰도 무효와 같게 400(G27, 계약 TokenInvalid — 구분하지 않음)
+      const { token } = parse(z.object({ token: z.string() }).strict(), req.body); // 형식이 어긋난 토큰도 무효와 같게 400(G27, 계약 TokenInvalid — 구분하지 않음)
       const accountId = await withTx(db, async (conn) => {
         const t = await lockValidToken(conn, token, 'verify');
         if (!t) throw new Problem('token_invalid', 'token_invalid', 'G27');
@@ -122,7 +121,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
 
   r.post('/v1/auth/email/verify/resend', async (req, res, next) => {
     try {
-      const { email: e } = parse(z.object({ email }), req.body);
+      const { email: e } = parse(z.object({ email }).strict(), req.body);
       const em = normEmail(e);
       if (await rl.take('resend', { email: em, ip: ip(req) })) {
         const mail = await withTx(db, async (conn) => {
@@ -140,7 +139,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 로그인 ---
   r.post('/v1/auth/login', async (req, res, next) => {
     try {
-      const b = parse(z.object({ email, password: z.string().min(1).max(200) }), req.body);
+      const b = parse(z.object({ email, password: z.string().min(1).max(200) }).strict(), req.body);
       const em = normEmail(b.email);
       if (await rl.exceeded('login', { email: em })) throw new Problem('rate_limited', 'login_attempts');
       const [rows] = await db.query(`SELECT account_id, password_hash, email_verified_at FROM guardian_account WHERE email_norm = ?`, [em]);
@@ -167,7 +166,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 로그인 정보 찾기·재설정(UC14) ---
   r.post('/v1/auth/recovery', async (req, res, next) => {
     try {
-      const { email: e } = parse(z.object({ email }), req.body);
+      const { email: e } = parse(z.object({ email }).strict(), req.body);
       const em = normEmail(e);
       if (await rl.take('recovery', { email: em, ip: ip(req) })) {
         const mail = await withTx(db, async (conn) => {
@@ -247,7 +246,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 팀원 로그인(INC2, G1) ---
   r.post('/v1/ops/auth/login', async (req, res, next) => {
     try {
-      const b = parse(z.object({ email, password: z.string().min(1).max(200) }), req.body);
+      const b = parse(z.object({ email, password: z.string().min(1).max(200) }).strict(), req.body);
       const [rows] = await db.query(
         `SELECT m.member_id, m.password_hash, GROUP_CONCAT(r.role) roles FROM team_member m
            LEFT JOIN team_member_role r ON r.member_id = m.member_id

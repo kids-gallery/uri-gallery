@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { guardianAuth } from '../../auth/guards.js';
-import { Problem, parseSignal } from '../../lib/problem.js';
+import { Problem, parseSignal, zodFields } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import type { CaptionOk, InfraClass, LlmPort } from './llmServer.js';
 
@@ -83,7 +83,7 @@ export function captionsRouter(db: Pool, cfg: Config, llm: LlmPort, retryDelaysM
     const id = Number(req.params.id);
     try {
       const p = schema.safeParse(req.body);
-      if (!p.success) throw new Problem('validation_failed', 'invalid_fields', undefined, p.error.issues.map((i) => ({ name: String(i.path[0] ?? ''), reason: i.code })));
+      if (!p.success) throw new Problem('validation_failed', 'invalid_fields', undefined, zodFields(p.error));
       const keywords = p.data.keywords.map((k) => k.trim()).filter(Boolean);
       const tags = [...new Set(p.data.selectedTags)];
       const st = await one<{ age_at_creation: number | null; made_on: Date | null; utterance: string | null }>(db,
@@ -179,7 +179,7 @@ export function captionsRouter(db: Pool, cfg: Config, llm: LlmPort, retryDelaysM
     const id = Number(req.params.id), cid = Number(req.params.cid);
     try {
       const p = putSchema.safeParse(req.body);
-      if (!p.success || (p.data.action === 'edit' && !p.data.body?.trim())) throw new Problem('validation_failed', 'invalid_fields');
+      if (!p.success || (p.data.action === 'edit' && !p.data.body?.trim())) throw new Problem('validation_failed', 'invalid_fields', undefined, p.success ? [{ name: 'body', reason: 'blank' }] : zodFields(p.error));
       await withTx(db, async (conn) => {
         const a = await one<{ status: string }>(conn, `SELECT status FROM artwork WHERE artwork_id = ? AND family_id = ? FOR UPDATE`, [id, familyId]);
         if (!a) throw new Problem('not_found');

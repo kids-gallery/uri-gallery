@@ -37,6 +37,13 @@ export class Problem extends Error {
   }
 }
 
+/** zod 검사 실패 → 계약 fields(JSON 본문 공통 오류, 계약 머리말). 모르는 칸은 칸마다 reason 'unrecognized'. */
+export function zodFields(err: { issues: { code: string; path: (string | number)[]; message: string; keys?: string[] }[] }): { name: string; reason: string }[] {
+  return err.issues.flatMap((i) => (i.code === 'unrecognized_keys'
+    ? (i.keys ?? []).map((k) => ({ name: k, reason: 'unrecognized' }))
+    : [{ name: String(i.path[0] ?? ''), reason: i.code === 'custom' ? i.message : i.code }]));
+}
+
 /** 트리거가 SIGNAL SQLSTATE '45000'으로 거절한 경우 {gate, reason}을 뽑는다. 아니면 null. */
 export function parseSignal(err: unknown): { gate?: string; reason: string } | null {
   const e = err as { sqlState?: string; sqlMessage?: string };

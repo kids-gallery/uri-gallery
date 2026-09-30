@@ -4,14 +4,14 @@ import { Router } from 'express';
 import type { Pool } from 'mysql2/promise';
 import { z } from 'zod';
 import { guardianAuth } from '../../auth/guards.js';
-import { Problem } from '../../lib/problem.js';
+import { Problem, zodFields } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 
 const aliasSchema = z.object({ alias: z.string() }).strict();
 
 function cleanAlias(body: unknown): string {
   const r = aliasSchema.safeParse(body); // 실명·생년월일 같은 다른 필드는 받지 않는다(BR-CHD-01)
-  if (!r.success) throw new Problem('validation_failed', 'invalid_fields', 'G4');
+  if (!r.success) throw new Problem('validation_failed', 'invalid_fields', 'G4', zodFields(r.error));
   const alias = r.data.alias.trim();
   if (!alias) throw new Problem('validation_failed', 'alias_blank', 'G4', [{ name: 'alias', reason: 'blank' }]);
   if ([...alias].length > 20) throw new Problem('validation_failed', 'alias_too_long', 'G4', [{ name: 'alias', reason: 'too_long' }]);

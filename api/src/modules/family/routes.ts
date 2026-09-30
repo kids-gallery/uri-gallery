@@ -6,7 +6,7 @@ import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { guardianAuth } from '../../auth/guards.js';
 import { destroyAllFor } from '../../auth/session.js';
-import { Problem, isDup, parseSignal } from '../../lib/problem.js';
+import { Problem, isDup, parseSignal, zodFields } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import type { Mailer } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from '../auth/rateLimit.js';
@@ -52,8 +52,8 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   r.post('/v1/family/invites', withFamily, async (req, res, next) => {
     const g = req.guardian!;
     try {
-      const b = z.object({ email: z.string().trim().max(254).email() }).safeParse(req.body);
-      if (!b.success) throw new Problem('validation_failed', 'email', 'G29');
+      const b = z.object({ email: z.string().trim().max(254).email() }).strict().safeParse(req.body);
+      if (!b.success) throw new Problem('validation_failed', 'email', 'G29', zodFields(b.error));
       const em = normEmail(b.data.email);
       if (g.role !== 'owner') throw new Problem('forbidden_role', 'invite_owner_only', 'G29');
       const [co] = await db.query(`SELECT COUNT(*) n FROM guardian_account WHERE family_id = ? AND role = 'co'`, [g.familyId]);

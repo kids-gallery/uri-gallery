@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { guardianAuth } from '../../auth/guards.js';
-import { Problem, isDup } from '../../lib/problem.js';
+import { Problem, isDup, zodFields } from '../../lib/problem.js';
 import { recordGate } from '../../lib/gateEvent.js';
 import { LocalFsDriver, type StoragePort } from '../../storage/LocalFsDriver.js';
 import { MAX_BYTES, validateUpload } from './validateUpload.js';
@@ -94,8 +94,8 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
     const familyId = req.guardian!.familyId!;
     const id = Number(req.params.id);
     try {
-      const k = z.object({ kind: z.enum(['animated', 'relief', 'frame', 'sculpture']) }).safeParse(req.body);
-      if (!k.success) throw new Problem('validation_failed', 'kind', 'G8');
+      const k = z.object({ kind: z.enum(['animated', 'relief', 'frame', 'sculpture']) }).strict().safeParse(req.body);
+      if (!k.success) throw new Problem('validation_failed', 'kind', 'G8', zodFields(k.error));
       const kind = k.data.kind as ConfirmKind;
       await withTx(db, async (conn) => {
         const [rows] = await conn.query(`SELECT status FROM artwork WHERE artwork_id = ? AND family_id = ? FOR UPDATE`, [id, familyId]);
@@ -127,8 +127,8 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
     const familyId = req.guardian!.familyId!;
     const id = Number(req.params.id);
     try {
-      const d = z.object({ decision: z.enum(['like', 'use_lower', 'frame', 'retake']) }).safeParse(req.body);
-      if (!d.success) throw new Problem('validation_failed', 'decision', 'G10');
+      const d = z.object({ decision: z.enum(['like', 'use_lower', 'frame', 'retake']) }).strict().safeParse(req.body);
+      if (!d.success) throw new Problem('validation_failed', 'decision', 'G10', zodFields(d.error));
       let out;
       try {
         out = await withTx(db, (conn) => decide(db, cfg, storage, conn, familyId, req.guardian!.accountId, id, d.data.decision as DecisionCode));

@@ -67,8 +67,10 @@ function breakers(s0: S): [string, unknown][] {
 
 interface Row { op: string; case: string; status: number; code?: string; reason?: string; fields: boolean; detail: boolean; verdict: string }
 const rows: Row[] = [];
-const verdict = (st: number, contractCodes: string[]) =>
-  st === 422 ? 'O 422' : st >= 500 ? 'X 서버 오류' : st >= 200 && st < 300 ? 'X 받아들임' : st === 400 ? (contractCodes.includes('400') ? '△ 400(계약)' : 'X 400') : `? ${st}(다른 문)`;
+const verdict = (st: number, contractCodes: string[], reason?: string, op = '', label = '') =>
+  st === 400 && reason === 'bad_json' ? '△ 400(계약 공통 bad_json)'
+  : st === 200 && op === 'PUT /v1/artworks/{artworkId}/story' && !/날짜|길이|타입|null|목록/.test(label) ? '△ 200(임시 저장 D22)'
+  : st === 422 ? 'O 422' : st >= 500 ? 'X 서버 오류' : st >= 200 && st < 300 ? 'X 받아들임' : st === 400 ? (contractCodes.includes('400') ? '△ 400(계약)' : 'X 400') : `? ${st}(다른 문)`;
 
 const t = testApp();
 afterAll(async () => {
@@ -112,7 +114,7 @@ describe.skipIf(!process.env.SWEEP)('스키마 전수 점검', () => {
         const r = await req;
         const b = (r.body ?? {}) as S;
         rows.push({ op: `${m.toUpperCase()} ${p}`, case: label, status: r.status, code: b.code, reason: b.reason, fields: Array.isArray(b.fields) && b.fields.length > 0,
-          detail: typeof b.detail === 'string' && b.detail.length > 0, verdict: verdict(r.status, codes) });
+          detail: typeof b.detail === 'string' && b.detail.length > 0, verdict: verdict(r.status, codes, b.reason, `${m.toUpperCase()} ${p}`, label) });
       };
       // 경로·쿼리 칸
       for (const x of params) {

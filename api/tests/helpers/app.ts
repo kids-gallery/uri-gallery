@@ -45,7 +45,8 @@ const responseValidator = () => OpenApiValidator.middleware({
       const b = body as { status?: number; reason?: string } | undefined;
       if (/status code '(401|403)'/.test(err.message)) return;
       if (/status code '409'/.test(err.message) && b?.reason === 'no_family') return;
-      if (/status code '422'/.test(err.message) && b?.reason === 'invalid_param') return; // 경로·쿼리 입력 공통 오류(계약 머리말)
+      // 경로·쿼리 입력·JSON 본문 공통 오류(계약 머리말, 2026-09-30) — 422 validation_failed는 경로마다 적지 않는다
+      if (/status code '422'/.test(err.message) && (b as { code?: string } | undefined)?.code === 'validation_failed') return;
       contractViolations.push(`${req.method} ${req.path}: ${err.message}`);
     },
   },

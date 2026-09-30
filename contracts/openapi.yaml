@@ -17,6 +17,9 @@ info:
       1~18자리 양의 정수 문자열이다(`^[1-9][0-9]{0,17}$`). 어기면 — 그리고 필수 쿼리가 없거나, `modelId`가 목록 밖이거나, 날짜 쿼리가 `YYYY-MM-DD`가 아니면 —
       처리 전에 422 `validation_failed`·reason `invalid_param`·`fields: [{name, reason}]`(reason `required`·`not_positive_integer`·`not_in_enum`·`not_date`)로 거절한다.
       이 검사는 로그인 확인(401)·소유·존재 확인(404)보다 먼저다(형식만 보고 자원 존재는 알리지 않는다) — 형식이 맞는 id만 404로 존재를 숨긴다(BR-ACC-01). DB 오류(503)로 번지지 않는다.
+    - JSON 본문 공통 오류(2026-09-30, 점검표 계약 2~5행, 경로별로 반복해 적지 않음): 본문이 JSON이 아니면 400 `invalid_input`·reason `bad_json`.
+      계약에 없는 칸(칸 이름 오타 포함)·필수 칸 누락·타입·길이·범위·목록 밖 값은 422 `validation_failed`로 거절하고, 어느 칸인지 `fields: [{name, reason}]`로 알린다
+      (모르는 칸은 reason `unrecognized`). 본문 검사 실패가 503으로 번지지 않는다. 예외: 이야기 저장(`PUT …/story`)은 임시 저장(D22)이라 모든 칸이 선택이다.
     - 오류→화면 사상은 `code`가 아니라 `reason`(+`gate`)으로 한다. 해제 주체·다음 행동 문구는 화면 문구 사전(web `copy/ko.ts`)이 gate·reason으로 정한다.
 servers:
   - url: /
