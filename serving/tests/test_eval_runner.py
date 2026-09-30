@@ -194,3 +194,15 @@ def test_run_cli_processes_only_eval_jobs(ev):
     assert cli.run("cpu_vision") == 0
     assert all(ev.job_row(j)["status"] == "done" for j in jobs)
     assert ev.job_row(sj)["status"] == "queued"                                  # 보호자 작업은 건드리지 않는다
+
+
+def test_summary_scores_by_model_expected_path():
+    """채점(D57): M1·M5는 기대 animated를 relief로 본다 — 분리가 되면 맞음. M2·M3는 그대로."""
+    cli = _cli()
+    rows = [{"item_id": 1, "status": "done", "result_path": "relief", "expected_path": "animated", "category": "person",
+             "processing_ms": 10, "memory_mb": 1, "misclass_label": None},
+            {"item_id": 2, "status": "done", "result_path": "frame", "expected_path": "relief", "category": "non_person",
+             "processing_ms": 10, "memory_mb": 1, "misclass_label": None}]
+    assert cli.summarize(rows, 2, "M1")["match_rate"] == 0.5          # 1은 맞음, 2는 분리 실패라 틀림
+    assert cli.summarize(rows, 2, "M5")["match_rate"] == 0.5
+    assert cli.summarize(rows, 2, "M2")["match_rate"] == 0.0          # 판정 제안은 그대로 비교

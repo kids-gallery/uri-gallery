@@ -25,6 +25,7 @@ models = [
   "kornia==0.7.3",
   "einops==0.8.0",
   "imageio-ffmpeg==0.6.0",   # 고정된 정적 ffmpeg(M3 GIF→MP4). 호스트 Homebrew ffmpeg에 기대지 않는다
+  "scipy==1.16.2",           # M1 구멍 채우기(D56) · M3 렌더 모양 검사(D55) — ndimage
 ]
 
 [tool.pytest.ini_options]

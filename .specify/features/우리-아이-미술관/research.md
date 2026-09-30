@@ -206,7 +206,7 @@
 
 | ID | 모델(원천 체크포인트) | 변형·형식 | 입력 → 출력 | 실행기·장치 | 라이선스 상태 |
 |:--:|---|---|---|---|---|
-| M1 | **BiRefNet** — `ZhengPeng7/BiRefNet` (Hugging Face) | 일반용 가중치, FP32 PyTorch `[추론]`. 입력 1024×1024로 리사이즈, 출력 마스크를 원본 크기로 복원 | 원본 → 1채널 마스크 PNG + RGBA 컷아웃 PNG | PyTorch, CPU(`worker-cpu`) | MIT 계열 — 확정 기록 필요(U4 목록 밖) |
+| M1 | **BiRefNet** — `ZhengPeng7/BiRefNet` (Hugging Face) | 일반용 가중치, FP32 PyTorch `[추론]`. 입력 1024×1024로 리사이즈, 출력 마스크를 원본 크기로 복원 → 0.5 이진화 → 닫힌 구멍 채우기(`scipy.ndimage.binary_fill_holes`) → 알파 = max(원 마스크, 채움). 전경 비율은 채운 마스크로 잰다. 설정 `postprocess: fill_holes`는 `config_hash`에 들어간다(D56) | 원본 → 1채널 마스크 PNG + RGBA 컷아웃 PNG | PyTorch, CPU(`worker-cpu`) | MIT 계열 — 확정 기록 필요(U4 목록 밖) |
 | M2 | **OpenCLIP** — 아키텍처 `ViT-B-32`, 사전학습 가중치 `laion2b_s34b_b79k` `[추론]` | FP32 PyTorch. 제로샷 레이블 4종 "a child's drawing of a person / an animal / a house / an object"(프롬프트 원문은 `serving/config/m2_prompts.yaml`), 태그 후보는 같은 방식의 고정 어휘 목록 | 원본(또는 컷아웃) → 종류 1개 + 태그 후보(점수는 기록만) | open_clip_torch, CPU | **가중치 라이선스 확인 전 비활성**(U4, A2, BR-MDL-07) |
 | M3 | **Meta Animated Drawings** — `facebookresearch/AnimatedDrawings` (2025-09-03 보관 처리) | 저장소 커밋 고정, TorchServe 모델 2종 `drawn_humanoid_detector.mar`·`drawn_humanoid_pose_estimator.mar`, 모션은 저장소 기본 모션 1종 `[추론]` | 원본 → 관절(판정용) / 리깅·렌더 GIF → 워커가 MP4 변환 | TorchServe(네이티브, 보관 처리) + Java 17, CPU | MIT — 보관 처리 엔진은 내부망 격리(BR-MDL-06) |
 | M4 | **규칙**(모델 아님) — 관절 기하 규칙 | `serving/config/m4_rules.yaml` 파일 해시를 버전으로 | M3 관절 → 통과/불통과(팔다리 길이·좌우 대칭·몸통 비율) | Python, CPU | 해당 없음 |

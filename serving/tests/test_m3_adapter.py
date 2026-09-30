@@ -8,7 +8,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from adapters.base import JobInput
 from rules.m4_geometry import evaluate_file
@@ -105,3 +105,47 @@ def test_render_gif_to_mp4_and_cancel(tmp_path, torchserve, monkeypatch):
     t = time.monotonic()
     r = a.run(JobInput(2, "animate_render", tmp_path / "x", {"original": src}, ev))
     assert r.diagnostic == "cancelled_midway" and time.monotonic() - t < 7     # SIGTERM → 5초 뒤 SIGKILL 안에 끝남
+
+
+def _gif(path, frames):
+    fr = []
+    for boxes in frames:                                     # 흰 바탕 위 검은 사각형들
+        im = Image.new("RGB", (100, 100), "white"); d = ImageDraw.Draw(im)
+        for b in boxes:
+            d.rectangle(b, fill="black")
+        fr.append(im)
+    fr[0].save(path, save_all=True, append_images=fr[1:], duration=40)
+    return path
+
+
+def test_shape_check_torn_and_distorted(tmp_path):
+    """렌더 뒤 모양 검사(D55): 그대로면 통과, 조각이 갈라지면 render_torn, 면적이 크게 흔들리면 render_distorted."""
+    from adapters.m3_render import shape_check
+    from common.config import load_yaml
+    t = load_yaml("thresholds")["animate_render"]
+    body = (40, 20, 60, 80)
+    ok = [[body], [(38, 20, 62, 80)], [body]]                                 # 약간 흔들림(1.2배 안)
+    assert shape_check(_gif(tmp_path / "ok.gif", ok), t) is None
+    torn = [[(40, 20, 60, 45), (40, 55, 60, 80)]] * 3                          # 몸통이 끊겨 두 조각
+    assert shape_check(_gif(tmp_path / "torn.gif", torn), t) == "render_torn"
+    grow = [[body], [(20, 20, 80, 80)], [body]]                               # 면적 3배
+    assert shape_check(_gif(tmp_path / "grow.gif", grow), t) == "render_distorted"
+    blank = [[body], [], [body]]                                              # 그림이 사라진 프레임
+    assert shape_check(_gif(tmp_path / "blank.gif", blank), t) == "render_torn"
+
+
+def test_render_distorted_downgrades(tmp_path, torchserve, monkeypatch):
+    """모양 검사에 걸리면 MP4를 만들지 않고 quality_below — 낮춤 체인(animated_to_relief)으로 간다."""
+    ad = tmp_path / "ad"; (ad / "examples").mkdir(parents=True)
+    runner = tmp_path / "fake_runner.py"
+    runner.write_text(
+        "import sys,os\nfrom PIL import Image, ImageDraw\nout=sys.argv[2]; os.makedirs(out, exist_ok=True)\nfr=[]\n"
+        "for w in (10,40,10):\n im=Image.new('RGB',(100,100),'white'); ImageDraw.Draw(im).rectangle((50-w,20,50+w,80),fill='black'); fr.append(im)\n"
+        "fr[0].save(os.path.join(out,'video.gif'),save_all=True,append_images=fr[1:],duration=40)\n")
+    monkeypatch.setenv("M3_AD_PYTHON", sys.executable); monkeypatch.setenv("M3_AD_ROOT", str(ad))
+    monkeypatch.setenv("M3_AD_RUNNER", str(runner))
+    from adapters.m3_render import AnimatedDrawingsAdapter
+    src = tmp_path / "o.png"; Image.new("RGB", (64, 64), "white").save(src)
+    r = AnimatedDrawingsAdapter().run(JobInput(1, "animate_render", tmp_path, {"original": src}, threading.Event()))
+    assert (r.outcome, r.diagnostic) == ("quality_below", "render_distorted")
+    assert not (tmp_path / "animated.mp4").exists()

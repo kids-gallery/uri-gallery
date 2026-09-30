@@ -2218,7 +2218,8 @@ components:
             properties:
               evalItemId: { type: string }
               status: { type: string, enum: [done, incomplete, timeout] }
-              expectedPath: { type: [string, 'null'] }
+              expectedPath: { type: [string, 'null'], description: '이 모델 기준 기대 경로(D57 — M1·M5는 항목 기대 animated를 relief로 본다). actualPath와 같으면 일치' }
+              itemExpectedPath: { type: [string, 'null'], description: '평가 항목에 적힌 원래 기대 경로(eval_item.expected_path)' }
               actualPath: { type: [string, 'null'] }
               outcome: { type: [string, 'null'] }
               downgradeReason: { type: [string, 'null'] }

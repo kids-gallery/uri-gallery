@@ -26,6 +26,8 @@
 | `sculpture` (P1) | M7 TripoSR | `gpu` | 컷아웃 | `stored_object(result_glb)` → `result(sculpture)` | **예** |
 | `caption` (P0.5) | M6 Qwen3-4B | `llm` | 허용 필드(llm-contract.md) | `caption` 행, `caption_check_failure` | 아님 — **큐로 전달하지 않음**(§11) |
 
+**M1 마스크(D56)**: `split`의 마스크·컷아웃 알파는 닫힌 구멍을 채운 뒤 값이다(전경 비율도 채운 마스크 기준). 외부 `segment`(§9)도 같은 어댑터라 같은 값을 준다.
+
 **모델 버전 기록**: app-api는 작업을 만들 때 그 단계 대표 모델(`split` M1 · `judge` M2 · `animate_render` M3 · `depth_relief` M5 · `sculpture` M7)의 활성 버전을 `model_version_id`에 적는다(`chk_sj_model_required`, `trg_stage_job_bi`). 활성 버전이 없으면 작업을 만들지 않는다: 판정 모델(M1·M2·M3) 중 하나라도 비활성이면 `split`·`judge`를 만들지 않고 `judgment(suggestion_state='exhausted')`를 기록해 `awaiting_confirm`으로 둔다(보호자 직접 확정, clarify 2026-09-28). 결과 모델이 비활성이면 그 확정 선택지를 막는다(openapi `unavailableChoices`).
 
 **판정 전 확정의 순서(2026-09-28 추가)**: 보호자는 판정 중에도 확정할 수 있다(BR-SUG-05). 이때 판정 결과(마스크·컷아웃·관절)가 필요한 결과 작업(`animate_render`·`depth_relief`·`sculpture`)은 `available_at`을 먼 미래로 등록해 잠가 둔다. **워커가 `judge`를 닫을 때(성공·품질 미달·소진 모두) 같은 작품의 잠긴 `origin='confirm'` 작업을 연다**(`available_at=UTC_TIMESTAMP()`). 열 때 `relief` 확정인데 `split_ok`가 TRUE가 아니면 `depth_relief`를 `done_downgraded`·`split_fail`로 닫고 `frame_compose`를 등록한다(§6 넷째 줄과 같은 결과). `frame_compose`는 판정 결과가 필요 없어 잠그지 않는다. 판정 모델이 비활성이라 판정 작업이 없으면 잠그지 않고 곧바로 연다.
@@ -121,6 +123,8 @@ else:                                                   suggestion = frame
 | `relief` 확정 | `split_ok<>TRUE` | 확정 트랜잭션이 `depth_relief` 대신 `frame_compose` 등록 | `split_fail`(`split` 작업에 이미 기록) |
 | `sculpture` quality_below (P1) | 마스크 있음 / 없음 | `depth_relief` / `frame_compose` | `sculpture_to_relief` |
 
+**움직임 렌더 모양 검사(D55)**: `animate_render`는 AD가 GIF를 만든 뒤 프레임 모양을 검사한다. 전경 조각이 둘 이상으로 갈라진 프레임이 50% 이상이면 `diagnostic=render_torn`, 프레임 전경 면적 최대/최소가 `thresholds.yaml animate_render.max_area_ratio`(1.6, `[추론]`)를 넘으면 `render_distorted`로 `quality_below`를 낸다 — 위 표의 낮춤으로 간다. 기존 `ad_failed`(AD 실패) · `empty_render`(1KB 미만)와 같은 자리다.
+
 낮춘 결과가 최종 결과가 되면 `artwork_outcome.result_cause='model_downgrade'`. 낮춤 표시는 보호자 화면 S4·S5에만(`v_job_progress.downgrade_cause`), 전시(`v_gallery`)에는 없다(D3).
 
 ## 7. 취소 (EXT1, G18·G19, H12)
@@ -196,6 +200,7 @@ app-api(G21)가 평가 요청마다 `evaluation` 1행과 항목마다 `stage_job
 - **같은 어댑터**: 워커에 올라간 어댑터를 그대로 쓴다. 어댑터는 매니페스트 리비전으로 가중치를 올리므로, 실행 직전에 후보 버전의 `weights_sha256`·`config_hash`가 매니페스트와 같은지 다시 본다. 다르면(평가 요청 뒤 매니페스트가 바뀜) 재시도 없이 `incomplete`로 닫는다.
 - **평가 대상**(D51): 평가 요청이 모델마다 항목을 고른다 — M1·M2·M5는 `caption_input`을 뺀 사진 항목 전체, **M3는 `category='person'`만**, M6은 `caption_input`만. 대상이 0개면 409 `no_eval_items`(G21).
 - **입력**: `eval_item.object_id` → `stored_object`(`owner_kind='eval_set'`, `evalset/…`)의 파일을 `original`로 준다. `caption_input` 항목(M6)은 P0.5에서, M7은 GPU가 있을 때만(UC9 A4) 처리한다 — 그 전에는 점유하지 않는다.
+- **채점(D57)**: 일치 여부는 기대 경로를 그 모델이 낼 수 있는 답으로 바꿔 본다 — M1·M5는 기대 `animated`를 `relief`로(분리·깊이가 되면 `relief`), M2·M3·M6은 그대로. 저장값 `eval_item.expected_path`는 바꾸지 않고, 평가 기록 응답 `expectedPath`와 보고서 일치율에서만 적용한다.
 - **모델별 실행과 `result_path`**(기대 경로 `eval_item.expected_path`와 비교하는 값). 나머지 단계는 성공한다고 보고 이 모델의 결과가 이르는 경로를 적는다 `[추론]`:
 
   | 후보 | 단계(어댑터) | `ok` | `quality_below` |

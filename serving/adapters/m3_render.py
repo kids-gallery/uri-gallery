@@ -23,6 +23,31 @@ from .base import Adapter, AdapterResult, JobInput
 RUNNER = Path(__file__).with_name("m3_ad_run.py")
 
 
+def shape_check(gif: Path, t: dict) -> str | None:
+    """렌더 뒤 모양 검사(D55). 문제 없으면 None, 있으면 진단 코드(render_torn · render_distorted)."""
+    import numpy as np
+    from PIL import Image, ImageSequence
+    from scipy import ndimage
+
+    areas, torn = [], 0
+    with Image.open(gif) as g:
+        for f in ImageSequence.Iterator(g):
+            fg = (np.asarray(f.convert("RGB")) < t["background_level"]).any(axis=2)
+            fg = ndimage.binary_closing(fg, np.ones((3, 3), bool))
+            lab, n = ndimage.label(fg, np.ones((3, 3), bool))
+            sizes = np.bincount(lab.ravel())[1:] if n else np.zeros(0, int)
+            total = int(sizes.sum())
+            areas.append(total)
+            torn += int((sizes >= t["piece_min_share"] * total).sum() > 1) if total else 0
+    if not areas or min(areas) == 0:
+        return "render_torn"
+    if torn / len(areas) >= t["max_torn_frame_ratio"]:
+        return "render_torn"
+    if max(areas) / min(areas) > t["max_area_ratio"]:
+        return "render_distorted"
+    return None
+
+
 def _bundled_ffmpeg() -> str:
     try:
         import imageio_ffmpeg
@@ -34,7 +59,8 @@ def _bundled_ffmpeg() -> str:
 class AnimatedDrawingsAdapter(Adapter):
     model_id = "M3"
     CONFIG = {"detector": m3_joints.DETECTOR, "pose": m3_joints.POSE, "max_side": m3_joints.MAX_SIDE,
-              "motion": "dab", "retarget": "fair1_ppf", "render": "osmesa", "video": "mp4-h264-24fps"}
+              "motion": "dab", "retarget": "fair1_ppf", "render": "osmesa", "video": "mp4-h264-24fps",
+              "shape_check": "d53-torn-area"}   # 렌더 뒤 모양 검사(D55) — 기준값은 thresholds.yaml
 
     def __init__(self):
         super().__init__()
@@ -44,7 +70,8 @@ class AnimatedDrawingsAdapter(Adapter):
         self.ad_root = os.environ.get("M3_AD_ROOT")
         self.runner = os.environ.get("M3_AD_RUNNER") or str(RUNNER)
         self.ffmpeg = os.environ.get("FFMPEG") or _bundled_ffmpeg()
-        self.min_bytes = load_yaml("thresholds")["animate_render"]["min_output_bytes"]
+        self.limits = load_yaml("thresholds")["animate_render"]
+        self.min_bytes = self.limits["min_output_bytes"]
 
     # 적재 = TorchServe에 두 모델이 올라가 있는지 확인(가중치는 TorchServe가 들고 있다)
     def load(self) -> None:
@@ -102,6 +129,12 @@ class AnimatedDrawingsAdapter(Adapter):
             except Exception:
                 return AdapterResult("engine_down", diagnostic="torchserve_down")
             return AdapterResult("quality_below", diagnostic="ad_failed")
+        try:
+            bad = shape_check(gif, self.limits)
+        except OSError:
+            return AdapterResult("engine_down", diagnostic="render_unreadable")
+        if bad:
+            return AdapterResult("quality_below", diagnostic=bad)   # 일그러진 영상은 주지 않고 낮춘다(D55)
         mp4 = job.tmp_dir / "animated.mp4"
         rc = self._run_proc([self.ffmpeg, "-y", "-loglevel", "error", "-i", str(gif), "-an", "-c:v", "libx264",
                              "-pix_fmt", "yuv420p", "-r", "24", "-movflags", "+faststart",

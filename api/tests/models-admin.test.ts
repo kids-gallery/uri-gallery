@@ -108,6 +108,16 @@ describe('평가 → 판단 → 승격 → 롤백 → 비활성화(G21·G22, D5)
     expect(all5.body.itemTotal).toBe(3);
   });
 
+  it('평가 기록의 기대 경로는 그 모델 기준(D57) — M5는 항목 기대 animated를 relief로, 원래 값은 itemExpectedPath', async () => {
+    const a = await evaluator();
+    await a.post('/v1/admin/eval-items').field('category', 'person').field('expectedPath', 'animated').field('makerAttested', 'true')
+      .attach('photo', await png(), 'p.png').expect(201);
+    const ev = (await a.post('/v1/admin/models/M5/evaluate').send({ versionId: await candidate(a) }).expect(202)).body.id as string;
+    await finish(ev);
+    const run = (await a.get(`/v1/admin/eval-runs/${ev}`).expect(200)).body;
+    expect(run.results[0]).toMatchObject({ expectedPath: 'relief', itemExpectedPath: 'animated', actualPath: 'relief' });
+  });
+
   it('미완료 항목이 있으면 승격 막힘, 전부 완료·통과면 승격하고 직전 활성은 롤백 후보', async () => {
     const a = await evaluator();
     await addItems(a, 2);

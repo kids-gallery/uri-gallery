@@ -22,6 +22,9 @@ const EVAL_STAGE: Record<string, [string, string]> = { // 모델 → [단계, �
 };
 // 모델별 평가 대상(D51) — M3는 사람 항목만, M6은 설명 입력만, 나머지는 사진 항목 전체
 const EVAL_TARGET: Record<string, string> = { M3: "category = 'person'", M6: "category = 'caption_input'" };
+// 채점(D57): 기대 경로를 그 모델이 낼 수 있는 답으로 — M1·M5는 분리·깊이가 되면 relief라 animated를 relief로 본다
+export const modelExpected = (m: string, expected: string | null) =>
+  (m === 'M1' || m === 'M5') && expected === 'animated' ? 'relief' : expected;
 const all = async <T>(db: Pool, sql: string, p: unknown[] = []) => (await db.query(sql, p))[0] as T[];
 const hex64 = z.string().regex(/^[a-f0-9]{64}$/);
 
@@ -109,8 +112,9 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
 
   async function runView(evaluationId: number) {
     const [e] = await all<Record<string, unknown>>(db,
-      `SELECT e.evaluation_id, e.version_id, e.verdict, e.rationale, p.item_total, p.done_count, p.incomplete_count, p.eligible
-         FROM evaluation e JOIN v_promotion_eligibility p ON p.evaluation_id = e.evaluation_id WHERE e.evaluation_id = ?`, [evaluationId]);
+      `SELECT e.evaluation_id, e.version_id, mv.model_id, e.verdict, e.rationale, p.item_total, p.done_count, p.incomplete_count, p.eligible
+         FROM evaluation e JOIN v_promotion_eligibility p ON p.evaluation_id = e.evaluation_id
+         JOIN model_version mv ON mv.version_id = e.version_id WHERE e.evaluation_id = ?`, [evaluationId]);
     if (!e) throw new Problem('not_found');
     const results = await all<Record<string, unknown>>(db,
       `SELECT r.item_id, r.status, r.result_path, r.misclass_label, r.processing_ms, i.expected_path
@@ -119,7 +123,9 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
       id: String(e.evaluation_id), versionId: String(e.version_id), itemTotal: Number(e.item_total), itemDone: Number(e.done_count),
       doneCount: Number(e.done_count), incompleteCount: Number(e.incomplete_count), verdict: e.verdict ?? null, rationale: e.rationale ?? null,
       eligible: Boolean(Number(e.eligible)),
-      results: results.map((x) => ({ evalItemId: String(x.item_id), status: x.status, expectedPath: x.expected_path, actualPath: x.result_path ?? null,
+      results: results.map((x) => ({ evalItemId: String(x.item_id), status: x.status,
+        expectedPath: modelExpected(String(e.model_id), (x.expected_path as string | null) ?? null), itemExpectedPath: x.expected_path ?? null,
+        actualPath: x.result_path ?? null,
         outcome: null, downgradeReason: null, misclassCode: x.misclass_label ?? null, durationMs: x.processing_ms ?? null })),
     };
   }

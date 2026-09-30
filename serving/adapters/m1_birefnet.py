@@ -2,7 +2,8 @@
 
 `ZhengPeng7/BiRefNet` 일반용 가중치, 입력 1024×1024로 줄였다가 마스크를 원본 크기로 되돌린다.
 모델 코드는 HF 저장소의 원격 코드(trust_remote_code)다 — 매니페스트 revision(커밋)을 고정해서 그 커밋의 코드만 실행한다.
-품질: 전경 비율이 thresholds.yaml split 범위 밖이면 quality_below(split_fail) — U5 전에는 "명백한 실패"만.
+후처리(D56): 0.5 이진화 → 닫힌 구멍 채우기 → 알파 = max(원 마스크, 채움). 선 그림의 안쪽까지 작품으로 본다.
+품질: 채운 마스크의 전경 비율이 thresholds.yaml split 범위 밖이면 quality_below(split_fail) — U5 전에는 "명백한 실패"만.
 """
 from __future__ import annotations
 
@@ -17,9 +18,18 @@ HF_ID = "ZhengPeng7/BiRefNet"
 SIZE = 1024
 
 
+def fill_holes(m, threshold: float):
+    """원 마스크(0~1) → (알파 0~1, 전경 비율). 채운 안쪽은 1, 가장자리의 부드러운 값은 그대로(D56)."""
+    import numpy as np
+    from scipy import ndimage
+
+    filled = ndimage.binary_fill_holes(m > threshold)
+    return np.maximum(m, filled.astype(np.float32)), float(filled.mean())
+
+
 class BiRefNetAdapter(Adapter):
     model_id = "M1"
-    CONFIG = {"hf_id": HF_ID, "input": SIZE, "normalize": "imagenet", "threshold": 0.5}
+    CONFIG = {"hf_id": HF_ID, "input": SIZE, "normalize": "imagenet", "threshold": 0.5, "postprocess": "fill_holes"}
 
     def __init__(self):
         super().__init__()
@@ -59,8 +69,8 @@ class BiRefNetAdapter(Adapter):
         if job.cancel.is_set():
             return AdapterResult("engine_down", diagnostic="cancelled_midway")
         mask_img = transforms.functional.to_pil_image(pred).resize(rgb.size, Image.BILINEAR)
-        m = np.asarray(mask_img, dtype=np.float32) / 255.0
-        ratio = float((m > self.CONFIG["threshold"]).mean())
+        alpha, ratio = fill_holes(np.asarray(mask_img, dtype=np.float32) / 255.0, self.CONFIG["threshold"])
+        mask_img = Image.fromarray(np.round(alpha * 255).astype(np.uint8), "L")
         if not (self.th["min_foreground_ratio"] <= ratio <= self.th["max_foreground_ratio"]):
             return AdapterResult("quality_below", downgrade_cause="split_fail", score=ratio, diagnostic="foreground_ratio")
         mask_p, cut_p = job.tmp_dir / "mask.png", job.tmp_dir / "cutout.png"

@@ -6,7 +6,7 @@ models:
     source: ZhengPeng7/BiRefNet
     revision: e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4
     weights_sha256: 9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154
-    config_hash: 556ba0a1493221de68303b6f92ffc121186e1ff8cd28cbe1b4652fa5a937f2d4
+    config_hash: e02942790580f2bd6855199b09421261f18def00ff7417c13db4b228ac344048
     runtime: torch-2.4.1-cpu
     exec_device: cpu
     license_confirmed: true
@@ -17,7 +17,7 @@ models:
       measured_at: '2026-09-28'
     note: CPU만(MPS에 deform_conv2d 없음). HF 원격 코드 — revision 고정 필수. CPU 추론 중 RSS 8.5GB.
       라이선스 MIT — U4 팀 확정 2026-09-29(켬)
-    image_digest: sha256:c2a660901204cbb81ca1cdc7729dae303ea719223780321b6f7f93c046a9b947
+    image_digest: sha256:89e72385b60ee5cbe697c15fc9952f5beda234f5cb94ce67bda83576d8165840
   M2:
     source: laion/CLIP-ViT-B-32-laion2B-s34B-b79K
     arch: ViT-B-32
@@ -36,12 +36,12 @@ models:
     note: 'open_clip_model.safetensors를 직접 읽는다(pickle .bin 쓰지 않음). A2 라이선스 기록 전 비활성(BR-MDL-07)
       · U4 팀 확정 2026-09-29: 보류(모델 카드 배포 권고, T137 오인율 뒤 재검토) → 같은 날 팀 합의로 보류 해제(이진우
       전달) — 켬은 활성화가 아니며 평가 통과(G22) 뒤 승격'
-    image_digest: sha256:2989b05a1dbe5857558bc78495d55c0da45cf263dc66cd4ac5883327945f966f
+    image_digest: sha256:4e3270416ed437297e470a015a6b3d04a4e793b074e03285c3871495dfaa782c
   M3:
     source: facebookresearch/AnimatedDrawings
     revision: b859684857519c7424da51a0b0862fbd1fd258f4
     weights_sha256: a739c0670a2d38e9ca0ab71c0e7e174fc55312066347e3d60c80534e86f7f868
-    config_hash: fb97342f1b116bf1cfa1ff74b3b4471418f0a8a171636e91939b3011612fef0d
+    config_hash: 9175537a9422434713dffa541e57fffdbd8a49c087467c94a83117e07b601112
     runtime: torchserve-0.12.0-native
     exec_device: cpu
     license_confirmed: true
@@ -76,7 +76,7 @@ models:
     note: MPS(exec_device=gpu, runtime에 mps). 비정사각 입력의 bicubic은 PYTORCH_ENABLE_MPS_FALLBACK로
       CPU. Apache-2.0 — 팀 확정 기록 뒤 license_confirmed=true · U4 라이선스 팀 확정 2026-09-29(켬,
       Small만)
-    image_digest: sha256:f472b77ab3ca38f69d45a6cd0575a540a57db1ff431c0a5311701cc2b7a1ed75
+    image_digest: sha256:e69aa1badf3cba93d0afea7ee2bb7b0be3c04f576a04e49cbdd76ad4942dc33a
   M6:
     source: Qwen/Qwen3-4B-Instruct-2507
     ollama_tag: qwen3:4b-instruct-2507-q4_K_M
@@ -96,8 +96,8 @@ models:
         — 화면은 둘 사이를 안내
     note: weights_sha256 = `ollama show <tag> --modelfile`의 FROM 블롭 다이제스트(Studio-B
       공유 Ollama v0.34.0). 공유 서버의 `qwen3:4b`는 Qwen3-4B-Thinking-2507과 같은 블롭(sha256:3e4cb141…)이라
-      생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A/A_모델재현기록.md). 라이선스 Apache-2.0(모델 카드)이나
-      팀 확정 기록 전 비활성(U4). expected_seconds는 공유 서버 대기 포함 실측
+      생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A/A_모델재현기록.md). 라이선스 Apache-2.0(모델
+      카드)이나 팀 확정 기록 전 비활성(U4). expected_seconds는 공유 서버 대기 포함 실측
     image_digest: sha256:fd15e9b41339cc2fda806ab4b62f8a727087024a2372cc0a981636a063630593
   M7:
     source: stabilityai/TripoSR

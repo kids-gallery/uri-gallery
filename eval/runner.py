@@ -31,11 +31,16 @@ def _pct(values: list[int], q: float) -> int | None:
     return v[min(len(v) - 1, max(0, int(round(q * (len(v) - 1)))))]
 
 
-def summarize(rows: list[dict], item_total: int) -> dict:
+def model_expected(model_id: str | None, expected: str | None) -> str | None:
+    """채점(D57): 기대 경로를 그 모델이 낼 수 있는 답으로 — M1·M5는 animated를 relief로 본다."""
+    return "relief" if model_id in ("M1", "M5") and expected == "animated" else expected
+
+
+def summarize(rows: list[dict], item_total: int, model_id: str | None = None) -> dict:
     done = [r for r in rows if r["status"] == "done"]
     ms = [r["processing_ms"] for r in done if r["processing_ms"] is not None]
     mb = [r["memory_mb"] for r in rows if r["memory_mb"] is not None]
-    mism = [r for r in done if r["result_path"] != r["expected_path"]]
+    mism = [r for r in done if r["result_path"] != model_expected(model_id, r["expected_path"])]
     return {
         "item_total": item_total,
         "done": len(done),
@@ -72,14 +77,14 @@ def report(evaluation_id: int) -> dict:
                 raise SystemExit(f"평가 {evaluation_id} 없음")
             out = {"evaluation_id": e["evaluation_id"], "model_id": e["model_id"], "candidate": e["version_label"],
                    "verdict": e["verdict"], "eligible": bool(e["eligible"]),
-                   "candidate_summary": summarize(_rows(cur, evaluation_id), e["item_total"])}
+                   "candidate_summary": summarize(_rows(cur, evaluation_id), e["item_total"], e["model_id"])}
             cur.execute("""SELECT e.evaluation_id, e.item_total, mv.version_label FROM evaluation e
                              JOIN model_version mv ON mv.version_id = e.version_id
                             WHERE mv.model_id = %s AND mv.release_state = 'active'
                             ORDER BY e.evaluation_id DESC LIMIT 1""", (e["model_id"],))
             a = cur.fetchone()
             out["active"] = a["version_label"] if a else None
-            out["active_summary"] = summarize(_rows(cur, a["evaluation_id"]), a["item_total"]) if a else None
+            out["active_summary"] = summarize(_rows(cur, a["evaluation_id"]), a["item_total"], e["model_id"]) if a else None
         return out
     finally:
         conn.close()
