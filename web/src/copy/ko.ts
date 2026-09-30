@@ -341,7 +341,7 @@ export const ko = {
   animAsk: { q: '애니메이션으로 만드시겠습니까?', yes: '예', no: '아니오', hint: '만드는 동안 지금 액자는 그대로 걸려 있어요',
     judging: '그림을 살펴보는 중이에요', started: '만들기 시작했어요', startedHint: '다 되면 작품 목록에서 [좋아요]를 눌러 바꿔 걸어요', close: '닫기',
     remakeHint: '지금 액자는 그대로 걸려 있어요. 다 되면 [좋아요]를 눌러 바꿔 걸어요',
-    remaking: (k: string) => `${k}을 만드는 중이에요`, remakeQueued: (k: string) => `${k}을 만들 차례를 기다리는 중이에요`, remakeRetry: (k: string) => `${k}을 다시 만들어 보는 중이에요`, fail: '지금은 만들 수 없어요 - 잠시 뒤 작품 화면에서 다시 해 볼까요?' },
+    remaking: (k: string) => `${josa(k, '을/를')} 만드는 중이에요`, remakeQueued: (k: string) => `${josa(k, '을/를')} 만들 차례를 기다리는 중이에요`, remakeRetry: (k: string) => `${josa(k, '을/를')} 다시 만들어 보는 중이에요`, fail: '지금은 만들 수 없어요 - 잠시 뒤 작품 화면에서 다시 해 볼까요?' },
   save: { framed: '액자 그림 저장', moving: '움직이는 그림 저장', busy: '저장하는 중…', done: '저장했어요', fail: '저장하지 못했어요 — 다시 해 볼까요?' },
 
   photo: {
