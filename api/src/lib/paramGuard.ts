@@ -11,7 +11,7 @@ import { Problem } from './problem.js';
 interface Schema { type?: string | string[]; pattern?: string; enum?: unknown[]; format?: string }
 interface Param { name: string; in: string; required?: boolean; schema?: Schema; $ref?: string }
 interface Route { method: string; re: RegExp; names: string[]; params: Param[]; literal: number }
-export interface Field { name: string; reason: 'required' | 'not_positive_integer' | 'not_in_enum' | 'not_date' | 'pattern' }
+export interface Field { name: string; reason: 'required' | 'not_positive_integer' | 'not_in_enum' | 'not_date' | 'pattern'; message?: string }
 
 const ID_PATTERN = '^[1-9][0-9]{0,17}$';
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -25,7 +25,7 @@ const isDate = (v: string) => {
 function check(p: Param, v: string | undefined): Field | null {
   if (v === undefined || v === '') return p.required ? { name: p.name, reason: 'required' } : null;
   const s = p.schema ?? {};
-  if (s.enum && !s.enum.includes(v)) return { name: p.name, reason: 'not_in_enum' };
+  if (s.enum && !s.enum.includes(v)) return { name: p.name, reason: 'not_in_enum', message: `허용 값 중 하나여야 합니다: ${s.enum.join(', ')}.` };
   if (s.pattern && !new RegExp(s.pattern).test(v)) return { name: p.name, reason: s.pattern === ID_PATTERN ? 'not_positive_integer' : 'pattern' };
   if (s.format === 'date' && !isDate(v)) return { name: p.name, reason: 'not_date' };
   return null;

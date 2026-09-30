@@ -20,6 +20,9 @@ info:
     - JSON 본문 공통 오류(2026-09-30, 점검표 계약 2~5행, 경로별로 반복해 적지 않음): 본문이 JSON이 아니면 400 `invalid_input`·reason `bad_json`.
       계약에 없는 칸(칸 이름 오타 포함)·필수 칸 누락·타입·길이·범위·목록 밖 값은 422 `validation_failed`로 거절하고, 어느 칸인지 `fields: [{name, reason}]`로 알린다
       (모르는 칸은 reason `unrecognized`). 본문 검사 실패가 503으로 번지지 않는다. 예외: 이야기 저장(`PUT …/story`)은 임시 저장(D22)이라 모든 칸이 선택이다.
+    - 오류 안내(2026-09-30, 점검표 W5·E4·E7): 모든 Problem에 `detail`(한국어 한 문장 — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지)을 싣는다.
+      422는 `fields[].message`에 칸마다 올바른 값(형식·길이·범위·허용 값)을 적는다. 4xx는 부르는 쪽이 요청을 고치고, 503은 서버 쪽 문제라 요청을 고치지 않고 다시 시도한다.
+      `detail`·`message`는 API를 부르는 사람을 위한 문장이고, 화면 문구는 아래처럼 `reason`·`gate`로 정한다(문장을 화면에 그대로 쓰지 않는다).
     - 오류→화면 사상은 `code`가 아니라 `reason`(+`gate`)으로 한다. 해제 주체·다음 행동 문구는 화면 문구 사전(web `copy/ko.ts`)이 gate·reason으로 정한다.
 servers:
   - url: /
@@ -1413,13 +1416,18 @@ components:
           type: string
           description: 세부 사유 코드 = gate_event.reason_code (예 format, unreadable, no_family, already_in_family, invite_owner_only, co_guardian_full, invite_email_mismatch, story_conflict, m6_preload_at_start_only, made_on_in_future, age_out_of_range, deleting, already_processing, caption_locked, no_rollback_candidate, license_unconfirmed, eval_incomplete, check_in_progress, not_check_sample, no_check_sample, version_retired, rule_not_checked, m6_check_p05, check_runner_missing)
         gate: { type: string, description: 'SD_01 게이트 번호(예 G4). 화면 C2 차단 블록용', pattern: '^G[0-9]{1,2}$' }
+        detail:
+          type: string
+          description: 사람이 읽는 안내 한 문장(RFC 9457 detail) — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지. 화면 문구로 쓰지 않는다
         fields:
           type: array
           items:
             type: object
+            required: [name, reason]
             properties:
-              name: { type: string }
-              reason: { type: string }
+              name: { type: string, description: 틀린 칸 이름(경로·쿼리·본문) }
+              reason: { type: string, description: 'required · unrecognized · not_positive_integer · not_in_enum · not_date · invalid_type · too_small · too_big · invalid_string · invalid_enum_value · blank · too_long …' }
+              message: { type: string, description: 이 칸에 넣어야 할 올바른 값 안내(형식·길이·범위·허용 값) }
         requestId: { type: string }
 
     DeletionProgress:

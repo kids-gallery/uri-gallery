@@ -2846,9 +2846,15 @@ export interface components {
             reason?: string;
             /** @description SD_01 게이트 번호(예 G4). 화면 C2 차단 블록용 */
             gate?: string;
+            /** @description 사람이 읽는 안내 한 문장(RFC 9457 detail) — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지. 화면 문구로 쓰지 않는다 */
+            detail?: string;
             fields?: {
-                name?: string;
-                reason?: string;
+                /** @description 틀린 칸 이름(경로·쿼리·본문) */
+                name: string;
+                /** @description required · unrecognized · not_positive_integer · not_in_enum · not_date · invalid_type · too_small · too_big · invalid_string · invalid_enum_value · blank · too_long … */
+                reason: string;
+                /** @description 이 칸에 넣어야 할 올바른 값 안내(형식·길이·범위·허용 값) */
+                message?: string;
             }[];
             requestId?: string;
         };

@@ -14,7 +14,7 @@ function cleanAlias(body: unknown): string {
   if (!r.success) throw new Problem('validation_failed', 'invalid_fields', 'G4', zodFields(r.error));
   const alias = r.data.alias.trim();
   if (!alias) throw new Problem('validation_failed', 'alias_blank', 'G4', [{ name: 'alias', reason: 'blank' }]);
-  if ([...alias].length > 20) throw new Problem('validation_failed', 'alias_too_long', 'G4', [{ name: 'alias', reason: 'too_long' }]);
+  if ([...alias].length > 20) throw new Problem('validation_failed', 'alias_too_long', 'G4', [{ name: 'alias', reason: 'too_long', message: '별칭은 20자 이하로 넣어 주세요.' }]);
   return alias;
 }
 

@@ -21,7 +21,7 @@ beforeAll(async () => {
 
 const unrecognized = (r: { status: number; body: Record<string, unknown> }) => {
   expect(r.status).toBe(422);
-  expect(r.body).toMatchObject({ code: 'validation_failed', fields: expect.arrayContaining([{ name: 'extraField', reason: 'unrecognized' }]) });
+  expect(r.body).toMatchObject({ code: 'validation_failed', fields: expect.arrayContaining([expect.objectContaining({ name: 'extraField', reason: 'unrecognized' })]) });
 };
 
 describe('모르는 칸 → 422 unrecognized (조용히 버리지 않음)', () => {
