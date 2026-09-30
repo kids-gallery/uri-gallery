@@ -60,11 +60,9 @@ async function onBlock(label: string) {
 .sv-wall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,4vw,48px);align-items:center;
   padding:clamp(18px,4vw,40px);border-radius:24px;background:linear-gradient(180deg,#fbf5ea,#f4ead8);box-shadow:inset 0 0 0 1px rgba(201,165,82,.35)}
 @media (max-width:760px){.sv-wall{grid-template-columns:1fr}}
-.sv-art{margin:0;display:grid;gap:14px;justify-items:center;min-width:0}
-/* 액자가 칸 폭을 넘어 글 칸을 덮지 않게(ArtViewer 9c89555와 같은 규칙) */
-.sv-art :deep(.is-lg){--art-max-w:100%}
-.sv-art :deep(.artframe){width:100%;box-sizing:border-box}
-.sv-art :deep(.mat img){max-width:100%;height:auto}
+.sv-art{margin:0;display:grid;gap:14px;justify-items:center;min-width:0;container-type:inline-size}
+/* 액자가 칸 폭을 넘어 글 칸을 덮지 않게: 액자를 늘리지 않고(빈 금색 판이 생김) 그림을 칸 폭 - 매트 · 테 만큼으로 줄인다 */
+.sv-art :deep(.mat img){max-width:calc(100cqi - 110px);height:auto;max-height:var(--art-h)}
 .sv-words{min-width:0}
 .sv-plaque{background:linear-gradient(180deg,#e9d18f,#c9a552);border-radius:6px;padding:8px 16px;text-align:center;box-shadow:0 6px 14px -8px rgba(90,62,30,.6);max-width:100%}
 .sv-title{margin:0;font:700 clamp(18px,2.4vw,22px)/1.3 var(--mc-serif,serif);color:#3a2a1f;word-break:keep-all;overflow-wrap:anywhere}
