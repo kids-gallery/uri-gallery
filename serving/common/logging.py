@@ -14,6 +14,8 @@ ALLOWED = frozenset({
     "attempt_count", "status", "error_class", "downgrade_cause", "duration_ms",
     # 적재 상태·준비 확인(모델 적재 시간 화면용). 경로 없음
     "load_state", "load_ms", "serving_group", "diagnostic", "outcome", "port",
+    # 설명 규칙 파일 버전(research R-26) — 규칙 교체 전후 구분용. 문장·입력 없음
+    "rules_version",
 })
 
 

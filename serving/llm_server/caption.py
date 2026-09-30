@@ -1,16 +1,27 @@
 """작품 설명 초안(llm-contract §3) — llm-server 쪽 연결부.
 
-규칙 검사(G16, fail_event·fail_emotion·fail_development)와 프롬프트 문구의 정본은 C의 `caption/` 패키지다(U11).
-그 패키지가 있으면 그것을 쓰고, 없으면 아래 최소 구현(형식 검사만)을 쓴다. 최소 구현은 내용 규칙을 검사하지 않는다.
+규칙 검사(G16, fail_event·fail_emotion·fail_development)·프롬프트·템플릿·재생성 상한의 정본은 저장소 루트의
+`caption/` 패키지(T127, D)와 그 규칙 파일 `caption/rules.yaml`이다(U11 — 지금은 임시 기준표, research R-26).
+패키지를 못 읽으면 아래 최소 구현(형식 검사만)을 쓰고 RULES_VERSION은 None이다. 최소 구현은 내용 규칙을 검사하지 않는다.
 """
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
-try:  # C 담당 패키지(caption/)
-    from caption import build_messages as _c_build, rule_check as _c_check, template as _c_template  # type: ignore
-except Exception:  # pragma: no cover - 패키지가 아직 없음
-    _c_build = _c_check = _c_template = None
+_ROOT = str(Path(__file__).resolve().parents[2])   # 저장소 루트 — llm-server는 serving/에서 뜨므로 caption/이 경로에 없다
+if _ROOT not in sys.path:
+    sys.path.append(_ROOT)
+
+try:  # D 담당 패키지(caption/, T127)
+    import caption as _c  # type: ignore
+    _c_build, _c_check, _c_template = _c.build_messages, _c.rule_check, _c.template
+    RULES_VERSION: str | None = _c.RULES_VERSION
+    RULES_PROVISIONAL: bool | None = _c.PROVISIONAL
+except Exception:  # pragma: no cover - 패키지·규칙 파일을 못 읽음
+    _c = _c_build = _c_check = _c_template = None
+    RULES_VERSION = RULES_PROVISIONAL = None
 
 ALLOWED = ("keywords", "tags", "words", "ageAtMaking", "madeOn")
 SYSTEM = ("너는 아이 그림에 붙일 설명을 쓴다. 규칙:\n"
@@ -23,7 +34,7 @@ SHOTS = [({"keywords": ["집", "빨간색"], "ageAtMaking": 4}, "4살 때 그린
           "6살 때 그린 강아지 그림이에요. 아이는 강아지와 산책한 것이라고 말했어요.")]
 # num_ctx는 클라이언트가 8192로 고정한다(공유 서버 규칙, llm-contract §3의 2048을 대체). 출력은 2~3문장이라 160 토큰
 GEN_OPTIONS = {"temperature": 0.3, "num_predict": 160}
-MAX_REGEN = 2
+MAX_REGEN = _c.MAX_REGEN if _c else 2   # 규칙 파일 max_regen(U11 [추론] 2회)
 
 
 def allowed_input(body: dict) -> dict:

@@ -162,7 +162,8 @@ def _ready_body() -> dict:
     v = state.view()
     return {"ollama": v["ollama"], "activeVersion": state.version_label(state.digest) if v["digestMatches"] else None,
             "licenseConfirmed": v["licenseConfirmed"], "model": v["model"],
-            "queue": {"inFlight": _sem.locked(), "waiting": _waiting}}
+            "queue": {"inFlight": _sem.locked(), "waiting": _waiting},
+            "caption": {"rulesVersion": cap.RULES_VERSION, "provisional": cap.RULES_PROVISIONAL}}   # research R-26
 
 
 @app.get("/v1/ready")
@@ -244,7 +245,7 @@ async def caption(request: Request):
     finally:
         state.end_load()
         _sem.release()
-    log.info("caption", model_id="M6", outcome="ok", duration_ms=int((time.monotonic() - t0) * 1000))
+    log.info("caption", model_id="M6", outcome="ok", rules_version=cap.RULES_VERSION, duration_ms=int((time.monotonic() - t0) * 1000))
     return {"outcome": "ok", **res, "model": {"id": "M6", "version": state.version_label(state.digest)}}
 
 
@@ -252,6 +253,6 @@ async def caption(request: Request):
 def _startup() -> None:
     state.inventory()
     v = state.view()
-    log.info("startup", serving_group="llm", load_state=v["model"]["state"], port=8200)
+    log.info("startup", serving_group="llm", load_state=v["model"]["state"], port=8200, rules_version=cap.RULES_VERSION)
     if os.environ.get("LLM_WARM_ON_START", "1") == "1" and v["model"]["state"] == "cold":
         threading.Thread(target=_preload_once, daemon=True).start()

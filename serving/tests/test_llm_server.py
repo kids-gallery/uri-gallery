@@ -108,10 +108,21 @@ def test_think_block_stripped_and_rule_fail_to_template(llm):
     r = TestClient(appmod.app).post("/v1/caption", json={"keywords": ["바다"], "tags": ["사람"], "ageAtMaking": 5}).json()
     assert (r["outcome"], r["source"], r["generationCount"], r["ruleFailCount"]) == ("ok", "template", 3, 3)
     assert r["failClasses"] == ["fail_event"] * 3             # 걸린 초안마다 분류 하나(T145)
-    assert r["body"] == "5살 때 그린 작품이에요. 바다·사람을(를) 그렸어요."
+    assert r["body"] == "5살 때 그린 작품이에요. 바다·사람을 그렸어요."    # caption 패키지 템플릿(T127, 을/를 받침)
     import llm_server.ollama_client as oc
     fake.replies = ["<think>생각</think>\n좋아요."]
     assert oc.chat([{"role": "user", "content": "x"}])["content"] == "좋아요."
+
+
+def test_caption_package_rules_used(llm):
+    """T127: llm-server가 저장소 루트 caption/ 패키지를 쓴다 — 규칙 버전이 /v1/ready에 보이고 내용 규칙이 걸린다."""
+    fake, appmod, _ = llm
+    c = TestClient(appmod.app)
+    assert c.get("/v1/ready").json()["caption"] == {"rulesVersion": "tmp-2026-09-30", "provisional": True}
+    fake.replies = ["바다를 그렸어요. 아이가 행복해 보여요.", "5살 때 바다를 그린 작품이에요."]
+    r = c.post("/v1/caption", json={"keywords": ["바다"], "ageAtMaking": 5}).json()
+    assert (r["source"], r["generationCount"], r["failClasses"]) == ("llm", 2, ["fail_emotion"])
+    assert "행복" not in json.dumps(r, ensure_ascii=False)          # 걸린 초안은 돌려주지 않는다(BR-CAP-07)
 
 
 def test_errors_classified(llm):

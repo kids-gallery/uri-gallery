@@ -169,7 +169,7 @@
 | 9 (5~6일차) | model-api: 키 인증·한도(`external_call_log`)·크기·`external_job`·결과 1회 수령·만료, `pose` 팀 내부·시험 키 전용, `classify` 라이선스 게이트, 운영 CLI(`ops:key`), API활용 S12·시험 호출 | Scenario 16·18, 외부 입력 잔존 0, 401/403/413/422/429/503 계약 시험 | 5, 7 | B(인증·한도)·A(어댑터 공유)·C(S12) |
 | 10 (7~8일차) | 통합 시험: 장애 주입 5종 × 결과 단계, 삭제 완전성, 가족 교차 접근, 가입 여부 비노출, 로그 표본 점검, 성능 1차(움직임 p95·액자 p95), 평가 1차 측정·임계값 제안(U5) | `docs/B_통합시험.md`, `docs/A_평가묶음_1차측정.md` — spec SC 정량 항목 점검표 | 4~9 | B·A |
 | 11 (7~8일차) | 사용 관찰(팀원 보호자 역할), 막힌 지점 기록 | `docs/C_사용관찰.md` | 10 | C |
-| P0.5 (P0 완료 뒤) | M6 Qwen3-4B 재현(Q4_K_M 다이제스트 고정), `llm-server`, caption 패키지·규칙 검사·템플릿, S7, `/captions`, 외부 `caption`, 약관 | llm-contract.md 시험, Scenario 17 | U3·U11·U16·U12(약관) 확정 | C·A·B |
+| P0.5 (P0 완료 뒤) | M6 Qwen3-4B 재현(Q4_K_M 다이제스트 고정), `llm-server`, caption 패키지·규칙 검사·템플릿, S7, `/captions`, 외부 `caption`, 약관 | llm-contract.md 시험, Scenario 17 | U3·U11·U16·U12(약관) 확정 — 예외: T127은 U11 임시 기준표로 먼저(REF D29, research R-26, p1 비노출 유지) | C·A·B·D |
 | P1 (GPU 확인 뒤) | M7 재현·어댑터, sculpture 확정·전시(`<model-viewer>`), 노출 설정 | Scenario 19 | U2 GPU 확인, U4 TRELLIS 제외 확인 | A·C |
 
 ## Risks & Mitigations
