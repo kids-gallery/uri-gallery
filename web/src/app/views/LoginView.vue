@@ -11,6 +11,7 @@ import ReasonButton from '@/components/ReasonButton.vue';
 import { ko } from '@/copy/ko';
 import { safeNext } from '@/router/menu';
 import { neighbor as nbc } from '@/app/town/copy';
+import { markEntered } from '../entrance';
 import { useSession } from '@/stores/session';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { emailProblem } from '../authForm';
@@ -18,6 +19,8 @@ import { emailProblem } from '../authForm';
 const route = useRoute();
 const router = useRouter();
 /** 친구 링크로 왔는가(§17-16) — 초대 안내 한 줄 + 미술관 배경 */
+// 로그인 화면을 거쳐 왔으면 입장 화면을 다시 보이지 않는다(D53 ④, 외부 피드백 4차 ②) — 로그인 뒤 바로 내 미술관
+markEntered();
 const fromFriend = typeof route.query.next === 'string' && route.query.next.startsWith('/app/neighbor');
 const session = useSession();
 const email = ref('');
