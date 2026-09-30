@@ -1,0 +1,10 @@
+{
+  "model_id": "M2",
+  "name": "OpenCLIP ViT-B-32 / laion2b_s34b_b79k",
+  "hf_repo": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
+  "file": "open_clip_model.safetensors",
+  "revision": "1a25a446712ba5ee05982a381eed697ef9b435cf",
+  "weights_sha256": "ac4f8c4b88af6d963118cbf40ad93176d092abbedfcb752601ae1866352656e6",
+  "license": "MIT(코드) · 가중치는 LAION 모델 카드 — 팀 확정 U4(2026-09-29)",
+  "note": "models/manifest.yaml M2 항목의 사본. 가중치 파일(605MB)은 저장소에 넣지 않고 models/hf 캐시를 오프라인으로 읽는다. 프롬프트는 model/m2_prompts.yaml(= serving/config/m2_prompts.yaml)."
+}
