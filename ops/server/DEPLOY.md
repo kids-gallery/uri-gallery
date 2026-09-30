@@ -45,6 +45,9 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>:9501/internal/ready
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://<도메인>:9501/model-api/health  # 404 application/problem+json (웹 화면 200이면 잘못)
 ```
 
+**한 번에(D48 ④, 2026-09-30)**: `ops/checklist/check-live.sh [주소]` — 위 항목과 웹 첫 화면 · `/version.json`을 **내용까지** 본다(200이어도 웹 화면 HTML이면 실패). `EXPECT_COMMIT=<커밋>`을 주면 배포 커밋도 대조. 하나라도 틀리면 0 아닌 종료.
+**웹 배포 확인(D48 ③)**: `ops/p1/deploy-web.sh`가 `version.json`(커밋 · 배포 시각)을 함께 올리고 공개 주소에서 읽어 맞는지 확인한다 — 다르면 이전 판(`p1-web.old`)으로 되돌리고 실패. 성공하면 마지막 줄 "배포됨 {커밋} {시각}"을 팀 채널에 붙인다. nginx 설정(`/version.json` 캐시 없음)을 바꾼 첫 배포는 `pm2 restart p1-nginx` 뒤에 확인된다.
+
 운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/A/A_모델적재_화면요구.md`).
 
 ## 4. 키와 비밀 정보
