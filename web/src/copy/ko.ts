@@ -481,7 +481,7 @@ export const ko = {
     opsName: '운영 화면',
     role: { operator: '서비스 운영자', evaluator: '평가 담당', integrator: '연동 개발' } as Record<string, string>,
     menu: { status: '상태-지표', models: '모델 평가', modelsRead: '모델 평가(읽기)', apiGuide: 'API활용' },
-    appMenu: { artworks: '작품 관리', children: '우리 아이', family: '가족 보호자', gallery: '미술관', upload: '작품 올리기' }, // 전시실 홈 개정안(SD_02 §17-2): 목록은 '작품 관리', 전시는 '미술관'
+    appMenu: { artworks: '작품 관리', children: '우리 아이', family: '가족 보호자', gallery: '미술관', upload: '작품 올리기', town: '미술관 마을', friends: '친구 초대' }, // D52: 마을 · 친구가 메뉴에 보이게 // 전시실 홈 개정안(SD_02 §17-2): 목록은 '작품 관리', 전시는 '미술관'
   },
 } as const;
 

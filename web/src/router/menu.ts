@@ -8,6 +8,8 @@ export const APP_MENU: MenuItem[] = [
   { to: '/app/works', label: ko.shell.appMenu.artworks }, // 작품 관리(S4 목록)
   { to: '/app/children', label: ko.shell.appMenu.children },
   { to: '/app/family', label: ko.shell.appMenu.family },
+  { to: '/app/town', label: ko.shell.appMenu.town }, // D52: 미술관 마을(외관 · 친구 미술관)
+  { to: '/app/family#neighbors', label: ko.shell.appMenu.friends }, // D52: 친구 초대(가족 화면 친구 칸)
 ];
 
 /** 화면별 접근 역할(읽기 포함). */
