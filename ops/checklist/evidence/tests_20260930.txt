@@ -1,0 +1,59 @@
+# 시험 결과 원문 — 2026-09-30 10:52 KST · main f7b1e7b
+
+## api (vitest, 임시 MariaDB)
+ ✓ tests/deletion-sweeper.test.ts (11 tests) 1010ms
+ ✓ tests/review-story-gallery.test.ts (13 tests) 1368ms
+ ✓ tests/captions.test.ts (11 tests) 1181ms
+ ✓ tests/intake-confirm.test.ts (11 tests) 1173ms
+ ✓ tests/model-check.test.ts (12 tests) 1703ms
+ ✓ tests/models-admin.test.ts (6 tests) 880ms
+ ✓ tests/rbac.test.ts (13 tests) 1505ms
+ ✓ tests/ops.test.ts (6 tests) 1244ms
+ ✓ tests/family.test.ts (7 tests) 1336ms
+ ✓ tests/auth.test.ts (13 tests) 1502ms
+ ✓ tests/api-guide.test.ts (5 tests) 1534ms
+ ✓ tests/web-prep.test.ts (7 tests) 600ms
+ ✓ tests/input-params.test.ts (10 tests) 509ms
+ ✓ tests/eval-items.test.ts (2 tests) 380ms
+ ✓ tests/input-body.test.ts (9 tests) 425ms
+ ✓ tests/error-guidance.test.ts (9 tests) 303ms
+ ✓ tests/children.test.ts (5 tests) 423ms
+ ✓ tests/contract-docs.test.ts (9 tests) 263ms
+ ✓ tests/feature-setting.test.ts (2 tests) 426ms
+ ✓ tests/request-id.test.ts (4 tests) 130ms
+ Test Files  21 passed | 1 skipped (22)
+      Tests  185 passed | 43 skipped (228)
+   Duration  41.26s (transform 295ms, setup 5.12s, collect 1.65s, tests 20.10s, environment 2ms, prepare 639ms)
+
+## serving (pytest, 실모델 시험 제외)
+...............................................................          [100%]
+134 passed, 1 skipped in 43.64s
+
+## caption (pytest)
+26 passed in 0.04s
+
+## web (vitest)
+ Test Files  10 passed (10)
+      Tests  114 passed (114)
+
+## 계약 lint · 정본=사본
+883 | summary: Prometheus 지표 (FR-26) — 라벨은 model_id·model_version·serving_group·cause·error_class만
+Woohoo! Your API descriptions are valid. 🎉
+diff -r: 같음
+
+## 외부 점검 스크립트(https://p1.sumzip.com)
+ok   /model-api → 404 application/problem+json
+ok   /model-api/ → 404 application/problem+json
+ok   /model-api/health → 404 application/problem+json
+ok   /model-api/docs → 404 application/problem+json
+ok   /model-api/openapi.json → 404 application/problem+json
+ok   /model-api/predict → 404 application/problem+json
+ok   /live → 200
+ok   /v1/models/openapi.json → 200
+ok   /internal/ready → 404
+ok   /v1/artworks → 413 application/problem+json
+ok   /v1/models/segment → 413 application/problem+json
+
+## 브라우저 E2E (Playwright 390·1440, 대체 포트 9913·9921, 커밋된 spec 전체 — 미커밋 us4-results.spec.ts 제외, 오늘 10:5x 실행)
+전체 실행: 30 passed · 2 failed — [desktop-1440] us3-progress · us4-review-story-gallery, 원인 "메일 없음"(시험 메일 수신 지연, 4e774b1에 기록된 부하 증상)
+두 건 단독 재실행: 2 passed (29.1s)  → 32/32
