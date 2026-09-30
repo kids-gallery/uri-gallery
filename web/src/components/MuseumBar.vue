@@ -55,12 +55,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 </template>
 
 <style scoped>
-.mbar{position:relative;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px clamp(12px,2.5vw,32px);background:var(--color-canvas);border-bottom:1px solid var(--color-hairline)}
-.mbar-mark{font:750 18px/1 var(--font-sans);color:var(--color-primary);text-decoration:none;white-space:nowrap}
+.mbar{position:relative;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px clamp(12px,2.5vw,32px);background:#fbf4e6;border-bottom:2px solid #c9a24a;box-shadow:0 1px 0 #fffaf0 inset,0 2px 8px rgba(74,52,65,.08)} /* D53 게임 틀 — 크림 양피지 + 금테 */
+.mbar-mark{font:700 20px/1 var(--mc-serif,'Noto Serif KR',serif);color:var(--color-primary);text-decoration:none;white-space:nowrap;letter-spacing:-.01em}
 .mbar-quick{display:flex;gap:6px;align-items:center}
-.mbar-pill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border:1px solid var(--color-hairline);border-radius:var(--r-pill);background:var(--color-canvas);
+.mbar-pill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border:1.5px solid #c9a24a;border-radius:var(--r-pill);background:#fffaf0;box-shadow:0 3px 0 #d9c28a;transition:transform .08s,box-shadow .08s;
   color:var(--color-ink);font:600 14px/1 var(--font-sans);text-decoration:none;cursor:pointer;white-space:nowrap}
-.mbar-pill:hover{background:var(--color-surface-soft)}
+.mbar-pill:hover{background:#fff4dc}
+.mbar-pill:active{transform:translateY(3px);box-shadow:0 0 0 #d9c28a}
+@media (prefers-reduced-motion:reduce){.mbar-pill{transition:none}.mbar-pill:active{transform:none}}
 .mbar-menu{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary);
   position:fixed;top:8px;right:clamp(12px,2.5vw,32px);z-index:44;box-shadow:0 2px 8px rgba(74,52,65,.18)}
 .mbar-quick{padding-right:104px} /* 고정된 [메뉴] 자리 */

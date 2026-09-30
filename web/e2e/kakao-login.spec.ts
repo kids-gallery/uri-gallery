@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
+import { home as hc } from '../src/app/town/copy';
 
 const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../docs/B/카카오로그인_캡처');
 async function shot(page: Page, name: string, project: string) {
@@ -28,7 +29,7 @@ test('로그인 화면: 크게 [카카오로 시작하기], 작게 이메일 로
   await shot(page, '01_로그인', info.project.name);
 });
 
-test('처음 카카오 로그인 → 캐릭터 만들기 "아이를 등록해 볼까요?" → 다시 오면 입장 화면 → 아이 미술관(D47)', async ({ page }, info) => {
+test('처음 카카오 로그인 → 캐릭터 만들기 → 다시 오면 입장 화면 없이 바로 아이 미술관(D47 · D53)', async ({ page }, info) => {
   const id = member();
   await page.goto('/app/login');
   await viaKakao(page, id);
@@ -43,9 +44,7 @@ test('처음 카카오 로그인 → 캐릭터 만들기 "아이를 등록해 �
   await page.getByRole('button', { name: ko.auth.logout }).click();
   await expect(page).toHaveURL(/\/app\/login/);
   await viaKakao(page, id);
-  await expect(page).toHaveURL(/\/app\/welcome\?next=%2Fapp|\/app\/welcome\?next=\/app/);
-  await page.getByRole('button', { name: new RegExp(ko.museum.enter) }).click();
-  await expect(page).toHaveURL(/\/app\/museum\/\d+/);
+  await expect(page).toHaveURL(/\/app\/museum\/\d+/); // D53 ④: 로그인 화면을 거쳤으면 입장 화면 없이 바로 내 미술관
 });
 
 test('카카오에서 취소하면 "로그인을 취소했어요. 다시 해 볼까요?"', async ({ page }, info) => {

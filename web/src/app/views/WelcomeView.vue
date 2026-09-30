@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// S0w 입장(SD_02 §17-4, D26 ⑥ — 동작은 §17-2 그대로) — 로그인 전 첫 방문 한 번만. 아이보리 한 면에 아주 큰 굵은 글자
-// "우리 아이 미술관", 글자 안은 아이 그림 같은 색 띠(background-clip), 태그라인 · 짧은 소개 두 줄 · 빨간 가는 선 고리 문양,
-// [입장하기](빨간 원형 테두리 + 화살표) → S0a(next 유지). 외부 이미지 없음. 움직임 줄이기면 색 띠 흐름을 멈춘다(motion.css).
-// D47(§17-16): 로그인한 사람도 탭 세션마다 한 번 여기부터 — 로그인했으면 [입장하기] → next(없으면 홈 /app = 아이 미술관).
+// S0w 입장 = 게임 타이틀 화면(D53, SD_02 §17-19). 공통 틀 GameStage(밝은 하늘 · 광장 · 먼 고전 외관) 앞에 큰 세리프 로고
+// "우리 아이 미술관" · 태그라인 한 줄 · [시작하기](주 버튼) · [견본 미술관 둘러보기](D48 ①). 외부 이미지 없음.
+// 동작은 그대로(§17-2 · D47 §17-16): 로그인했으면 [시작하기] → next(없으면 홈 /app = 아이 미술관), 아니면 로그인(next 유지).
+// 들어오면 주 버튼에 초점. 움직임 줄이기면 로고가 떠오르는 장면 없이 바로.
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import GameStage from '@/components/GameStage.vue';
 import { ko } from '@/copy/ko';
 import { markEntered } from '../entrance';
 import { safeNext } from '@/router/menu';
@@ -22,64 +23,41 @@ async function enter() {
   if (signedIn) { await router.replace(safeNext(route.query.next, 'app')); return; }
   await router.replace({ path: '/app/login', query: typeof route.query.next === 'string' ? { next: route.query.next } : {} });
 }
-
-/** 빨간 가는 선 고리 문양(스피로그래프 — 장식) */
-function spiro(R: number, r: number, d: number, turns: number) {
-  const pts: string[] = [];
-  for (let t = 0; t <= Math.PI * 2 * turns; t += 0.04) {
-    const x = (R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t);
-    const y = (R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t);
-    pts.push(`${(x + 110).toFixed(1)},${(y + 110).toFixed(1)}`);
-  }
-  return `M${pts.join('L')}`;
-}
-const RING = spiro(96, 41, 50, 41);
-const RING2 = spiro(90, 33, 44, 33);
 </script>
 
 <template>
-  <main class="welcome">
-    <svg class="ring r1" viewBox="0 0 220 220" aria-hidden="true" focusable="false"><path :d="RING" /></svg>
-    <svg class="ring r2" viewBox="0 0 220 220" aria-hidden="true" focusable="false"><path :d="RING2" /></svg>
-
-    <div class="top">
-      <p class="intro">{{ ko.museum.intro1 }}<br>{{ ko.museum.intro2 }}</p>
-    </div>
-
-    <div class="sign">
-      <p class="eyebrow">{{ ko.museum.tagline }}</p>
-      <h1 class="title">{{ ko.museum.name }}</h1>
-    </div>
-
-    <div class="door">
-      <button ref="btn" class="enter" type="button" @click="enter">{{ ko.museum.enter }} <span class="arrow" aria-hidden="true">→</span></button>
-      <!-- D48 ①: 로그인 없이 걸어 보는 견본 미술관 -->
-      <RouterLink class="sample" to="/app/sample">{{ hc.sampleTour }}</RouterLink>
-    </div>
-  </main>
+  <GameStage>
+    <main class="wel">
+      <div class="sign">
+        <p class="eyebrow">{{ ko.museum.tagline }}</p>
+        <h1 class="g-title logo">{{ ko.museum.name }}</h1>
+        <span class="g-rule" aria-hidden="true" />
+      </div>
+      <div class="door">
+        <p class="intro">{{ ko.museum.intro1 }}</p>
+        <button ref="btn" class="g-btn g-btn--primary g-btn--big enter" type="button" @click="enter">{{ hc.start }}</button>
+        <!-- D48 ①: 로그인 없이 걸어 보는 견본 미술관 -->
+        <RouterLink class="g-btn sample" to="/app/sample">{{ hc.sampleTour }}</RouterLink>
+      </div>
+    </main>
+  </GameStage>
 </template>
 
 <style scoped>
-.welcome{position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;background:var(--color-canvas);
-  padding:clamp(20px,4vw,48px);word-break:keep-all}
-.ring{position:absolute;fill:none;stroke:var(--color-accent-magenta);stroke-width:.35;opacity:.8;pointer-events:none}
-.r1{width:clamp(220px,30vw,420px);left:-6%;bottom:-10%}
-.r2{width:clamp(140px,16vw,240px);right:6%;top:14%;opacity:.55}
-.top{position:relative;display:flex;justify-content:flex-end}
-.intro{max-width:340px;font:500 15px/1.6 var(--font-sans);color:var(--color-ink)}
-.sign{position:relative;align-self:center;display:grid;gap:var(--s-sm)}
-.eyebrow{font:700 clamp(18px,2vw,26px)/1.3 var(--font-sans);color:var(--color-accent-magenta);letter-spacing:-.01em}
-/* 글자 안을 동화책 색 띠로 — 장미 · 라일락 · 민트 · 하늘(v3, D31 ②). 가장 옅은 띠도 바탕 대비 3.19:1(큰 글자 기준 3:1 이상) */
-.title{margin:0;font:800 clamp(56px,13vw,200px)/.95 var(--font-sans);letter-spacing:-.05em;
-  background:linear-gradient(100deg,#b8618a 0%,#9a74c4 22%,#d0708f 38%,#4e9a96 52%,#7584c8 68%,#9a74c4 84%,#b8618a 100%) 0 0/200% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 14s linear infinite}
-@keyframes flow{to{background-position:200% 0}}
-.door{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:flex-start;padding-bottom:clamp(8px,3vh,32px)}
-.enter{display:inline-flex;align-items:center;gap:14px;background:var(--color-canvas);color:var(--color-ink);border:1px solid var(--color-accent-magenta);
-  border-radius:var(--r-pill);padding:14px 16px 14px 28px;font:700 20px/1 var(--font-sans);cursor:pointer}
-.enter .arrow{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);font-size:18px}
-.enter:hover{background:var(--color-surface-soft)}
-.sample{font:600 16px/1.3 var(--font-sans);color:var(--color-ink);text-decoration:underline;text-underline-offset:5px;padding:12px 4px;min-height:44px;display:inline-flex;align-items:center}
-@media (max-width:560px){.title{font-size:21vw;line-height:1}}
-@media (prefers-reduced-motion:reduce){.title{animation:none}}
+.wel{flex:1;width:100%;max-width:1100px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:24px;text-align:center;word-break:keep-all}
+.sign{display:grid;justify-items:center;gap:10px;padding-top:clamp(8px,4vh,48px)}
+.eyebrow{margin:0;font:700 clamp(16px,1.6vw,20px)/1.3 var(--g-serif);color:var(--g-plum-deep);letter-spacing:.08em}
+/* 큰 세리프 로고: 자두색 글자 + 크림 빛 테두리(하늘 · 외관 위에서도 또렷하게) */
+.logo{font-size:clamp(44px,7.4vw,108px);line-height:1.02;letter-spacing:-.02em;color:#6e3550;
+  text-shadow:0 2px 0 #fff8ea,0 0 18px rgba(255,250,238,.95),0 0 42px rgba(255,250,238,.9),0 6px 0 rgba(201,162,74,.45)}
+.intro{margin:0 0 4px;max-width:30em;padding:6px 16px;border-radius:999px;background:rgba(255,250,240,.78);font:600 clamp(15px,1.4vw,18px)/1.5 var(--font-sans);color:var(--g-ink)}
+.door{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;padding-bottom:clamp(8px,4vh,40px)}
+.wel .g-btn.enter{min-width:min(320px,100%);font-size:22px;letter-spacing:.02em}
+.g-btn.sample{min-width:min(280px,100%)}
+@media (max-width:560px){.enter,.sample{width:100%;max-width:340px}}
+@media (prefers-reduced-motion:no-preference){
+  .sign{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+  .door{animation:rise .9s .15s cubic-bezier(.2,.8,.2,1) both}
+}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
 </style>

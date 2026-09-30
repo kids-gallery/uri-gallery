@@ -77,4 +77,8 @@ export const home = {
   makeCharacterHint: '이름 · 동물 친구 · 미술관 모양을 골라 아이만의 미술관을 열어요',
   changeLook: '캐릭터 · 미술관 바꾸기',
   sampleTour: '견본 미술관 둘러보기',
+  // 하나의 게임 틀(D53, SD_02 §17-19): 입장 = 게임 타이틀 · 로그인 = 입장권
+  start: '시작하기',
+  ticket: '입장권',
+  ticketHint: '카카오로 바로 들어와요',
 };

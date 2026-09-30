@@ -2,12 +2,14 @@
 // S1 아이 등록 = 캐릭터 만들기(D40, SD_02 §17-13 A). ① 이름 짓기 ② 캐릭터 고르기 ③ 미술관 모양 고르기 ④ 개관.
 // 별칭 규칙은 S1(ChildrenView)과 같다 — 앞뒤 공백 뺀 1~20자, 실명·생년월일 칸 없음(BR-CHD-01, D22).
 // 저장: ④에서 [리본 자르기] = POST /v1/children {alias, character, color, museumStyle} → [미술관에 들어가기] → /app/museum/{id}.
+// D53(SD_02 §17-19): 공통 틀 GameStage(외관은 작고 옅게) 위 — 단계 카드 = 금테 양피지 패널, 버튼 = 금테 크림 알약(주 버튼 자두색).
 // 바꾸기: ?edit={childId} → ②③만, PATCH /v1/children/{id}(별칭도 함께) → /app/children. 셋 다 계약 enum 값만 보낸다.
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
 import BlockNotice from '@/components/BlockNotice.vue';
+import GameStage from '@/components/GameStage.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import { ko, problemCopy } from '@/copy/ko';
 import CharacterAvatar from '../character/CharacterAvatar.vue';
@@ -149,9 +151,10 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 </script>
 
 <template>
-  <main class="container page cc">
-    <h1 class="t-headline">{{ title }}</h1>
-    <p v-if="route.query.welcome === '1'" class="cc-welcome t-body" role="status">{{ ko.kakao.welcome }}</p><!-- D47: 카카오 첫 가입은 흰 표 대신 여기로 -->
+  <GameStage compact :facade="false">
+  <main class="cc">
+    <h1 class="g-title cc-title">{{ title }}</h1>
+    <p v-if="route.query.welcome === '1'" class="g-note cc-welcome" role="status">{{ ko.kakao.welcome }}</p><!-- D47: 카카오 첫 가입은 흰 표 대신 여기로 -->
 
     <nav class="dots" :aria-label="cc.stepNav">
       <ol>
@@ -168,14 +171,14 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 
     <BlockNotice v-if="loadBlock" :notice="loadBlock" @action="loadEdit" />
     <p v-if="loading" class="t-body-sm" role="status">{{ cc.loading }}</p>
-    <section v-else-if="notFound" class="card stack">
+    <section v-else-if="notFound" class="g-panel step">
       <p class="t-body" role="alert">{{ cc.notFound }}</p>
-      <RouterLink class="btn btn-secondary" to="/app/children">{{ cc.toChildren }}</RouterLink>
+      <RouterLink class="g-btn" to="/app/children">{{ cc.toChildren }}</RouterLink>
     </section>
 
     <template v-else-if="!loadBlock">
       <!-- ① 이름 짓기 -->
-      <section v-if="step === 1" class="step card" data-step="1" aria-labelledby="cc-h">
+      <section v-if="step === 1" class="step g-panel" data-step="1" aria-labelledby="cc-h">
         <h2 id="cc-h" ref="head" class="t-card-title" tabindex="-1">{{ cc.askName }}</h2>
         <form class="stack" novalidate @submit.prevent="next">
           <span class="name-pal" aria-hidden="true"><CharacterAvatar :kind="kind" :color="color" :size="96" /></span><!-- ①단계 미리보기: 이름표를 들 친구 -->
@@ -190,7 +193,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
           <p class="t-body-sm">{{ cc.notCollected }}</p>
           <div class="acts">
             <!-- 막힌 [다음]은 흐리게 + 쉬운 안내 한 줄(공통 "(비활성) -" 표시 대신, 세션2 판별 A8). 누르면 이름표로 초점 -->
-            <button class="btn btn-primary big" :class="{ soft: !!aliasErr }" type="submit" :aria-disabled="aliasErr ? 'true' : undefined"
+            <button class="g-btn g-btn--primary g-btn--big" :class="{ soft: !!aliasErr }" type="submit" :aria-disabled="aliasErr ? 'true' : undefined"
               :aria-describedby="aliasErr ? 'cc-next-why' : undefined">{{ cc.next }}</button>
             <p v-if="aliasErr" id="cc-next-why" class="t-body-sm next-why">{{ !trimmed ? cc.nameFirst : cc.nameTooLong }}</p>
           </div>
@@ -198,7 +201,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
       </section>
 
       <!-- ② 캐릭터 고르기 -->
-      <section v-else-if="step === 2" class="step card" data-step="2" aria-labelledby="cc-h">
+      <section v-else-if="step === 2" class="step g-panel" data-step="2" aria-labelledby="cc-h">
         <h2 id="cc-h" ref="head" class="t-card-title" tabindex="-1">{{ cc.pickTitle }}</h2>
         <div class="stage">
           <CharacterAvatar :kind="kind" :color="color" :size="176" spinning />
@@ -225,13 +228,13 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
           </div>
         </fieldset>
         <div class="acts">
-          <button v-if="!editId" class="btn btn-secondary" type="button" @click="back">{{ cc.back }}</button>
-          <button class="btn btn-primary big" type="button" @click="next">{{ cc.next }}</button>
+          <button v-if="!editId" class="g-btn" type="button" @click="back">{{ cc.back }}</button>
+          <button class="g-btn g-btn--primary g-btn--big" type="button" @click="next">{{ cc.next }}</button>
         </div>
       </section>
 
       <!-- ③ 미술관 모양 고르기 -->
-      <section v-else-if="step === 3" class="step card" data-step="3" aria-labelledby="cc-h">
+      <section v-else-if="step === 3" class="step g-panel" data-step="3" aria-labelledby="cc-h">
         <h2 id="cc-h" ref="head" class="t-card-title" tabindex="-1">{{ cc.styleTitle }}</h2>
         <div class="town" role="group" :aria-label="cc.townLabel(STYLE_NAME[museumStyle])">
           <svg class="town-bg" viewBox="0 0 320 160" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
@@ -245,22 +248,22 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
           <MuseumBuilding class="town-b" :museum-style="museumStyle" :color="color" :size="200" />
         </div>
         <div class="flip">
-          <button class="btn btn-secondary flip-btn" type="button" :aria-label="cc.prevStyle" @click="prevStyle"><span aria-hidden="true">‹</span></button>
+          <button class="g-btn g-btn--round flip-btn" type="button" :aria-label="cc.prevStyle" @click="prevStyle"><span aria-hidden="true">‹</span></button>
           <p class="flip-name" aria-live="polite">
             <strong class="t-body-lg">{{ STYLE_NAME[museumStyle] }}</strong>
             <span class="t-body-sm">{{ cc.styleCount(styleIdx + 1, STYLES.length) }}</span>
           </p>
-          <button class="btn btn-secondary flip-btn" type="button" :aria-label="cc.nextStyle" @click="nextStyle"><span aria-hidden="true">›</span></button>
+          <button class="g-btn g-btn--round flip-btn" type="button" :aria-label="cc.nextStyle" @click="nextStyle"><span aria-hidden="true">›</span></button>
         </div>
         <div class="acts">
-          <button class="btn btn-secondary" type="button" @click="back">{{ cc.back }}</button>
-          <ReasonButton v-if="editId" class="big" :label="busy ? cc.saving : cc.saveEdit" :disabled="busy" @click="saveEdit" />
-          <button v-else class="btn btn-primary big" type="button" @click="next">{{ cc.next }}</button>
+          <button class="g-btn" type="button" @click="back">{{ cc.back }}</button>
+          <ReasonButton v-if="editId" class="g-btn g-btn--primary g-btn--big" :label="busy ? cc.saving : cc.saveEdit" :disabled="busy" @click="saveEdit" />
+          <button v-else class="g-btn g-btn--primary g-btn--big" type="button" @click="next">{{ cc.next }}</button>
         </div>
       </section>
 
       <!-- ④ 개관 -->
-      <section v-else-if="step === 4" class="step card" data-step="4" aria-labelledby="cc-h">
+      <section v-else-if="step === 4" class="step g-panel" data-step="4" aria-labelledby="cc-h">
         <h2 id="cc-h" ref="head" class="t-card-title" tabindex="-1">{{ cc.openTitle }}</h2>
         <div class="ceremony" :class="{ opened: !!created }">
           <MuseumBuilding :museum-style="museumStyle" :color="color" :size="220" :open="!!created" decorative />
@@ -270,15 +273,15 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
         <template v-if="!created">
           <p class="t-body">{{ cc.ribbonHint }}</p>
           <div class="acts">
-            <button class="btn btn-secondary" type="button" :disabled="busy" @click="back">{{ cc.back }}</button>
-            <ReasonButton class="big" :label="busy ? cc.saving : cc.cutRibbon" :disabled="busy" @click="open" />
+            <button class="g-btn" type="button" :disabled="busy" @click="back">{{ cc.back }}</button>
+            <ReasonButton class="g-btn g-btn--primary g-btn--big" :label="busy ? cc.saving : cc.cutRibbon" :disabled="busy" @click="open" />
           </div>
         </template>
         <template v-else>
           <p ref="openedEl" class="opened-msg t-headline" role="status" tabindex="-1">{{ cc.opened(created.alias) }}</p>
           <p v-if="created.aliasDuplicate" class="t-body-sm">{{ cc.dup(created.alias) }}</p>
           <div class="acts">
-            <button class="btn btn-primary big" type="button" @click="enter">{{ after?.startsWith('/app/neighbor') ? cc.toFriend : cc.enter }}</button>
+            <button class="g-btn g-btn--primary g-btn--big" type="button" @click="enter">{{ after?.startsWith('/app/neighbor') ? cc.toFriend : cc.enter }}</button>
           </div>
         </template>
       </section>
@@ -286,35 +289,36 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
       <BlockNotice v-if="block" :notice="block" @action="onBlockAction" />
     </template>
   </main>
+  </GameStage>
 </template>
 
 <style scoped>
-.cc{display:flex;flex-direction:column;gap:var(--s-lg);max-width:min(880px,100%);overflow-x:clip}
+.cc{width:100%;max-width:880px;display:flex;flex-direction:column;gap:18px;overflow-x:clip;padding-top:clamp(0px,2vh,16px)}
+.cc-title{font-size:clamp(28px,4vw,40px);text-align:center;text-shadow:0 1px 0 #fff8ea,0 0 16px rgba(255,250,238,.95),0 0 32px rgba(255,250,238,.9)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.dots ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--s-xs)}
-.dot-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:4px 12px 4px 4px;border:0;border-radius:var(--r-pill);background:var(--color-surface-soft);color:var(--color-ink);font:480 16px/1.2 var(--font-sans);cursor:pointer}
+.dots ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s-xs)}
+.dot-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:4px 14px 4px 4px;border:1.5px solid var(--g-gold);border-radius:var(--r-pill);background:rgba(255,250,240,.92);color:var(--g-ink);font:600 16px/1.2 var(--font-sans);cursor:pointer;box-shadow:0 2px 0 var(--g-gold-soft)}
 .dot-btn:disabled{cursor:default;opacity:.55}
-.dot{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--color-canvas);box-shadow:inset 0 0 0 2px var(--color-hairline);font-variant-numeric:tabular-nums}
-.dot-btn.done .dot{background:var(--color-block-mint)}
-.dot-btn.on{background:var(--color-primary);color:var(--color-on-primary)}
-.dot-btn.on .dot{background:var(--color-on-primary);color:var(--color-primary);box-shadow:none}
+.dot{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#fffdf6;box-shadow:inset 0 0 0 1.5px var(--g-gold);font:700 15px/1 var(--g-serif);font-variant-numeric:tabular-nums}
+.dot-btn.done .dot{background:linear-gradient(#f6e7bf,#ebd39a)}
+.dot-btn.on{background:linear-gradient(#ad557e,#93405f);color:#fff8ec;border-color:var(--g-gold)}
+.dot-btn.on .dot{background:#fff8ec;color:var(--g-plum-deep);box-shadow:inset 0 0 0 1.5px var(--g-gold)}
 @media (max-width:560px){.dot-btn:not(.on) .dot-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.dot-btn:not(.on){padding-right:4px}}
-.step{display:flex;flex-direction:column;gap:var(--s-md);min-width:0}
+.step{display:flex;flex-direction:column;gap:var(--s-md);min-width:0;padding:clamp(18px,3vw,32px)}
+.step h2{font-family:var(--g-serif);font-weight:700;color:var(--g-ink)}
 .step h2:focus{outline:none}
 .step h2:focus-visible{outline:2px solid var(--color-ink);outline-offset:4px}
 .name-pal{display:flex;justify-content:center}
-.btn.soft{opacity:.45;box-shadow:none}
 .next-why{width:100%;margin:0;color:var(--color-ink)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center}
-.big{min-height:56px;padding-left:32px;padding-right:32px;font-size:22px}
-@media (max-width:560px){.acts .big{flex:1 1 100%}}
+@media (max-width:560px){.acts .g-btn--big{flex:1 1 100%}}
 .hint{margin:0}
 .num{font-variant-numeric:tabular-nums}
 
 /* ① 이름표 */
-.tag{position:relative;display:flex;flex-direction:column;gap:6px;padding:var(--s-md) var(--s-lg) var(--s-lg) 56px;background:var(--color-block-lime);border:2px solid var(--color-ink);border-radius:var(--r-lg) 12px 12px var(--r-lg);max-width:560px;box-shadow:var(--elev-2)}
-.tag-hole{position:absolute;left:20px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:var(--color-canvas);box-shadow:inset 0 0 0 2px var(--color-ink)}
-.tag-label{font:400 14px/1 var(--font-mono);letter-spacing:.6px}
+.tag{position:relative;display:flex;flex-direction:column;gap:6px;padding:var(--s-md) var(--s-lg) var(--s-lg) 56px;background:linear-gradient(#fffdf6,#fff3d6);border:2px solid var(--g-gold);border-radius:var(--r-lg) 12px 12px var(--r-lg);max-width:560px;box-shadow:var(--elev-2)}
+.tag-hole{position:absolute;left:20px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:var(--g-cream);box-shadow:inset 0 0 0 2px var(--g-gold-deep)}
+.tag-label{font:700 15px/1 var(--g-serif);letter-spacing:.06em;color:var(--g-ink)}
 .tag-input{width:100%;min-width:0;border:0;border-bottom:3px dashed var(--color-accent-magenta);background:transparent;color:var(--color-ink);font:700 clamp(26px,6vw,36px)/1.3 var(--font-sans);padding:4px 0}
 .tag-input:focus{outline:none;border-bottom-style:solid;border-bottom-color:var(--color-ink)}
 .tag-input.is-error{border-bottom-color:var(--color-ink);border-bottom-style:solid}
@@ -325,7 +329,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 .pick{border:0;margin:0;padding:0;min-width:0}
 .pick legend{padding:0;margin-bottom:var(--s-xs);font-weight:540}
 .kinds{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:var(--s-xs)}
-.kcard{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:var(--r-md);background:var(--color-canvas);box-shadow:inset 0 0 0 1px var(--color-hairline);cursor:pointer;transition:transform .15s ease}
+.kcard{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:var(--r-md);background:#fffdf8;box-shadow:inset 0 0 0 1.5px rgba(201,162,74,.6);cursor:pointer;transition:transform .15s ease}
 .kcard:hover{transform:translateY(-2px)}
 .kcard.on{background:var(--color-block-pink);box-shadow:inset 0 0 0 3px var(--color-primary)}
 .kcard:focus-within,.sw:focus-within{outline:3px solid var(--color-ink);outline-offset:2px}
@@ -342,7 +346,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 .town-b{position:relative;animation:rise .5s cubic-bezier(.3,.7,.2,1.2)}
 @keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 .flip{display:flex;align-items:center;justify-content:center;gap:var(--s-md)}
-.flip-btn{width:56px;height:56px;min-height:56px;padding:0;font-size:32px;border-radius:50%}
+.g-btn.flip-btn{flex:none;height:56px;min-height:56px}
 .flip-name{display:flex;flex-direction:column;align-items:center;margin:0;min-width:0;text-align:center}
 
 /* ④ 개관식 */
@@ -364,5 +368,5 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
   .kcard{transition:none}
   .ribbon{display:none}
 }
-.cc-welcome{margin:0;padding:10px 14px;border-radius:14px;background:var(--color-block-lime);font-weight:600}
+.cc-welcome{text-align:center}
 </style>

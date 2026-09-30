@@ -35,7 +35,7 @@ test('홈 /app: 아이가 둘이면 고르기, 고른 아이는 다음에 바로
   await page.request.post('/v1/children', { data: { alias: '바다', character: 'penguin', color: 'sky', museumStyle: 'silver_wave' } });
   await page.goto('/app');
   await expect(page).toHaveURL(/\/app\/welcome/); // D47: 탭 세션마다 한 번 입장 화면
-  await page.getByRole('button', { name: /입장하기/ }).click();
+  await page.getByRole('button', { name: /시작하기/ }).click(); // D53 입장 = 게임 타이틀
   await page.getByRole('button', { name: /바다의 미술관/ }).click();
   await expect(page).toHaveURL(/\/app\/museum\/\d+/);
   await page.goto('/app');

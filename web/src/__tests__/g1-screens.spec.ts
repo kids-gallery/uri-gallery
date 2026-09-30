@@ -22,6 +22,7 @@ import InviteAcceptView from '../app/views/InviteAcceptView.vue';
 import NoFamilyView from '../app/views/NoFamilyView.vue';
 import { routeFor } from '../app/artwork';
 import { ko } from '../copy/ko';
+import { home as hc } from '../app/town/copy';
 import { roomLabel } from '../app/museumTheme';
 
 const Stub = { template: '<div />' };
@@ -339,11 +340,11 @@ describe('홈 /app — 아날로그 감성(D26 ⑥, SD_02 §17-3)', () => {
 });
 
 describe('S0w 입장(제안 SD_02 §17-2)', () => {
-  it('첫 방문이면 입장 화면, [입장하기] 뒤에는 저장값으로 건너뛰고 next를 로그인에 넘긴다', async () => {
+  it('첫 방문이면 입장 화면, [시작하기](D53) 뒤에는 저장값으로 건너뛰고 next를 로그인에 넘긴다', async () => {
     localStorage.removeItem('uam.entered');
     expect(isFirstVisit()).toBe(true);
     const w = await open(WelcomeView, '/app/welcome?next=/app/upload');
-    await btn(w, ko.museum.enter)!.trigger('click');
+    await btn(w, hc.start)!.trigger('click');
     await flushPromises();
     expect(isFirstVisit()).toBe(false);
     expect(router.currentRoute.value.fullPath).toBe('/app/login?next=/app/upload');

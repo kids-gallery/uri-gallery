@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 미술관 마을(D40, SD_02 §17-13 D, UC_16 BF4): 가족마다 건물 1채 — 내 건물 · 이웃 건물(문 열림, 아이 미술관 문) · 모르는 가족(겉모양만, 자물쇠).
 // 끌어서 마을 밀기 · 방향키 · 건물 누르기 → 그 앞으로 + 로비 카드. 미니맵은 오른쪽 아래(내 건물 자두 · 이웃 하늘 · 그 밖 회색 · 지금 보는 곳 사각형).
+// D53(SD_02 §17-19): HUD 버튼 · 로비 카드 · 미니맵 = 공통 게임 틀(game.css 금테 크림 알약 · 금테 양피지 패널). 마을 장면은 그대로.
 // 3D 엔진 없음(CSS 아이소메트릭). 움직임 줄이기면 옮길 때 애니메이션 없음.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -9,6 +10,7 @@ import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
 import MuseumBuilding from '@/app/character/MuseumBuilding.vue';
 import { DEFAULT_COLOR, DEFAULT_KIND } from '@/app/character/names';
 import { town as tc } from '@/app/town/copy';
+import '@/styles/game.css';
 import { centerOn, clampPan, layoutTown, museumPath, type PlacedBuilding, type TownBuildingDto, type TownLayout } from '@/app/town/layout';
 
 const router = useRouter();
@@ -117,10 +119,10 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
       @pointerdown="down" @pointermove="move" @pointerup="up" @pointercancel="up"
     >
       <p v-if="state === 'loading'" class="center t-body" role="status">{{ tc.loading }}</p>
-      <div v-else-if="state === 'error'" class="center stack-sm" role="alert">
+      <div v-else-if="state === 'error'" class="center" role="alert"><div class="g-panel err stack-sm">
         <p class="t-body">{{ tc.unavailable }}</p>
-        <button class="btn btn-primary" type="button" @click="load">{{ tc.retry }}</button>
-      </div>
+        <button class="g-btn g-btn--primary" type="button" @click="load">{{ tc.retry }}</button>
+      </div></div>
       <div
         v-else class="board" :class="{ glide: gliding }"
         :style="{ width: `${lay.width}px`, height: `${lay.height}px`, transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }"
@@ -150,14 +152,14 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
     <div class="hud-top">
       <p class="hint t-body-sm">{{ tc.hint }}</p>
       <div class="hud-acts">
-        <button v-if="mine" class="btn btn-secondary btn-sm" type="button" @click="pick(mine)">{{ tc.toMine }}</button>
-        <RouterLink class="btn btn-secondary btn-sm" to="/app/family#neighbors">{{ tc.inviteNeighbor }}</RouterLink>
+        <button v-if="mine" class="g-btn g-btn--primary" type="button" @click="pick(mine)">{{ tc.toMine }}</button>
+        <RouterLink class="g-btn" to="/app/family#neighbors">{{ tc.inviteNeighbor }}</RouterLink>
       </div>
     </div>
 
     <!-- 로비 카드: 누른 건물 -->
-    <section v-if="picked" class="lobby" aria-labelledby="town-lobby-h">
-      <h2 id="town-lobby-h" ref="lobbyHead" tabindex="-1" class="t-card-title">{{ nameOf(picked) }}</h2>
+    <section v-if="picked" class="g-panel lobby" aria-labelledby="town-lobby-h">
+      <h2 id="town-lobby-h" ref="lobbyHead" tabindex="-1" class="g-title lobby-h">{{ nameOf(picked) }}</h2>
       <p v-if="picked.relation === 'stranger'" class="t-body-sm">{{ tc.locked }}</p>
       <template v-else>
         <p class="t-body-sm">{{ tc.lobby(picked.children.length) }}</p>
@@ -174,11 +176,11 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
           {{ tc.noChildMine }} <RouterLink to="/app/children/new">{{ tc.addChild }}</RouterLink>
         </p>
       </template>
-      <button class="btn btn-secondary btn-sm" type="button" @click="picked = null">{{ tc.close }}</button>
+      <button class="g-btn g-btn--sm lobby-close" type="button" @click="picked = null">{{ tc.close }}</button>
     </section>
 
     <!-- 미니맵(오른쪽 아래) -->
-    <nav v-if="state === 'ready' && lay.buildings.length" class="minimap" :aria-label="tc.minimap">
+    <nav v-if="state === 'ready' && lay.buildings.length" class="g-panel minimap" :aria-label="tc.minimap">
       <div class="map" :style="{ width: `${mapBox.w}px`, height: `${mapBox.h}px` }" aria-hidden="true" @click="mapClick">
         <span
           v-for="b in lay.buildings" :key="b.id" class="dot" :class="b.relation"
@@ -189,7 +191,7 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
       <ul class="legend t-caption" aria-hidden="true">
         <li><span class="dot mine" />{{ tc.legendMine }}</li><li><span class="dot neighbor" />{{ tc.legendNeighbor }}</li><li><span class="dot stranger" />{{ tc.legendOther }}</li>
       </ul>
-      <button class="map-size" type="button" :aria-expanded="bigMap" @click="bigMap = !bigMap">{{ bigMap ? tc.minimapSmall : tc.minimapBig }}</button>
+      <button class="g-btn g-btn--sm map-size" type="button" :aria-expanded="bigMap" @click="bigMap = !bigMap">{{ bigMap ? tc.minimapSmall : tc.minimapBig }}</button>
       <!-- 화면 읽기 · 키보드용 건물 목록 -->
       <ul class="sr-only" :aria-label="tc.buildingList">
         <li v-for="b in lay.buildings" :key="b.id"><button type="button" @click="pick(b)">{{ nameOf(b) }}</button></li>
@@ -204,6 +206,7 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
 .stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;user-select:none}
 .stage:active{cursor:grabbing}
 .center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:var(--s-sm);padding:16px}
+.err{padding:24px;justify-items:center}
 .board{position:absolute;left:0;top:0;will-change:transform}
 .board.glide{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .ground{position:absolute;inset:0;background:
@@ -219,37 +222,39 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
 .bld[aria-pressed="true"]{filter:drop-shadow(0 0 10px rgba(255,214,90,.9))}
 .lot.stranger .bld{filter:saturate(.55) brightness(1.02)}
 .sign{position:absolute;left:-90px;top:-178px;z-index:2;width:180px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;
-  padding:4px 6px;border-radius:12px;background:rgba(255,251,247,.92);box-shadow:0 2px 6px rgba(74,52,65,.18)}
-.sign-t{width:100%;text-align:center;font:600 13px/1.3 var(--font-sans);color:var(--color-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  padding:4px 6px;border-radius:12px;border:1.5px solid var(--g-gold);background:rgba(251,244,230,.95);box-shadow:0 2px 0 var(--g-gold-soft),0 4px 8px rgba(74,52,65,.14)}
+.sign-t{width:100%;text-align:center;font:700 13px/1.3 var(--g-serif);color:var(--g-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hud-top{position:absolute;left:16px;right:16px;top:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;pointer-events:none}
 .hud-top>*{pointer-events:auto}
-.hint{margin:0;padding:6px 12px;border-radius:999px;background:rgba(255,251,247,.88);max-width:520px}
-.hud-acts{display:flex;gap:8px;flex-wrap:wrap}
-.btn-sm{min-height:44px;font-size:16px;padding:6px 14px}
-.lobby{position:absolute;left:16px;bottom:16px;width:min(360px,calc(100% - 32px));max-height:60%;overflow:auto;display:grid;gap:var(--s-sm);
-  padding:16px;border-radius:20px;background:rgba(255,251,247,.96);box-shadow:0 8px 24px rgba(74,52,65,.22)}
+.hint{margin:0;align-self:flex-start;padding:8px 16px;border-radius:999px;border:1.5px solid var(--g-gold);background:rgba(251,244,230,.94);color:var(--g-ink);font-weight:600;max-width:520px;box-shadow:0 6px 14px -10px rgba(74,53,38,.45)}
+.hud-acts{display:flex;gap:10px;flex-wrap:wrap;padding-bottom:3px}
+.lobby{position:absolute;left:16px;bottom:16px;width:min(380px,calc(100% - 32px));max-height:60%;overflow:auto;display:grid;gap:var(--s-sm);padding:20px 18px 18px}
+.lobby-h{font-size:22px}
+.lobby-close{justify-self:start}
 .doors{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .door{width:100%;display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:8px 12px;min-height:72px;
-  border:1px solid var(--color-hairline);border-radius:16px;background:var(--color-canvas);cursor:pointer;text-align:left}
-.door:hover,.door:focus-visible{border-color:var(--color-primary)}
+  border:1.5px solid var(--g-gold);border-radius:18px;background:linear-gradient(#fffdf6,#fbf1dc);cursor:pointer;text-align:left;
+  box-shadow:0 3px 0 var(--g-gold-soft);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .12s}
+.door:active{transform:translateY(3px);box-shadow:0 0 0 var(--g-gold-soft);transition-duration:.05s}
+.door:hover{transform:translateY(-1px)}
+.door:focus-visible{outline:3px solid var(--g-plum-deep);outline-offset:3px}
 .door-t{font:600 17px/1.3 var(--font-sans);color:var(--color-ink)}
-.door-go{font:600 15px/1 var(--font-sans);color:var(--color-primary)}
-.minimap{position:absolute;right:16px;bottom:16px;display:grid;gap:6px;justify-items:end;padding:10px;border-radius:16px;
-  background:rgba(255,251,247,.92);box-shadow:0 4px 14px rgba(74,52,65,.2)}
-.map{position:relative;border-radius:8px;background:#d9f2c9;cursor:pointer;overflow:hidden}
+.door-go{padding:8px 14px;border-radius:999px;background:linear-gradient(#ad557e,#93405f);border:1.5px solid var(--g-gold);font:700 15px/1 var(--font-sans);color:#fff8ec}
+.minimap{position:absolute;right:16px;bottom:16px;display:grid;gap:8px;justify-items:end;padding:12px}
+.map{position:relative;border-radius:10px;background:#d9f2c9;cursor:pointer;overflow:hidden;box-shadow:inset 0 0 0 1.5px var(--g-gold)}
 .map .dot{position:absolute;transform:translate(-50%,-50%)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#b8b2ad}
 .dot.mine{background:#a0496b;width:12px;height:12px}
 .dot.neighbor{background:#4aa3df}
 .vr{position:absolute;border:2px solid #4a3441;border-radius:3px;pointer-events:none}
-.legend{list-style:none;margin:0;padding:0;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.legend{letter-spacing:0;word-spacing:normal;list-style:none;margin:0;padding:0;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .legend li{display:flex;align-items:center;gap:4px}
-.map-size{min-height:44px;padding:4px 10px;border:1px solid var(--color-hairline);border-radius:999px;background:var(--color-canvas);font:500 14px/1 var(--font-sans);cursor:pointer}
+.minimap .g-btn.map-size{font-size:14px}
 .stack-sm{display:grid;gap:var(--s-sm)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 @media (max-width:600px){
   .lobby{bottom:auto;top:64px}
   .hint{display:none}
 }
-@media (prefers-reduced-motion:reduce){.board.glide{transition:none}}
+@media (prefers-reduced-motion:reduce){.board.glide{transition:none}.door,.door:hover,.door:active{transition:none;transform:none}}
 </style>
