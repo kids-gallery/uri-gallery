@@ -40,7 +40,7 @@
 | `awaiting_review` | `awaiting_review` | 확인 대기 | |
 | `failed` | `failed` | 처리하지 못함 | 결과 단계 소진(G9). 이전 초안의 `unprocessable` |
 | `approved` | `approved` | 승인됨 | |
-| (저장 안 함) | `exhibited` | 전시 중 | `v_artwork_display.display_status='exhibited'` = 승인 + 필수 이야기(G12) |
+| (저장 안 함) | `exhibited` | 전시 중 | `v_artwork_display.display_status='exhibited'` = 승인 + 필수 이야기(G12) → **D34: 걸림(`artwork.hung_result_id`) + 제목 · 그린 날**. 올리기 트랜잭션이 원본 액자 결과를 만들어 바로 건다. 상태(`status`)는 권유 · 다시 만들기 진행만 나타낸다(`docs/B/B_D34_설계반영안_2026-09-30.md`) |
 | `deleting` | (목록에서 제외) | 삭제 중 | 과도 상태(D4). 트리거가 새 작업·이야기·설명을 막음 |
 
 ### 2.2 단계 작업 `stage_job`
@@ -126,7 +126,7 @@
 | 낮춤 | BR-PRC-02 | 워커: 현재 작업 `done_downgraded` + 다음 작업(`depth_relief` 또는 `frame_compose`, `origin='downgrade'`) INSERT |
 | 결정 frame의 전시 | — | "액자로 걸기"(UC4 A2·A5)는 결과 행을 만들지 않는다. `v_gallery`가 결정 `frame`이면 원본 액자로 보이고, 앱은 `artwork_outcome.result_kind='frame'`을 기록한다(SD_03 §19 #17) |
 | 결정 | G10·G3 | `decision` INSERT(트리거가 상태 검사, `uq_dc_round`로 중복 차단 → 중복이면 기존 결정 반환) + `artwork_outcome` 갱신 + 전이(`approved` / `use_lower`면 2.5D 없을 때 `depth_relief` 작업·`processing` / `retake`면 `deleting` + `deletion_request(origin='retake')`) |
-| 이야기 | G11·G12 | `story` UPSERT(트리거: 미래 제작일·삭제 중·전시 작품 필수 항목 비우기 거절). 전시 여부는 저장하지 않고 뷰로 |
+| 이야기 | G11·G12 | `story` UPSERT(트리거: 미래 제작일·삭제 중·전시 작품 필수 항목 비우기 거절). 전시 여부는 저장하지 않고 뷰로. D34: 올리기 때 자동으로 채움 — 그린 날 = `capturedOn`(브라우저가 EXIF에서 날짜만) 또는 올린 날, 나이 = 그 아이의 가장 최근 기록(없으면 NULL = 나이 미정), 제목 = "제목 없는 그림 N"(`title_auto`) |
 | 삭제 요청 | G18 | `artwork.status='deleting'`, `deleting_since` + 작품의 `stage_job.cancel_requested_at` + `deletion_request(accepted→waiting_stop)` → 202 |
 | 삭제 완료 | G19·H13 | sweeper: `v_deletion_hold`에 없음(또는 점유 만료+유예) 확인 → 파일 삭제 → `stored_object` 삭제 → `artwork` 삭제(연결 FK는 CASCADE/SET NULL, `artwork_outcome`·`stage_job`에는 집계만 남음) → `deletion_request` 연결 NULL + `completed`(트리거 `trg_deletion_bu`) |
 | 점검 요청(D20) | G30 | 버전 확인(지정 → 활성 → 가장 최근의 폐기 아닌 버전) · 항목 선택(지정 또는 자동: M3는 `person` 우선, M7은 `sculpture`, 그 밖은 사진 항목) → `model_check` INSERT(트리거 `trg_model_check_bi`가 G30 최종 판정, `uq_mc_one_inflight` 중복 → 409 `check_in_progress`) + `stage_job`(`origin='check'`, `model_check_id`, `eval_item_id`, 우선순위 30; M5는 GPU 없으면 `cpu_vision`) 한 트랜잭션. 같은 트랜잭션에서 그 모델의 21번째 이전 기록과 점검 작업 삭제 |
