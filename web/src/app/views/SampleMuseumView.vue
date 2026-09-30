@@ -49,6 +49,6 @@ function exit() { void router.push('/app/welcome'); }
 .sm-go:focus-visible{outline:2px solid #6E3550;outline-offset:3px}
 .sm-stage{position:relative;flex:1;min-height:0}
 .sm-note{position:absolute;right:14px;top:66px;z-index:7;margin:0;padding:4px 10px;border-radius:999px;background:rgba(255,251,247,.8);color:#6E3550;font:500 12px/1.3 var(--font-sans)}
-@media (max-width:600px){.sm-note{top:auto;bottom:140px;right:14px}}
+@media (max-width:600px){.sm-note{display:none}}
 @media (prefers-reduced-motion:reduce){.sm-go{transition:none}}
 </style>

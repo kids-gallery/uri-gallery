@@ -33,7 +33,7 @@ export const m3 = {
   mapTap: '안내도를 눌러 그곳으로 걸어가기',
   close: '닫기',
 
-  keys: '끌어서 둘러보기 · 바닥을 두 번 눌러 걷기 · W A S D 걷기 · Shift 빨리',
+  keys: ['끌어서 둘러보기', '두 번 눌러 걷기', 'WASD 걷기', 'Shift 빨리'],
   touchKeys: '끌어서 둘러보고, 바닥을 두 번 눌러 걸어가요',
 
   loading: '미술관 문을 여는 중이에요',

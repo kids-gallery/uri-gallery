@@ -38,7 +38,7 @@ export interface MuseumInput {
 
 // ---------- 출력 ----------
 export interface Vec { x: number; z: number }
-export interface Pose { x: number; z: number; yaw: number }
+export interface Pose { x: number; z: number; yaw: number; /** 도착 때 고개(위 +). 없으면 0 */ pitch?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 /** 장식 면(바닥 · 벽 · 천장 · 기둥 · 글자판). w · h · 위치는 미터, 회전은 도 */
 export interface Plane { key: string; cls: string; x: number; y: number; z: number; w: number; h: number; ry: number; rx: number; text?: string }
@@ -67,12 +67,18 @@ export const HALL_HALF = 6;
 export const ROOM = 8;
 export const ROOM_H = 7;
 export const HALL_H = 8;
-export const LOBBY_D = 7;
+export const LOBBY_D = 9;
 export const END_PAD = 3;
 export const DOOR_W = 2.4;
 export const DOOR_H = 2.8;
 export const ARCH_TOP = DOOR_H + DOOR_W / 2;
 export const MIN_PLINTHS = 2;
+export const LOBBY_STATUE_Z = 6.5;
+export const MIN_HALL_LEN = 16;
+/** 살짝 왼쪽 — 입구에서 홀 긴 축 · 끝벽 벽화가 가려지지 않게 */
+export const LOBBY_STATUE_X = -2.2;
+/** 방 · 홀 버튼으로 도착할 때 살짝 올려 본다(천장화 · 천창이 들어오게) */
+export const ARRIVE_PITCH = 6;
 export const MAX_PLINTHS = 12;
 export const PLINTH_H = 1;
 export const MIN_ROOMS = 2;
@@ -132,7 +138,9 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
   const seeds = roomSeeds(input);
   const rows = Math.ceil(seeds.length / 2);
   const zRooms0 = LOBBY_D;
-  const zEnd = zRooms0 + rows * ROOM + END_PAD;
+  // 홀은 적어도 16m — 방이 한 줄뿐이어도 끝벽 벽화가 화면을 다 덮지 않게(깊이감)
+  const endPad = Math.max(END_PAD, MIN_HALL_LEN - rows * ROOM);
+  const zEnd = zRooms0 + rows * ROOM + endPad;
   const planes: Plane[] = [];
   const P = (key: string, cls: string, o: Omit<Plane, 'key' | 'cls' | 'ry' | 'rx'> & { ry?: number; rx?: number }) =>
     planes.push({ key, cls, ry: 0, rx: 0, ...o });
@@ -165,7 +173,8 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
 
     P(`${k}-floor`, 'floor room', { x: xc, y: 0, z: zc, w: ROOM, h: ROOM, rx: 90 });
     P(`${k}-ceil`, 'ceil sky room', { x: xc, y: ROOM_H, z: zc, w: ROOM, h: ROOM, rx: -90 });
-    P(`${k}-far`, 'wall room', { x: xout, y: ROOM_H / 2, z: zc, w: ROOM, h: ROOM_H, ry: facingHall });
+    P(`${k}-far`, 'wall room far', { x: xout, y: ROOM_H / 2, z: zc, w: ROOM, h: ROOM_H, ry: facingHall });
+    P(`${k}-title`, 'label title', { x: side * (HALL_HALF + ROOM - 0.03), y: 3.9, z: zc, w: 3.6, h: 0.7, ry: facingHall, text: seed.label });
     P(`${k}-label`, 'label', { x: side * (HALL_HALF - 0.02), y: ARCH_TOP + 0.55, z: zc, w: 3, h: 0.55, ry: facingHall, text: seed.label });
     // 문 양옆 기둥(홀 쪽) — 보이는 세 면
     for (const dz of [-(DOOR_W / 2 + 0.6), DOOR_W / 2 + 0.6]) {
@@ -220,7 +229,7 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
     const door = { z: zc, hall: { x: side * (HALL_HALF - 1), z: zc }, inside: { x: side * (HALL_HALF + 1.2), z: zc } };
     const room: Room = {
       index, no: index + 1, label: seed.label, side, rect, center: { x: xc, z: zc }, door,
-      entry: { x: side * (HALL_HALF + 0.3), z: zc, yaw: yawOf(side, 0) }, // 문턱에서 방 안을 본다
+      entry: { x: side * (HALL_HALF + 0.3), z: zc, yaw: yawOf(side, 0), pitch: ARRIVE_PITCH + 4 }, // 문턱에서 방 뒤 벽을 본다(살짝 위로 — 천장까지)
       count: seed.items.length, hidden: wallItems.length - hung.length,
       frames: roomFrames, pedestal, statues: roomStatues,
     };
@@ -242,7 +251,8 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
       P(`hw${s}-${row}b`, 'wall', { x, y: HALL_H / 2, z: zc + DOOR_W / 2 + seg / 2, w: seg, h: HALL_H, ry });
       P(`hw${s}-${row}c`, 'wall lintel', { x, y: (DOOR_H + HALL_H) / 2, z: zc, w: DOOR_W, h: HALL_H - DOOR_H, ry });
     }
-    P(`hw${s}-end`, 'wall', { x, y: HALL_H / 2, z: zRooms0 + rows * ROOM + END_PAD / 2, w: END_PAD, h: HALL_H, ry });
+    P(`hw${s}-end`, 'wall', { x, y: HALL_H / 2, z: zRooms0 + rows * ROOM + endPad / 2, w: endPad, h: HALL_H, ry });
+    if (endPad >= 6) murals.push({ key: `mu${s}-end`, x: side * (HALL_HALF - 0.02), y: 2.9, z: zRooms0 + rows * ROOM + endPad / 2, ry, w: 2.6, h: 1.8, big: false, seed: 11 + (side < 0 ? 0 : 1) });
     const mine = rooms.filter((r) => r.side === side);
     const count = mine.length;
     for (let b = 0; b <= count; b++) {
@@ -252,17 +262,18 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
       if (b > 0 && b < count) murals.push({ key: `mu${s}-${b}`, x: side * (HALL_HALF - 0.02), y: 2.9, z, ry, w: 2, h: 1.4, big: false, seed: b + (side < 0 ? 0 : 7) });
     }
   }
-  murals.push({ key: 'mu-end', x: 0, y: 3.9, z: zEnd - 0.02, ry: 0, w: 10, h: 5.6, big: true, seed: 0 });
+  murals.push({ key: 'mu-end', x: 0, y: 3.6, z: zEnd - 0.02, ry: 0, w: 8, h: 4.5, big: true, seed: 0 });
 
   // 가운데 홀 받침대 줄(D45): 문 앞을 비우고 양옆 번갈아. 최소 2 · 최대 12(넘치면 숨긴 수만)
+  // 자리 차례: 홀 입구에서 보이도록 안쪽부터(첫 줄 끝 → 다음 줄 …) · 끝 여유 · 마지막에 입구 바로 옆. 양옆 번갈아
+  const zs: number[] = [];
+  for (let row = 0; row < rows; row++) { if (row > 0) zs.push(zRooms0 + row * ROOM + 1.3); zs.push(zRooms0 + row * ROOM + ROOM - 1.3); }
+  zs.push(zEnd - 1.6, zRooms0 + 1.3);
   const slots: { side: -1 | 1; z: number }[] = [];
-  for (let pass = 0; pass < 2; pass++) for (let row = 0; row < rows; row++) {
-    const z0 = zRooms0 + row * ROOM;
-    slots.push({ side: pass ? 1 : -1, z: z0 + 1.3 }, { side: pass ? -1 : 1, z: z0 + ROOM - 1.3 });
-  }
+  for (let pass = 0; pass < 2; pass++) zs.forEach((z, i) => slots.push({ side: ((i + pass) % 2 === 0 ? -1 : 1), z }));
   const nPl = Math.min(MAX_PLINTHS, slots.length, Math.max(MIN_PLINTHS, extraMaking.length));
-  const plinths: PlinthSpot[] = slots.slice(0, nPl).sort((a, b) => a.z - b.z || a.side - b.side).map((sl, index) => {
-    const item = extraMaking[index] ?? null; const x = sl.side * (HALL_HALF - 1.8); const z = sl.z; const k = `pl${index}`;
+  const plinths: PlinthSpot[] = slots.slice(0, nPl).map((sl, index) => {
+    const item = extraMaking[index] ?? null; const x = sl.side * (HALL_HALF - 2.6); const z = sl.z; const k = `pl${index}`;
     const half = 0.35; const face = -sl.side * 90; const cls = item ? 'marble' : 'marble empty';
     const planes: Plane[] = [
       { key: `${k}-e`, cls, x: x + half, y: PLINTH_H / 2, z, w: half * 2, h: PLINTH_H, ry: 90, rx: 0 },
@@ -281,8 +292,9 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
   const plinthHidden = Math.max(0, extraMaking.length - plinths.length);
 
   // 로비 가운데 캐릭터 동상(항상)
-  statues.push({ key: 'lobby-statue', room: -1, x: 0, z: 3.6, kind: 'character', item: null });
-  blockers.push({ x0: -0.7, x1: 0.7, z0: 2.9, z1: 4.3 });
+  // 로비 동상: 실제 동상 크기(캐릭터 1.3m + 둥근 받침 0.9m · 폭 1.4m), 입구에서 약 5.5m 앞 — 뒤로 홀 · 아치가 보인다
+  statues.push({ key: 'lobby-statue', room: -1, x: LOBBY_STATUE_X, z: LOBBY_STATUE_Z, kind: 'character', item: null });
+  blockers.push({ x0: LOBBY_STATUE_X - 0.8, x1: LOBBY_STATUE_X + 0.8, z0: LOBBY_STATUE_Z - 0.8, z1: LOBBY_STATUE_Z + 0.8 });
 
   const lobby: Rect = { x0: -HALL_HALF, x1: HALL_HALF, z0: 0, z1: LOBBY_D };
   const hall: Rect = { x0: -HALL_HALF, x1: HALL_HALF, z0: LOBBY_D, z1: zEnd };
@@ -291,7 +303,7 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
     alias: input.childAlias, visitor: input.visitor, color: TINT[input.color ?? ''] ?? TINT.sunflower!,
     rooms, frames, pedestals, plinths, plinthHidden, statues, murals, planes, lobby, hall, walkable, blockers,
     bounds: { x0: -(HALL_HALF + ROOM), x1: HALL_HALF + ROOM, z0: 0, z1: zEnd },
-    start: { x: 0, z: 1.2, yaw: 0 }, hallEntry: { x: 0, z: LOBBY_D + 0.6, yaw: 0 }, zEnd,
+    start: { x: 0, z: 0.9, yaw: 0 }, hallEntry: { x: 0, z: LOBBY_D + 0.2, yaw: 0, pitch: ARRIVE_PITCH }, zEnd,
   };
 }
 

@@ -3,6 +3,7 @@
 // (가족은 walk/ArtViewer.vue를 그대로 쓴다.) Esc · [닫기] · 바깥 누름으로 닫고, 초점은 부르는 쪽이 돌려준다.
 import { nextTick, onMounted, ref } from 'vue';
 import ArtFrame from '@/components/ArtFrame.vue';
+import SpeakButton from '@/app/sound/SpeakButton.vue';
 import { reducedMotion } from '@/composables/usePolling';
 import type { MuseumItem } from './layout';
 import { m3 } from './copy';
@@ -10,6 +11,9 @@ import { m3 } from './copy';
 const props = defineProps<{ item: MuseumItem; alias: string }>();
 const emit = defineEmits<{ close: [] }>();
 const playing = ref(false);
+/** [들려주기](§17-15 A): 방문자 = 제목만, 견본 = 제목 + 해설 */
+const title = () => props.item.title ?? m3.untitled;
+const parts = () => (props.item.caption ? [title(), props.item.caption] : [title()]);
 const closeBtn = ref<HTMLButtonElement | null>(null);
 onMounted(async () => { await nextTick(); closeBtn.value?.focus(); });
 function trap(e: KeyboardEvent) {
@@ -31,6 +35,7 @@ function trap(e: KeyboardEvent) {
       </button>
       <h2 id="vw-title">{{ props.item.title ?? m3.untitled }}</h2>
       <p v-if="props.item.caption" class="vw-cap">{{ props.item.caption }}</p>
+      <SpeakButton :parts="parts()" :title="title()" />
       <p>{{ m3.title(props.alias) }}</p>
     </div>
   </div>

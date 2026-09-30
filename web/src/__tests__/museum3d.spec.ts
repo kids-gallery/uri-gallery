@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import {
-  areaOf, ARCH_TOP, buildMuseumLayout, canStand, clampMove, clampPitch, domEstimate, EYE, FOV_DEG, HALL_H, HALL_HALF, MAX_ROOMS, MIN_PLINTHS,
+  areaOf, ARCH_TOP, buildMuseumLayout, canStand, clampMove, clampPitch, domEstimate, EYE, FOV_DEG, HALL_H, HALL_HALF, MAX_ROOMS, MIN_PLINTHS, LOBBY_STATUE_X, LOBBY_STATUE_Z,
   nearestTarget, pathTo, perspectiveFor, ROOM_H, screenToFloor,
   type MuseumInput, type MuseumItem,
 } from '../app/museum3d/layout';
@@ -148,7 +148,10 @@ describe('걷기 · 충돌 · 길', () => {
   const L = buildMuseumLayout(input([{ label: 'a', items: [it_('a')] }, { label: 'b', items: [it_('b')] }, { label: 'c', items: [it_('c')] }]));
   it('홀 · 방 안은 설 수 있고 벽 밖 · 동상 자리는 못 선다', () => {
     expect(canStand(L, 0, 1)).toBe(true);
-    expect(canStand(L, 0, 3)).toBe(false); // 로비 동상
+    expect(canStand(L, LOBBY_STATUE_X, LOBBY_STATUE_Z)).toBe(false); // 로비 동상
+    expect(Math.hypot(LOBBY_STATUE_X - L.start.x, LOBBY_STATUE_Z - L.start.z)).toBeGreaterThanOrEqual(5); // 입구에서 5m 넘게 앞(작은 실제 크기로 보인다)
+    expect(L.hallEntry.yaw).toBe(0); // 홀 버튼 = 홀 긴 축을 본다
+    for (const r of L.rooms) expect(r.entry.pitch).toBeGreaterThan(0);
     expect(canStand(L, L.rooms[0]!.center.x, L.rooms[0]!.center.z + 2)).toBe(true); // 방 안
     expect(canStand(L, -HALL_HALF, L.rooms[0]!.rect.z0 + 0.2)).toBe(false); // 문 아닌 벽
     expect(canStand(L, -HALL_HALF, L.rooms[0]!.center.z)).toBe(true); // 문
@@ -202,7 +205,9 @@ describe('Museum3DView 올리기', () => {
       { path: '/app/museum/:childId', component: Museum3DView }, { path: '/app/town', component: { template: '<div>town</div>' } },
       { path: '/:p(.*)*', component: { template: '<div />' } }] });
     await router.push(url); await router.isReady();
-    const w = mount({ template: '<RouterView />' }, { global: { plugins: [router] }, attachTo: document.body });
+    // 움직이게 물어보기(AnimateAsk, 팀원 컴포넌트)는 흉내: ready를 보이고 누르면 closed
+    const AnimateAsk = { props: ['artworkId', 'overlay', 'ready'], emits: ['closed'], template: '<button class="ask-stub" :data-ready="String(ready)" @click="$emit(\'closed\')">ask</button>' };
+    const w = mount({ template: '<RouterView />' }, { global: { plugins: [router], stubs: { AnimateAsk } }, attachTo: document.body });
     await flushPromises(); await flushPromises();
     return { w, router };
   };
@@ -251,16 +256,52 @@ describe('Museum3DView 올리기', () => {
     b.w.unmount();
   });
 
-  it('걸리는 장면(D44): ?hung= 이면 주소에서 지우고, 움직임 줄이기면 바로 그 작품 크게 보기', async () => {
+  it('걸리는 장면(D44 · D46): ?hung= 이면 주소에서 지우고, 장면이 끝나면 물어보기 → 닫으면 그 작품 크게 보기', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
     vi.stubGlobal('fetch', vi.fn(async (u: string) => {
       if (u.startsWith('/v1/children')) return json([{ id: '7', alias: '하늘' }]);
+      if (u.includes('/comments')) return json({ items: [], open: true, openUntil: '2026-10-07T00:00:00Z' });
       return json({ childId: '7', groups: [{ ageAtMaking: null, items: [{ id: 'n1', kind: 'frame', originalUrl: '/o', photoUrl: '/p', title: '새 그림', madeOn: '2026-09-30', ageAtMaking: null, childWords: null }] }] });
     }));
     const { w, router } = await mk('/app/museum/7?hung=n1&x=1');
     await flushPromises();
     expect(router.currentRoute.value.query).toEqual({ x: '1' });
+    const ask = w.find('.ask-stub');
+    expect(ask.attributes('data-ready')).toBe('true'); // 움직임 줄이기: 장면이 바로 끝남
+    expect(document.body.querySelector('[role=dialog]')).toBeNull(); // 물어보기를 닫기 전에는 크게 보기를 열지 않는다
+    await ask.trigger('click'); await flushPromises();
+    expect(w.find('.ask-stub').exists()).toBe(false);
     expect(document.body.querySelector('[role=dialog]')?.textContent).toContain('새 그림');
     w.unmount();
+  });
+  it('물어보기가 없는 걸리는 장면 신호: 장면만 끝나면 hangDone', async () => {
+    const { mount: m } = await import('@vue/test-utils');
+    const Scene = (await import('../app/museum3d/Scene.vue')).default;
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
+    const L = buildMuseumLayout(input([{ label: 'a', items: [it_('h1')] }]));
+    const s = m(Scene, { props: { layout: L, hang: 'h1' }, attachTo: document.body });
+    await flushPromises();
+    expect(s.emitted('hangDone')?.[0]).toEqual(['h1']);
+    expect((s.emitted('open')?.[0]?.[0] as MuseumItem).id).toBe('h1'); // openAfterHang 기본 true
+    s.unmount();
+  });
+  it('도움말: 데스크톱은 " · "로 이은 네 가지, 터치는 키 이름 없이 두 가지', async () => {
+    const Scene = (await import('../app/museum3d/Scene.vue')).default;
+    const L = buildMuseumLayout(input([{ label: 'a', items: [it_('h1')] }]));
+    const d = mount(Scene, { props: { layout: L, companion: false }, attachTo: document.body });
+    expect(d.find('.m3-keys').text()).toBe(m3.keys.join(' · '));
+    d.unmount();
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }));
+    const t = mount(Scene, { props: { layout: L, companion: false }, attachTo: document.body });
+    expect(t.find('.m3-keys').text()).toBe(m3.keys.slice(0, 2).join(' · '));
+    expect(t.find('.m3-keys').text()).not.toMatch(/WASD|Shift/);
+    t.unmount();
+  });
+  it('방문자 크게 보기: [들려주기]는 제목만, 저장 없음', async () => {
+    const Viewer = (await import('../app/museum3d/Viewer.vue')).default;
+    const v = mount(Viewer, { props: { item: { id: 'f', kind: 'frame', title: '배', imageUrl: '/v1/visit/files/t' }, alias: '바다' }, attachTo: document.body });
+    expect(v.findComponent({ name: 'SpeakButton' }).props('parts')).toEqual(['배']);
+    expect(v.text()).not.toMatch(/저장/);
+    v.unmount();
   });
 });

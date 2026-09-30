@@ -79,6 +79,9 @@ describe('SampleMuseumView', () => {
     expect(t).toContain(item.title!); expect(t).toContain(item.caption!);
     expect(t).not.toMatch(/저장|올리기|이웃/);
     expect(v.find('img').attributes('src')).toBe(item.imageUrl);
+    const sp = v.findComponent({ name: 'SpeakButton' });
+    expect(sp.exists()).toBe(true);
+    expect(sp.props('parts')).toEqual([item.title, item.caption]); // 견본 = 제목 + 해설
     v.unmount();
   });
 });

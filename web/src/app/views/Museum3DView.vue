@@ -39,6 +39,15 @@ const loadNo = ref(0);
 const hangId = ref<string | null>(null);
 /** 움직임 질문(D49): 걸리는 장면 뒤 "애니메이션으로 만드시겠습니까?" */
 const askId = ref<string | null>(null);
+/** 걸리는 장면이 끝났나(D44 · D46): 끝나야 움직이게 물어보기(AnimateAsk)가 나온다 */
+const hangDone = ref(false);
+function onHangDone() { hangDone.value = true; }
+/** 물어보기를 닫으면 그때 걸린 작품 크게 보기(물어보기가 없으면 장면 끝에 바로 연다) */
+function onAskClosed() {
+  const id = askId.value; askId.value = null;
+  const it = id ? [...(input.value?.groups.flatMap((g) => g.items) ?? []), ...(input.value?.hallMaking ?? [])].find((x) => x.id === id) : null;
+  if (it) open(it);
+}
 const viewing = ref<MuseumItem | null>(null);
 let opener: HTMLElement | null = null;
 
@@ -47,7 +56,7 @@ const itemCount = computed(() => input.value?.groups.reduce((n, g) => n + g.item
 const familyItem = computed(() => (viewing.value && !visitor.value ? byId.value.get(viewing.value.id) ?? null : null));
 
 async function load() {
-  const id = childId.value; hangId.value = null; loading.value = true; block.value = null; locked.value = false; input.value = null;
+  const id = childId.value; hangId.value = null; hangDone.value = false; loading.value = true; block.value = null; locked.value = false; input.value = null;
   try {
     if (visitor.value) {
       const v = await api.get<VisitGallery>(`/v1/visit/children/${encodeURIComponent(id)}/gallery`);
@@ -84,7 +93,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   <main ref="rootEl" class="m3v" :style="{ '--m3-top': `${top}px` }">
     <h1 class="m3v-sr">{{ m3.title(input?.childAlias ?? layout?.alias ?? '') }}</h1>
     <Scene v-if="layout" :key="loadNo" :layout="layout" :character="input?.character" :color="input?.color" :paused="!!viewing"
-      :companion="!visitor" :hang="visitor ? null : hangId" @open="open" @exit="exit">
+      :companion="!visitor" :hang="visitor ? null : hangId" :open-after-hang="!(askId && !visitor)" @open="open" @exit="exit" @hang-done="onHangDone">
       <p v-if="visitor" class="m3v-badge">{{ m3.visitBadge }}</p>
       <div v-if="!itemCount" class="m3v-empty" role="status">
         <p>{{ visitor ? m3.emptyVisit : m3.empty }}</p>
@@ -101,7 +110,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
 
     <ArtViewer v-if="viewing && familyItem" :item="familyItem" :alias="layout?.alias ?? ''" :still="viewing.imageUrl" @close="close" />
     <Viewer v-else-if="viewing" :item="viewing" :alias="layout?.alias ?? ''" @close="close" />
-    <AnimateAsk v-if="askId && !visitor" :key="askId" :artwork-id="askId" overlay @close="askId = null" />
+    <AnimateAsk v-if="askId && !visitor" :key="askId" :artwork-id="askId" overlay :ready="hangDone" @closed="onAskClosed" />
   </main>
 </template>
 
