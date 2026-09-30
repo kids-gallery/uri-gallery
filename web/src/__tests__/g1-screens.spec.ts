@@ -22,6 +22,7 @@ import InviteAcceptView from '../app/views/InviteAcceptView.vue';
 import NoFamilyView from '../app/views/NoFamilyView.vue';
 import { routeFor } from '../app/artwork';
 import { ko } from '../copy/ko';
+import { roomLabel } from '../app/museumTheme';
 
 const Stub = { template: '<div />' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -253,8 +254,9 @@ describe('전시실 /app/hall(SD_02 §17-2 내용 · §17-4 모양)', () => {
     await flushPromises();
     expect(w.find('.hall-title').text()).toBe(ko.museum.hallTitle('하늘'));
     expect(w.find('.room-meta').text()).toBe(ko.museum.roomMeta(1, '2026-03-01'));
-    expect(w.findAll('.plan-room').map((b) => b.find('b').text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
-    expect(w.findAll('.signplate').map((h) => h.text())).toEqual([ko.museum.room(5), ko.museum.room(6)]);
+    // 전시실 이름은 시안에 따라(D30): v2 "N세관" · 고전 시안 "제N전시실 · N살"
+    expect(w.findAll('.plan-room').map((b) => b.find('b').text())).toEqual([roomLabel(1, 5), roomLabel(2, 6)]);
+    expect(w.findAll('.signplate').map((h) => h.text())).toEqual([roomLabel(1, 5), roomLabel(2, 6)]);
     expect(w.text()).toContain(ko.museum.plaque('2026-09-01', 6));
     expect(w.text()).not.toContain('바꿨어요');
     expect(w.text()).toContain(ko.museum.preparing(1));

@@ -280,6 +280,15 @@ export const ko = {
     reel: '걸린 작품', prev: '이전 작품', next: '다음 작품', pos: (i: number, n: number) => `${i} / ${n}`, // [추론]
     family: '가족 보호자', toFamily: '가족 보호자 보기', // [추론]
   },
+  /** 고전 미술관 시안 A · B(D30, SD_02 §17-5 — 시안, docs/C/C_화면문구.md "고전 미술관 시안"). 두 시안 문구 같음. */
+  classic: {
+    room: (no: number, age: number) => `제${no}전시실 · ${age}살`, // [추론]
+    roomNo: (no: number) => `제${no}전시실`, // [추론]
+    roomLine: (age: number, n: number, from: string) => `${age}살 · ${n}점 · ${from} ~`, // [추론]
+    wallOf: (no: number) => `제${no}전시실 작품`, // [추론]
+    plaqueOpen: (title: string) => `${title} - 크게 보기`, // [추론]
+    map: '미술관 안내도', here: '현재 위치', cell: (age: number, n: number) => `${age}살 · ${n}점`, // [추론]
+  },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
     title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,

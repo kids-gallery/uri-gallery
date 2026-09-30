@@ -7,6 +7,7 @@ import { ApiError, setNavigator } from '@/api/client';
 import { useSession } from '@/stores/session';
 import { OPS_ROLES, safeNext } from './menu';
 import { isFirstVisit } from '@/app/entrance';
+import { isClassic } from '@/app/museumTheme';
 
 declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
@@ -29,7 +30,8 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { shell: 'app' },
     children: [
-      { path: '', name: 'app-home', component: () => import('@/app/views/PaperHomeView.vue') }, // 홈(D26 ⑥, SD_02 §17-3)
+      // 홈: 시안 전환은 museumTheme.ts 한 줄(D30, SD_02 §17-5) — v2 = §17-3 홈, classic-a · classic-b = 고전 미술관 시안
+      { path: '', name: 'app-home', component: () => (isClassic() ? import('@/app/views/ClassicHomeView.vue') : import('@/app/views/PaperHomeView.vue')) },
       { path: 'hall', name: 'app-hall', component: () => import('@/app/views/MuseumView.vue') }, // 전시실 — 평면도 · N세관 · 작품 앞 ?art=(SD_02 §17-4)
       { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리
       { path: 'artworks/:id', component: () => import('@/app/views/ArtworkDetailView.vue') },

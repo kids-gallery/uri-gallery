@@ -17,6 +17,7 @@ import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, type ArtworkSummary } from '../artwork';
 import { reducedMotion } from '@/composables/usePolling';
+import { museumTheme, roomLabel, roomNumbers } from '../museumTheme';
 
 type Child = components['schemas']['Child'];
 type Gallery = components['schemas']['Gallery'];
@@ -38,6 +39,11 @@ let pushed = false;
 let lastOpenedId = '';
 
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
+/** 시안(D30, SD_02 §17-5): 전시실 이름과 작품 앞의 벽 · 액자만 바뀐다. v2는 지금 그대로 */
+const theme = museumTheme();
+const frameVariant = theme === 'classic-b' ? 'gold' : theme === 'classic-a' ? 'bw' : 'mat';
+const roomNo = computed(() => roomNumbers(rooms.value));
+const roomName = (age: number) => roomLabel(roomNo.value.get(age) ?? 1, age, theme);
 const rooms = computed(() => g.value?.groups ?? []);
 const all = computed(() => rooms.value.flatMap((r) => r.items));
 const count = computed(() => all.value.length);
@@ -109,7 +115,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 </script>
 
 <template>
-  <main class="hallpage">
+  <main class="hallpage" :class="theme">
     <div class="container">
       <NoticeBlock v-if="joined" :title="ko.family.joined" />
       <BlockNotice v-if="block" :notice="block" @action="load" />
@@ -119,7 +125,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
     <section v-if="open" class="viewing" aria-labelledby="wl-title">
       <div class="container viewing-in">
         <div class="wall-piece">
-          <ArtFrame size="lg" :src="(showOriginal ? open.originalUrl : still(open)) ?? null"
+          <ArtFrame size="lg" :variant="frameVariant" :src="(showOriginal ? open.originalUrl : still(open)) ?? null"
             :video="!showOriginal && open.kind === 'animated' ? open.primaryUrl ?? null : null" :playing="playing" :alt="open.title" @reload="load" />
         </div>
         <aside ref="labelEl" class="walllabel" tabindex="-1" aria-live="polite">
@@ -160,7 +166,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
             <button v-for="(r, i) in rooms" :key="r.ageAtMaking" type="button" class="plan-room" :class="i % 2 ? 'right' : 'left'"
               :style="{ gridRow: Math.floor(i / 2) + 1, '--blk': blockOf2(i) }" @click="goRoom(r.ageAtMaking)">
               <span class="no" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-              <b>{{ ko.museum.room(r.ageAtMaking) }}</b><span class="n">{{ r.items.length }}</span>
+              <b>{{ roomName(r.ageAtMaking) }}</b><span class="n">{{ r.items.length }}</span>
             </button>
             <div class="plan-lobby" aria-hidden="true" :style="{ gridRow: planRows + 1 }">{{ ko.museum.lobby }}</div>
           </div>
@@ -171,7 +177,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
       <!-- N세관: 평평한 구획을 번갈아 -->
       <section v-for="(r, ri) in rooms" :id="`room-${r.ageAtMaking}`" :key="r.ageAtMaking" class="room" :class="{ alt: ri % 2 === 0 }" :aria-labelledby="`rh-${r.ageAtMaking}`">
         <div class="container room-head">
-          <h2 :id="`rh-${r.ageAtMaking}`" class="signplate" tabindex="-1">{{ ko.museum.room(r.ageAtMaking) }}</h2>
+          <h2 :id="`rh-${r.ageAtMaking}`" class="signplate" tabindex="-1">{{ roomName(r.ageAtMaking) }}</h2>
           <p class="room-meta">{{ ko.museum.roomMeta(r.items.length, r.items[0]?.madeOn ?? '') }}</p>
         </div>
         <div class="container">
@@ -179,7 +185,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
             <ul class="hang">
               <li v-for="it in r.items" :key="it.id">
                 <button class="piece" type="button" :aria-label="it.title" :data-art="it.id" @click="show(it)">
-                  <ArtFrame size="sm" :src="still(it) ?? null" :alt="it.title" />
+                  <ArtFrame size="sm" :variant="frameVariant" :src="still(it) ?? null" :alt="it.title" />
                 </button>
                 <p class="plaque"><b>{{ it.title }}</b><span>{{ ko.museum.plaque(it.madeOn, it.ageAtMaking) }}</span></p>
               </li>
@@ -229,7 +235,8 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 .plan-map{display:grid;grid-template-columns:1fr 72px 1fr;border:5px solid var(--color-accent-magenta);background:var(--color-canvas)}
 .corridor{grid-column:2;border-left:2px solid var(--color-accent-magenta);border-right:2px solid var(--color-accent-magenta);display:flex;align-items:center;justify-content:center;
   background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(228,56,40,.1) 10px 11px)}
-.corridor span{font:400 12px/1 var(--font-mono);letter-spacing:.6px;writing-mode:vertical-rl}
+/* 글자는 가로 한 줄(세로 쪼개짐 수정, D30 — SD_02 §17-5) */
+.corridor span{font:400 12px/1 var(--font-mono);letter-spacing:.6px;white-space:nowrap}
 .plan-room{position:relative;border:0;border-bottom:2px solid var(--color-accent-magenta);background:var(--blk);min-height:64px;
   display:flex;align-items:center;justify-content:center;gap:var(--s-xs);padding:10px 14px;font:500 16px/1.2 var(--font-sans);cursor:pointer;color:var(--color-ink)}
 .plan-room b{font-weight:750}
@@ -241,7 +248,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 .plan-room.left::after{right:-5px}.plan-room.right::after{left:-5px}
 .plan-room:hover,.plan-room:focus-visible{box-shadow:inset 0 0 0 2px var(--color-accent-magenta)}
 .plan-lobby{grid-column:1 / -1;display:grid;place-items:center;font:400 13px/1 var(--font-mono);letter-spacing:.6px;background:var(--color-surface-soft)}
-.stairs{width:120px;margin:0 auto;padding:28px 0 12px;display:grid;justify-items:center;font:400 12px/1 var(--font-mono);letter-spacing:.6px;
+.stairs{white-space:nowrap;width:120px;margin:0 auto;padding:28px 0 12px;display:grid;justify-items:center;font:400 12px/1 var(--font-mono);letter-spacing:.6px;
   background:repeating-linear-gradient(180deg,var(--color-accent-magenta) 0 1px,transparent 1px 6px) top/100% 22px no-repeat}
 
 /* N세관 — 평평한 구획 */
@@ -276,4 +283,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 .wl-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
 .wl-acts .btn{font-size:16px;padding:8px 16px}
 .wl-acts .btn-secondary{border:1px solid var(--color-accent-magenta)}
+/* 고전 시안(D30, SD_02 §17-5) — 작품 앞의 벽만. A 크림 벽 · B 진홍 벽(라벨 카드는 흰 바탕 그대로) */
+.hallpage.classic-a .wall-piece{background:var(--color-block-cream);box-shadow:inset 0 10px 0 #eceae4,inset 0 11px 0 #b9b5ac}
+.hallpage.classic-b .wall-piece{background:#6e1a22;box-shadow:inset 0 10px 0 #eceae4,inset 0 11px 0 #b9b5ac}
 </style>

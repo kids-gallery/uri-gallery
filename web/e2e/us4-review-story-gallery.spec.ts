@@ -3,6 +3,7 @@
 // 이 스택에서 만들 수 없다 — 모델이 켜진 뒤 같은 파일에 덧붙인다(액자는 결과가 원본이라 원본 토글이 없어야 맞다).
 import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
+import { roomLabel } from '../src/app/museumTheme';
 import { drawingPng, guardianWithChild } from './stack/guardian';
 
 async function noScoreNoToast(page: Page) {
@@ -43,7 +44,7 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
   // 전시 = 홈 전시실(D25): N세관 안에 걸리고, 열면 월 라벨과 정지 화면(액자는 원본·재생 토글 없음)
   await page.getByRole('link', { name: ko.list.toGallery }).click();
   await expect(page).toHaveURL(/\/app\/hall(\?|$)/);
-  const room = page.getByRole('region', { name: ko.museum.room(6) });
+  const room = page.getByRole('region', { name: roomLabel(1, 6) });
   await expect(room.getByText('빨간 해')).toBeVisible();
   await room.getByRole('button', { name: '빨간 해' }).click();
   await expect(page.getByRole('button', { name: ko.museum.back })).toBeVisible();
@@ -60,5 +61,5 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
   await room.getByRole('button', { name: '빨간 해' }).click();
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/[?&]art=/);
-  await expect(page.getByRole('heading', { name: ko.museum.room(6) })).toBeVisible();
+  await expect(page.getByRole('heading', { name: roomLabel(1, 6) })).toBeVisible();
 });
