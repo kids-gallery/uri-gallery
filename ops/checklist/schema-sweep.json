@@ -1,0 +1,4524 @@
+{
+ "measuredAt": "2026-09-30T00:51:56.037Z",
+ "rows": [
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "모르는 칸 추가",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "필수 password 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "필수 passwordConfirm 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "email 길이 초과(255)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "칸 이름 오타 password→passwordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "password 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "password 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "password null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "칸 이름 오타 passwordConfirm→passwordConfirmm",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "passwordConfirm 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "passwordConfirm 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "passwordConfirm null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "inviteToken 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "inviteToken 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/signup",
+   "case": "inviteToken null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "모르는 칸 추가",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "필수 token 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "칸 이름 오타 token→tokenn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "token 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "token 공백만",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/email/verify",
+   "case": "token null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "모르는 칸 추가",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/email/verify/resend",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "모르는 칸 추가",
+   "status": 401,
+   "code": "unauthorized",
+   "reason": "bad_credentials",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 401(다른 문)"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "필수 password 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "칸 이름 오타 password→passwordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "password 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "password 공백만",
+   "status": 401,
+   "code": "unauthorized",
+   "reason": "bad_credentials",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 401(다른 문)"
+  },
+  {
+   "op": "POST /v1/auth/login",
+   "case": "password null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "모르는 칸 추가",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "모르는 칸 추가",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "필수 token 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "필수 password 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "필수 passwordConfirm 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "칸 이름 오타 token→tokenn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "token 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "token 공백만",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "token null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "칸 이름 오타 password→passwordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "password 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "password 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "password null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "칸 이름 오타 passwordConfirm→passwordConfirmm",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "passwordConfirm 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "passwordConfirm 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/recovery/reset",
+   "case": "passwordConfirm null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "모르는 칸 추가",
+   "status": 204,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "필수 currentPassword 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "필수 password 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "필수 passwordConfirm 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "칸 이름 오타 currentPassword→currentPasswordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "currentPassword 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "currentPassword 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "current_password_mismatch",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "currentPassword null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "칸 이름 오타 password→passwordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "password 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "password 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "password null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "칸 이름 오타 passwordConfirm→passwordConfirmm",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "passwordConfirm 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "passwordConfirm 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/auth/password",
+   "case": "passwordConfirm null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "모르는 칸 추가",
+   "status": 401,
+   "code": "unauthorized",
+   "reason": "bad_credentials",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 401(다른 문)"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "필수 password 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "칸 이름 오타 password→passwordd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "password 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "password 공백만",
+   "status": 401,
+   "code": "unauthorized",
+   "reason": "bad_credentials",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 401(다른 문)"
+  },
+  {
+   "op": "POST /v1/ops/auth/login",
+   "case": "password null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "모르는 칸 추가",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "필수 email 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "칸 이름 오타 email→emaill",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "email 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "email 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "email 이메일 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/family/invites",
+   "case": "email null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "DELETE /v1/family/invites/{inviteId}",
+   "case": "path inviteId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "DELETE /v1/family/invites/{inviteId}",
+   "case": "path inviteId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "DELETE /v1/family/invites/{inviteId}",
+   "case": "path inviteId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/family/invites/lookup",
+   "case": "쿼리 token 없음",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "본문 빈 객체",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "본문 배열",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "모르는 칸 추가",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "필수 token 없음",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "칸 이름 오타 token→tokenn",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "token 타입 불일치(숫자)",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "token 공백만",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/family/invites/accept",
+   "case": "token null",
+   "status": 400,
+   "code": "token_invalid",
+   "reason": "token_invalid",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "DELETE /v1/family/members/{memberId}",
+   "case": "path memberId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "DELETE /v1/family/members/{memberId}",
+   "case": "path memberId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "DELETE /v1/family/members/{memberId}",
+   "case": "path memberId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "필수 alias 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "칸 이름 오타 alias→aliass",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "alias 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "alias 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "alias_blank",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "alias 길이 초과(21)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "alias_too_long",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/children",
+   "case": "alias null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "path childId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "path childId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "path childId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "필수 alias 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "칸 이름 오타 alias→aliass",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "alias 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "alias 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "alias_blank",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "alias 길이 초과(21)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "alias_too_long",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/children/{childId}",
+   "case": "alias null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "DELETE /v1/children/{childId}",
+   "case": "path childId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "deletion_not_saved",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "DELETE /v1/children/{childId}",
+   "case": "path childId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "DELETE /v1/children/{childId}",
+   "case": "path childId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/children/{childId}/deletion",
+   "case": "path childId 타입 불일치(문자)",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/children/{childId}/deletion",
+   "case": "path childId 음수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/children/{childId}/deletion",
+   "case": "path childId 아주 큰 수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/artworks",
+   "case": "query child 타입 불일치(문자)",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/artworks",
+   "case": "query child 음수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/artworks",
+   "case": "query child 아주 큰 수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/artworks",
+   "case": "파일 없음",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "idempotency_key",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "POST /v1/artworks",
+   "case": "이미지 아닌 파일",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "idempotency_key",
+   "fields": false,
+   "detail": false,
+   "verdict": "△ 400(계약)"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "DELETE /v1/artworks/{artworkId}",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "deletion_not_saved",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "DELETE /v1/artworks/{artworkId}",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "DELETE /v1/artworks/{artworkId}",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}/deletion",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}/deletion",
+   "case": "path artworkId 음수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "GET /v1/artworks/{artworkId}/deletion",
+   "case": "path artworkId 아주 큰 수",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "모르는 칸 추가",
+   "status": 409,
+   "code": "conflict",
+   "reason": "already_processing",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 409(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "필수 kind 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "칸 이름 오타 kind→kindd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "kind 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "kind 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "kind 목록 밖 값",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/confirm",
+   "case": "kind null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "decision_not_saved",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "모르는 칸 추가",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "필수 decision 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "칸 이름 오타 decision→decisionn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "decision 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "decision 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "decision 목록 밖 값",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/decision",
+   "case": "decision null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "본문 빈 객체",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "updatedAt 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "updatedAt 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "title 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "title 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "title_blank",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "title 길이 초과(101)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "madeOn 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "madeOn 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "madeOn 날짜 형식 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "made_on_in_future",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "madeOn 미래 날짜",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "made_on_in_future",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "ageAtMaking 타입 불일치(문자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "ageAtMaking 정수 아님",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "ageAtMaking 최솟값 미만(-1)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "ageAtMaking 최댓값 초과(19)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "childWords 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "childWords 공백만",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "childWords 길이 초과(2001)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "guardianNote 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "guardianNote 공백만",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "guardianNote 길이 초과(1001)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "baseUpdatedAt 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/story",
+   "case": "baseUpdatedAt 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "본문 빈 객체",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "본문 배열",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "모르는 칸 추가",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "필수 keywords 없음",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "필수 selectedTags 없음",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "칸 이름 오타 keywords→keywordss",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "keywords 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "keywords 개수 초과(6)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "keywords null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "칸 이름 오타 selectedTags→selectedTagss",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "selectedTags 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "selectedTags 개수 초과(6)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "selectedTags null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "fallback 타입 불일치(숫자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "fallback 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "fallback 목록 밖 값",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "fallback null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "body 타입 불일치(숫자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "body 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "body 길이 초과(1001)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/artworks/{artworkId}/captions",
+   "case": "body null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path artworkId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path artworkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path artworkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path captionId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path captionId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "path captionId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "본문 빈 객체",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "본문 배열",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "모르는 칸 추가",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "필수 action 없음",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "칸 이름 오타 action→actionn",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "action 타입 불일치(숫자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "action 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "action 목록 밖 값",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "action null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "body 타입 불일치(숫자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "body 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "body 길이 초과(1001)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
+   "case": "body null",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/gallery",
+   "case": "쿼리 child 없음",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "GET /v1/gallery",
+   "case": "query child 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "GET /v1/gallery",
+   "case": "query child 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/gallery",
+   "case": "query child 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/gallery",
+   "case": "query madeOn 날짜 형식 아님",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/warmup",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/warmup",
+   "case": "path modelId 음수",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/warmup",
+   "case": "path modelId 아주 큰 수",
+   "status": 202,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "본문 빈 객체",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "check_runner_missing",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "versionId 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "versionId 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "versionId 패턴 불일치",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "versionId null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "evalItemId 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "evalItemId 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "evalItemId 패턴 불일치",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/ops/models/{modelId}/check",
+   "case": "evalItemId null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "check_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "GET /v1/ops/model-checks/{checkId}",
+   "case": "path checkId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/ops/model-checks/{checkId}",
+   "case": "path checkId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/ops/model-checks/{checkId}",
+   "case": "path checkId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 version 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 weightsSha256 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 runtime 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 imageDigest 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 configHash 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "필수 device 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 version→versionn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "version 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "version 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "version null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 weightsSha256→weightsSha2566",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "weightsSha256 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "weightsSha256 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "weightsSha256 패턴 불일치",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "weightsSha256 null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 runtime→runtimee",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "runtime 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "runtime 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 imageDigest→imageDigestt",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "imageDigest 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "imageDigest 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "imageDigest 패턴 불일치",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 configHash→configHashh",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "configHash 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "configHash 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "configHash 패턴 불일치",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "configHash null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "칸 이름 오타 device→devicee",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "device 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "device 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "device 목록 밖 값",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "filePath 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "filePath 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "licenseRecord 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "licenseRecord 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/versions",
+   "case": "licenseRecord null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "version_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "본문 빈 객체",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "본문 배열",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "모르는 칸 추가",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "필수 versionId 없음",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "칸 이름 오타 versionId→versionIdd",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "versionId 타입 불일치(숫자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "versionId 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/evaluate",
+   "case": "versionId null",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "GET /v1/admin/eval-runs/{runId}",
+   "case": "path runId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "GET /v1/admin/eval-runs/{runId}",
+   "case": "path runId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/admin/eval-runs/{runId}",
+   "case": "path runId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "path runId 타입 불일치(문자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "path runId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "path runId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "모르는 칸 추가",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "필수 verdict 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "필수 rationale 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "칸 이름 오타 verdict→verdictt",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "verdict 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "verdict 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "verdict 목록 밖 값",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "verdict null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "칸 이름 오타 rationale→rationalee",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "rationale 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "rationale 공백만",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "PATCH /v1/admin/eval-runs/{runId}",
+   "case": "rationale null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "verdict_rationale",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "본문 빈 객체",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "본문 배열",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "모르는 칸 추가",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "필수 versionId 없음",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "필수 evalRunId 없음",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "칸 이름 오타 versionId→versionIdd",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "versionId 타입 불일치(숫자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "versionId 공백만",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "versionId null",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "칸 이름 오타 evalRunId→evalRunIdd",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "evalRunId 타입 불일치(숫자)",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "evalRunId 공백만",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/promote",
+   "case": "evalRunId null",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "internal",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "모르는 칸 추가",
+   "status": 409,
+   "code": "conflict",
+   "reason": "no_rollback_candidate",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 409(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "필수 reason 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "칸 이름 오타 reason→reasonn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "reason 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "reason 공백만",
+   "status": 409,
+   "code": "conflict",
+   "reason": "no_rollback_candidate",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 409(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "reason 길이 초과(501)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/rollback",
+   "case": "reason null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "path modelId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "path modelId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "path modelId 아주 큰 수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "모르는 칸 추가",
+   "status": 200,
+   "fields": false,
+   "detail": false,
+   "verdict": "X 받아들임"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "필수 reason 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "칸 이름 오타 reason→reasonn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "reason 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "reason 공백만",
+   "status": 409,
+   "code": "conflict",
+   "reason": "no_active_version",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 409(다른 문)"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "reason 길이 초과(501)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/models/{modelId}/deactivate",
+   "case": "reason null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/eval-items",
+   "case": "파일 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "maker_or_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/eval-items",
+   "case": "이미지 아닌 파일",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "maker_or_fields",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "본문 빈 객체",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "본문 JSON 깨짐",
+   "status": 400,
+   "code": "invalid_input",
+   "reason": "bad_json",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 400"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "본문 배열",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "모르는 칸 추가",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "필수 function 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "필수 evalItemId 없음",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "칸 이름 오타 function→functionn",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "function 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "function 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "function 목록 밖 값",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "function null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "칸 이름 오타 evalItemId→evalItemIdd",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "evalItemId 타입 불일치(숫자)",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "evalItemId 공백만",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "POST /v1/admin/api-guide/test-call",
+   "case": "evalItemId null",
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "not_eval_item",
+   "fields": false,
+   "detail": false,
+   "verdict": "O 422"
+  },
+  {
+   "op": "GET /v1/admin/api-guide/test-call/{jobId}",
+   "case": "path jobId 타입 불일치(문자)",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/admin/api-guide/test-call/{jobId}",
+   "case": "path jobId 음수",
+   "status": 404,
+   "code": "not_found",
+   "fields": false,
+   "detail": false,
+   "verdict": "? 404(다른 문)"
+  },
+  {
+   "op": "GET /v1/admin/api-guide/test-call/{jobId}",
+   "case": "path jobId 아주 큰 수",
+   "status": 503,
+   "code": "not_saved",
+   "reason": "test_key_missing",
+   "fields": false,
+   "detail": false,
+   "verdict": "X 서버 오류"
+  }
+ ],
+ "contractViolations": [
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/ops/models/abc/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
+  "POST /v1/ops/models/-1/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
+  "POST /v1/ops/models/99999999999999999999/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
+  "POST /v1/admin/models/abc/versions: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/-1/versions: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/99999999999999999999/versions: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
+  "POST /v1/admin/models/abc/evaluate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/-1/evaluate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/99999999999999999999/evaluate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/M1/evaluate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/abc/promote: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/-1/promote: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/99999999999999999999/promote: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/M1/promote: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/abc/rollback: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/-1/rollback: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/99999999999999999999/rollback: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/abc/deactivate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/-1/deactivate: no schema defined for status code '404' in the openapi spec",
+  "POST /v1/admin/models/99999999999999999999/deactivate: no schema defined for status code '404' in the openapi spec",
+  "GET /v1/admin/api-guide/test-call/abc: no schema defined for status code '404' in the openapi spec",
+  "GET /v1/admin/api-guide/test-call/-1: no schema defined for status code '404' in the openapi spec"
+ ]
+}
