@@ -1,0 +1,201 @@
+{
+ "flows": [
+  {
+   "w": 390,
+   "log": [
+    "입구",
+    "회랑 1/6",
+    "갈림길",
+    "6살 전시실",
+    "5살 전시실",
+    "“달까지 가요”",
+    "/app/list"
+   ],
+   "hscroll": false,
+   "errs": []
+  },
+  {
+   "w": 1440,
+   "log": [
+    "입구",
+    "회랑 1/6",
+    "갈림길",
+    "6살 전시실",
+    "5살 전시실",
+    "“달까지 가요”",
+    "/app/list"
+   ],
+   "hscroll": false,
+   "errs": []
+  }
+ ],
+ "visits": [
+  {
+   "w": 390,
+   "first": "입구",
+   "second": "5살 전시실",
+   "gateShown": 0,
+   "skipVisibleInCorridor": null
+  },
+  {
+   "w": 1440,
+   "first": "입구",
+   "second": "5살 전시실",
+   "gateShown": 0,
+   "skipVisibleInCorridor": null
+  }
+ ],
+ "states": [
+  {
+   "state": "zero",
+   "w": 390,
+   "where": "회랑 0/0",
+   "empty": 1,
+   "cta": "작품 올리기",
+   "hscroll": false,
+   "errs": []
+  },
+  {
+   "state": "zero",
+   "w": 1440,
+   "where": "회랑 0/0",
+   "empty": 1,
+   "cta": "작품 올리기",
+   "hscroll": false,
+   "errs": []
+  },
+  {
+   "state": "one",
+   "w": 390,
+   "where": "회랑 1/1",
+   "empty": 0,
+   "cta": null,
+   "hscroll": false,
+   "errs": [],
+   "after": "갈림길",
+   "onlyDoor": "6살 전시실로 →"
+  },
+  {
+   "state": "one",
+   "w": 1440,
+   "where": "회랑 1/1",
+   "empty": 0,
+   "cta": null,
+   "hscroll": false,
+   "errs": [],
+   "after": "갈림길",
+   "onlyDoor": "6살 전시실로 →"
+  }
+ ],
+ "keyboard": [
+  [
+   "회랑 1/6",
+   "focus:물고기 친구 - 크게 보기",
+   "갈림길",
+   "6살 전시실",
+   "focus:6살 전시실",
+   "dialog:1",
+   "dialog:0",
+   "focusBack:true"
+  ]
+ ],
+ "reduced": [
+  {
+   "sceneChangeMs": 249,
+   "zoomSeen": 0,
+   "skyAnim": "none",
+   "pieceAnim": "none"
+  }
+ ],
+ "swipe": [
+  [
+   "회랑 1/6",
+   "회랑 2/6",
+   "갈림길",
+   "6살 전시실"
+  ]
+ ],
+ "perf": [
+  {
+   "state": "many3",
+   "gate": 15159,
+   "alias": 25549,
+   "fcp": 5340,
+   "runs": [
+    {
+     "gate": 15115,
+     "alias": 25449,
+     "fcp": 5340
+    },
+    {
+     "gate": 15587,
+     "alias": 25672,
+     "fcp": 5376
+    },
+    {
+     "gate": 15159,
+     "alias": 25549,
+     "fcp": 5244
+    }
+   ]
+  }
+ ],
+ "axe": [
+  {
+   "tag": "gate 390",
+   "v": []
+  },
+  {
+   "tag": "corridor 390",
+   "v": []
+  },
+  {
+   "tag": "junction 390",
+   "v": []
+  },
+  {
+   "tag": "room 390",
+   "v": []
+  },
+  {
+   "tag": "viewer 390",
+   "v": []
+  },
+  {
+   "tag": "gate 1440",
+   "v": []
+  },
+  {
+   "tag": "corridor 1440",
+   "v": []
+  },
+  {
+   "tag": "junction 1440",
+   "v": []
+  },
+  {
+   "tag": "room 1440",
+   "v": []
+  },
+  {
+   "tag": "viewer 1440",
+   "v": []
+  },
+  {
+   "tag": "zero 390",
+   "v": []
+  },
+  {
+   "tag": "zero 1440",
+   "v": []
+  },
+  {
+   "tag": "one 390",
+   "v": []
+  },
+  {
+   "tag": "one 1440",
+   "v": []
+  }
+ ]
+}
