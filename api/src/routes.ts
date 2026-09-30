@@ -16,13 +16,14 @@ import { adminRouter } from './modules/admin/routes.js';
 import { ModelApi } from './modules/ops/modelApi.js';
 import { apiGuideRouter } from './modules/apiGuide/routes.js';
 import { captionsRouter } from './modules/captions/routes.js';
+import { neighborsRouter } from './modules/neighbors/routes.js';
 import { LlmServer, type LlmPort } from './modules/captions/llmServer.js';
 
 export interface Deps { db: Pool; cfg: Config; storage: StoragePort; mailer: Mailer; kakao?: import('./modules/auth/kakao.js').KakaoClient; modelApi?: ModelApi; llm?: LlmPort; captionRetryDelaysMs?: number[] }
 
 export function buildRouters(d: Deps): Router[] {
   const modelApi = d.modelApi ?? new ModelApi(d.cfg.modelApiUrl);
-  return [opsRouter(d.db, d.cfg, modelApi), modelCheckRouter(d.db, d.cfg), authRouter(d.db, d.cfg, d.mailer, d.kakao), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage, undefined, modelApi), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer), adminRouter(d.db, d.cfg, d.storage, d.cfg.manifestPath),
+  return [opsRouter(d.db, d.cfg, modelApi), modelCheckRouter(d.db, d.cfg), authRouter(d.db, d.cfg, d.mailer, d.kakao), childrenRouter(d.db), artworksRouter(d.db, d.cfg, d.storage, undefined, modelApi), galleryRouter(d.db, d.cfg), deletionRouter(d.db), familyRouter(d.db, d.cfg, d.mailer), neighborsRouter(d.db, d.cfg, d.storage), adminRouter(d.db, d.cfg, d.storage, d.cfg.manifestPath),
     apiGuideRouter(d.db, d.cfg, d.storage),
     captionsRouter(d.db, d.cfg, d.llm ?? new LlmServer(d.cfg.llmServerUrl), d.captionRetryDelaysMs)];
 }
