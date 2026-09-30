@@ -106,7 +106,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 <style scoped>
 .fx-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
 @keyframes fx-in{from{opacity:0}}
-.fx{width:min(1040px,100%);max-height:calc(100dvh - 24px);overflow:auto;background:#fbf6ee;border-radius:22px;padding:clamp(14px,3vw,28px);display:grid;gap:12px;
+.fx{width:min(1040px,100%);max-height:calc(100dvh - 24px);overflow:auto;background:linear-gradient(#fffaf0,#fbf4e6);border:2px solid #c9a24a;border-radius:20px;padding:clamp(14px,3vw,28px);display:grid;gap:12px;
   box-shadow:0 0 0 1px rgba(201,165,82,.5),0 40px 80px -30px rgba(0,0,0,.6);animation:fx-up var(--dur-3,800ms) var(--ease-spring,ease) both}
 @keyframes fx-up{from{transform:translateY(24px) scale(.98);opacity:0}}
 .fx-t{margin:0;font:700 22px/1.25 var(--mc-serif,serif);color:#3a2a1f}

@@ -125,8 +125,9 @@ onBeforeUnmount(() => { alive = false; if (timer) clearTimeout(timer); document.
 <style scoped>
 .aa-scrim{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(60,44,30,.28);animation:aa-in .45s cubic-bezier(.32,.72,0,1) both}
 .aa-inline{margin-top:12px}
-.aa{background:#fffdf8;border-radius:22px;padding:22px 20px;max-width:380px;width:100%;margin:0 auto;text-align:center;display:grid;gap:10px;
-  box-shadow:0 0 0 1px rgba(201,165,82,.45),0 24px 60px -24px rgba(90,62,30,.45)}
+/* D53 게임 틀 패널(game.css .g-panel과 같은 모양) */
+.aa{background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.7),rgba(255,255,255,0) 60%),linear-gradient(#fffaf0,#fbf4e6);border:2px solid #c9a24a;border-radius:20px;padding:22px 20px;max-width:380px;width:100%;margin:0 auto;text-align:center;display:grid;gap:10px;
+  box-shadow:inset 0 0 0 5px #fbf4e6,inset 0 0 0 6px rgba(201,162,74,.75),0 24px 48px -28px rgba(90,62,20,.45),0 8px 18px -12px rgba(90,62,20,.25)}
 .aa-scrim .aa{animation:aa-pop .55s cubic-bezier(.32,.72,0,1) both}
 .aa-spark{margin:0;font-size:30px;line-height:1}
 .aa-q{margin:0;font:700 20px/1.35 var(--mc-serif,serif);color:#4a3526;word-break:keep-all;overflow-wrap:anywhere}

@@ -11,6 +11,8 @@ async function openAnimated(db: Connection): Promise<() => Promise<void>> {
     VALUES ('M3', CONCAT('e2e-', LEFT(REPLACE(UUID(), '-', ''), 12)), REPEAT('0', 64), REPEAT('0', 64), 'fake', TRUE, 'active', 'cpu')`) as [{ insertId: number }];
   return async () => { await db.query(`UPDATE model_version SET release_state = 'retired' WHERE version_id = ?`, [v.insertId]); };
 }
+/** SHOTS=폴더면 화면을 찍어 둔다(사람 눈 확인용, D53 게임 틀) */
+async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()?.width}.png`, fullPage: true }); }
 const tag = (p: string) => `${p}-${Date.now()}-${Math.floor(Math.random() * 1e4)}`;
 async function uploadWith(page: Page, fill: (p: Page) => Promise<void>): Promise<string> {
   await page.goto('/app/upload');
@@ -28,6 +30,7 @@ test('설명을 적고 올리면 곧바로 아이 미술관에 걸리고, 이야
   const id = await uploadWith(page, async (p) => {
     await p.getByLabel(ko.up2.title).fill('해바라기');
     await p.getByText(ko.up2.more).click(); // 한마디 · 감상은 접혀 있다
+    await shot(p, 'upload')
     await p.getByLabel(ko.up2.words).fill('해가 웃어요');
     await expect(p.getByRole('radio', { name: new RegExp(ko.up2.drawing) })).toBeChecked();
   });
@@ -44,6 +47,7 @@ test('설명을 적고 올리면 곧바로 아이 미술관에 걸리고, 이야
   const img = await page.locator('.sv-art .artframe img').boundingBox();
   expect(art!.width - img!.width).toBeLessThan(130);
   await expect(page.getByText(ko.up2.lockNote)).toBeVisible();
+  await shot(page, 'story');
   await expect(page.locator('.sv-wall form, .sv-wall input, .sv-wall textarea')).toHaveCount(0); // 이야기는 보기만(댓글 입력은 따로)
   // 서버도 막는다(D46 ①)
   const put = await page.request.put(`/v1/artworks/${id}/story`, { data: { title: '바꿈' } });
@@ -72,6 +76,7 @@ test('움직일 수 있는 그림이면 "애니메이션으로 만드시겠습�
     const [y, n] = [card.getByRole('button', { name: ko.animAsk.yes, exact: true }), card.getByRole('button', { name: ko.animAsk.no, exact: true })];
     const [by, bn] = [await y.boundingBox(), await n.boundingBox()];
     expect(Math.round(by!.width)).toBe(Math.round(bn!.width)); // 같은 무게(U10)
+    await shot(page, 'detail-ask');
     await y.click();
     await expect(page.getByText(ko.animAsk.started)).toBeVisible();
     const d = await (await page.request.get(`/v1/artworks/${id}`)).json() as { confirmedKind: string | null };
