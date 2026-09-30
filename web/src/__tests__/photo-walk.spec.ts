@@ -22,3 +22,34 @@ describe('고전 회랑 배치', () => {
     expect(Math.max(...hung.map((h) => h.z))).toBeLessThanOrEqual(ZMAX);
   });
 });
+
+// 나이 미정 구역 · 제목 권유(D34 ③, SD_02 §17-9) — B API가 ageAtMaking null · titleAuto를 주면 나타난다
+import { flushPromises, mount } from '@vue/test-utils';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import ArtViewer from '../app/walk/ArtViewer.vue';
+import { roomNumbers } from '../app/museumTheme';
+import { ko } from '../copy/ko';
+
+describe('나이 미정 · 제목 권유', () => {
+  it('회랑은 나이 미정이 입구 쪽 맨 앞, 목록 번호는 맨 뒤, 명패는 "나이 미정"', () => {
+    const { sections } = layout([{ age: 6, items: [art('a', 6, '2025-01-01')] }, { age: null, items: [art('n', 0, '2026-09-30')] }]);
+    expect(sections.map((s) => s.age)).toEqual([null, 6]);
+    const no = roomNumbers([{ ageAtMaking: null }, { ageAtMaking: 5 }]);
+    expect([no.get(5), no.get(null)]).toEqual([1, 2]);
+    expect(ko.museum.plaque('2026-09-30', null)).toBe('2026-09-30 · 나이 미정');
+    expect(ko.photo.room(null)).toBe('나이 미정 전시실');
+  });
+  it('titleAuto인 작품만 크게 보기에 조용히 "제목을 붙여 줄까요?" · [제목 적기]', async () => {
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:p(.*)*', component: { template: '<div />' } }] });
+    const item = { id: '9', kind: 'frame', originalUrl: '/f', title: '제목 없는 그림 1', madeOn: '2026-09-30', ageAtMaking: 6, childWords: null };
+    const w = mount(ArtViewer, { props: { item: { ...item, titleAuto: true } as never, alias: '하늘', still: '/f' }, global: { plugins: [router] }, attachTo: document.body });
+    await flushPromises();
+    expect(w.find('.av-ask').text()).toContain(ko.photo.titleAsk);
+    expect(w.find('.av-ask a').attributes('href')).toBe('/app/artworks/9/story');
+    w.unmount();
+    const v = mount(ArtViewer, { props: { item: item as never, alias: '하늘', still: '/f' }, global: { plugins: [router] }, attachTo: document.body });
+    await flushPromises();
+    expect(v.find('.av-ask').exists()).toBe(false);
+    v.unmount();
+  });
+});

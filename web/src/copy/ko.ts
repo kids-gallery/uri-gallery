@@ -22,6 +22,9 @@ export interface ProblemCopy {
 
 const SELF = '보호자 - 지금 이 화면';
 
+/** 나이 표시 — null이면 "나이 미정"(D34 ③, SD_02 §17-9) */
+const AGE = (age: number | null) => (age == null ? '나이 미정' : `${age}살`);
+
 export const ko = {
   state: {
     received: '접수됨',
@@ -256,8 +259,8 @@ export const ko = {
   museum: {
     name: '우리 아이 미술관', tagline: '작은 손이 그린 큰 이야기', enter: '입장하기', // [추론] tagline
     hall: (alias: string) => `${alias}의 미술관`, // [추론]
-    child: '아이', plan: '전시실 안내', entrance: '입구', room: (n: number) => `${n}세관`, // [추론] 안내·입구
-    plaque: (date: string, age: number) => `${date} · ${age}살`,
+    child: '아이', plan: '전시실 안내', entrance: '입구', room: (n: number | null) => (n == null ? '나이 미정' : `${n}세관`), // [추론] 안내·입구
+    plaque: (date: string, age: number | null) => `${date} · ${AGE(age)}`,
     emptyTitle: '첫 그림을 걸어 볼까요?', upload: '작품 올리기', // [추론]
     preparing: (n: number) => `전시 준비 중인 작품 ${n}점`, manage: '작품 관리', // [추론]
     kind: { animated: '움직이는 그림 - 누르면 움직여요', relief: '입체 부조', frame: '액자 작품', sculpture: '3D 조각' } as Record<string, string>, // [추론] 움직이는 그림·액자 작품
@@ -273,7 +276,7 @@ export const ko = {
     // 건축 평면도·로비(D25 ⑥)
     floorPlan: '평면도', lobby: '로비', corridor: '회랑', north: '북', // [추론]
     collection: (n: number) => `소장 작품 ${n}점`, latest: '최근에 걸린 작품', // [추론]
-    hangOf: (age: number) => `${age}살 때 그린 작품`, // [추론] 세관 벽(옆으로 넘기는 영역) 이름
+    hangOf: (age: number | null) => (age == null ? '나이 미정 작품' : `${age}살 때 그린 작품`), // [추론] 세관 벽(옆으로 넘기는 영역) 이름
     // 전시실 /app/hall · 입장(D26 ⑥, SD_02 §17-4)
     hallTitle: (alias: string) => `${alias}의 전시실`, toHome: '홈으로', // [추론]
     roomMeta: (n: number, from: string) => `${n}점 · ${from} ~`, // [추론]
@@ -289,12 +292,12 @@ export const ko = {
   },
   /** 고전 미술관 시안 A · B(D30, SD_02 §17-5 — 시안, docs/C/C_화면문구.md "고전 미술관 시안"). 두 시안 문구 같음. */
   classic: {
-    room: (no: number, age: number) => `제${no}전시실 · ${age}살`, // [추론]
+    room: (no: number, age: number | null) => `제${no}전시실 · ${AGE(age)}`, // [추론]
     roomNo: (no: number) => `제${no}전시실`, // [추론]
-    roomLine: (age: number, n: number, from: string) => `${age}살 · ${n}점 · ${from} ~`, // [추론]
+    roomLine: (age: number | null, n: number, from: string) => `${AGE(age)} · ${n}점 · ${from} ~`, // [추론]
     wallOf: (no: number) => `제${no}전시실 작품`, // [추론]
     plaqueOpen: (title: string) => `${title} - 크게 보기`, // [추론]
-    map: '미술관 안내도', here: '현재 위치', cell: (age: number, n: number) => `${age}살 · ${n}점`, // [추론]
+    map: '미술관 안내도', here: '현재 위치', cell: (age: number | null, n: number) => `${AGE(age)} · ${n}점`, // [추론]
   },
   /** 걸어 다니는 미술관(D31, SD_02 §17-6 — docs/C/C_화면문구.md "걸어 다니는 미술관"). */
   walk: {
@@ -311,14 +314,15 @@ export const ko = {
   /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/C/C_화면문구.md "1인칭 고전 회랑") */
   photo: {
     scene: '고전 회랑 - 1인칭 장면', intro: '고전 회랑에 우리 아이 그림이 걸렸어요', enter: '입장하기', // [추론]
-    atGate: '고전 회랑 입구', atHall: '고전 회랑', room: (age: number) => `${age}살 전시실`, // [추론]
-    banner: (age: number, n: number) => `${age}살 전시실 · ${n}점`, art: (title: string, age: number) => `${title}, ${age}살 - 가까이 가기`, // [추론]
-    near: (madeOn: string, age: number) => `${madeOn} · ${age}살 · 눌러서 크게 보기`, // [추론]
+    atGate: '고전 회랑 입구', atHall: '고전 회랑', room: (age: number | null) => `${AGE(age)} 전시실`, // [추론]
+    banner: (age: number | null, n: number) => `${AGE(age)} 전시실 · ${n}점`, art: (title: string, age: number | null) => `${title}, ${AGE(age)} - 가까이 가기`, // [추론]
+    near: (madeOn: string, age: number | null) => `${madeOn} · ${AGE(age)} · 눌러서 크게 보기`, // [추론]
     next: '다음 작품', prev: '이전 작품으로 걸어가기', skip: '건너뛰기', map: '안내도 크게 보기', mapTitle: '안내도 - 고전 회랑', // [추론]
     mapNote: '입구에서 안쪽으로 걸을수록 어릴 때 그림이에요. 작품 점을 누르면 그 앞으로 걸어가요', entrance: '입구', // [추론]
     credit: (author: string, license: string) => `사진: ${author}, ${license} (변형: 3D 면으로 펴서 자름)`, // 작업 지시 문구
     hangFraming: '액자에 담는 중', hangDone: '걸었어요', suggest: '걸었어요 · 이렇게도 만들어 볼까요?', // D34 ⑤ [추론]
     suggestAnimate: '움직이게', suggestRelief: '입체로', suggestNo: '괜찮아요', // D34 ⑤ [추론]
+    titleAsk: '제목을 붙여 줄까요?', titleWrite: '제목 적기', // D34 ③ [추론]
     keys: 'W A S D 걷기 · 끌기 둘러보기 · Shift 빨리 · E 크게 보기 · Space 다음 작품', // [추론]
   },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */

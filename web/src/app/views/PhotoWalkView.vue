@@ -32,7 +32,7 @@ const fallback = ref(false);
 const vp = ref<HTMLElement | null>(null);
 const eng = shallowRef<PhotoCorridor | null>(null);
 const entered = ref(false);
-const whereAge = ref<number | null>(null);
+const whereSec = shallowRef<{ age: number | null } | null>(null);
 const near = shallowRef<Hung | null>(null);
 const viewing = ref<Item | null>(null);
 const planOpen = ref(false);
@@ -46,10 +46,10 @@ let suggestTimer = 0;
 
 const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
-const groups = computed(() => (g.value?.groups ?? []).map((r) => ({ age: r.ageAtMaking, items: r.items })));
+const groups = computed(() => (g.value?.groups ?? []).map((r) => ({ age: (r.ageAtMaking as number | null) ?? null, items: r.items })));
 const all = computed(() => groups.value.flatMap((r) => r.items));
 function still(it: Item) { return (it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl) ?? null; }
-const where = computed(() => (!entered.value ? ko.photo.atGate : whereAge.value != null ? ko.photo.room(whereAge.value) : ko.photo.atHall));
+const where = computed(() => (!entered.value ? ko.photo.atGate : whereSec.value ? ko.photo.room(whereSec.value.age) : ko.photo.atHall));
 const touch = matchMedia('(hover: none), (pointer: coarse)').matches;
 
 // ---- 불러오기 ----
@@ -85,7 +85,7 @@ watch([node, vp], async () => {
   const base = `/museum/photos/${node.value.id}/${Math.min(window.innerWidth, window.innerHeight) < 761 ? 'mobile' : 'desktop'}`;
   eng.value = new PhotoCorridor(vp.value, node.value, base, reduce, {
     onNear: (a) => { near.value = a; },
-    onWhere: (age) => { whereAge.value = age; if (age != null && childId.value) saveVisit(childId.value, age); },
+    onWhere: (sec) => { whereSec.value = sec; if (sec?.age != null && childId.value) saveVisit(childId.value, sec.age); },
     onOpen: (a) => openById(a.art.id),
     onFrame: (c) => { const t = performance.now(); if (t - lastCam > 90) { lastCam = t; cam.value = { ...c }; } },
   });
@@ -189,7 +189,7 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
       <button class="pw-core" type="button" :aria-label="ko.photo.map" @click="openPlan">
         <svg :viewBox="plan.vb" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <rect :x="plan.xl" :y="-plan.topZ" :width="plan.W" :height="plan.topZ - plan.bot" rx=".6" fill="#F4EDE2" stroke="#C9A552" stroke-width=".35" />
-          <line v-for="s in plan.sections" :key="s.age" :x1="plan.xl" :x2="plan.xr" :y1="-(s.z0 - 1)" :y2="-(s.z0 - 1)" stroke="#C9A552" stroke-width=".25" stroke-dasharray=".6 .5" />
+          <line v-for="s in plan.sections" :key="String(s.age)" :x1="plan.xl" :x2="plan.xr" :y1="-(s.z0 - 1)" :y2="-(s.z0 - 1)" stroke="#C9A552" stroke-width=".25" stroke-dasharray=".6 .5" />
           <circle v-for="(a, i) in plan.arts" :key="i" :cx="a.x" :cy="-a.z" r=".9" fill="#A0496B" />
           <path :d="fov.d" fill="#A0496B" opacity=".25" /><circle :cx="fov.X" :cy="fov.Z" r="1.1" fill="#6E3550" stroke="#fff" stroke-width=".4" />
         </svg>
@@ -244,7 +244,7 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
         <h3 id="pw-plan-t">{{ ko.photo.mapTitle }}</h3>
         <svg class="pw-plan" :viewBox="plan.vb" role="img" :aria-label="ko.photo.mapTitle">
           <rect :x="plan.xl" :y="-plan.topZ" :width="plan.W" :height="plan.topZ - plan.bot" rx=".6" fill="#F4EDE2" stroke="#C9A552" stroke-width=".35" />
-          <g v-for="s in plan.sections" :key="s.age">
+          <g v-for="s in plan.sections" :key="String(s.age)">
             <line :x1="plan.xl" :x2="plan.xr" :y1="-(s.z0 - 1)" :y2="-(s.z0 - 1)" stroke="#C9A552" stroke-width=".25" stroke-dasharray=".6 .5" />
             <text :x="(plan.xl + plan.xr) / 2" :y="-(s.z0 + 3)" text-anchor="middle" font-size="2.2" font-weight="700" fill="#6E3550">{{ ko.photo.room(s.age) }}</text>
           </g>

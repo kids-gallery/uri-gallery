@@ -13,7 +13,7 @@ import ArtFrame from '@/components/ArtFrame.vue';
 import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
 import { blockOf, type ArtworkSummary } from '../artwork';
-import { roomNumbers } from '../museumTheme';
+import { byAge, roomNumbers } from '../museumTheme';
 import { loadWall } from '../walk/prefs';
 
 type Child = components['schemas']['Child'];
@@ -33,7 +33,7 @@ const block = ref<Notice | null>(null);
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
 /** 전시실 — 나이가 어린 순서, 번호는 1부터 */
 const rooms = computed(() => {
-  const groups = [...(g.value?.groups ?? [])].sort((a, b) => a.ageAtMaking - b.ageAtMaking);
+  const groups = [...(g.value?.groups ?? [])].sort((a, b) => byAge(a.ageAtMaking, b.ageAtMaking)); // 나이 미정은 맨 뒤
   const no = roomNumbers(groups);
   return groups.map((r) => ({ ...r, no: no.get(r.ageAtMaking)!, items: [...r.items].sort((a, b) => a.madeOn.localeCompare(b.madeOn)) }));
 });

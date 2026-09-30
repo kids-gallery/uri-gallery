@@ -39,6 +39,9 @@ function trap(e: KeyboardEvent) {
           <p class="av-words-h">{{ ko.museum.childWords }}</p>
           <p class="av-words-q">“{{ props.item.childWords }}”</p>
         </div>
+        <!-- 자동 제목이면 조용히 권한다(D34 ③, SD_02 §17-9) — 강요 없음 -->
+        <p v-if="(props.item as { titleAuto?: boolean }).titleAuto" class="av-ask">{{ ko.photo.titleAsk }}
+          <RouterLink :to="`/app/artworks/${props.item.id}/story`">{{ ko.photo.titleWrite }}</RouterLink></p>
         <StoryCard :item="props.item" :alias="props.alias" title-id="av-title" />
       </aside>
     </div>
@@ -57,5 +60,7 @@ function trap(e: KeyboardEvent) {
 .av-label{background:var(--color-canvas);border:1px solid var(--color-hairline);border-radius:var(--r-lg);padding:var(--s-lg);display:grid;gap:var(--s-sm);color:var(--color-ink)}
 .av-words{background:var(--color-block-pink);border-radius:var(--r-md);padding:var(--s-md)}
 .av-words-h{font:600 13px/1.2 var(--font-sans);letter-spacing:.6px}
+.av-ask{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:500 14px/1.4 var(--font-sans);color:var(--color-ink)}
+.av-ask a{color:var(--color-primary);font-weight:700;text-underline-offset:3px}
 .av-words-q{margin-top:6px;font:600 22px/1.45 var(--mc-serif,var(--font-sans))}
 </style>

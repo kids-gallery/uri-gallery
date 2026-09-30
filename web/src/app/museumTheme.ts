@@ -15,10 +15,13 @@ export function museumTheme(): MuseumTheme {
 export const isClassic = (t: MuseumTheme = museumTheme()) => t !== 'v2';
 
 /** 전시실 번호 — 나이가 어린 순서로 1부터(아이마다 따로). */
-export function roomNumbers<T extends { ageAtMaking: number }>(rooms: readonly T[]): Map<number, number> {
-  return new Map([...rooms].map((r) => r.ageAtMaking).sort((a, b) => a - b).map((age, i) => [age, i + 1]));
+export function roomNumbers<T extends { ageAtMaking: number | null }>(rooms: readonly T[]): Map<number | null, number> {
+  // 나이 미정(null)은 맨 뒤(D34 ③, SD_02 §17-9)
+  return new Map([...rooms].map((r) => r.ageAtMaking).sort(byAge).map((age, i) => [age, i + 1]));
 }
 /** 전시실 이름(한눈에 보기 · 전시실 목록): v2 "N세관" · walk "제N전시실 · N살" */
-export function roomLabel(no: number, age: number, t: MuseumTheme = museumTheme()): string {
+/** 나이 오름차순, null(나이 미정)은 맨 뒤 */
+export const byAge = (a: number | null, b: number | null) => (a == null ? 1 : b == null ? -1 : a - b);
+export function roomLabel(no: number, age: number | null, t: MuseumTheme = museumTheme()): string {
   return isClassic(t) ? ko.classic.room(no, age) : ko.museum.room(age);
 }

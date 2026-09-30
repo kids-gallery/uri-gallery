@@ -10,11 +10,12 @@ export interface TipNode {
   original: { width: number; height: number }; camera: { vx: number; vy: number; f: number };
   box: { xl: number; xr: number; yf: number; yc: number; zb: number }; faces: TipFace[];
 }
-export interface WalkArt { id: string; title: string; age: number; madeOn: string; src: string | null }
-export interface Section { age: number; z0: number; n: number }
+export interface WalkArt { id: string; title: string; age: number | null; madeOn: string; src: string | null }
+/** age null = 나이 미정 구역(D34 ③) */
+export interface Section { age: number | null; z0: number; n: number }
 export interface Hung { art: WalkArt; side: -1 | 1; x: number; z: number; fw: number; fh: number; el: HTMLButtonElement }
 export interface Cam { x: number; z: number; yaw: number; pitch: number; P: number }
-interface Hooks { onNear(a: Hung | null): void; onWhere(age: number | null): void; onOpen(a: Hung): void; onFrame?(c: Cam): void }
+interface Hooks { onNear(a: Hung | null): void; onWhere(sec: Section | null): void; onOpen(a: Hung): void; onFrame?(c: Cam): void }
 
 export const ZMIN = 24;
 export const ZMAX = 96;
@@ -25,10 +26,11 @@ const cm = (m: number) => (m * 100).toFixed(1);
 const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /** 나이 구역 배치: 입구 쪽이 최근 나이. 깊이에 들어가는 만큼만(넘치면 최근 순) */
-export function layout(groups: { age: number; items: WalkArt[] }[]): { sections: Section[]; hung: { art: WalkArt; side: -1 | 1; z: number; age: number }[] } {
-  const sections: Section[] = []; const hung: { art: WalkArt; side: -1 | 1; z: number; age: number }[] = [];
+export function layout(groups: { age: number | null; items: WalkArt[] }[]): { sections: Section[]; hung: { art: WalkArt; side: -1 | 1; z: number; age: number | null }[] } {
+  const sections: Section[] = []; const hung: { art: WalkArt; side: -1 | 1; z: number; age: number | null }[] = [];
   let z = ZMIN + 3;
-  for (const g of [...groups].sort((a, b) => b.age - a.age)) {
+  // 나이 미정(null)이 입구 쪽 맨 앞(막 올린 작품), 그다음 최근 나이부터
+  for (const g of [...groups].sort((a, b) => (a.age == null ? -1 : b.age == null ? 1 : b.age - a.age))) {
     const items = [...g.items].sort((a, b) => b.madeOn.localeCompare(a.madeOn));
     const room = Math.floor((ZMAX - 2 - (z + 1.8)) / STEP) + 1;
     if (room <= 0) break;
@@ -54,7 +56,7 @@ export class PhotoCorridor {
   private keys = new Set<string>();
   private drag: { x: number; y: number; yaw: number; pitch: number; moved: number } | null = null;
   private stick = { x: 0, y: 0 };
-  private whereAge: number | null | undefined = undefined;
+  private whereSec: Section | null | undefined = undefined;
   private tourIdx = -1;
   private disposed = false;
 
@@ -93,7 +95,7 @@ export class PhotoCorridor {
     entry.setAttribute('aria-hidden', 'true');
   }
   /** 전시 작품을 건다(다시 부르면 옛 액자를 걷어 낸다) */
-  hangAll(groups: { age: number; items: WalkArt[] }[], label: { banner(age: number, n: number): string; art(title: string, age: number): string; plaque(madeOn: string, age: number): string }) {
+  hangAll(groups: { age: number | null; items: WalkArt[] }[], label: { banner(age: number | null, n: number): string; art(title: string, age: number | null): string; plaque(madeOn: string, age: number | null): string }) {
     this.world.querySelectorAll('.pw-art,.pw-plaque,.pw-banner').forEach((e) => e.remove());
     this.arts = []; this.near = null; this.hooks.onNear(null);
     const { sections, hung } = layout(groups); this.sections = sections;
@@ -270,8 +272,7 @@ export class PhotoCorridor {
     }
     if (best !== this.near) { this.near?.el.classList.remove('pw-near'); this.near = best; best?.el.classList.add('pw-near'); this.hooks.onNear(best); }
     const sec = this.entered ? [...this.sections].reverse().find((s) => this.cam.z >= s.z0 - 1) ?? null : null;
-    const age = sec ? sec.age : null;
-    if (age !== this.whereAge) { this.whereAge = age; this.hooks.onWhere(age); }
+    if (sec !== this.whereSec) { this.whereSec = sec; this.hooks.onWhere(sec); }
   }
   dispose() {
     this.disposed = true; cancelAnimationFrame(this.raf);
