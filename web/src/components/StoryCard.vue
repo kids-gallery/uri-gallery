@@ -14,11 +14,18 @@ const props = defineProps<{ item: Item; alias: string; titleId?: string }>();
 
 const yearOf = (d: string) => d.slice(0, 4);
 const monthOf = (d: string) => Number(d.slice(5, 7));
+// D46 ⑩: 보호자가 비워 자동으로 채운 제목 · 날짜 · 나이는 해설에서 단정하지 않는다
+type Auto = { titleAuto?: boolean; madeOnAuto?: boolean; ageAuto?: boolean; making?: boolean };
+const auto = computed(() => props.item as Item & Auto);
+const age = computed(() => (auto.value.ageAuto ? null : props.item.ageAtMaking ?? null));
+const year = computed(() => (auto.value.madeOnAuto ? '' : yearOf(props.item.madeOn)));
+const intro = computed(() => ko.museum.intro(auto.value.titleAuto ? null : props.item.title, props.alias, age.value, year.value, monthOf(props.item.madeOn), !!auto.value.making));
+const artist = computed(() => ko.museum.artist(props.alias, age.value, year.value));
 const readParts = computed(() => {
   const i = props.item;
   return [
     `${i.title}.`,
-    ko.museum.intro(i.title, props.alias, i.ageAtMaking, yearOf(i.madeOn), monthOf(i.madeOn)),
+    intro.value,
     i.childWords ? `${ko.museum.wordsBefore}${i.childWords}${ko.museum.wordsAfter}` : '',
     ko.museum.kindLine[i.kind] ?? '',
     i.guardianNote ? `${ko.museum.guardianNote}. ${i.guardianNote}` : '',
@@ -32,10 +39,10 @@ const readParts = computed(() => {
   <p class="wl-eyebrow">{{ ko.museum.label }}</p>
   <h1 :id="titleId" class="wl-title">{{ item.title }}</h1>
   <SpeakButton :parts="readParts" :title="item.title" />
-  <p class="wl-artist">{{ ko.museum.artist(alias, item.ageAtMaking, yearOf(item.madeOn)) }}</p>
+  <p class="wl-artist">{{ artist }}</p>
   <p class="wl-kind">{{ ko.museum.kind[item.kind] }}</p>
   <p class="wl-desc">
-    {{ ko.museum.intro(item.title, alias, item.ageAtMaking, yearOf(item.madeOn), monthOf(item.madeOn)) }}
+    {{ intro }}
     <template v-if="item.childWords">{{ ko.museum.wordsBefore }}<span class="wl-words">{{ item.childWords }}</span>{{ ko.museum.wordsAfter }}</template>
     <template v-if="ko.museum.kindLine[item.kind]">{{ ko.museum.kindLine[item.kind] }}</template>
   </p>

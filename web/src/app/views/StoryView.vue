@@ -19,7 +19,9 @@ const a = ref<ArtworkDetail | null>(null);
 const block = ref<Notice | null>(null);
 const s = computed(() => a.value?.story ?? {});
 const photo = computed(() => (a.value as { photoUrl?: string | null } | null)?.photoUrl ?? a.value?.originalUrl ?? null);
-const plaque = computed(() => [s.value.madeOn ? koDate(s.value.madeOn) : '', s.value.ageAtMaking == null ? '' : ko.story.ageLine(s.value.ageAtMaking)].filter(Boolean).join(' · '));
+// D46 ⑩: 명패도 보호자가 적은 날짜 · 나이만(자동으로 채운 값은 빼고)
+const st = computed(() => s.value as typeof s.value & { madeOnAuto?: boolean; ageAuto?: boolean });
+const plaque = computed(() => [s.value.madeOn && !st.value.madeOnAuto ? koDate(s.value.madeOn) : '', s.value.ageAtMaking == null || st.value.ageAuto ? '' : ko.story.ageLine(s.value.ageAtMaking)].filter(Boolean).join(' · '));
 
 async function load() {
   try { a.value = await loadArtwork(id); block.value = null; } catch (e) { block.value = blockOf(e); }

@@ -228,9 +228,10 @@ async function autoStory(conn: PoolConnection, artworkId: number, childId: numbe
   const n = Number((nr as { n: number }[])[0].n) + 1;
   // 그린 날 기본값 · 상한 = 한국 날짜(세션 시간대는 +00:00이라 CURRENT_DATE는 한국 0~9시에 어제가 된다)
   await conn.query(
-    `INSERT INTO story (artwork_id, title, title_auto, made_on, age_at_creation, utterance, guardian_note, updated_at)
-     VALUES (?, ?, ?, LEAST(COALESCE(?, DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [artworkId, up.title ?? `제목 없는 그림 ${n}`, up.title === null, up.madeOn ?? capturedOn, age, up.childWords, up.guardianNote]);
+    `INSERT INTO story (artwork_id, title, title_auto, made_on, made_on_auto, age_at_creation, age_auto, utterance, guardian_note, updated_at)
+     VALUES (?, ?, ?, LEAST(COALESCE(?, DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR)), ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    // D46 ⑩: 비워서 채운 칸은 자동 표시 — 해설이 보호자가 적지 않은 날짜 · 나이를 단정하지 않게
+    [artworkId, up.title ?? `제목 없는 그림 ${n}`, up.title === null, up.madeOn ?? capturedOn, up.madeOn === null, age, up.ageAtMaking === null, up.childWords, up.guardianNote]);
 }
 
 /** 확정 트랜잭션(data-model §4, stage-job §2·§6). */

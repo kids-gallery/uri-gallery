@@ -20,7 +20,7 @@ describe('접수(G5·G6)', () => {
     const key = '11111111-1111-4111-8111-111111111111';
     const r = await upload(a, childId, await png(), key).expect(202);
     expect(r.body).toMatchObject({ state: 'exhibited', exhibited: true, hungResultKind: 'frame' }); // D34
-    expect(r.body.story).toMatchObject({ title: '제목 없는 그림 1', titleAuto: true, ageAtMaking: null });
+    expect(r.body.story).toMatchObject({ title: '제목 없는 그림 1', titleAuto: true, ageAtMaking: null, madeOnAuto: true, ageAuto: true }); // D46 ⑩ 비운 칸은 자동 표시
     expect(r.body.story.madeOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect((await q<{ status: string }>('SELECT status FROM artwork'))[0].status).toBe('judging'); // 처리 상태는 판정 중(권유)
     expect(r.body.originalUrl).toMatch(/^\/v1\/files\//);

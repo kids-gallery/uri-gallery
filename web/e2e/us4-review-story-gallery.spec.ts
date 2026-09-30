@@ -21,7 +21,10 @@ test('설명을 적어 올리면 곧바로 걸리고 → 전시실 6세관에서
   await page.getByLabel(ko.up2.title).fill('빨간 해');
   await page.getByLabel(ko.up2.madeOn).fill('2026-09-01');
   await page.getByLabel(ko.up2.age).fill('6');
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await page.getByRole('button', { name: ko.upload.submit, exact: true }).click();
+  const r = await res;
+  expect(r.status(), await r.text()).toBeLessThan(300);
   await expect(page).toHaveURL(/\/app\/museum\/\d+/);
   await noScoreNoToast(page);
 

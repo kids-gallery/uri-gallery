@@ -280,15 +280,22 @@ export const ko = {
     childWords: '아이의 한마디', guardianNote: '보호자 감상평', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
     // 전시 해설(월 라벨, SD_02 §17-2 — 규칙 문장, AI 아님). 한마디는 원문 그대로 따옴표 안에(화면에서 끼운다)
     label: '전시 해설',
-    artist: (alias: string, age: number | null, year: string) => (age == null ? `${alias} (${year})` : `${alias} (${age}세 작, ${year})`), // [추론] 나이 미정이면 나이 빼고(D34)
-    intro: (title: string, alias: string, age: number | null, year: string, month: number) =>
-      `「${title}」${josa(title, '은/는').slice(title.length)} ${josa(alias, '이/가')} ${age == null ? '' : `${age}살이던 `}${year}년 ${month}월에 그린 작품입니다.`, // [추론] 나이 미정이면 나이 빼고(D34)
+    // D46 ⑩: 보호자가 적지 않은(자동) 나이 · 해는 부르는 쪽이 null · ''로 넘긴다 — 모르는 사실을 단정하지 않는다
+    artist: (alias: string, age: number | null, year: string) => { const p = [age == null ? '' : `${age}세 작`, year].filter(Boolean).join(', '); return p ? `${alias} (${p})` : alias; },
+    // D46 ⑩: title은 자동 제목이면 null, year는 자동 날짜면 '' — 적은 것만 말한다. 날짜 · 나이가 없으면 "그린"도 쓰지 않는다
+    intro: (title: string | null, alias: string, age: number | null, year: string, month: number, making = false) => {
+      const head = title ? `「${title}」${josa(title, '은/는').slice(title.length)} ` : '';
+      const verb = making ? '만든' : '그린';
+      if (!year && age == null) return `${head}${alias}의 작품입니다.`;
+      const when = year ? `${age == null ? '' : `${age}살이던 `}${year}년 ${month}월에` : `${age}살 때`;
+      return `${head}${josa(alias, '이/가')} ${when} ${verb} 작품입니다.`;
+    },
     wordsBefore: '작가는 이 그림을 두고 “', wordsAfter: '”라고 말했습니다.', // [추론]
     kindLine: { animated: '종이에 그린 그림이 움직이는 작품으로 걸렸습니다.', relief: '종이 그림이 입체 부조로 걸렸습니다.', sculpture: '종이 그림이 3D 조각으로 걸렸습니다.' } as Record<string, string>, // [추론]
     // 건축 평면도·로비(D25 ⑥)
     floorPlan: '평면도', lobby: '로비', corridor: '회랑', north: '북', // [추론]
     collection: (n: number) => `소장 작품 ${n}점`, latest: '최근에 걸린 작품', // [추론]
-    hangOf: (age: number | null) => (age == null ? '나이 미정 작품' : `${age}살 때 그린 작품`), // [추론] 세관 벽(옆으로 넘기는 영역) 이름
+    hangOf: (age: number | null) => (age == null ? '나이를 적지 않은 작품' : `${age}살 때 그린 작품`), // [추론] 세관 벽(옆으로 넘기는 영역) 이름
     // 전시실 /app/hall · 입장(D26 ⑥, SD_02 §17-4)
     hallTitle: (alias: string) => `${alias}의 전시실`, toHome: '홈으로', // [추론]
     roomMeta: (n: number, from: string) => `${n}점 · ${from} ~`, // [추론]

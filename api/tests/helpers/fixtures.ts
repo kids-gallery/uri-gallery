@@ -82,6 +82,6 @@ export async function setStory(db: Pool, artworkId: string | number, v: { title?
   const map: [keyof typeof v, string][] = [['title', 'title'], ['madeOn', 'made_on'], ['ageAtMaking', 'age_at_creation'], ['childWords', 'utterance'], ['guardianNote', 'guardian_note']];
   const cols = map.filter(([k]) => v[k] !== undefined);
   if (!cols.length) return;
-  const extra = v.title ? ', title_auto = FALSE' : '';
+  const extra = (v.title ? ', title_auto = FALSE' : '') + (v.madeOn ? ', made_on_auto = FALSE' : '') + (v.ageAtMaking != null ? ', age_auto = FALSE' : ''); // 보호자가 적은 것처럼
   await db.query(`UPDATE story SET ${cols.map(([, c]) => `${c} = ?`).join(', ')}${extra} WHERE artwork_id = ?`, [...cols.map(([k]) => v[k]), Number(artworkId)]);
 }

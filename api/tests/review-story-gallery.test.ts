@@ -87,7 +87,7 @@ describe('이야기·전시(UC5·UC6) — D46 올린 작품은 고정', () => {
     expect((await up(f.a, f.childId, { making: 'maybe' })).status).toBe(422);
     const r = await up(f.a, f.childId, { title: STORY.title, madeOn: STORY.madeOn, ageAtMaking: '5', childWords: STORY.childWords, guardianNote: '감상', making: 'true' });
     expect(r.status).toBe(202);
-    expect(r.body).toMatchObject({ making: true, locked: true, story: { title: '우리 가족', titleAuto: false, madeOn: '2026-09-20', ageAtMaking: 5, childWords: '  엄마랑 바다 갔어  ', guardianNote: '감상' } });
+    expect(r.body).toMatchObject({ making: true, locked: true, story: { title: '우리 가족', titleAuto: false, madeOnAuto: false, ageAuto: false, madeOn: '2026-09-20', ageAtMaking: 5, childWords: '  엄마랑 바다 갔어  ', guardianNote: '감상' } });
     const locked = await f.a.put(`/v1/artworks/${r.body.id}/story`).send({ title: '고침' });
     expect(locked.status).toBe(409);
     expect(locked.body.reason).toBe('artwork_locked');

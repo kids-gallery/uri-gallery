@@ -86,8 +86,8 @@ export function captionsRouter(db: Pool, cfg: Config, llm: LlmPort, retryDelaysM
       if (!p.success) throw new Problem('validation_failed', 'invalid_fields', undefined, zodFields(p.error));
       const keywords = p.data.keywords.map((k) => k.trim()).filter(Boolean);
       const tags = [...new Set(p.data.selectedTags)];
-      const st = await one<{ age_at_creation: number | null; made_on: Date | null; utterance: string | null }>(db,
-        `SELECT s.age_at_creation, s.made_on, s.utterance FROM artwork a LEFT JOIN story s ON s.artwork_id = a.artwork_id WHERE a.artwork_id = ? AND a.family_id = ?`, [id, familyId]);
+      const st = await one<{ age_at_creation: number | null; age_auto: number | null; made_on: Date | null; utterance: string | null }>(db,
+        `SELECT s.age_at_creation, s.age_auto, s.made_on, s.utterance FROM artwork a LEFT JOIN story s ON s.artwork_id = a.artwork_id WHERE a.artwork_id = ? AND a.family_id = ?`, [id, familyId]);
       if (!st) throw new Problem('not_found');
 
       // A3 직접 쓰기 — 출처 direct, "AI 작성" 없음, 단계 작업 없음
@@ -112,7 +112,7 @@ export function captionsRouter(db: Pool, cfg: Config, llm: LlmPort, retryDelaysM
         const cid = await withTx(db, async (conn) => {
           await lockArtwork(conn, familyId, id);
           const gen = await replacePending(conn, id);
-          return insertCaption(conn, id, { jobId: null, keywords, source: 'template', body: templateCaption(st.age_at_creation, [...keywords, ...tags]), gen });
+          return insertCaption(conn, id, { jobId: null, keywords, source: 'template', body: templateCaption(st.age_auto ? null : st.age_at_creation, [...keywords, ...tags]) /* D46 ⑩ 자동 나이는 단정하지 않음 */, gen });
         }).catch(gateFail);
         return res.status(201).json(captionView((await one<Row>(db, `SELECT * FROM caption WHERE caption_id = ?`, [cid]))!));
       }

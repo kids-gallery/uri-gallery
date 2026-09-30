@@ -37,8 +37,8 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     `SELECT stage_kind, status, attempt_count, downgrade_cause FROM v_job_progress WHERE artwork_id = ? ORDER BY job_id`, [artworkId]);
   const cr = await one<{ result_kind: string; object_id: number | null }>(db, `SELECT result_kind, object_id FROM v_current_result WHERE artwork_id = ?`, [artworkId]);
   const dec = await one<{ decision_code: string }>(db, `SELECT decision_code FROM decision WHERE artwork_id = ? ORDER BY review_round DESC LIMIT 1`, [artworkId]);
-  const st = await one<{ title: string | null; title_auto: number; made_on: Date | null; age_at_creation: number | null; utterance: string | null; guardian_note: string | null; updated_at: Date }>(db,
-    `SELECT title, title_auto, made_on, age_at_creation, utterance, guardian_note, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
+  const st = await one<{ title: string | null; title_auto: number; made_on_auto: number; age_auto: number; made_on: Date | null; age_at_creation: number | null; utterance: string | null; guardian_note: string | null; updated_at: Date }>(db,
+    `SELECT title, title_auto, made_on_auto, age_auto, made_on, age_at_creation, utterance, guardian_note, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
   const hung = await one<{ result_kind: string }>(db,
     `SELECT r.result_kind FROM artwork a JOIN result r ON r.result_id = a.hung_result_id WHERE a.artwork_id = ?`, [artworkId]);
 
@@ -100,6 +100,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     story: {
       title: st?.title ?? null,
       titleAuto: Boolean(st?.title_auto), // D34: 자동 제목(제목 없는 그림 N)
+      madeOnAuto: Boolean(st?.made_on_auto), ageAuto: Boolean(st?.age_auto), // D46 ⑩: 비워서 채운 날짜 · 나이
       madeOn: st?.made_on ? new Date(st.made_on).toISOString().slice(0, 10) : null,
       ageAtMaking: st?.age_at_creation ?? null,
       childWords: st?.utterance ?? null,

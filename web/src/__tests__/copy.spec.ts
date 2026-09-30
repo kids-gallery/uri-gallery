@@ -43,4 +43,13 @@ describe('화면 문구(T035)', () => {
     expect(ko.child.dup('별이')).toContain('같은 별칭 별이가 이미');
     expect(ko.del.childItems('하늘', 2)).toBe('하늘과 작품 2개가 모두 지워져요');
   });
+  it('해설은 보호자가 적은 것만 말한다(D46 ⑩)', () => {
+    expect(ko.museum.intro('해바라기', '하늘', 6, '2026', 9)).toBe('「해바라기」는 하늘이 6살이던 2026년 9월에 그린 작품입니다.');
+    expect(ko.museum.intro(null, '하늘', 6, '2026', 9)).toBe('하늘이 6살이던 2026년 9월에 그린 작품입니다.');
+    expect(ko.museum.intro('해바라기', '하늘', null, '', 9)).toBe('「해바라기」는 하늘의 작품입니다.');
+    expect(ko.museum.intro(null, '하늘', null, '', 9)).toBe('하늘의 작품입니다.');
+    expect(ko.museum.intro(null, '별이', 5, '', 1, true)).toBe('별이가 5살 때 만든 작품입니다.');
+    expect(ko.museum.artist('하늘', null, '')).toBe('하늘');
+    expect(ko.museum.artist('하늘', 6, '2026')).toBe('하늘 (6세 작, 2026)');
+  });
 });
