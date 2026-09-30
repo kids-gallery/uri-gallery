@@ -1955,6 +1955,8 @@ components:
         updatedAt: { type: [string, 'null'], format: date-time, readOnly: true, description: 'story.updated_at — 동시 수정 판정 기준' }
         title: { type: [string, 'null'], maxLength: 100 }
         titleAuto: { type: boolean, readOnly: true, description: '(D34) 제목이 "제목 없는 그림 N"으로 자동으로 붙음. 보호자가 제목을 고치면 false' }
+        madeOnAuto: { type: boolean, readOnly: true, description: '(D46 ⑩) 그린 날을 비워 촬영일 · 올린 날로 채움 — 해설이 날짜를 단정하지 않는다' }
+        ageAuto: { type: boolean, readOnly: true, description: '(D46 ⑩) 나이를 비워 최근 나이로 채움 — 해설이 나이를 단정하지 않는다' }
         madeOn: { description: '만든 날. 오늘이나 지난 날짜만 — 미래 날짜는 422 made_on_in_future(G11, 서버·DB 트리거가 막는다)', type: [string, 'null'], format: date }
         ageAtMaking: { type: [integer, 'null'], minimum: 0, maximum: 18 }
         childWords: { type: [string, 'null'], maxLength: 2000 }
@@ -2025,6 +2027,8 @@ components:
         making: { type: boolean, description: '(D46) 만들기 → 미술관 받침대(D45)' }
         title: { type: string }
         titleAuto: { type: boolean, description: '(D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다' }
+        madeOnAuto: { type: boolean, description: '(D46 ⑩) 자동 그린 날' }
+        ageAuto: { type: boolean, description: '(D46 ⑩) 자동 나이' }
         madeOn: { type: string, format: date }
         ageAtMaking: { type: [integer, 'null'], description: '(D34) null = 나이 미정' }
         childWords: { type: [string, 'null'] }

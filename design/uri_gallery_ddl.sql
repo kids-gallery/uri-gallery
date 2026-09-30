@@ -529,6 +529,9 @@ ALTER TABLE artwork ADD CONSTRAINT fk_artwork_hung FOREIGN KEY IF NOT EXISTS (hu
 ALTER TABLE result MODIFY job_id BIGINT NULL;
 ALTER TABLE result ADD CONSTRAINT IF NOT EXISTS chk_rs_job CHECK (job_id IS NOT NULL OR result_kind = 'frame');
 ALTER TABLE story ADD COLUMN IF NOT EXISTS title_auto BOOLEAN NOT NULL DEFAULT FALSE AFTER title;
+-- (D46 ⑩, 2026-09-30) 비워서 자동으로 채운 그린 날 · 나이 — 해설이 보호자가 적지 않은 사실을 단정하지 않게. 다시 실행해도 안전(멱등)
+ALTER TABLE story ADD COLUMN IF NOT EXISTS made_on_auto BOOLEAN NOT NULL DEFAULT FALSE AFTER made_on;
+ALTER TABLE story ADD COLUMN IF NOT EXISTS age_auto BOOLEAN NOT NULL DEFAULT FALSE AFTER age_at_creation;
 -- (D39, 2026-09-30) 사진 고치기 — 원본은 그대로 두고 고친 사진(object_kind 'display')을 따로 건다(멱등). 원본 액자 · 전시 · 저장하기는 고친 사진을 쓴다
 ALTER TABLE stored_object DROP CONSTRAINT IF EXISTS chk_so_kind;
 ALTER TABLE stored_object ADD CONSTRAINT chk_so_kind CHECK (object_kind IN ('original','mask','cutout','joints','depth',
@@ -1196,7 +1199,7 @@ SELECT c.child_id, c.family_id, c.alias, COUNT(a.artwork_id) AS artwork_count
 -- S8 가족 전시 — 전시 중만, 연령 묶음 → 제작일 순. 3D는 노출 꺼지면 액자로(D10). 낮춤 원인 비노출(BR-EXH-07)
 CREATE OR REPLACE VIEW v_gallery AS
 SELECT a.family_id, a.child_id, a.artwork_id,
-       s.age_at_creation AS age_group, s.made_on, s.title, s.title_auto, s.utterance, s.guardian_note, a.making,
+       s.age_at_creation AS age_group, s.made_on, s.title, s.title_auto, s.made_on_auto, s.age_auto, s.utterance, s.guardian_note, a.making,
        -- D34: 걸린 결과(hung_result_id)를 보인다 — 걸린 채 다시 만드는 중에도 전시는 그대로. 원본 액자 결과는 파일이 없다
        CASE WHEN hr.result_kind IS NULL OR hr.result_kind = 'frame' THEN 'frame'
             WHEN hr.result_kind = 'sculpture'
