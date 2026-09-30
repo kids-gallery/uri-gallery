@@ -22,7 +22,10 @@ export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDe
   app.disable('x-powered-by');
   app.set('trust proxy', 'loopback');
   app.use((req, res, next) => {
-    req.requestId = randomUUID();
+    // 요청 번호(계약 머리말, 점검표 L1): 형식이 맞는 X-Request-ID는 그대로, 아니면 새로 — 응답 헤더·오류 본문·로그 줄이 같은 값
+    const given = req.get('x-request-id');
+    req.requestId = given && /^[A-Za-z0-9._-]{1,128}$/.test(given) ? given : randomUUID();
+    res.setHeader('X-Request-ID', req.requestId);
     const t0 = Date.now();
     res.on('finish', () => log.info({ requestId: req.requestId, method: req.method, route: req.route?.path ?? 'unmatched', status: res.statusCode, durationMs: Date.now() - t0 }));
     next();
