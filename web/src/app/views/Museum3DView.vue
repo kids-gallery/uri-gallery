@@ -9,6 +9,7 @@ import { api, ApiError } from '@/api/client';
 import type { BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
 import BlockNotice from '@/components/BlockNotice.vue';
+import AnimateAsk from '@/components/AnimateAsk.vue';
 import { blockOf } from '../artwork';
 import ArtViewer from '../walk/ArtViewer.vue';
 import Scene from '../museum3d/Scene.vue';
@@ -36,6 +37,8 @@ const loading = ref(true);
 const loadNo = ref(0);
 /** 걸리는 장면(D44 ④): ?hung={작품 id} — 장면을 시작할 때 주소에서 지운다(새로고침해도 다시 재생하지 않게) */
 const hangId = ref<string | null>(null);
+/** 움직임 질문(D49): 걸리는 장면 뒤 "애니메이션으로 만드시겠습니까?" */
+const askId = ref<string | null>(null);
 const viewing = ref<MuseumItem | null>(null);
 let opener: HTMLElement | null = null;
 
@@ -56,7 +59,7 @@ async function load() {
       byId.value = new Map(g.groups.flatMap((grp) => grp.items).map((it) => [it.id, it]));
       input.value = fromGallery(g, info);
       const hung = typeof route.query.hung === 'string' ? route.query.hung : '';
-      if (hung) { hangId.value = hung; const q = { ...route.query }; delete q.hung; void router.replace({ query: q }); }
+      if (hung) { hangId.value = hung; askId.value = hung; const q = { ...route.query }; delete q.hung; void router.replace({ query: q }); }
     }
   } catch (e) {
     if (visitor.value && e instanceof ApiError && e.status === 404) locked.value = true;
@@ -98,6 +101,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
 
     <ArtViewer v-if="viewing && familyItem" :item="familyItem" :alias="layout?.alias ?? ''" :still="viewing.imageUrl" @close="close" />
     <Viewer v-else-if="viewing" :item="viewing" :alias="layout?.alias ?? ''" @close="close" />
+    <AnimateAsk v-if="askId && !visitor" :key="askId" :artwork-id="askId" overlay @close="askId = null" />
   </main>
 </template>
 

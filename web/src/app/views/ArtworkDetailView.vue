@@ -10,6 +10,7 @@ import JourneyRail from '@/components/JourneyRail.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import ArtFrame from '@/components/ArtFrame.vue';
 import CommentPanel from '@/components/CommentPanel.vue';
+import AnimateAsk from '@/components/AnimateAsk.vue';
 import { usePolling } from '@/composables/usePolling';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
@@ -75,6 +76,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
         <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ next }}</RouterLink>
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
+      <AnimateAsk :artwork-id="id" @started="first" /><!-- D49 움직임 질문 -->
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
       <CommentPanel :artwork-id="id" /><!-- D46 ④ 부모 댓글 -->
     </section>
