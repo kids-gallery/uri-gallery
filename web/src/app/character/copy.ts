@@ -44,5 +44,5 @@ export const cc = {
   toChildren: '우리 아이로 돌아가기',
 
   buildingLabel: (name: string, locked: boolean) => (locked ? `${name} - 문이 잠겨 있어요` : name),
-  lockedHint: '이웃이 되면 들어갈 수 있어요',
+  lockedHint: '친구가 되면 들어갈 수 있어요', // D52: 화면 말은 "친구"
 };
