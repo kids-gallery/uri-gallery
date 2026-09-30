@@ -5,8 +5,8 @@
   /* D26 ⑥: 토큰 v2와 같은 값 — 토큰을 따른다 */
   --paper-bg:var(--color-canvas); --paper-blush:var(--color-surface-soft); --paper-card:var(--color-canvas); --paper-mat:#ffffff;
   --paper-ink:var(--color-ink); --paper-ink-2:var(--color-primary); --paper-accent:var(--color-accent-magenta); --paper-line:var(--color-accent-magenta);
-  --paper-btn:var(--color-primary); --paper-btn-ink:#ffffff; --paper-tape:rgba(255,200,185,.7);
-  --paper-shadow:rgba(184,41,27,.16);
+  --paper-btn:var(--color-primary); --paper-btn-ink:#ffffff; --paper-tape:rgba(253,228,232,.8);
+  --paper-shadow:rgba(110,53,80,.12);
   background:var(--paper-bg);color:var(--paper-ink);
 }
 /* 반투명 테이프 — 블러시 */
@@ -15,4 +15,4 @@
 /* 도장 버튼 — 빨강 바탕 흰 글자(5.4:1) */
 .paper-stamp{display:inline-flex;align-items:center;gap:10px;background:var(--paper-btn);color:var(--paper-btn-ink);border:0;border-radius:999px;
   padding:12px 22px;font:600 17px/1 var(--font-sans);text-decoration:none;cursor:pointer;box-shadow:0 0 0 2px var(--paper-bg),0 0 0 3px var(--paper-accent)}
-.paper-stamp:hover{background:#a8241a}
+.paper-stamp:hover{background:#8c3c5b}

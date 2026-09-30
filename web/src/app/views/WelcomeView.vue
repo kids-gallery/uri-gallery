@@ -60,9 +60,9 @@ const RING2 = spiro(90, 33, 44, 33);
 .intro{max-width:340px;font:500 15px/1.6 var(--font-sans);color:var(--color-ink)}
 .sign{position:relative;align-self:center;display:grid;gap:var(--s-sm)}
 .eyebrow{font:700 clamp(18px,2vw,26px)/1.3 var(--font-sans);color:var(--color-accent-magenta);letter-spacing:-.01em}
-/* 글자 안을 아이 그림 같은 색 띠로 — 빨강 · 분홍 · 노랑 · 하늘(글자 자체 대비는 가장 옅은 띠도 큰 글자 기준 3:1 이상) */
+/* 글자 안을 동화책 색 띠로 — 장미 · 라일락 · 민트 · 하늘(v3, D31 ②). 가장 옅은 띠도 바탕 대비 3.19:1(큰 글자 기준 3:1 이상) */
 .title{margin:0;font:800 clamp(56px,13vw,200px)/.95 var(--font-sans);letter-spacing:-.05em;
-  background:linear-gradient(100deg,#e43828 0%,#d6336c 22%,#e8572a 38%,#b07800 52%,#2f7fb8 68%,#d6336c 84%,#e43828 100%) 0 0/200% 100%;
+  background:linear-gradient(100deg,#b8618a 0%,#9a74c4 22%,#d0708f 38%,#4e9a96 52%,#7584c8 68%,#9a74c4 84%,#b8618a 100%) 0 0/200% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 14s linear infinite}
 @keyframes flow{to{background-position:200% 0}}
 .door{position:relative;display:flex;justify-content:flex-start;padding-bottom:clamp(8px,3vh,32px)}
