@@ -150,12 +150,16 @@ function onKey(e: KeyboardEvent) {
   const fn = map[e.key];
   if (fn) { e.preventDefault(); fn(); }
 }
-let sx = 0; let sy = 0; let sOk = false;
-function onDown(e: PointerEvent) { sOk = !(e.target as HTMLElement).closest('.rm-strip, .wp, button, a, select'); sx = e.clientX; sy = e.clientY; }
+let sx = 0; let sy = 0; let sOk = false; let swiped = false;
+/** 그림 위에서 밀어도 이동한다(SD_02 §17-6). 방 안 작품 줄 · 벽 색 판 · 막대 · 입력은 제외 */
+function onDown(e: PointerEvent) { sOk = !(e.target as HTMLElement).closest('.rm-strip, .wp, .wk-bar, a, select, input'); sx = e.clientX; sy = e.clientY; }
+/** 밀었으면 그 손끝의 누름은 크게 보기 · 버튼으로 치지 않는다 */
+function onClickCapture(e: MouseEvent) { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }
 function onUp(e: PointerEvent) {
   if (!sOk) return; sOk = false;
   const dx = e.clientX - sx; const dy = e.clientY - sy;
   if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
+  swiped = true; setTimeout(() => { swiped = false; }, 400);
   if (Math.abs(dy) > Math.abs(dx)) { if (dy < 0) forward(); else backward(); } else side(dx < 0 ? 1 : -1);
 }
 onMounted(() => { window.addEventListener('keydown', onKey); window.addEventListener('resize', measure); });
@@ -177,7 +181,7 @@ function resetWall() { wall.value = WALL_DEFAULT; saveWall(childId.value, null);
 
 <template>
   <main ref="rootEl" class="wk mc" :class="[`at-${scene}`, { walking }]" :style="{ '--walk-wall': wall, '--scene-top': `${top}px` }"
-    @pointerdown="onDown" @pointerup="onUp">
+    @pointerdown="onDown" @pointerup="onUp" @click.capture="onClickCapture">
     <div class="wk-stage" role="region" :aria-label="ko.walk.scene">
       <div class="wk-bg" :class="{ zoom: walking && scene !== 'room' }">
         <Room v-if="scene === 'room'" :wide="wide" />
