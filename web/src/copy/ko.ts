@@ -427,6 +427,7 @@ export const ko = {
     colItem: '평가 항목', colStatus: '상태', colExpected: '기대', colActual: '결과', colDowngradeReason: '낮춤', colMisclass: '오인', colTime: '시간', // [추론]
   },
   shell: {
+    quick: '지름길', quickUpload: '올리기', quickList: '목록', menuOpen: '메뉴', // D34 ④ 미술관 셸 [추론]
     appName: '우리 아이 미술관',
     opsName: '운영 화면',
     role: { operator: '서비스 운영자', evaluator: '평가 담당', integrator: '연동 개발' } as Record<string, string>,

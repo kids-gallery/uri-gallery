@@ -193,8 +193,7 @@ function resetWall() { wall.value = WALL_DEFAULT; saveWall(childId.value, null);
         <p class="wk-where" aria-live="polite">{{ where }}</p>
         <div class="wk-acts">
           <button v-if="scene !== 'room'" class="wk-pill" type="button" @click="skip">{{ ko.walk.skip }} <span aria-hidden="true">»</span></button>
-          <RouterLink class="wk-pill" :to="children?.length ? '/app/upload' : '/app/children'">{{ ko.walk.upload }}</RouterLink>
-          <RouterLink class="wk-pill" :to="{ path: '/app/list', query: childId ? { child: childId } : {} }">{{ ko.walk.list }}</RouterLink>
+          <!-- [올리기] · [목록]은 미술관 셸(MuseumBar)에 늘 있다(D34 ④) -->
           <div class="wk-wallbox">
             <button class="wk-pill" type="button" :aria-expanded="picker" @click="picker = !picker">
               <span class="wk-dot" :style="{ background: wall }" aria-hidden="true"></span>{{ ko.walk.wall }}
