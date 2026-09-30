@@ -188,6 +188,25 @@ export class PhotoCorridor {
     if (a) this.goTo(a, instant); else this.walkTo({ x: -0.3, z: ZMIN + 1.5, yaw: 0, pitch: 2, P: this.walkP() }, null, 0);
   }
 
+  /** 걸리는 장면(D34 ⑤): 카메라가 그 벽 앞으로 걸어가는 동안 액자가 관람자 앞에 떠 있다가 벽으로 날아가 붙는다 */
+  async land(id: string): Promise<Hung | null> {
+    const a = this.arts.find((x) => x.art.id === id); if (!a) return null;
+    if (!this.entered) this.enter(true);
+    this.tourIdx = this.arts.indexOf(a);
+    const pose = this.artPose(a);
+    if (this.reduced()) { this.walkTo(pose, a, 0); return a; }
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const final = a.el.style.transform; const yaw = a.side < 0 ? 90 : -90;
+    const mid = [(a.x + pose.x) / 2 + (a.side < 0 ? 0.9 : -0.9), (a.z + pose.z) / 2] as const;
+    a.el.classList.add('pw-landing'); a.el.style.transition = 'none';
+    a.el.style.transform = `translate3d(${cm(mid[0])}px,${cm(-0.25)}px,${cm(-mid[1])}px) rotateY(${yaw + (a.side < 0 ? -35 : 35)}deg) scale(.55)`;
+    this.walkTo(pose, a, 2200);
+    await wait(1700);
+    a.el.style.transition = ''; void a.el.offsetWidth; a.el.style.transform = final;
+    await wait(1500); a.el.classList.remove('pw-landing');
+    return a;
+  }
+
   // ---------- 입력 ----------
   setStick(x: number, y: number) { this.stick = { x, y }; if (x || y) this.auto = null; }
   private onKey = (e: KeyboardEvent) => {

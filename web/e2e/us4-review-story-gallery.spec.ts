@@ -42,7 +42,10 @@ test('액자로 확정 → 결과 확인(좋아요) → 이야기 저장 → 전
   await noScoreNoToast(page);
 
   // 전시 = 홈 전시실(D25): N세관 안에 걸리고, 열면 월 라벨과 정지 화면(액자는 원본·재생 토글 없음)
+  // [전시 보기] → 걸리는 장면(D34 ⑤, /app?hung=) — 전시실 확인은 /app/hall로 이어서
   await page.getByRole('link', { name: ko.list.toGallery }).click();
+  await expect(page).toHaveURL(/\/app\?(.*&)?hung=/);
+  await page.goto('/app/hall');
   await expect(page).toHaveURL(/\/app\/hall(\?|$)/);
   const room = page.getByRole('region', { name: roomLabel(1, 6) });
   await expect(room.getByText('빨간 해')).toBeVisible();

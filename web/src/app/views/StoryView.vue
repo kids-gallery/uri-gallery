@@ -106,7 +106,7 @@ function dropDraft() { draft.value = null; clearDraft(); }
         <div class="hang-anim"><ArtFrame size="sm" :src="resultImage(a).still" :alt="a.story?.title ?? ''" /></div>
       </div>
       <NoticeBlock v-if="done" :title="done === 'exhibited' ? ko.story.exhibited : ko.story.saved">
-        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" to="/app/hall">{{ ko.list.toGallery }}</RouterLink></template>
+        <template v-if="done === 'exhibited'" #actions><RouterLink class="btn btn-secondary" :to="{ path: '/app', query: { hung: id, ...(a?.childId ? { child: a.childId } : {}) } }">{{ ko.list.toGallery }}</RouterLink><!-- 걸리는 장면(D34 ⑤, SD_02 §17-9) --></template>
       </NoticeBlock>
 
       <form class="card stack story-form" novalidate @submit.prevent="save">

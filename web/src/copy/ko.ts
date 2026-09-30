@@ -316,7 +316,9 @@ export const ko = {
     near: (madeOn: string, age: number) => `${madeOn} · ${age}살 · 눌러서 크게 보기`, // [추론]
     next: '다음 작품', prev: '이전 작품으로 걸어가기', skip: '건너뛰기', map: '안내도 크게 보기', mapTitle: '안내도 - 고전 회랑', // [추론]
     mapNote: '입구에서 안쪽으로 걸을수록 어릴 때 그림이에요. 작품 점을 누르면 그 앞으로 걸어가요', entrance: '입구', // [추론]
-    credit: (author: string, license: string) => `사진: ${author} · ${license} · 3D로 펴서 씀`, // [추론]
+    credit: (author: string, license: string) => `사진: ${author}, ${license} (변형: 3D 면으로 펴서 자름)`, // 작업 지시 문구
+    hangFraming: '액자에 담는 중', hangDone: '걸었어요', suggest: '걸었어요 · 이렇게도 만들어 볼까요?', // D34 ⑤ [추론]
+    suggestAnimate: '움직이게', suggestRelief: '입체로', suggestNo: '괜찮아요', // D34 ⑤ [추론]
     keys: 'W A S D 걷기 · 끌기 둘러보기 · Shift 빨리 · E 크게 보기 · Space 다음 작품', // [추론]
   },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
@@ -438,7 +440,7 @@ export const ko = {
     colItem: '평가 항목', colStatus: '상태', colExpected: '기대', colActual: '결과', colDowngradeReason: '낮춤', colMisclass: '오인', colTime: '시간', // [추론]
   },
   shell: {
-    quick: '지름길', quickUpload: '올리기', quickList: '목록', menuOpen: '메뉴', // D34 ④ 미술관 셸 [추론]
+    quick: '지름길', quickUpload: '작품 올리기', quickList: '한눈에 보기', quickUploadShort: '올리기', quickListShort: '목록', menuOpen: '메뉴', // D34 ④ 미술관 셸(작업 지시) [추론]
     appName: '우리 아이 미술관',
     opsName: '운영 화면',
     role: { operator: '서비스 운영자', evaluator: '평가 담당', integrator: '연동 개발' } as Record<string, string>,

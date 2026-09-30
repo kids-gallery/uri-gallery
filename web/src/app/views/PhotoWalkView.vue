@@ -39,6 +39,10 @@ const planOpen = ref(false);
 const cam = ref<Cam>({ x: 0, z: 0, yaw: 0, pitch: 0, P: 1000 });
 const top = ref(64);
 let opener: HTMLElement | null = null;
+/** 걸리는 장면(D34 ⑤): 무대(액자에 담는 중 → 걸었어요) → 날아가 벽에 걸림 → 권유 */
+const stage = ref<{ src: string | null; step: 1 | 2; framed: boolean; out: boolean } | null>(null);
+const suggest = ref(false);
+let suggestTimer = 0;
 
 const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
@@ -91,11 +95,29 @@ watch(g, () => { if (eng.value) place(); });
 /** 작품을 걸고 시작 자리: 두 번째 방문이면 마지막 구역 앞(입구 연출 없이) */
 function place() {
   const e = eng.value!; e.hangAll(artsOf(), labels);
+  const hung = typeof route.query.hung === 'string' ? route.query.hung : '';
+  if (hung && all.value.some((x) => x.id === hung)) { void playHang(hung); return; }
   const v = childId.value ? loadVisit(childId.value) : null;
   if (v && !e.entered) { e.goToSection(v.room, true); entered.value = true; }
 }
-onBeforeUnmount(() => { eng.value?.dispose(); window.removeEventListener('resize', measure); });
+onBeforeUnmount(() => { eng.value?.dispose(); window.removeEventListener('resize', measure); clearTimeout(suggestTimer); });
 
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+async function playHang(id: string) {
+  const e = eng.value; const it = all.value.find((x) => x.id === id); if (!e || !it) return;
+  entered.value = true;
+  const q = { ...route.query }; delete q.hung; void router.replace({ query: q }); // 새로고침하면 다시 재생하지 않게
+  if (reduce()) { await e.land(id); showSuggest(); return; }
+  e.enter(true);
+  stage.value = { src: still(it), step: 1, framed: false, out: false };
+  await wait(700); if (stage.value) stage.value.framed = true;
+  await wait(1300); if (stage.value) stage.value.step = 2;
+  await wait(600); if (stage.value) stage.value.out = true;
+  const landing = e.land(id);
+  await wait(900); stage.value = null;
+  await landing; showSuggest();
+}
+function showSuggest() { suggest.value = true; clearTimeout(suggestTimer); suggestTimer = window.setTimeout(() => { suggest.value = false; }, 12000); }
 function enter() {
   if (!eng.value) return;
   if (childId.value && !loadVisit(childId.value)) saveVisit(childId.value, null);
@@ -237,6 +259,18 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
       </div></div>
     </div>
 
+    <!-- 걸리는 장면 무대(D34 ⑤) -->
+    <div v-if="stage" class="pw-stage" :class="{ out: stage.out }">
+      <p class="pw-step" aria-live="polite">{{ stage.step === 1 ? ko.photo.hangFraming : ko.photo.hangDone }}</p>
+      <div class="pw-dots" aria-hidden="true"><i class="on"></i><i class="on"></i><i :class="{ on: stage.step === 2 }"></i></div>
+      <div class="pw-work" :class="{ framed: stage.framed, fly: stage.out }"><img v-if="stage.src" :src="stage.src" alt=""></div>
+    </div>
+    <!-- 권유: 움직이게 · 입체로는 걸린 뒤 바꿔 만들기 API(D34 ②) 뒤에 보인다 -->
+    <div v-if="suggest" class="pw-shell pw-suggest" role="status"><div class="pw-core">
+      <span>{{ ko.photo.suggest }}</span>
+      <button type="button" class="no" @click="suggest = false">{{ ko.photo.suggestNo }}</button>
+    </div></div>
+
     <ArtViewer v-if="viewing" :item="viewing" :alias="alias" :still="still(viewing)" @close="closeViewer" />
   </main>
 </template>
@@ -300,6 +334,19 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
   .pw-prompt{bottom:136px;max-width:calc(100% - 32px);width:calc(100% - 32px)}
   .pw-credit{left:14px;right:auto;bottom:auto;top:160px;text-align:left;max-width:130px}
 }
+.pw-stage{position:absolute;inset:0;z-index:15;display:grid;place-items:center;align-content:center;gap:18px;padding:24px;background:radial-gradient(ellipse at 50% 45%,rgba(43,35,29,.55),rgba(24,16,12,.88));transition:opacity .8s var(--spring)}
+.pw-stage.out{opacity:0}
+.pw-step{margin:0;font:700 22px/1.2 var(--mc-serif,serif);color:var(--cream);text-align:center}
+.pw-dots{display:flex;gap:8px;justify-content:center}.pw-dots i{width:8px;height:8px;border-radius:50%;background:rgba(253,251,247,.3);transition:background .5s,transform .5s var(--spring)}.pw-dots i.on{background:var(--gold-l);transform:scale(1.25)}
+.pw-work{width:min(80vw,520px);aspect-ratio:4/3;display:grid;place-items:center;transition:transform 1s var(--spring)}
+.pw-work img{max-width:100%;max-height:100%;display:block;background:#fff;box-shadow:0 24px 50px -20px rgba(0,0,0,.8);transition:padding 1s var(--spring),background 1s var(--spring),box-shadow 1s var(--spring)}
+.pw-work.framed img{padding:14px;background:linear-gradient(135deg,var(--gold-l),var(--gold) 38%,var(--gold-d) 62%,var(--gold-l));box-shadow:inset 0 0 0 12px #FBF8F1,0 30px 60px -20px rgba(0,0,0,.85)}
+.pw-work.fly{transform:translateY(-12vh) scale(.35);opacity:0;transition:transform 1.1s var(--spring),opacity 1.1s ease}
+.pw-suggest{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:9;border-radius:999px}
+.pw-suggest .pw-core{border-radius:999px;display:flex;gap:10px;align-items:center;padding:6px 6px 6px 16px;font:600 14px/1.2 var(--font-sans);white-space:nowrap}
+.pw-suggest button{border:0;border-radius:999px;padding:9px 14px;min-height:40px;cursor:pointer;font:700 13px/1 var(--font-sans);background:var(--plum);color:var(--cream)}
+.pw-suggest button.no{background:none;color:var(--pw-ink);box-shadow:inset 0 0 0 1px rgba(42,31,26,.25)}
+@media (max-width:600px){.pw-suggest{top:auto;bottom:200px}}
 .pw-modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(24,16,12,.62);backdrop-filter:blur(10px)}
 .pw-modal-box{width:min(94vw,560px);max-height:92vh;overflow:auto;border-radius:32px}
 .pw-modal-box .pw-core{border-radius:27px;padding:22px;display:grid;gap:14px;background:var(--cream)}
@@ -324,6 +371,8 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
 .pw-art .pw-fr{position:absolute;inset:0;padding:7px;border-radius:1px;background:linear-gradient(135deg,#E6CB86,#C9A552 38%,#8E6B2A 62%,#E6CB86);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 22px 30px -18px rgba(20,12,8,.8)}
 .pw-art .pw-mat{display:block;width:100%;height:100%;padding:8px;background:#FBF8F1;box-shadow:inset 0 0 0 1px rgba(142,107,42,.45),inset 0 6px 10px -6px rgba(0,0,0,.25)}
 .pw-art img{width:100%;height:100%;display:block;object-fit:contain;background:#fff}
+.pw-art.pw-landing{transition:transform 1.5s cubic-bezier(.2,.9,.25,1.08)}
+.pw-art.pw-landing .pw-glow{opacity:0}.pw-art .pw-glow{transition:opacity 1.2s ease .9s}
 .pw-art.pw-near .pw-fr{box-shadow:0 0 0 2px rgba(255,248,230,.95),0 0 60px 10px rgba(255,226,160,.55),0 22px 30px -18px rgba(20,12,8,.8)}
 .pw-art:focus-visible .pw-fr{outline:4px solid #fff;outline-offset:4px}
 .pw-plaque{display:flex;flex-direction:column;justify-content:center;padding:2px 4px;border-radius:1px;white-space:nowrap;overflow:hidden;background:linear-gradient(135deg,#E9D39A,#C9A552 55%,#A98435);color:#2B2007;font:500 4.2px/1.3 sans-serif;box-shadow:0 3px 5px -3px rgba(0,0,0,.5)}

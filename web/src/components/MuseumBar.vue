@@ -24,8 +24,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   <header class="mbar" data-shell="app">
     <RouterLink class="mbar-mark" to="/app">{{ ko.shell.appName }}</RouterLink>
     <nav class="mbar-quick" :aria-label="ko.shell.quick">
-      <RouterLink class="mbar-pill" to="/app/upload">{{ ko.shell.quickUpload }}</RouterLink>
-      <RouterLink class="mbar-pill" :to="{ path: '/app/list', query: route.query.child ? { child: route.query.child } : {} }">{{ ko.shell.quickList }}</RouterLink>
+      <RouterLink class="mbar-pill" to="/app/upload" :aria-label="ko.shell.quickUpload"><span class="full">{{ ko.shell.quickUpload }}</span><span class="short" aria-hidden="true">{{ ko.shell.quickUploadShort }}</span></RouterLink>
+      <RouterLink class="mbar-pill" :to="{ path: '/app/list', query: route.query.child ? { child: route.query.child } : {} }" :aria-label="ko.shell.quickList"><span class="full">{{ ko.shell.quickList }}</span><span class="short" aria-hidden="true">{{ ko.shell.quickListShort }}</span></RouterLink>
       <button ref="btn" class="mbar-pill mbar-menu" type="button" :aria-expanded="open" aria-controls="mbar-panel" @click="open ? hide() : show()">
         <span aria-hidden="true">☰</span> {{ ko.shell.menuOpen }}
       </button>
@@ -59,5 +59,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .mbar-link{display:block;padding:12px 12px;border-radius:var(--r-md);color:var(--color-ink);font:500 16px/1.3 var(--font-sans);text-decoration:none}
 .mbar-link:hover,.mbar-link:focus-visible{background:var(--color-surface-soft)}
 .mbar-foot{display:flex;gap:8px;justify-content:space-between;border-top:1px solid var(--color-hairline);padding-top:var(--s-sm)}
-@media (max-width:420px){.mbar-mark{font-size:16px}.mbar-pill{padding:8px 10px;font-size:13px}}
+.mbar-pill .short{display:none}
+@media (max-width:420px){.mbar-mark{font-size:16px}.mbar-pill{padding:8px 10px;font-size:13px}.mbar-pill .full{display:none}.mbar-pill .short{display:inline}}
 </style>
