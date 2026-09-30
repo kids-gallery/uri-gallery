@@ -317,6 +317,7 @@ export const ko = {
     copied: '링크를 복사했어요. 카카오톡으로 보내 주세요',
     copyManual: '아래 링크를 길게 눌러 복사해 카카오톡으로 보내 주세요',
     linkInvite: '초대 링크',
+    colInvite: '초대',
     inviteHint: '링크는 한 번만 쓸 수 있고 7일 뒤에 끝나요. 새 링크를 만들면 이전 링크는 쓸 수 없어요',
     invitedStart: '받은 초대로 들어가려면 카카오로 시작해 주세요',
     inviteError: { token_invalid: '이 초대 링크는 이미 쓰였거나 끝났어요. 초대한 보호자에게 새 링크를 받아 주세요', already_in_family: '이미 다른 가족 공간에 있어요. 그 가족에서 나온 뒤에 초대를 받을 수 있어요', co_guardian_full: '이 가족은 보호자가 이미 두 명이에요' } as Record<string, string>,

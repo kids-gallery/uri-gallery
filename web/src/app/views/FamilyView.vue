@@ -108,7 +108,7 @@ async function confirm() {
         <h2 id="fm-pend" class="t-card-title">{{ ko.family.pending(invites.length) }}</h2>
         <p v-if="full && !invites.length" class="t-body-sm">{{ ko.family.pendingFull }}</p>
         <table v-if="invites.length" class="plain">
-          <thead><tr><th>{{ ko.family.colInvite }}</th><th>{{ ko.family.colExpires }}</th><th>{{ ko.family.colActions }}</th></tr></thead>
+          <thead><tr><th>{{ ko.kakao.colInvite }}</th><th>{{ ko.family.colExpires }}</th><th>{{ ko.family.colActions }}</th></tr></thead>
           <tbody>
             <tr v-for="i in invites" :key="i.id">
               <td>{{ i.emailMasked ?? ko.kakao.linkInvite }}</td><td class="num">{{ when(i.expiresAt) }}</td>
