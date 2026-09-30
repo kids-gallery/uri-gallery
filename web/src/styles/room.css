@@ -16,10 +16,10 @@
 /* 명패 쓰는 책상: 이야기 판 = 책상 위 카드 */
 .room-desk .story-form{transform-origin:50% 100%;transform:perspective(1400px) rotateX(4deg)}
 @media (prefers-reduced-motion:reduce){.in-room .card,.in-room .stack>section{animation:none}}
-/* 로블록스 느낌 살짝(이제민 지시): 두툼하게 눌리는 선명한 버튼 · 통통 튀는 반응 */
-.in-room .btn{border-radius:14px;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.18);transition:transform 120ms var(--ease-spring,ease),box-shadow 120ms}
-.in-room .btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 rgba(0,0,0,.18)}
-.in-room .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
-.in-room .btn-primary{background:linear-gradient(#b8577d,#a0496b);box-shadow:0 5px 0 #6e3550,0 12px 18px -10px rgba(110,53,80,.6)}
-.in-room .btn-primary:active{box-shadow:0 1px 0 #6e3550}
+/* 루브르의 고풍스러움 위에 로블록스는 살짝만(이제민 지시): 금테 · 세리프는 그대로, 버튼은 누르면 살짝 내려가는 정도 */
+.in-room .btn{border-radius:999px;font-weight:700;box-shadow:0 2px 0 rgba(90,62,20,.22);transition:transform 140ms var(--ease-spring,ease),box-shadow 140ms}
+.in-room .btn:hover{transform:translateY(-1px);box-shadow:0 3px 0 rgba(90,62,20,.22)}
+.in-room .btn:active{transform:translateY(2px);box-shadow:0 0 0 rgba(90,62,20,.22)}
+.in-room .btn-primary{background:linear-gradient(#a8527a,#93405f);box-shadow:0 0 0 2px rgba(255,251,247,.9),0 0 0 3px #c9a552,0 3px 0 3px #6e3550}
+.in-room .btn-primary:active{box-shadow:0 0 0 2px rgba(255,251,247,.9),0 0 0 3px #c9a552,0 1px 0 3px #6e3550}
 @media (prefers-reduced-motion:reduce){.in-room .btn,.in-room .btn:hover,.in-room .btn:active{transform:none;transition:none}}
