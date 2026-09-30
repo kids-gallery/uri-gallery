@@ -8,6 +8,7 @@ import { log } from './lib/logger.js';
 import { ZodError } from 'zod';
 import { Problem, parseSignal, zodFields } from './lib/problem.js';
 import { paramGuard } from './lib/paramGuard.js';
+import { requestContext } from './lib/requestContext.js';
 import type { StoragePort } from './storage/LocalFsDriver.js';
 import { filesRouter } from './modules/files/routes.js';
 
@@ -28,7 +29,7 @@ export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDe
     res.setHeader('X-Request-ID', req.requestId);
     const t0 = Date.now();
     res.on('finish', () => log.info({ requestId: req.requestId, method: req.method, route: req.route?.path ?? 'unmatched', status: res.statusCode, durationMs: Date.now() - t0 }));
-    next();
+    requestContext.run({ requestId: req.requestId }, next); // 이 요청에서 비동기로 찍는 로그 줄도 같은 번호
   });
   app.use(cookieParser());
   app.use(express.json({ limit: '64kb' }));
