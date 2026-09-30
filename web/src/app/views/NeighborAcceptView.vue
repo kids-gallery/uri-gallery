@@ -11,6 +11,8 @@ const token = typeof route.query.token === 'string' ? route.query.token : '';
 const busy = ref(false);
 const done = ref(false);
 const err = ref(token ? '' : nc.noToken);
+/** 링크가 쓰였거나 끝났으면 다시 눌러도 소용없다 — [친구 되기] 대신 [마을로 가기](세션2 판별 A2-8) */
+const dead = ref(!token);
 
 async function accept() {
   if (busy.value || !token) return;
@@ -24,6 +26,7 @@ async function accept() {
     // 링크 문제(400 token_invalid · 422 형식)만 "이미 쓰였거나 끝났어요", 끊김 · 서버 문제는 잠시 뒤 다시(링크는 아직 쓸 수 있다)
     err.value = r === 'own_family' ? nc.ownFamily : r === 'neighbor_full' ? nc.fullAccept
       : r === 'token_invalid' || st === 400 || st === 422 ? nc.tokenInvalid : nc.tryLater;
+    dead.value = err.value === nc.tokenInvalid || err.value === nc.ownFamily || err.value === nc.fullAccept;
   } finally { busy.value = false; }
 }
 </script>
@@ -38,7 +41,8 @@ async function accept() {
         <p class="t-body-sm">{{ nc.accept3 }}</p>
         <p v-if="err" class="t-body" role="alert">{{ err }}</p>
         <div class="acts">
-          <button class="btn btn-primary" type="button" :disabled="busy || !token" @click="accept">{{ nc.acceptGo }}</button>
+          <button v-if="!dead" class="btn btn-primary" type="button" :disabled="busy" @click="accept">{{ nc.acceptGo }}</button>
+          <RouterLink v-else class="btn btn-primary" to="/app/town">{{ nc.toTown }}</RouterLink>
         </div>
       </template>
       <template v-else>

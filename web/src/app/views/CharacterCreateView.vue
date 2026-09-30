@@ -114,7 +114,12 @@ async function saveEdit() {
   } catch (e) { fail(e); } finally { busy.value = false; }
 }
 
-function enter() { if (created.value) void router.push(`/app/museum/${encodeURIComponent(created.value.id)}`); }
+/** 가입 전에 연 주소(친구 링크 등, §17-16) — 개관 뒤 그리로. 없으면 새 미술관 */
+const after = typeof route.query.next === 'string' && route.query.next.startsWith('/app/') && !route.query.next.startsWith('//') ? route.query.next : null;
+function enter() {
+  if (!created.value) return;
+  void router.push(after ?? `/app/museum/${encodeURIComponent(created.value.id)}`);
+}
 
 function onBlockAction(label: string) {
   if (label === ko.child.edit) {
@@ -181,13 +186,13 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
               :aria-invalid="left < 0 ? 'true' : undefined" aria-describedby="cc-alias-h cc-alias-n">
           </div>
           <p id="cc-alias-h" class="hint t-body-sm">{{ cc.nameHint }}</p>
-          <p id="cc-alias-n" class="hint t-body-sm num" aria-live="polite">{{ cc.remaining(Math.max(left, 0)) }}<template v-if="left < 0"> - {{ aliasErr }}</template></p>
+          <p id="cc-alias-n" class="hint t-body-sm num" aria-live="polite">{{ cc.remaining(Math.max(left, 0)) }}</p>
           <p class="t-body-sm">{{ cc.notCollected }}</p>
           <div class="acts">
             <!-- 막힌 [다음]은 흐리게 + 쉬운 안내 한 줄(공통 "(비활성) -" 표시 대신, 세션2 판별 A8). 누르면 이름표로 초점 -->
             <button class="btn btn-primary big" :class="{ soft: !!aliasErr }" type="submit" :aria-disabled="aliasErr ? 'true' : undefined"
               :aria-describedby="aliasErr ? 'cc-next-why' : undefined">{{ cc.next }}</button>
-            <p v-if="aliasErr" id="cc-next-why" class="t-body-sm next-why">{{ !trimmed ? cc.nameFirst : aliasErr }}</p>
+            <p v-if="aliasErr" id="cc-next-why" class="t-body-sm next-why">{{ !trimmed ? cc.nameFirst : cc.nameTooLong }}</p>
           </div>
         </form>
       </section>
@@ -273,7 +278,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
           <p ref="openedEl" class="opened-msg t-headline" role="status" tabindex="-1">{{ cc.opened(created.alias) }}</p>
           <p v-if="created.aliasDuplicate" class="t-body-sm">{{ cc.dup(created.alias) }}</p>
           <div class="acts">
-            <button class="btn btn-primary big" type="button" @click="enter">{{ cc.enter }}</button>
+            <button class="btn btn-primary big" type="button" @click="enter">{{ after?.startsWith('/app/neighbor') ? cc.toFriend : cc.enter }}</button>
           </div>
         </template>
       </section>

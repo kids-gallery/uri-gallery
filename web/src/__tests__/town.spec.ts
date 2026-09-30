@@ -132,9 +132,20 @@ describe('이웃 칸(NeighborPanel) · 받기(NeighborAcceptView)', () => {
     let w = await mountAt(NeighborAcceptView, '/app/neighbor?token=tok-1234567890');
     await w.find('button.btn-primary').trigger('click'); await flushPromises();
     expect(w.find('[role="alert"]').text()).toBe(nc.ownFamily);
+    expect(w.find('button.btn-primary').exists()).toBe(false); // 다시 눌러도 소용없으면 [마을로 가기](판별 A2-8)
+    expect(w.find('a[href="/app/town"]').text()).toBe(nc.toTown);
+    w.unmount();
     fetchMock.mockResolvedValueOnce(problem(400, { code: 'token_invalid', reason: 'token_invalid' }));
+    w = await mountAt(NeighborAcceptView, '/app/neighbor?token=tok-1234567890');
     await w.find('button.btn-primary').trigger('click'); await flushPromises();
     expect(w.find('[role="alert"]').text()).toBe(nc.tokenInvalid);
+    expect(w.find('a[href="/app/town"]').exists()).toBe(true);
+    w.unmount();
+    fetchMock.mockRejectedValueOnce(new TypeError('network')); // 끊김은 잠시 뒤 다시 — 버튼 그대로
+    w = await mountAt(NeighborAcceptView, '/app/neighbor?token=tok-1234567890');
+    await w.find('button.btn-primary').trigger('click'); await flushPromises();
+    expect(w.find('[role="alert"]').text()).toBe(nc.tryLater);
+    expect(w.find('button.btn-primary').exists()).toBe(true);
     w.unmount();
     fetchMock.mockResolvedValueOnce(json(204, null));
     w = await mountAt(NeighborAcceptView, '/app/neighbor?token=tok-1234567890');

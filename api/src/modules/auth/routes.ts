@@ -109,7 +109,8 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
         if (acc) return { to: st.n ?? '/app', event: 'kakao_login', id: acc.account_id }; // D47: 홈 = 아이 미술관(입장 화면은 웹이 탭 세션마다 한 번)
         const [f] = await conn.query(`INSERT INTO family () VALUES ()`);    // 첫 로그인: 가족 공간 + 만든 보호자(UC13 §0 5, E4 한 트랜잭션)
         const [g] = await conn.query(`INSERT INTO guardian_account (family_id, role, kakao_id) VALUES (?, 'owner', ?)`, [(f as { insertId: number }).insertId, memberId]);
-        return { to: st.n ?? '/app/children/new?welcome=1', event: 'kakao_signup', id: (g as { insertId: number }).insertId }; // D47: 흰 표 대신 캐릭터 만들기
+        return { to: st.n ? `/app/children/new?welcome=1&next=${encodeURIComponent(st.n)}` : '/app/children/new?welcome=1', event: 'kakao_signup', // 첫 가입은 캐릭터 먼저, 개관 뒤 next(§17-16)
+           id: (g as { insertId: number }).insertId }; // D47: 흰 표 대신 캐릭터 만들기
       });
       if (out.id) setGuardianCookie(res, await createSession(db, 'guardian', out.id));
       return done(out.to, out.event);

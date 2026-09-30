@@ -47,7 +47,8 @@ describe('카카오 로그인 — 가입·로그인', () => {
       const state = new URL(s.headers.location).searchParams.get('state')!;
       return { to: (await a.get(`/v1/auth/kakao/callback?code=${code}&state=${encodeURIComponent(state)}`).expect(302)).headers.location as string };
     };
-    expect((await go('1101', '/app/neighbor?token=abcdefghijklmnop')).to).toBe('/app/neighbor?token=abcdefghijklmnop');
+    // 첫 가입은 캐릭터 만들기가 먼저, 개관 뒤 next로(§17-16) · 다시 로그인은 곧바로 next
+    expect((await go('1101', '/app/neighbor?token=abcdefghijklmnop')).to).toBe(`/app/children/new?welcome=1&next=${encodeURIComponent('/app/neighbor?token=abcdefghijklmnop')}`);
     expect((await go('1101', '/app/museum/7')).to).toBe('/app/museum/7');
     expect((await go('1102', '//evil.example/app')).to).toBe('status 422'); // 계약 pattern — 밖 주소는 받지 않는다
   });

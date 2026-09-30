@@ -59,9 +59,8 @@ function trap(e: KeyboardEvent) {
 .av-close{justify-self:end;grid-column:1 / -1;background:rgba(255,251,247,.9);border:1px solid var(--color-hairline);border-radius:var(--r-pill);padding:8px 14px;font:600 15px/1 var(--font-sans);color:var(--color-ink);cursor:pointer;min-height:44px}
 .av-art{position:relative;display:grid;justify-items:center;gap:var(--s-sm);min-width:0}
 .av-spot{position:absolute;inset:-10% -5% 20%;background:radial-gradient(ellipse 55% 60% at 50% 20%,rgba(255,255,255,.75),transparent 70%);pointer-events:none}
-.av-art :deep(.is-lg){--art-max-w:100%} /* 액자는 칸 폭 안에서 — 가로 그림이 해설 칸을 덮지 않게(세션2 판별 A1) */
-.av-art :deep(.artframe){width:100%;max-width:100%;box-sizing:border-box}
-.av-art :deep(.mat img){max-width:100%;height:auto}
+.av-art{container-type:inline-size} /* 액자는 늘리지 않고 그림을 칸 폭에 맞춘다(세션2 판별 A2-1 · 14ae5b7과 같은 방법) */
+.av-art :deep(.mat img){max-width:calc(100cqi - 110px);height:auto;max-height:var(--art-h)} /* 110px = lg 매트 36×2 + 금테 */
 .av-label{background:var(--color-canvas);border:1px solid var(--color-hairline);border-radius:var(--r-lg);padding:var(--s-lg);display:grid;gap:var(--s-sm);color:var(--color-ink)}
 .av-words{background:var(--color-block-pink);border-radius:var(--r-md);padding:var(--s-md)}
 .av-words-h{font:600 13px/1.2 var(--font-sans);letter-spacing:.6px}

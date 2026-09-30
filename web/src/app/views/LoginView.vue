@@ -10,12 +10,15 @@ import BlockNotice from '@/components/BlockNotice.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import { ko } from '@/copy/ko';
 import { safeNext } from '@/router/menu';
+import { neighbor as nbc } from '@/app/town/copy';
 import { useSession } from '@/stores/session';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { emailProblem } from '../authForm';
 
 const route = useRoute();
 const router = useRouter();
+/** 친구 링크로 왔는가(§17-16) — 초대 안내 한 줄 + 미술관 배경 */
+const fromFriend = typeof route.query.next === 'string' && route.query.next.startsWith('/app/neighbor');
 const session = useSession();
 const email = ref('');
 const password = ref('');
@@ -77,7 +80,8 @@ async function onAction(label: string) {
 
 <template>
   <header class="topnav"><div class="container"><RouterLink class="wordmark" to="/app/login">{{ ko.shell.appName }}</RouterLink></div></header>
-  <main class="container page stack">
+  <main class="container page stack" :class="{ 'from-friend': fromFriend }">
+    <p v-if="fromFriend" class="friend-note t-body" role="status">{{ nbc.loginNote }}</p>
     <NoticeBlock v-if="resetDone" :title="ko.auth.resetDone" />
     <section class="card stack auth-form">
       <h1 class="t-headline">{{ ko.auth.loginTitle }}</h1>
@@ -105,7 +109,10 @@ async function onAction(label: string) {
 <style scoped>
 .auth-form{max-width:560px}
 .row-acts{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center}
-.kakao-btn{width:100%;min-height:56px;font-size:18px}
+.kakao-btn{width:100%;min-height:56px;font-size:18px;background:#FEE500;color:#191600;border-color:#FEE500} /* 카카오 노랑(§17-16) */
+.kakao-btn:hover{background:#f5dc00}
+.from-friend{background:radial-gradient(120% 80% at 50% 0%,var(--color-block-cream),var(--color-canvas));border-radius:24px;padding-top:24px}
+.friend-note{margin:0;padding:12px 16px;border-radius:14px;background:var(--color-block-lime);font-weight:600}
 .email-toggle{justify-self:start;font-size:14px}
 .kakao-note{margin:0}
 </style>

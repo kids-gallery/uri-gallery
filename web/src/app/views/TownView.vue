@@ -218,7 +218,7 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
 .bld:focus-visible{outline:3px solid var(--color-primary);outline-offset:4px}
 .bld[aria-pressed="true"]{filter:drop-shadow(0 0 10px rgba(255,214,90,.9))}
 .lot.stranger .bld{filter:saturate(.55) brightness(1.02)}
-.sign{position:absolute;left:-90px;top:30px;width:180px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;
+.sign{position:absolute;left:-90px;top:-178px;z-index:2;width:180px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;
   padding:4px 6px;border-radius:12px;background:rgba(255,251,247,.92);box-shadow:0 2px 6px rgba(74,52,65,.18)}
 .sign-t{width:100%;text-align:center;font:600 13px/1.3 var(--font-sans);color:var(--color-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hud-top{position:absolute;left:16px;right:16px;top:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;pointer-events:none}
