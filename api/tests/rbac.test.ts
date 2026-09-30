@@ -39,8 +39,8 @@ describe('권한 정본과 계약이 같다(D24 ②)', () => {
     expect(staffOps.filter((o) => o.scopes.length === 0).map((o) => o.op)).toEqual(['POST /v1/ops/auth/logout']);
   });
 
-  it('SD_02 §2-1 표: 미도달은 운영자만, 평가·승격은 평가 담당만, API활용에 평가 담당 없음', () => {
-    expect(permissionsOf(['operator'])).not.toContain('models.manage');
+  it('SD_02 §2-1 표: 운영자는 모든 권한(2026-09-30 이제민), 미도달은 운영자만, 평가·승격은 운영자·평가 담당, API활용에 평가 담당 없음', () => {
+    expect(permissionsOf(['operator'])).toEqual(Object.keys(STAFF_POLICY));
     expect(permissionsOf(['evaluator'])).toEqual(expect.arrayContaining(['models.manage', 'models.warmup']));
     expect(permissionsOf(['evaluator'])).not.toContain('apiGuide.use');
     expect(permissionsOf(['integrator'])).toEqual(expect.arrayContaining(['metrics.read', 'models.read', 'apiGuide.use']));
@@ -62,6 +62,11 @@ describe('역할별 허용·거부가 정본대로 동작한다(G1)', () => {
     'models.check': (a) => a.post('/v1/ops/models/M1/check').send({}), // D20
     'models.check.read': (a) => a.get('/v1/ops/model-checks'),
   };
+  it('운영자 한 역할로 평가·승격 경로(models.manage)가 막히지 않는다(403 아님)', async () => {
+    const s = await staff(t, 'op-all@rbac.test', ['operator']);
+    expect((await s.a.get('/v1/admin/eval-runs/999999')).status).not.toBe(403);
+    expect((await s.a.get('/v1/admin/eval-items')).status).not.toBe(403);
+  });
   for (const role of ROLES) {
     it(`${role} 한 역할만 가진 팀원`, async () => {
       const s = await staff(t, `${role}@rbac.test`, [role]);

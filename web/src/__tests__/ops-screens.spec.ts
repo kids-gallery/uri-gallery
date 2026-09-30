@@ -113,6 +113,12 @@ describe('S11 모델 평가·승격(T119)', () => {
     expect(calls('GET', '/v1/admin/eval-runs')).toHaveLength(0);
     w.unmount();
   });
+  it('운영자는 모든 권한 — 읽기 전용 안내 없이 평가·승격 조작을 쓴다(2026-09-30 이제민)', async () => {
+    serve({ '/v1/admin/models': manifest, '/v1/ops/models': loads });
+    const w = await open(ModelsView, ['operator']);
+    expect(w.text()).not.toContain(ko.ops.readOnly);
+    w.unmount();
+  });
   it('운영자는 미준비 모델을 지금 불러오기 할 수 있다', async () => {
     serve({ '/v1/admin/models': manifest, '/v1/ops/models': loads, 'POST /v1/ops/models/M1/warmup': () => json({ modelId: 'M1', licenseConfirmed: true, hint: 'model_loading' }, 202) });
     const w = await open(ModelsView, ['operator']);

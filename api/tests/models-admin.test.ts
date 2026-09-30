@@ -44,10 +44,15 @@ describe('매니페스트·후보 등록(FR-24, BR-MDL-07)', () => {
     const r2 = await a.post('/v1/admin/models/M1/versions').send({ version: 'v2', weightsSha256: C, runtime: 'x', imageDigest: A, configHash: D, device: 'cpu' }).expect(201);
     expect(r2.body.licenseConfirmed).toBe(false);
   });
-  it('운영자는 조회만, 등록은 403', async () => {
+  it('운영자는 모든 권한 — 조회와 등록 모두(등록 본문이 틀리면 403이 아니라 422, 2026-09-30 이제민)', async () => {
     const op = (await staff(t, 'op@test.local', ['operator'])).a;
     await op.get('/v1/admin/models').expect(200);
-    await op.post('/v1/admin/models/M5/versions').send({}).expect(403);
+    await op.post('/v1/admin/models/M5/versions').send({}).expect(422);
+  });
+  it('연동 개발은 조회만, 등록은 403', async () => {
+    const ig = (await staff(t, 'ig@test.local', ['integrator'])).a;
+    await ig.get('/v1/admin/models').expect(200);
+    await ig.post('/v1/admin/models/M5/versions').send({}).expect(403);
   });
 });
 

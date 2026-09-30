@@ -21,7 +21,7 @@ type EvalRun = components['schemas']['EvalRun'];
 
 const s = useSession();
 const roles = computed(() => s.staff?.roles ?? []);
-const isEval = computed(() => roles.value.includes('evaluator'));
+const isEval = computed(() => roles.value.includes('evaluator') || roles.value.includes('operator')); // 평가·승격 조작 — 운영자는 모든 권한(SD_02 §2-1, 2026-09-30)
 const canWarm = computed(() => roles.value.includes('evaluator') || roles.value.includes('operator'));
 
 const manifest = ref<Manifest[] | null>(null);

@@ -8,6 +8,7 @@ import type { Pool } from 'mysql2/promise';
 import { staffAuth, type StaffRole } from './guards.js';
 
 const ALL: StaffRole[] = ['operator', 'evaluator', 'integrator'];
+// 규칙: 서비스 운영자(operator)는 모든 권한을 가진다(SD_02 §2-1, 2026-09-30 이제민) — 아래 표의 모든 줄에 operator가 있어야 한다(tests/rbac.test.ts).
 
 export const STAFF_POLICY = {
   /** 로그인한 팀원 상태(/v1/ops/me) */
@@ -24,8 +25,8 @@ export const STAFF_POLICY = {
   'models.check': ['operator', 'evaluator'],
   /** S11 마지막 점검 읽기(D20) */
   'models.check.read': ALL,
-  /** S11 후보 등록·평가·판단·승격·롤백·비활성화·평가 항목 등록(UC9) */
-  'models.manage': ['evaluator'],
+  /** S11 후보 등록·평가·판단·승격·롤백·비활성화·평가 항목 등록(UC9) — 운영자도(2026-09-30 이제민: 운영자는 모든 권한) */
+  'models.manage': ['operator', 'evaluator'],
   /** S12 API활용(명세·시험 호출) */
   'apiGuide.use': ['operator', 'integrator'],
 } as const satisfies Record<string, readonly StaffRole[]>;

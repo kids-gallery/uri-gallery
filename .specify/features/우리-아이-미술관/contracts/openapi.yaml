@@ -1063,7 +1063,7 @@ paths:
     post:
       tags: [관리]
       summary: 후보 버전 등록 — models/manifest.yaml의 항목을 DB로 (research R-16)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
@@ -1084,7 +1084,7 @@ paths:
     post:
       tags: [관리]
       summary: 평가 묶음 전체 실행 (UC9, FR-17, G20·G21)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
@@ -1107,7 +1107,7 @@ paths:
     get:
       tags: [관리]
       summary: 평가 진행·보고서 (UC9 8.4·8.5)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: runId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
@@ -1121,7 +1121,7 @@ paths:
     patch:
       tags: [관리]
       summary: 판단 기록 — 통과/보류와 근거 (UC9 8.6)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
         - { name: runId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
@@ -1150,7 +1150,7 @@ paths:
     post:
       tags: [관리]
       summary: 승격 (UC9, BR-MDL-03·07, D5, G22) — 라이선스 확인 + 완료·통과 평가 필수
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
@@ -1176,7 +1176,7 @@ paths:
     post:
       tags: [관리]
       summary: 롤백 — 재평가 없이 즉시, 새 작업부터 (D5)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
@@ -1205,7 +1205,7 @@ paths:
     post:
       tags: [관리]
       summary: 비활성화(clarify 2026-09-28 — 롤백 후보 없는 첫 버전 문제) — 활성 버전을 retired로, release_event deactivate. 그 모델이 필요한 확정 선택지는 막힌다
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
@@ -1245,7 +1245,7 @@ paths:
     post:
       tags: [관리]
       summary: 평가 항목 등록 — 팀원 제작 작품만 (BR-MDL-04, G20)
-      security: [{ staffSession: [evaluator] }]
+      security: [{ staffSession: [operator, evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       requestBody:
         required: true
