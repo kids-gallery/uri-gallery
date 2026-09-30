@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><title>자동 자르기 시험</title>
+<body style="margin:0;font:13px sans-serif;background:#f4efe8"><div id="out" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px"></div>
+<script type="module">
+import { detectPaper, warpQuad } from './autocrop.js';
+const truth = await (await fetch('test/truth.json')).json();
+const res = {};
+function iou(a, b, W, H) { // 넓이 교집합(래스터)
+  const s = 300 / Math.max(W, H), c = document.createElement('canvas'); c.width = Math.round(W * s); c.height = Math.round(H * s);
+  const g = c.getContext('2d'); const fill = (q, col) => { g.beginPath(); q.forEach(([x, y], i) => g[i ? 'lineTo' : 'moveTo'](x * s, y * s)); g.closePath(); g.fillStyle = col; g.fill(); };
+  g.globalCompositeOperation = 'lighter'; fill(a, 'rgb(100,0,0)'); fill(b, 'rgb(0,100,0)');
+  const d = g.getImageData(0, 0, c.width, c.height).data; let I = 0, U = 0;
+  for (let i = 0; i < d.length; i += 4) { const A = d[i] > 50, B = d[i + 1] > 50; if (A && B) I++; if (A || B) U++; } return I / U;
+}
+for (const [name, q] of Object.entries(truth)) {
+  const img = new Image(); img.src = `test/${name}.jpg`; await img.decode();
+  const W = img.naturalWidth, H = img.naturalHeight, clip = q.map(([x, y]) => [Math.max(0, Math.min(W, x)), Math.max(0, Math.min(H, y))]);
+  const t0 = performance.now(); const r = detectPaper(img, W, H); const dt = performance.now() - t0;
+  let score = { name, ms: Math.round(dt), reason: r.reason, conf: +(r.score ?? 0).toFixed(3) };
+  const quad = r.quad ?? r.guess;
+  if (quad) { score.iou = +iou(quad, clip, W, H).toFixed(3); score.cornerErr = +(Math.max(...quad.map((p) => Math.min(...clip.map((c) => Math.hypot(p[0] - c[0], p[1] - c[1]))))) / Math.hypot(W, H) * 100).toFixed(2); }
+  let wms = 0, wc = null; if (r.quad) { const t1 = performance.now(); wc = warpQuad(img, r.quad, 1600); wms = Math.round(performance.now() - t1); score.warpMs = wms; }
+  res[name] = score;
+  const box = document.createElement('div'); box.innerHTML = `<b>${name}</b> ${JSON.stringify(score)}`;
+  const cv = document.createElement('canvas'); cv.width = 480; cv.height = 360; const g = cv.getContext('2d'); g.drawImage(img, 0, 0, 480, 360);
+  const k = 480 / W; const poly = (p, col, dash) => { g.setLineDash(dash); g.beginPath(); p.forEach(([x, y], i) => g[i ? 'lineTo' : 'moveTo'](x * k, y * k)); g.closePath(); g.strokeStyle = col; g.lineWidth = 3; g.stroke(); };
+  poly(clip, '#00c853', [6, 4]); if (quad) poly(quad, r.quad ? '#d50000' : '#ff9800', []);
+  box.appendChild(cv); if (wc) { wc.style.cssText = 'height:360px;margin-left:6px;border:1px solid #999'; box.appendChild(wc); }
+  document.getElementById('out').appendChild(box);
+}
+window.__RES = res;
+</script>
