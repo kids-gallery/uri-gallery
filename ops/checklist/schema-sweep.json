@@ -1,5 +1,5 @@
 {
- "measuredAt": "2026-09-30T00:51:56.037Z",
+ "measuredAt": "2026-09-30T01:38:55.411Z",
  "rows": [
   {
    "op": "POST /v1/auth/signup",
@@ -8,7 +8,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -18,8 +18,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/signup",
@@ -28,16 +28,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/signup",
    "case": "모르는 칸 추가",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/signup",
@@ -46,7 +48,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -56,7 +58,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -66,7 +68,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -76,7 +78,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -86,7 +88,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -96,7 +98,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -106,7 +108,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -116,7 +118,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -126,7 +128,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -136,7 +138,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -146,7 +148,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -156,7 +158,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -166,7 +168,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -176,7 +178,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -186,7 +188,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -196,7 +198,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -206,7 +208,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -216,7 +218,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -226,7 +228,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -236,7 +238,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -246,7 +248,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -256,8 +258,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/email/verify",
@@ -266,18 +268,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/email/verify",
    "case": "모르는 칸 추가",
-   "status": 400,
-   "code": "token_invalid",
-   "reason": "token_invalid",
-   "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/email/verify",
@@ -286,7 +288,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -296,7 +298,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -306,7 +308,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -316,7 +318,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -326,7 +328,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -336,7 +338,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -346,8 +348,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/email/verify/resend",
@@ -356,16 +358,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/email/verify/resend",
    "case": "모르는 칸 추가",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/email/verify/resend",
@@ -374,7 +378,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -384,7 +388,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -394,7 +398,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -404,7 +408,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -414,7 +418,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -424,7 +428,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -434,7 +438,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -444,8 +448,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/login",
@@ -454,18 +458,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/login",
    "case": "모르는 칸 추가",
-   "status": 401,
-   "code": "unauthorized",
-   "reason": "bad_credentials",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 401(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/login",
@@ -474,7 +478,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -484,7 +488,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -494,7 +498,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -504,7 +508,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -514,7 +518,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -524,7 +528,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -534,7 +538,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -544,7 +548,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -554,7 +558,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -564,7 +568,7 @@
    "code": "unauthorized",
    "reason": "bad_credentials",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 401(다른 문)"
   },
   {
@@ -574,7 +578,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -584,7 +588,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -594,8 +598,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/recovery",
@@ -604,16 +608,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/recovery",
    "case": "모르는 칸 추가",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/recovery",
@@ -622,7 +628,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -632,7 +638,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -642,7 +648,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -652,7 +658,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -662,7 +668,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -672,7 +678,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -682,7 +688,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -692,8 +698,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/recovery/reset",
@@ -702,18 +708,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/recovery/reset",
    "case": "모르는 칸 추가",
-   "status": 400,
-   "code": "token_invalid",
-   "reason": "token_invalid",
-   "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/recovery/reset",
@@ -722,7 +728,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -732,7 +738,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -742,7 +748,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -752,7 +758,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -762,7 +768,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -772,7 +778,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -782,7 +788,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -792,7 +798,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -802,7 +808,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -812,7 +818,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -822,7 +828,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -832,7 +838,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -842,7 +848,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -852,7 +858,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -862,7 +868,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -872,7 +878,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -882,8 +888,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/auth/password",
@@ -892,16 +898,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/password",
    "case": "모르는 칸 추가",
-   "status": 204,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/auth/password",
@@ -910,7 +918,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -920,7 +928,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -930,7 +938,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -940,7 +948,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -950,7 +958,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -960,7 +968,7 @@
    "code": "validation_failed",
    "reason": "current_password_mismatch",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -970,7 +978,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -980,7 +988,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -990,7 +998,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1000,7 +1008,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1010,7 +1018,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1020,7 +1028,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1030,7 +1038,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1040,7 +1048,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1050,7 +1058,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1060,7 +1068,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1070,8 +1078,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/ops/auth/login",
@@ -1080,18 +1088,18 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/auth/login",
    "case": "모르는 칸 추가",
-   "status": 401,
-   "code": "unauthorized",
-   "reason": "bad_credentials",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 401(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/auth/login",
@@ -1100,7 +1108,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1110,7 +1118,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1120,7 +1128,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1130,7 +1138,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1140,7 +1148,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1150,7 +1158,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1160,7 +1168,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1170,7 +1178,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1180,7 +1188,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1190,7 +1198,7 @@
    "code": "unauthorized",
    "reason": "bad_credentials",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 401(다른 문)"
   },
   {
@@ -1200,7 +1208,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1209,8 +1217,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1220,8 +1228,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/family/invites",
@@ -1229,17 +1237,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/family/invites",
    "case": "모르는 칸 추가",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "email",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/family/invites",
@@ -1247,8 +1257,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1257,8 +1267,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1267,8 +1277,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1277,8 +1287,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1287,8 +1297,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1297,47 +1307,49 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "email",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/family/invites/{inviteId}",
    "case": "path inviteId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/family/invites/{inviteId}",
    "case": "path inviteId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/family/invites/{inviteId}",
    "case": "path inviteId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/family/invites/lookup",
    "case": "쿼리 token 없음",
-   "status": 400,
-   "code": "token_invalid",
-   "reason": "token_invalid",
-   "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/family/invites/accept",
@@ -1346,7 +1358,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1356,8 +1368,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "△ 400(계약)"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/family/invites/accept",
@@ -1366,7 +1378,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1376,7 +1388,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1386,7 +1398,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1396,7 +1408,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1406,7 +1418,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1416,7 +1428,7 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1426,36 +1438,38 @@
    "code": "token_invalid",
    "reason": "token_invalid",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
    "op": "DELETE /v1/family/members/{memberId}",
    "case": "path memberId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/family/members/{memberId}",
    "case": "path memberId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/family/members/{memberId}",
    "case": "path memberId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/children",
@@ -1463,8 +1477,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1474,8 +1488,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/children",
@@ -1483,8 +1497,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1493,8 +1507,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1503,8 +1517,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1513,8 +1527,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1523,8 +1537,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1534,7 +1548,7 @@
    "code": "validation_failed",
    "reason": "alias_blank",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1544,7 +1558,7 @@
    "code": "validation_failed",
    "reason": "alias_too_long",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1553,37 +1567,39 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/children/{childId}",
    "case": "path childId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/children/{childId}",
    "case": "path childId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/children/{childId}",
    "case": "path childId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/children/{childId}",
@@ -1591,8 +1607,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1602,8 +1618,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "PATCH /v1/children/{childId}",
@@ -1611,8 +1627,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1621,8 +1637,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1631,8 +1647,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1641,8 +1657,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1651,8 +1667,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1662,7 +1678,7 @@
    "code": "validation_failed",
    "reason": "alias_blank",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1672,7 +1688,7 @@
    "code": "validation_failed",
    "reason": "alias_too_long",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1681,85 +1697,99 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "invalid_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/children/{childId}",
    "case": "path childId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "deletion_not_saved",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/children/{childId}",
    "case": "path childId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/children/{childId}",
    "case": "path childId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/children/{childId}/deletion",
    "case": "path childId 타입 불일치(문자)",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/children/{childId}/deletion",
    "case": "path childId 음수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/children/{childId}/deletion",
    "case": "path childId 아주 큰 수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks",
    "case": "query child 타입 불일치(문자)",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks",
    "case": "query child 음수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks",
    "case": "query child 아주 큰 수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks",
@@ -1768,7 +1798,7 @@
    "code": "invalid_input",
    "reason": "idempotency_key",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
@@ -1778,116 +1808,128 @@
    "code": "invalid_input",
    "reason": "idempotency_key",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "△ 400(계약)"
   },
   {
    "op": "GET /v1/artworks/{artworkId}",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks/{artworkId}",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks/{artworkId}",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/artworks/{artworkId}",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "deletion_not_saved",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/artworks/{artworkId}",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "DELETE /v1/artworks/{artworkId}",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks/{artworkId}/deletion",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks/{artworkId}/deletion",
    "case": "path artworkId 음수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/artworks/{artworkId}/deletion",
    "case": "path artworkId 아주 큰 수",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
@@ -1895,8 +1937,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1906,8 +1948,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
@@ -1915,19 +1957,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
    "case": "모르는 칸 추가",
-   "status": 409,
-   "code": "conflict",
-   "reason": "already_processing",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 409(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "kind",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/confirm",
@@ -1935,8 +1977,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1945,8 +1987,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1955,8 +1997,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1965,8 +2007,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1975,8 +2017,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -1985,37 +2027,39 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "kind",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "decision_not_saved",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
@@ -2023,8 +2067,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2034,8 +2078,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
@@ -2043,17 +2087,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
    "case": "모르는 칸 추가",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "decision",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/decision",
@@ -2061,8 +2107,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2071,8 +2117,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2081,8 +2127,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2091,8 +2137,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2101,8 +2147,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2111,37 +2157,39 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "decision",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
@@ -2149,7 +2197,7 @@
    "status": 200,
    "fields": false,
    "detail": false,
-   "verdict": "X 받아들임"
+   "verdict": "△ 200(임시 저장 D22)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
@@ -2158,8 +2206,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
@@ -2168,7 +2216,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2178,7 +2226,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2188,7 +2236,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2198,7 +2246,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2208,7 +2256,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2218,7 +2266,7 @@
    "code": "validation_failed",
    "reason": "title_blank",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2228,7 +2276,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2238,7 +2286,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2248,7 +2296,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2258,7 +2306,7 @@
    "code": "validation_failed",
    "reason": "made_on_in_future",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2268,7 +2316,7 @@
    "code": "validation_failed",
    "reason": "made_on_in_future",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2278,7 +2326,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2288,7 +2336,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2298,7 +2346,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2308,7 +2356,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2318,7 +2366,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2327,7 +2375,7 @@
    "status": 200,
    "fields": false,
    "detail": false,
-   "verdict": "X 받아들임"
+   "verdict": "△ 200(임시 저장 D22)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
@@ -2336,7 +2384,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2346,7 +2394,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2355,7 +2403,7 @@
    "status": 200,
    "fields": false,
    "detail": false,
-   "verdict": "X 받아들임"
+   "verdict": "△ 200(임시 저장 D22)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/story",
@@ -2364,7 +2412,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2374,7 +2422,7 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2384,35 +2432,38 @@
    "code": "validation_failed",
    "reason": "invalid_fields",
    "fields": true,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/captions",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/captions",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/captions",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/captions",
@@ -2420,7 +2471,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2430,8 +2481,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/artworks/{artworkId}/captions",
@@ -2439,7 +2490,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2448,7 +2499,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2457,7 +2508,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2466,7 +2517,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2475,7 +2526,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2484,7 +2535,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2493,7 +2544,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2502,7 +2553,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2511,7 +2562,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2520,7 +2571,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2529,7 +2580,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2538,7 +2589,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2547,7 +2598,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2556,7 +2607,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2565,7 +2616,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2574,7 +2625,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2583,7 +2634,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2592,7 +2643,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2601,7 +2652,7 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
@@ -2610,71 +2661,78 @@
    "status": 404,
    "code": "not_found",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "? 404(다른 문)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path artworkId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path artworkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path artworkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path captionId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path captionId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "path captionId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "본문 빈 객체",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
@@ -2683,213 +2741,238 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "본문 배열",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "모르는 칸 추가",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "필수 action 없음",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "칸 이름 오타 action→actionn",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "action 타입 불일치(숫자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "action 공백만",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "action 목록 밖 값",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "action null",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "body 타입 불일치(숫자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "body 공백만",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "body 길이 초과(1001)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PUT /v1/artworks/{artworkId}/captions/{captionId}",
    "case": "body null",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/gallery",
    "case": "쿼리 child 없음",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/gallery",
    "case": "query child 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/gallery",
    "case": "query child 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/gallery",
    "case": "query child 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/gallery",
    "case": "query madeOn 날짜 형식 아님",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/warmup",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/warmup",
    "case": "path modelId 음수",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/warmup",
    "case": "path modelId 아주 큰 수",
-   "status": 202,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/check",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/check",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/check",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/check",
@@ -2898,7 +2981,7 @@
    "code": "not_saved",
    "reason": "check_runner_missing",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "X 서버 오류"
   },
   {
@@ -2908,8 +2991,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/ops/models/{modelId}/check",
@@ -2918,7 +3001,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2928,7 +3011,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2938,7 +3021,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2948,7 +3031,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2958,7 +3041,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2968,7 +3051,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2978,7 +3061,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2988,7 +3071,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -2998,7 +3081,7 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3008,62 +3091,68 @@
    "code": "validation_failed",
    "reason": "check_fields",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "GET /v1/ops/model-checks/{checkId}",
    "case": "path checkId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/ops/model-checks/{checkId}",
    "case": "path checkId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/ops/model-checks/{checkId}",
    "case": "path checkId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/versions",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/versions",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/versions",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/versions",
@@ -3071,8 +3160,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3082,8 +3171,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/versions",
@@ -3091,8 +3180,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3101,8 +3190,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3111,8 +3200,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3121,8 +3210,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3131,8 +3220,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3141,8 +3230,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3151,8 +3240,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3161,8 +3250,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3171,8 +3260,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3181,8 +3270,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3191,8 +3280,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3201,8 +3290,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3211,8 +3300,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3221,8 +3310,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3231,8 +3320,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3241,8 +3330,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3251,8 +3340,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3261,8 +3350,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3271,8 +3360,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3281,8 +3370,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3291,8 +3380,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3301,8 +3390,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3311,8 +3400,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3321,8 +3410,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3331,8 +3420,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3341,8 +3430,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3351,8 +3440,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3361,8 +3450,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3371,8 +3460,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3381,8 +3470,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3391,8 +3480,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3401,8 +3490,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3411,8 +3500,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3421,8 +3510,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3431,8 +3520,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3441,8 +3530,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3451,8 +3540,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3461,46 +3550,49 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "version_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "본문 빈 객체",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
@@ -3509,142 +3601,147 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "본문 배열",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "모르는 칸 추가",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "필수 versionId 없음",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "칸 이름 오타 versionId→versionIdd",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "versionId 타입 불일치(숫자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "versionId 공백만",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/evaluate",
    "case": "versionId null",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/eval-runs/{runId}",
    "case": "path runId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/eval-runs/{runId}",
    "case": "path runId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/eval-runs/{runId}",
    "case": "path runId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "path runId 타입 불일치(문자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "path runId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "path runId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "본문 빈 객체",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3654,37 +3751,37 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "본문 배열",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "모르는 칸 추가",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "필수 verdict 없음",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3692,9 +3789,9 @@
    "case": "필수 rationale 없음",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3702,9 +3799,9 @@
    "case": "칸 이름 오타 verdict→verdictt",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3712,9 +3809,9 @@
    "case": "verdict 타입 불일치(숫자)",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3722,9 +3819,9 @@
    "case": "verdict 공백만",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3732,9 +3829,9 @@
    "case": "verdict 목록 밖 값",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3742,9 +3839,9 @@
    "case": "verdict null",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3752,9 +3849,9 @@
    "case": "칸 이름 오타 rationale→rationalee",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3762,67 +3859,70 @@
    "case": "rationale 타입 불일치(숫자)",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "rationale 공백만",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "PATCH /v1/admin/eval-runs/{runId}",
    "case": "rationale null",
    "status": 422,
    "code": "validation_failed",
-   "reason": "verdict_rationale",
-   "fields": false,
-   "detail": false,
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "본문 빈 객체",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
@@ -3831,154 +3931,158 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "본문 배열",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "모르는 칸 추가",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "필수 versionId 없음",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "필수 evalRunId 없음",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "칸 이름 오타 versionId→versionIdd",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "versionId 타입 불일치(숫자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "versionId 공백만",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "versionId null",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "칸 이름 오타 evalRunId→evalRunIdd",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "evalRunId 타입 불일치(숫자)",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "evalRunId 공백만",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/promote",
    "case": "evalRunId null",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "internal",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_fields",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
@@ -3986,8 +4090,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -3997,8 +4101,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
@@ -4006,19 +4110,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
    "case": "모르는 칸 추가",
-   "status": 409,
-   "code": "conflict",
-   "reason": "no_rollback_candidate",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 409(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
@@ -4026,8 +4130,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4036,8 +4140,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4046,19 +4150,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
    "case": "reason 공백만",
-   "status": 409,
-   "code": "conflict",
-   "reason": "no_rollback_candidate",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 409(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/rollback",
@@ -4066,8 +4170,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4076,36 +4180,39 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
    "case": "path modelId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
    "case": "path modelId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
    "case": "path modelId 아주 큰 수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
@@ -4113,8 +4220,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4124,8 +4231,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
@@ -4133,17 +4240,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
    "case": "모르는 칸 추가",
-   "status": 200,
-   "fields": false,
-   "detail": false,
-   "verdict": "X 받아들임"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
@@ -4151,8 +4260,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4161,8 +4270,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4171,19 +4280,19 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
    "case": "reason 공백만",
-   "status": 409,
-   "code": "conflict",
-   "reason": "no_active_version",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 409(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "reason",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "POST /v1/admin/models/{modelId}/deactivate",
@@ -4191,8 +4300,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4201,8 +4310,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "reason",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4211,8 +4320,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "maker_or_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4221,8 +4330,8 @@
    "status": 422,
    "code": "validation_failed",
    "reason": "maker_or_fields",
-   "fields": false,
-   "detail": false,
+   "fields": true,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4232,7 +4341,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4242,8 +4351,8 @@
    "code": "invalid_input",
    "reason": "bad_json",
    "fields": false,
-   "detail": false,
-   "verdict": "X 400"
+   "detail": true,
+   "verdict": "△ 400(계약 공통 bad_json)"
   },
   {
    "op": "POST /v1/admin/api-guide/test-call",
@@ -4252,7 +4361,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4262,7 +4371,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4272,7 +4381,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4282,7 +4391,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4292,7 +4401,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4302,7 +4411,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4312,7 +4421,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4322,7 +4431,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4332,7 +4441,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4342,7 +4451,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4352,7 +4461,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4362,7 +4471,7 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
@@ -4372,153 +4481,39 @@
    "code": "validation_failed",
    "reason": "not_eval_item",
    "fields": false,
-   "detail": false,
+   "detail": true,
    "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/api-guide/test-call/{jobId}",
    "case": "path jobId 타입 불일치(문자)",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/api-guide/test-call/{jobId}",
    "case": "path jobId 음수",
-   "status": 404,
-   "code": "not_found",
-   "fields": false,
-   "detail": false,
-   "verdict": "? 404(다른 문)"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   },
   {
    "op": "GET /v1/admin/api-guide/test-call/{jobId}",
    "case": "path jobId 아주 큰 수",
-   "status": 503,
-   "code": "not_saved",
-   "reason": "test_key_missing",
-   "fields": false,
-   "detail": false,
-   "verdict": "X 서버 오류"
+   "status": 422,
+   "code": "validation_failed",
+   "reason": "invalid_param",
+   "fields": true,
+   "detail": true,
+   "verdict": "O 422"
   }
  ],
- "contractViolations": [
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/email/verify/resend: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/auth/recovery: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/auth/login: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/artworks/24/decision: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/ops/models/abc/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
-  "POST /v1/ops/models/-1/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
-  "POST /v1/ops/models/99999999999999999999/warmup: /response/modelId must be equal to one of the allowed values: M1, M2, M3, M5, M6, M7",
-  "POST /v1/admin/models/abc/versions: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/-1/versions: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/99999999999999999999/versions: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/M1/versions: no schema defined for status code '422' in the openapi spec",
-  "POST /v1/admin/models/abc/evaluate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/-1/evaluate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/99999999999999999999/evaluate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/M1/evaluate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/abc/promote: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/-1/promote: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/99999999999999999999/promote: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/M1/promote: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/abc/rollback: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/-1/rollback: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/99999999999999999999/rollback: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/abc/deactivate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/-1/deactivate: no schema defined for status code '404' in the openapi spec",
-  "POST /v1/admin/models/99999999999999999999/deactivate: no schema defined for status code '404' in the openapi spec",
-  "GET /v1/admin/api-guide/test-call/abc: no schema defined for status code '404' in the openapi spec",
-  "GET /v1/admin/api-guide/test-call/-1: no schema defined for status code '404' in the openapi spec"
- ]
+ "contractViolations": []
 }
