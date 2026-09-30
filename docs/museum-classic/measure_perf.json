@@ -1,0 +1,287 @@
+{
+ "conditions": "Chrome CDP Network.emulateNetworkConditions latency 2000ms, down/up 400Kbps (50000 B/s), cache disabled, 390x844, gzip on (like p1 nginx), mock API + synthetic drawings, median of 3",
+ "v2_and_first_ab": [
+  {
+   "t": "v2",
+   "state": "one",
+   "fcp": 15520,
+   "lcp": 29088,
+   "heroVisible": 29081,
+   "kb": 631,
+   "runs": [
+    {
+     "fcp": 15484,
+     "lcp": 29272,
+     "hero": 29270,
+     "kb": 631
+    },
+    {
+     "fcp": 15568,
+     "lcp": 29000,
+     "hero": 28998,
+     "kb": 631
+    },
+    {
+     "fcp": 15520,
+     "lcp": 29088,
+     "hero": 29081,
+     "kb": 631
+    }
+   ]
+  },
+  {
+   "t": "v2",
+   "state": "many3",
+   "fcp": 15360,
+   "lcp": 32552,
+   "heroVisible": 32550,
+   "kb": 808,
+   "runs": [
+    {
+     "fcp": 15360,
+     "lcp": 32552,
+     "hero": 32550,
+     "kb": 808
+    },
+    {
+     "fcp": 15416,
+     "lcp": 32728,
+     "hero": 32724,
+     "kb": 808
+    },
+    {
+     "fcp": 15272,
+     "lcp": 32464,
+     "hero": 32459,
+     "kb": 808
+    }
+   ]
+  },
+  {
+   "t": "a",
+   "state": "one",
+   "fcp": 15808,
+   "lcp": 31412,
+   "heroVisible": 31321,
+   "kb": 880,
+   "runs": [
+    {
+     "fcp": 15808,
+     "lcp": 31412,
+     "hero": 31321,
+     "kb": 880
+    },
+    {
+     "fcp": 15912,
+     "lcp": 31712,
+     "hero": 31565,
+     "kb": 880
+    },
+    {
+     "fcp": 15760,
+     "lcp": 31144,
+     "hero": 31125,
+     "kb": 880
+    }
+   ]
+  },
+  {
+   "t": "a",
+   "state": "many3",
+   "fcp": 15888,
+   "lcp": 38444,
+   "heroVisible": 38378,
+   "kb": 1201,
+   "runs": [
+    {
+     "fcp": 15772,
+     "lcp": 38124,
+     "hero": 38119,
+     "kb": 1201
+    },
+    {
+     "fcp": 15976,
+     "lcp": 38464,
+     "hero": 38412,
+     "kb": 1201
+    },
+    {
+     "fcp": 15888,
+     "lcp": 38444,
+     "hero": 38378,
+     "kb": 1201
+    }
+   ]
+  },
+  {
+   "t": "b",
+   "state": "one",
+   "fcp": 15844,
+   "lcp": 32200,
+   "heroVisible": 32174,
+   "kb": 903,
+   "runs": [
+    {
+     "fcp": 15976,
+     "lcp": 32200,
+     "hero": 32174,
+     "kb": 903
+    },
+    {
+     "fcp": 15844,
+     "lcp": 32292,
+     "hero": 32226,
+     "kb": 903
+    },
+    {
+     "fcp": 15664,
+     "lcp": 31852,
+     "hero": 31832,
+     "kb": 903
+    }
+   ]
+  },
+  {
+   "t": "b",
+   "state": "many3",
+   "fcp": 16048,
+   "lcp": 38916,
+   "heroVisible": 38895,
+   "kb": 1224,
+   "runs": [
+    {
+     "fcp": 16224,
+     "lcp": 39032,
+     "hero": 39027,
+     "kb": 1224
+    },
+    {
+     "fcp": 15844,
+     "lcp": 38912,
+     "hero": 38895,
+     "kb": 1224
+    },
+    {
+     "fcp": 16048,
+     "lcp": 38916,
+     "hero": 38788,
+     "kb": 1224
+    }
+   ]
+  }
+ ],
+ "ab_after_fetchpriority": [
+  {
+   "t": "a",
+   "state": "one",
+   "fcp": 15928,
+   "lcp": 31432,
+   "heroVisible": 31397,
+   "kb": 880,
+   "runs": [
+    {
+     "fcp": 16088,
+     "lcp": 31660,
+     "hero": 31612,
+     "kb": 880
+    },
+    {
+     "fcp": 15848,
+     "lcp": 31432,
+     "hero": 31397,
+     "kb": 880
+    },
+    {
+     "fcp": 15928,
+     "lcp": 31388,
+     "hero": 31321,
+     "kb": 880
+    }
+   ]
+  },
+  {
+   "t": "a",
+   "state": "many3",
+   "fcp": 15840,
+   "lcp": 38256,
+   "heroVisible": 38186,
+   "kb": 1201,
+   "runs": [
+    {
+     "fcp": 15840,
+     "lcp": 38256,
+     "hero": 38186,
+     "kb": 1201
+    },
+    {
+     "fcp": 15932,
+     "lcp": 38308,
+     "hero": 38252,
+     "kb": 1201
+    },
+    {
+     "fcp": 15732,
+     "lcp": 38196,
+     "hero": 38178,
+     "kb": 1201
+    }
+   ]
+  },
+  {
+   "t": "b",
+   "state": "one",
+   "fcp": 15900,
+   "lcp": 32284,
+   "heroVisible": 32180,
+   "kb": 903,
+   "runs": [
+    {
+     "fcp": 15640,
+     "lcp": 31916,
+     "hero": 31854,
+     "kb": 903
+    },
+    {
+     "fcp": 15900,
+     "lcp": 32284,
+     "hero": 32180,
+     "kb": 903
+    },
+    {
+     "fcp": 16032,
+     "lcp": 32412,
+     "hero": 32294,
+     "kb": 903
+    }
+   ]
+  },
+  {
+   "t": "b",
+   "state": "many3",
+   "fcp": 15964,
+   "lcp": 39084,
+   "heroVisible": 39050,
+   "kb": 1224,
+   "runs": [
+    {
+     "fcp": 15964,
+     "lcp": 39084,
+     "hero": 39073,
+     "kb": 1224
+    },
+    {
+     "fcp": 15960,
+     "lcp": 38888,
+     "hero": 38859,
+     "kb": 1224
+    },
+    {
+     "fcp": 16000,
+     "lcp": 39084,
+     "hero": 39050,
+     "kb": 1224
+    }
+   ]
+  }
+ ]
+}

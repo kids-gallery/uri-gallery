@@ -1,0 +1,227 @@
+{
+  "shots": [
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_zero_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_zero_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_one_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_one_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_many1_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_many1_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_many3_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/A_many3_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_zero_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_zero_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_one_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_one_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_many1_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_many1_1440.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_many3_390.png",
+    "/private/tmp/claude-502/-Users-pioneer1/e12ff025-68dc-4ddb-8662-f0715524f864/scratchpad/cap/final/B_many3_1440.png"
+  ],
+  "checks": [
+    {
+      "t": "a",
+      "state": "zero",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": null,
+      "imgMaxPct": null,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "zero",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": null,
+      "imgMaxPct": null,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "one",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "one",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 28,
+      "imgMaxPct": 41,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "many1",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "many1",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 16,
+      "imgMaxPct": 41,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "many3",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "many3",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 14,
+      "imgMaxPct": 44,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "zero",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": null,
+      "imgMaxPct": null,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "zero",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": null,
+      "imgMaxPct": null,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "one",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "one",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 28,
+      "imgMaxPct": 41,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "many1",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "many1",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 16,
+      "imgMaxPct": 41,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "many3",
+      "w": 390,
+      "hscroll": false,
+      "imgMinPct": 72,
+      "imgMaxPct": 76,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "many3",
+      "w": 1440,
+      "hscroll": false,
+      "imgMinPct": 14,
+      "imgMaxPct": 44,
+      "serif": true,
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "viewing",
+      "w": 390,
+      "words": "달까지 가요",
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "viewing",
+      "w": 1440,
+      "words": "달까지 가요",
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "viewing",
+      "w": 390,
+      "words": "달까지 가요",
+      "axe": []
+    },
+    {
+      "t": "b",
+      "state": "viewing",
+      "w": 1440,
+      "words": "달까지 가요",
+      "axe": []
+    },
+    {
+      "t": "a",
+      "state": "reduced-motion",
+      "w": 390,
+      "sky": "none",
+      "pin": "none",
+      "pieceTransition": "0s"
+    },
+    {
+      "t": "b",
+      "state": "reduced-motion",
+      "w": 390,
+      "sky": "none",
+      "pin": "none",
+      "pieceTransition": "0s"
+    }
+  ],
+  "perf": []
+}
