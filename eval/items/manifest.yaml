@@ -4,10 +4,89 @@
 #   등록 뒤 받은 item_id를 아래 id 칸에 적는다. 파일 원본은 팀 공유 위치에 두고 file 칸에 상대 경로만 적는다.
 # - expected_path: animated | relief | frame | sculpture | caption. category: person | non_person | capture_condition | sculpture | caption_input
 # - 구성 목표 수는 [추론] 제안이다(원천 없음). 1차 측정(T137)에 필요한 최소 규모로 잡았다.
-targets:                       # category → 목표 항목 수 [추론]
-  person: 8                    # 사람 그림 — 대부분 animated, 팔다리가 겹치거나 한쪽이 없는 그림은 relief
-  non_person: 8                # 집·자동차·동물·사물 — relief. 집 그림은 2장 이상(0.946 오인 사례 재현, Scenario 2)
-  capture_condition: 6         # 기울기·그림자·책상 배경·흐린 경계 — 분리 미달이면 frame
-  sculpture: 3                 # 점토·종이 입체 — relief 또는 frame(M7은 P1)
-  caption_input: 5             # 설명 입력 문장(P0.5 M6) — caption
-items: []                      # 예) - {id: null, category: person, expected_path: animated, maker: 최호준, file: drawings/p01.jpg, note: 막대 사람}
+targets:
+  # category → 목표 항목 수 [추론]
+  person: 8 # 사람 그림 — 대부분 animated, 팔다리가 겹치거나 한쪽이 없는 그림은 relief
+  non_person: 8 # 집·자동차·동물·사물 — relief. 집 그림은 2장 이상(0.946 오인 사례 재현, Scenario 2)
+  capture_condition: 6 # 기울기·그림자·책상 배경·흐린 경계 — 분리 미달이면 frame
+  sculpture: 3 # 점토·종이 입체 — relief 또는 frame(M7은 P1)
+  caption_input: 5 # 설명 입력 문장(P0.5 M6) — caption
+# 1차 6장(2026-09-30, 사용자 지시): design/샘플/누끼/*_사각형.jpg를 "팀원이 그린 그림"으로 가정해 등록한다.
+#   실제 출처는 design/샘플/export1 사진(docs/A/A_샘플_평가묶음_적합성검토.md) — 팀원 제작이 아니라서 maker를 '팀원(가정)'으로 적는다.
+#   입력은 design/샘플/누끼/평가입력/(git 제외): 작품 위 이름 표시와 사각형에 걸린 얼굴 일부만 흐리게 한 사본.
+#   승격(G22) 근거로 쓰기 전에 팀원 실제 그림으로 바꾸거나 이 가정을 팀이 확정한다.
+items:
+  # 예) - {id: null, category: person, expected_path: animated, maker: 최호준, file: drawings/p01.jpg, note: 막대 사람}
+  - {
+      id: 1,
+      category: non_person,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 01.jpg,
+      note: "물고기 그림(크레파스·색종이) — 두 손으로 들고 찍음, 손가락이 가장자리를 가림"
+    }
+  - {
+      id: 2,
+      category: person,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 02.jpg,
+      note: "엄마·아빠 얼굴 꾸미기 활동지(인쇄 밑그림·한지) — 전신 관절 없음이라 움직임 아님"
+    }
+  - {
+      id: 3,
+      category: non_person,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 03.jpg,
+      note: "세계지도 색칠 활동지 — 책상 위 평평하게, 무늬 관절 오탐(M4 통과) 사례"
+    }
+  - {
+      id: 4,
+      category: sculpture,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 04.jpg,
+      note: "우유갑 배와 깃발 — 책상 위, 뒤에 사람"
+    }
+  - {
+      id: 5,
+      category: sculpture,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 05.jpg,
+      note: "우유갑 자동차(초록 바퀴) — 손에 들고 찍음"
+    }
+  - {
+      id: 6,
+      category: sculpture,
+      expected_path: relief,
+      maker: 팀원(가정),
+      file: 06.jpg,
+      note: "우유갑 자동차(주황 바퀴) — 손에 들고 찍음, 사각형이 넓어 몸 일부 포함"
+    }
+  # 2차 3장(2026-09-30, 사용자 확인 "팀원이 그린 그림") — M3 평가용 사람 그림(D51). 입력은 design/샘플/누끼/평가입력/07~09
+  - {
+      id: 7,
+      category: person,
+      expected_path: animated,
+      maker: 팀원(사용자 확인),
+      file: 07.jpg,
+      note: "팔 벌린 여자아이와 무지개 — 화면 캡처, 오른쪽 위에 'PixVerse.ai' 글자와 위아래 검은 띠가 있음"
+    }
+  - {
+      id: 8,
+      category: person,
+      expected_path: animated,
+      maker: 팀원(사용자 확인),
+      file: 08.png,
+      note: "고깔모자 쓴 막대 사람 — 팔다리 모두 보임, 회색 배경 화면 캡처"
+    }
+  - {
+      id: 9,
+      category: person,
+      expected_path: animated,
+      maker: 팀원(사용자 확인),
+      file: 09.png,
+      note: "산타 — 팔 벌리고 두 다리, 흰 배경"
+    }

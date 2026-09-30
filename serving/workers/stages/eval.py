@@ -247,7 +247,8 @@ class EvalRunner:
                 if res.outcome == "timeout":
                     return self._close(cur, job, "timeout", res, ms=ms, mb=mb, final=True)
                 return self._close(cur, job, "incomplete", res, final=False)
-        except pymysql.MySQLError:
+        except pymysql.MySQLError as e:
+            self.w.log.warning("eval_db_error", job_id=job["job_id"], errno=e.args[0] if e.args else None)  # D50, 원문 금지
             return "db_error"
 
     def _close(self, cur, job, eval_status: str, res: AdapterResult, ms=None, mb=None, final=False) -> str:

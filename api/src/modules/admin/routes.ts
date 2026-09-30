@@ -20,6 +20,8 @@ const EVAL_STAGE: Record<string, [string, string]> = { // 모델 → [단계, �
   M1: ['split', 'cpu_vision'], M2: ['judge', 'cpu_vision'], M3: ['animate_render', 'cpu_vision'],
   M5: ['depth_relief', 'gpu'], M6: ['caption', 'llm'], M7: ['sculpture', 'gpu'],
 };
+// 모델별 평가 대상(D51) — M3는 사람 항목만, M6은 설명 입력만, 나머지는 사진 항목 전체
+const EVAL_TARGET: Record<string, string> = { M3: "category = 'person'", M6: "category = 'caption_input'" };
 const all = async <T>(db: Pool, sql: string, p: unknown[] = []) => (await db.query(sql, p))[0] as T[];
 const hex64 = z.string().regex(/^[a-f0-9]{64}$/);
 
@@ -90,7 +92,7 @@ export function adminRouter(db: Pool, cfg: Config, storage: StoragePort, manifes
       }
       if (v.release_state === 'retired') throw new Problem('conflict', 'version_retired', 'G21');
       const [stage, group] = EVAL_STAGE[m];
-      const items = await all<{ item_id: number }>(db, `SELECT item_id FROM eval_item WHERE ${m === 'M6' ? "category = 'caption_input'" : "category <> 'caption_input'"} ORDER BY item_id`);
+      const items = await all<{ item_id: number }>(db, `SELECT item_id FROM eval_item WHERE ${EVAL_TARGET[m] ?? "category <> 'caption_input'"} ORDER BY item_id`);
       if (!items.length) throw new Problem('conflict', 'no_eval_items', 'G21');
       const evalId = await withTx(db, async (conn) => {
         const [e] = await conn.query(`INSERT INTO evaluation (version_id, requested_by, item_total) VALUES (?, ?, ?)`, [versionId, req.staff!.memberId, items.length]);

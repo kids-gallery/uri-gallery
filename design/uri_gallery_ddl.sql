@@ -712,7 +712,7 @@ CREATE TABLE IF NOT EXISTS eval_item_result (
   status           VARCHAR(12)  NOT NULL,
   result_path      VARCHAR(10)  NULL,
   misclass_label   VARCHAR(40)  NULL,     -- 팀원이 확정한 오인 분류
-  score            DECIMAL(5,4) NULL,     -- BR-PRC-04: 기록만
+  score            DECIMAL(5,4) NULL,     -- BR-PRC-04: 기록만. 어댑터 점수 0~1(D50, M5 = 깊이 표준편차÷255)
   processing_ms    INT          NULL,
   memory_mb        INT          NULL,
   rule_check_failed BOOLEAN     NULL,     -- M6 평가(UC9 A3)

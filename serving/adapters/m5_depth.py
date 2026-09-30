@@ -68,8 +68,9 @@ class DepthAnythingAdapter(Adapter):
             norm = (pred - lo) / (hi - lo)
         norm[~mask] = 0.0
         std255 = float((norm[mask] * 255).std())
+        score = round(std255 / 255, 4)                          # 점수는 0~1(D50). 평면 기준은 0~255 척도 그대로
         if std255 < self.min_std:
-            return AdapterResult("quality_below", score=std255, diagnostic="flat_depth")
+            return AdapterResult("quality_below", score=score, diagnostic="flat_depth")
         out = job.tmp_dir / "depth.png"
         Image.fromarray((norm * 65535).astype(np.uint16), mode="I;16").save(out)
-        return AdapterResult("ok", score=std255, outputs={"result_relief": str(out)})
+        return AdapterResult("ok", score=score, outputs={"result_relief": str(out)})

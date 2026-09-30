@@ -27,6 +27,7 @@ def test_depth_png16_from_cutout(tmp_path):
     arr = np.asarray(out)
     assert out.size == (256, 256) and arr.dtype in (np.uint16, np.int32) and arr.max() > 1000
     assert arr[0, 0] == 0                                   # 마스크 밖은 0
+    assert 0 < r.score <= 1                                 # 점수는 0~1(D50) — eval_item_result.score DECIMAL(5,4)
     print(f"\nM5 device={a.device} load={took:.1f}s")
     wide = Image.new("RGBA", (800, 600), (0, 0, 0, 0))            # 정사각형이 아닌 입력(DINOv2 위치 임베딩 보간)
     ImageDraw.Draw(wide).ellipse((200, 100, 600, 500), fill=(250, 200, 60, 255))

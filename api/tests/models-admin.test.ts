@@ -92,6 +92,22 @@ describe('평가 → 판단 → 승격 → 롤백 → 비활성화(G21·G22, D5)
     expect(jobs).toEqual([{ origin: 'eval', stage_kind: 'depth_relief', priority: 50, artwork_id: null }, { origin: 'eval', stage_kind: 'depth_relief', priority: 50, artwork_id: null }]);
   });
 
+  it('M3는 사람 항목만 평가 대상(D51) — 없으면 409 no_eval_items, M5는 사진 항목 전체', async () => {
+    const a = await evaluator();
+    await addItems(a, 2); // 비인물 2
+    await t.db.query(`UPDATE model_version SET weights_sha256 = ?, config_hash = ? WHERE model_id = 'M3'`, [A, B]);
+    writeManifest({ M3: { w: A, c: B, lic: true }, M5: { w: C, c: D, lic: true } });
+    const [[m3]] = (await t.db.query(`SELECT version_id FROM model_version WHERE model_id = 'M3' LIMIT 1`)) as unknown as [{ version_id: number }[]];
+    const none = await a.post('/v1/admin/models/M3/evaluate').send({ versionId: String(m3.version_id) }).expect(409);
+    expect(none.body).toMatchObject({ gate: 'G21', reason: 'no_eval_items' });
+    await a.post('/v1/admin/eval-items').field('category', 'person').field('expectedPath', 'animated').field('makerAttested', 'true')
+      .attach('photo', await png(), 'p.png').expect(201);
+    const ev = await a.post('/v1/admin/models/M3/evaluate').send({ versionId: String(m3.version_id) }).expect(202);
+    expect(ev.body.itemTotal).toBe(1);
+    const all5 = await a.post('/v1/admin/models/M5/evaluate').send({ versionId: await candidate(a) }).expect(202);
+    expect(all5.body.itemTotal).toBe(3);
+  });
+
   it('미완료 항목이 있으면 승격 막힘, 전부 완료·통과면 승격하고 직전 활성은 롤백 후보', async () => {
     const a = await evaluator();
     await addItems(a, 2);
