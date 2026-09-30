@@ -1013,6 +1013,11 @@ export interface paths {
             };
             requestBody: {
                 content: {
+                    /**
+                     * @example {
+                     *       "alias": "하늘"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ChildInput"];
                 };
             };
@@ -1408,6 +1413,11 @@ export interface paths {
             };
             requestBody: {
                 content: {
+                    /**
+                     * @example {
+                     *       "decision": "like"
+                     *     }
+                     */
                     "application/json": {
                         decision: components["schemas"]["Decision"];
                     };
@@ -1467,6 +1477,14 @@ export interface paths {
             };
             requestBody: {
                 content: {
+                    /**
+                     * @example {
+                     *       "title": "우리 가족",
+                     *       "madeOn": "2026-09-20",
+                     *       "ageAtMaking": 5,
+                     *       "childWords": "엄마랑 바다 갔어"
+                     *     }
+                     */
                     "application/json": components["schemas"]["StoryInput"];
                 };
             };
@@ -2982,7 +3000,10 @@ export interface components {
              */
             readonly updatedAt?: string | null;
             title?: string | null;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description 만든 날. 오늘이나 지난 날짜만 — 미래 날짜는 422 made_on_in_future(G11, 서버·DB 트리거가 막는다)
+             */
             madeOn?: string | null;
             ageAtMaking?: number | null;
             childWords?: string | null;
@@ -3272,25 +3293,40 @@ export interface components {
             } | null;
         };
         ModelRef: {
-            /** @enum {string} */
+            /**
+             * @description 모델 번호(M1 BiRefNet · M2 OpenCLIP · M3 Animated Drawings · M4 기하 규칙 · M5 Depth Anything V2 · M6 Qwen3)
+             * @enum {string}
+             */
             id: "M1" | "M2" | "M3" | "M4" | "M5" | "M6";
+            /** @description 모델 버전 라벨(model_version.version_label) */
             version: string;
         };
         ExtJob: {
             /** @description SD_03 external_job.ext_job_id. 발급한 키로만 조회된다(다른 키는 404) */
             jobId: string;
-            /** @enum {string} */
+            /**
+             * @description 기능 — segment(분리) · classify(종류) · pose(관절) · relief(깊이 부조)
+             * @enum {string}
+             */
             function: "segment" | "classify" | "pose" | "relief";
-            /** @enum {string} */
+            /**
+             * @description 작업 상태 — queued(대기) · running(처리 중) · done(끝, /result로 수령) · failed(실패, outcome에 이유)
+             * @enum {string}
+             */
             status: "queued" | "running" | "done" | "failed";
             /**
              * @description ok / quality_below / 인프라 5종(engine_down, timeout, storage, db, model_not_ready) — contracts/stage-job.md
              * @enum {string|null}
              */
             outcome?: "ok" | "quality_below" | "engine_down" | "timeout" | "storage" | "db" | "model_not_ready" | null;
+            /** @description 처리한 모델과 버전(model_version) — 재현·문의용 */
             model?: components["schemas"]["ModelRef"];
+            /** @description 처리 시간(ms). 끝나기 전 null */
             durationMs?: number | null;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 결과 보관 만료 시각(UTC, 끝난 뒤 1시간). 지나면 /result 404
+             */
             resultExpiresAt?: string | null;
         };
     };

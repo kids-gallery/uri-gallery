@@ -2,6 +2,8 @@ openapi: 3.1.0
 info:
   title: 우리 아이 미술관 — 모델 기능 API (model-api)
   version: 0.1.0
+  contact:
+    name: 1팀 우리 아이 미술관 — 팀 슬랙 채널(문의 때 응답 헤더 X-Request-ID 번호를 함께)
   description: |
     외부 클라이언트용 모델 기능 엔드포인트(UC12, FR-28, D17). Python 3.11 가상환경 + FastAPI + uvicorn (R3, research R-10).
     FastAPI가 이 문서와 같은 스키마로 `/v1/models/openapi.json`을 내보내고, 'API활용' 메뉴가 이를 읽는다(BR-API-08).
@@ -17,6 +19,25 @@ info:
       `external_job.result_temp_ref`에 그 키를 적는다. 결과 수령(`/result`) 때 model-api가 본문을 돌려준 뒤 `ext/{ext_job_id}/`를 지우고 `delivered_at`을 적으며 `result_temp_ref`를 비운다(chk_ej_delivered).
       만료(결과 보관 1시간)는 sweeper가 같은 방식으로 지운다.
     - DB·저장소 오류는 503(`chk_ecl_status`에 500이 없다).
+    - 상태코드와 누가 고치나(2026-09-30, 점검표 E7):
+
+      | 코드 | 뜻 | 누가 고치나 |
+      |---|---|---|
+      | 200 · 202 | 정상(202는 작업 접수 — `GET /v1/models/jobs/{jobId}`로 상태, 끝나면 `/result` 1회 수령) | 해당 없음 |
+      | 400 | (쓰지 않음 — 입력 오류는 422) | — |
+      | 401 | API 키 없음·무효·폐기 | 부르는 쪽 — 발급받은 키를 `X-API-Key`에 |
+      | 403 | 이 키 종류로 못 쓰는 기능(`pose`는 팀·시험 키만) | 부르는 쪽 — 허용된 키로 |
+      | 404 | 없는 기능·작업(다른 키의 작업도 404)·결과 만료·이미 수령 | 부르는 쪽 — 경로·작업 번호 확인 |
+      | 413 | 이미지 20MB 초과 | 부르는 쪽 — 줄여서 |
+      | 422 | 입력 오류(이미지 1장·`image` 칸 하나·JPEG/PNG/HEIC, `fields[].message`) | 부르는 쪽 — 값을 고쳐서 |
+      | 429 | 요청 한도(분당·하루·동시) 초과, `Retry-After` | 부르는 쪽 — 기다렸다가 |
+      | 503 | 모델 준비 안 됨·엔진·DB·저장소 문제 | 우리 팀 — 부르는 쪽은 요청을 고치지 않고 다시 시도 |
+      | 504 | 설명(caption) 처리 시간 초과 | 우리 팀 — 다시 시도 |
+
+      500은 내보내지 않는다(`chk_ecl_status`) — 예상 못 한 오류도 503으로 감싸고 `requestId`로 추적한다.
+    - 판단보류(2026-09-30, 점검표 E5): 모델 결과의 품질이 기준에 못 미치면 오류가 아니라 정상 응답이다 — 작업은 `done`, 결과 `outcome`이 `quality_below`로 온다(200).
+      부르는 쪽은 이 결과를 그대로 쓰지 말고 사람이 확인하거나 다른 이미지로 다시 요청한다(행선지 = 부르는 쪽의 사람 검토). 점수·확률은 싣지 않는다.
+      팀은 `external_call_log`·`external_job`의 `quality_below` 건수를 운영 지표로 본다.
     - 오류 안내·요청 번호(2026-09-30, API 서비스 점검표 W5·E4·E7·L1 — app-api와 같은 규칙): 모든 오류 본문에 `detail`(한국어 한 문장 — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지)과
       `requestId`를 싣고, 입력 오류(422)는 `fields[].message`로 칸마다 올바른 값을 알린다. 4xx는 부르는 쪽이 요청을 고치고, 503·504는 서버 쪽이라 요청을 고치지 않고 다시 시도한다.
       모든 응답 헤더에 `X-Request-ID`(요청 값이 1~128자 영문·숫자·`.`·`_`·`-`면 그대로, 아니면 UUID).
@@ -337,30 +358,30 @@ components:
       type: object
       required: [id, version]
       properties:
-        id: { type: string, enum: [M1, M2, M3, M4, M5, M6] }
-        version: { type: string }
+        id: { description: '모델 번호(M1 BiRefNet · M2 OpenCLIP · M3 Animated Drawings · M4 기하 규칙 · M5 Depth Anything V2 · M6 Qwen3)', type: string, enum: [M1, M2, M3, M4, M5, M6] }
+        version: { description: '모델 버전 라벨(model_version.version_label)', type: string }
     ExtJob:
       type: object
       required: [jobId, function, status]
       properties:
         jobId: { type: string, pattern: '^[0-9]+$', description: 'SD_03 external_job.ext_job_id. 발급한 키로만 조회된다(다른 키는 404)' }
-        function: { type: string, enum: [segment, classify, pose, relief] }
-        status: { type: string, enum: [queued, running, done, failed] }
+        function: { description: '기능 — segment(분리) · classify(종류) · pose(관절) · relief(깊이 부조)', type: string, enum: [segment, classify, pose, relief] }
+        status: { description: '작업 상태 — queued(대기) · running(처리 중) · done(끝, /result로 수령) · failed(실패, outcome에 이유)', type: string, enum: [queued, running, done, failed] }
         outcome:
           description: 'ok / quality_below / 인프라 5종(engine_down, timeout, storage, db, model_not_ready) — contracts/stage-job.md'
           type: [string, 'null']
           enum: [ok, quality_below, engine_down, timeout, storage, db, model_not_ready, null]
-        model: { $ref: '#/components/schemas/ModelRef' }
-        durationMs: { type: [integer, 'null'] }
-        resultExpiresAt: { type: [string, 'null'], format: date-time }
+        model: { description: '처리한 모델과 버전(model_version) — 재현·문의용', $ref: '#/components/schemas/ModelRef' }
+        durationMs: { description: '처리 시간(ms). 끝나기 전 null', type: [integer, 'null'] }
+        resultExpiresAt: { description: '결과 보관 만료 시각(UTC, 끝난 뒤 1시간). 지나면 /result 404', type: [string, 'null'], format: date-time }
     ExtResult:
       type: object
       required: [jobId, function, outcome, model]
       properties:
         jobId: { type: string, pattern: '^[0-9]+$', description: 'SD_03 external_job.ext_job_id. 발급한 키로만 조회된다(다른 키는 404)' }
-        function: { type: string }
-        outcome: { type: string, enum: [ok, quality_below] }
-        model: { $ref: '#/components/schemas/ModelRef' }
+        function: { description: '기능(ExtJob.function과 같음)', type: string }
+        outcome: { description: 'ok(정상) · quality_below(판단보류 — 품질 기준 미달, 사람이 확인하거나 다른 이미지로 다시)', type: string, enum: [ok, quality_below] }
+        model: { description: '처리한 모델과 버전', $ref: '#/components/schemas/ModelRef' }
         segment:
           type: object
           description: 'image/png base64 — 마스크(1ch)와 컷아웃(RGBA)'
@@ -374,6 +395,7 @@ components:
             kind: { type: string, enum: [person, animal, house, object] }
             tags: { type: array, items: { type: string } }
         pose:
+          description: '관절 좌표(Animated Drawings 골격 16점) — pose 기능일 때만'
           type: object
           properties:
             joints:
@@ -386,6 +408,7 @@ components:
                   y: { type: number }
             geometryRulePassed: { type: boolean, description: M4 기하 규칙 통과 여부 }
         relief:
+          description: '깊이 PNG16과 컷아웃(base64) — relief 기능일 때만'
           type: object
           properties:
             cutoutPng: { type: string, contentEncoding: base64 }
