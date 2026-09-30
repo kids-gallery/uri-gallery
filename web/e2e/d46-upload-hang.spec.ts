@@ -1,5 +1,5 @@
 // D46 · D49 올리기 한 번에(SD_02 §17-9 · §17-14): 설명 칸 · 그림/만들기 → 곧바로 미술관에 걸림 → 이야기는 보기만 ·
-// 움직임 질문 "애니메이션으로 만드시겠습니까?" [예] · [아니오] · 가족 댓글은 걸린 뒤 7일, 지나면 보기만. 390 · 1440.
+// 움직임 질문 "애니메이션으로 만드시겠습니까?" [예] · [아니오] · 가족 코멘트는 기한(7일, 화면 안내 없음)이 지나면 조용히 보기만. 390 · 1440.
 import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { e2eDb, type Connection } from './stack/db';
@@ -79,21 +79,21 @@ test('움직일 수 있는 그림이면 "애니메이션으로 만드시겠습�
   } finally { await off(); await db.end(); }
 });
 
-test('가족 댓글은 걸린 뒤 7일 — 지나면 보기만', async ({ page }) => {
+test('가족 코멘트 — 기한(7일, 안내 없음)이 지나면 조용히 보기만', async ({ page }) => {
   await guardianWithChild(page, tag('d46c'));
   const id = await uploadWith(page, async () => {});
   await page.goto(`/app/artworks/${id}`);
   await page.getByPlaceholder(ko.comment.ph).fill('정말 멋지다');
   await page.getByRole('button', { name: ko.comment.send, exact: true }).click();
   await expect(page.getByText('정말 멋지다')).toBeVisible();
-  await expect(page.getByText(/7일 동안 남길 수 있어요/)).toBeVisible();
+  await expect(page.getByText(/7일|남았어요/)).toHaveCount(0); // 기한은 내부 규칙(D46 ⑨)
 
   const db = await e2eDb();
   try { await db.query(`UPDATE artwork SET hung_at = UTC_TIMESTAMP() - INTERVAL 8 DAY, received_at = UTC_TIMESTAMP() - INTERVAL 8 DAY WHERE artwork_id = ?`, [id]); }
   finally { await db.end(); }
   await page.reload();
   await expect(page.getByText('정말 멋지다')).toBeVisible();
-  await expect(page.getByText(ko.comment.closed)).toBeVisible();
+  await expect(page.getByText(/기간|끝났어요/)).toHaveCount(0); // 조용히 보기만
   await expect(page.getByPlaceholder(ko.comment.ph)).toHaveCount(0);
   await expect(page.getByRole('button', { name: ko.comment.del, exact: true })).toHaveCount(0);
 });

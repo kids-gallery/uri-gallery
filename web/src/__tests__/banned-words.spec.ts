@@ -10,7 +10,8 @@ import { town, neighbor, home } from '../app/town/copy';
 import { sc } from '../app/sound/copy';
 
 // '큐'는 작업 큐만 — '큐레이터'는 보호자 말이다
-const BANNED = /G\d+|판정|모델|서버|API|토큰|깊이 정보|단계별 진행|승인됨|워커|큐(?!레이)|에러/;
+// '댓글' → 화면 말은 '코멘트'(D46 ⑨)
+const BANNED = /G\d+|판정|모델|서버|API|토큰|깊이 정보|단계별 진행|승인됨|워커|큐(?!레이)|에러|댓글/;
 const OPS_KO = new Set(['ops', 'apiGuide']); // 운영 화면(/ops)
 const OPS_PATHS = ['ko.shell.menu', 'ko.shell.role']; // 팀원 메뉴 · 역할 이름
 const OPS_GATES = new Set(['G1', 'G20', 'G21', 'G22', 'G23', 'G30']); // 팀원 화면에서만 나오는 사유

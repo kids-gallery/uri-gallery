@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// 부모 댓글(D46 ④, SD_02 §17-14): 가족 보호자만 읽고 쓴다(가족 밖 방문 화면에는 붙이지 않는다). 내 댓글만 [지우기], 걸린 뒤 7일 동안만.
-import { computed, onMounted, ref } from 'vue';
+// 가족 코멘트(D46 ④ · ⑨, SD_02 §17-14 — 화면 말은 "코멘트", 데이터 이름 comments): 가족 보호자만 읽고 쓴다(가족 밖 방문 화면에는 붙이지 않는다). 내 코멘트만 [지우기].
+import { onMounted, ref } from 'vue';
 import { api, ApiError } from '@/api/client';
 import { ko } from '@/copy/ko';
 
@@ -8,29 +8,27 @@ interface Comment { id: string; body: string; createdAt: string; mine: boolean; 
 const props = defineProps<{ artworkId: string }>();
 const list = ref<Comment[]>([]);
 const open = ref(false);
-const until = ref<string | null>(null);
 const failed = ref(false); // 불러오기 실패 — "기간이 끝났어요"와 다르다
 const text = ref('');
 const busy = ref(false);
 const msg = ref('');
 const when = (iso: string) => new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-// 7일 기한(D46 ④): 걸린 뒤 7일만 쓰고 지운다. 그 뒤로는 보기만(서버도 409 comments_closed).
-const daysLeft = computed(() => (until.value ? Math.max(1, Math.ceil((Date.parse(until.value) - Date.now()) / 86400000)) : 0));
+// 7일 기한(D46 ⑧ · ⑨)은 내부 규칙: 화면에 기한 · 남은 날을 보이지 않고, 지나면(open=false · 서버 409) 입력 줄 · [지우기]만 조용히 사라진다
 async function load() {
-  try { const r = await api.get<{ items: Comment[]; open: boolean; openUntil: string }>(`/v1/artworks/${props.artworkId}/comments`); list.value = r.items; open.value = r.open; until.value = r.openUntil; failed.value = false; }
+  try { const r = await api.get<{ items: Comment[]; open: boolean; openUntil: string }>(`/v1/artworks/${props.artworkId}/comments`); list.value = r.items; open.value = r.open; failed.value = false; }
   catch { list.value = []; open.value = false; failed.value = true; }
 }
 async function send() {
   if (!text.value.trim() || busy.value) return;
   busy.value = true; msg.value = '';
   try { const c = await api.post<Comment>(`/v1/artworks/${props.artworkId}/comments`, { body: { body: text.value } }); list.value.push(c); text.value = ''; }
-  catch (e) { if (e instanceof ApiError && e.reason === 'comments_closed') open.value = false; msg.value = open.value ? ko.comment.fail : ko.comment.closed; }
+  catch (e) { if (e instanceof ApiError && e.reason === 'comments_closed') { open.value = false; msg.value = ''; } else msg.value = ko.comment.fail; } // 기한 지남은 조용히 보기만(D46 ⑨)
   busy.value = false;
 }
 async function del(c: Comment) {
   msg.value = '';
   try { await api.del(`/v1/artworks/${props.artworkId}/comments/${c.id}`); list.value = list.value.filter((x) => x.id !== c.id); }
-  catch (e) { if (e instanceof ApiError && e.reason === 'comments_closed') { open.value = false; msg.value = ko.comment.closed; } else msg.value = ko.comment.delFail; }
+  catch (e) { if (e instanceof ApiError && e.reason === 'comments_closed') open.value = false; else msg.value = ko.comment.delFail; }
 }
 onMounted(load);
 </script>
@@ -47,7 +45,6 @@ onMounted(load);
     </ul>
     <p v-else-if="!failed" class="cm-empty">{{ ko.comment.empty }}</p>
     <p v-if="failed" class="cm-when">{{ ko.comment.loadFail }} <button class="cm-del" type="button" @click="load">{{ ko.comment.retry }}</button></p>
-    <p v-else class="cm-when">{{ open ? ko.comment.left(daysLeft) : ko.comment.closed }}</p>
     <form v-if="open" class="cm-form" @submit.prevent="send">
       <label class="sr-only" for="cm-in">{{ ko.comment.ph }}</label>
       <textarea id="cm-in" v-model="text" class="input" rows="2" maxlength="500" :placeholder="ko.comment.ph"></textarea>

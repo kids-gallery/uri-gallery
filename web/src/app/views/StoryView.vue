@@ -50,7 +50,7 @@ async function onBlock(label: string) {
         </div>
       </section>
       <CaptionPanel :artwork="a" />
-      <section class="card sv-cm"><CommentPanel :artwork-id="id" /></section><!-- D46 ④ 부모 댓글(7일) -->
+      <section class="card sv-cm"><CommentPanel :artwork-id="id" /></section><!-- D46 ④ 가족 코멘트 -->
     </template>
   </main>
 </template>

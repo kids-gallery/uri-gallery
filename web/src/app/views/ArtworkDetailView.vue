@@ -91,7 +91,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       </div>
       <AnimateAsk v-if="!deleting" :artwork-id="id" @started="askOpen = true; first()" @closed="askOpen = false" /><!-- D49 움직임 질문(삭제 확인 중엔 숨김) -->
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
-      <CommentPanel :artwork-id="id" /><!-- D46 ④ 부모 댓글 -->
+      <CommentPanel :artwork-id="id" /><!-- D46 ④ 가족 코멘트 -->
     </section>
     </div>
   </main>

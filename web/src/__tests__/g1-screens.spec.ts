@@ -216,7 +216,7 @@ describe('S5 결과 확인(T094)', () => {
 
 describe('S6 이야기(T095)', () => {
   const approved = { ...base, state: 'approved', story: { updatedAt: '2026-09-29T01:00:00.000Z', title: null, madeOn: null, ageAtMaking: null, childWords: null } };
-  it('올린 작품은 고정(D46) — 이야기는 보기만, 저장 버튼 없음, 댓글은 7일 동안', async () => {
+  it('올린 작품은 고정(D46) — 이야기는 보기만, 저장 버튼 없음, 코멘트는 기한 안에만(안내 없음)', async () => {
     const hung = { ...approved, state: 'exhibited', story: { ...approved.story, title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '멍멍' } };
     serve({ '/v1/artworks/7': hung, '/v1/artworks/7/comments': { items: [], open: false, openUntil: '2026-09-01T00:00:00.000Z', days: 7 } });
     const w = await open(StoryView, '/app/artworks/7/story');
@@ -225,7 +225,7 @@ describe('S6 이야기(T095)', () => {
     expect(w.text()).toContain('멍멍');
     expect(w.text()).toContain(ko.up2.lockNote);
     expect(w.find('form').exists()).toBe(false);
-    expect(w.text()).toContain(ko.comment.closed);
+    expect(w.find('textarea').exists()).toBe(false); // 코멘트 기한 지남 — 조용히 보기만(D46 ⑨)
     expect(calls('PUT', '/v1/artworks/7/story')).toHaveLength(0);
     w.unmount();
   });
