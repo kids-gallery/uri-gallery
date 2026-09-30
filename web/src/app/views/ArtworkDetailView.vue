@@ -80,7 +80,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
       <DowngradeNote v-if="a.downgrade" :path="a.downgrade" />
       <BlockNotice v-if="g9" :notice="g9" @action="onBlock" />
       <div class="acts">
-        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ next }}</RouterLink>
+        <RouterLink v-if="next && !g9" class="btn btn-primary" :to="a.state === 'exhibited' ? `/app/museum/${a.childId}` : routeFor(a)">{{ next }}</RouterLink>
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
       <AnimateAsk v-if="!deleting" :artwork-id="id" @started="first" /><!-- D49 움직임 질문(삭제 확인 중엔 숨김) -->

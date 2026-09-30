@@ -61,7 +61,7 @@ onMounted(first);
         </div>
         <div class="vstate">
           <StatusBadge :state="a.state === 'failed' ? 'not_delivered' : a.state" />
-          <RouterLink v-if="nextActionLabel(a.state)" class="vact" :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ nextActionLabel(a.state) }}</RouterLink>
+          <RouterLink v-if="nextActionLabel(a.state)" class="vact" :to="a.state === 'exhibited' ? `/app/museum/${a.childId}` : routeFor(a)">{{ nextActionLabel(a.state) }}</RouterLink>
           <span v-else-if="a.currentStage" class="t-body-sm">{{ ko.stageName[a.currentStage] ?? '' }}</span>
         </div>
       </li>
