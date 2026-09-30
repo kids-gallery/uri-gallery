@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // C1 진행 레일(T038, SD_02 §3-2). 기본 · 막힘(게이트 ID + 막힌 자리 보기) · 대기(닫아도 계속) · 전시 보류(C8 자리) · 종결(삭제 중).
 // 레일 단계는 누를 수 없다. 작품 레일(상태 7단계)과 여정 레일(작품 없는 S1·S2)을 steps로 바꿔 쓴다.
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { ko } from '@/copy/ko';
 
 export type RailVariant = 'default' | 'blocked' | 'waiting' | 'hold' | 'final';
@@ -14,6 +14,7 @@ const STEP_OF: Record<string, string> = { received: 'upload', judging: 'frame', 
 const props = withDefaults(defineProps<{ current: string; variant?: RailVariant; gate?: string | null; steps?: RailStep[]; blockedLabel?: string }>(), {
   variant: 'default', gate: null, steps: undefined, blockedLabel: undefined,
 });
+const inRoom = inject('inRoom', false); // D38: 방 안에서는 여정 탭을 보이지 않는다
 const emit = defineEmits<{ showBlock: [] }>();
 const list = computed(() => props.steps ?? ARTWORK);
 /** 작품 레일이면 내부 상태를 세 칸 중 하나로 */
@@ -26,7 +27,7 @@ const label = (s: RailStep) => {
 </script>
 
 <template>
-  <div class="journey">
+  <div v-if="!(inRoom && props.steps)" class="journey">
     <ol v-if="variant !== 'final'" class="rail" :aria-label="'진행'">
       <li
         v-for="s in list"

@@ -49,41 +49,39 @@ onMounted(first);
       <RouterLink v-if="!children.length" class="btn btn-secondary" to="/app/children">{{ ko.shell.appMenu.children }}</RouterLink>
     </section>
 
-    <div v-else-if="items" class="table-wrap" tabindex="0" role="region" :aria-label="ko.shell.appMenu.artworks">
-      <table class="plain">
-        <thead>
-          <tr><th>{{ ko.list.colTitle }}</th><th>{{ ko.list.colChild }}</th><th>{{ ko.list.colState }}</th><th>{{ ko.list.colStage }}</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="a in items" :key="a.id">
-            <td>
-              <RouterLink class="art-link" :to="routeFor(a)">
-                <img v-if="a.thumbnailUrl" :src="a.thumbnailUrl" alt="" class="thumb">
-                <span>{{ a.title || ko.list.untitled }}</span>
-              </RouterLink>
-            </td>
-            <td>{{ alias.get(a.childId) ?? '' }}</td>
-            <td><StatusBadge :state="a.state === 'failed' ? 'not_delivered' : a.state" /></td>
-            <td>
-              <RouterLink v-if="nextActionLabel(a.state)" class="btn btn-secondary btn-sm"
-                :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ nextActionLabel(a.state) }}</RouterLink>
-              <span v-else-if="a.currentStage" class="t-body-sm">{{ ko.stageName[a.currentStage] ?? '' }}</span>
-              <RouterLink v-else class="t-body-sm" :to="`/app/artworks/${a.id}`">{{ ko.list.progress }}</RouterLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <!-- D38 수장고: 원근 있는 벽에 액자로 걸린 작품 · 아래 상태 명패 -->
+    <ul v-else-if="items" class="vault" :aria-label="ko.shell.appMenu.artworks">
+      <li v-for="(a, i) in items" :key="a.id" v-reveal="i" class="vault-item">
+        <RouterLink v-tilt class="vframe" :to="routeFor(a)" :style="{ viewTransitionName: `art-${a.id}` }" :aria-label="a.title || ko.list.untitled">
+          <span class="vmat"><img v-if="a.thumbnailUrl" :src="a.thumbnailUrl" alt="" loading="lazy"><span v-else class="vblank"></span></span>
+        </RouterLink>
+        <div class="vplaque">
+          <b>{{ a.title || ko.list.untitled }}</b>
+          <span>{{ alias.get(a.childId) ?? '' }}</span>
+        </div>
+        <div class="vstate">
+          <StatusBadge :state="a.state === 'failed' ? 'not_delivered' : a.state" />
+          <RouterLink v-if="nextActionLabel(a.state)" class="vact" :to="a.state === 'exhibited' ? '/app/hall' : routeFor(a)">{{ nextActionLabel(a.state) }}</RouterLink>
+          <span v-else-if="a.currentStage" class="t-body-sm">{{ ko.stageName[a.currentStage] ?? '' }}</span>
+        </div>
+      </li>
+    </ul>
   </main>
 </template>
 
 <style scoped>
 .head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s-sm)}
-.table-wrap{overflow-x:auto}
-table.plain{width:100%;border-collapse:collapse;font:330 16px/1.45 var(--font-sans)}
-table.plain th,table.plain td{text-align:left;padding:var(--s-sm) var(--s-sm) var(--s-sm) 0;border-bottom:1px solid var(--color-hairline-soft);vertical-align:middle}
-table.plain th{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transform:uppercase}
-.art-link{display:inline-flex;align-items:center;gap:var(--s-sm);color:var(--color-ink);font-weight:540}
-.thumb{width:48px;height:48px;object-fit:cover;border-radius:var(--r-sm);background:var(--color-surface-soft)}
-.btn-sm{min-height:44px;font-size:16px;padding:6px 14px}
+/* 수장고 벽: 액자 격자(D38) */
+.vault{list-style:none;margin:0;padding:clamp(8px,2vw,24px) 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(44%,210px),1fr));gap:clamp(22px,4vw,44px) clamp(14px,3vw,36px)}
+.vault-item{display:grid;justify-items:center;gap:10px;text-align:center}
+.vframe{display:block;padding:9px;border-radius:2px;background:linear-gradient(135deg,#f1d98b,#c9a043 38%,#8e6b22 62%,#e2c170);
+  box-shadow:inset 0 0 0 2px rgba(255,236,170,.55),0 22px 28px -16px rgba(40,24,8,.6);width:100%;max-width:240px}
+.vmat{display:grid;place-items:center;aspect-ratio:4/3;background:#fffeef;padding:9%;box-shadow:inset 0 0 0 1px rgba(142,107,34,.45),inset 0 6px 10px -6px rgba(0,0,0,.25)}
+.vmat img{width:100%;height:100%;object-fit:contain}
+.vblank{width:100%;height:100%;border:1px dashed #c9a552}
+.vplaque{display:grid;gap:2px;padding:6px 12px;border-radius:3px;background:linear-gradient(135deg,#e9d39a,#c9a552 55%,#a98435);color:#2b2007;box-shadow:0 6px 10px -6px rgba(0,0,0,.45);max-width:100%}
+.vplaque b{font:700 15px/1.25 var(--mc-serif,serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vplaque span{font:500 12px/1.2 var(--font-sans)}
+.vstate{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+.vact{font:700 14px/1 var(--font-sans);color:var(--color-primary);padding:10px 12px;min-height:44px;display:inline-flex;align-items:center;text-underline-offset:3px}
 </style>

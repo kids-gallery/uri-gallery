@@ -2,6 +2,7 @@
 // - 보호자: GET /v1/me — 401이면 S0a(/app/login?next=), 가족이 없으면 S1d(/app/no-family).
 // - 팀원: GET /v1/ops/me — 401이면 S0o(/ops/login?next=), 역할 없는 화면은 G1(/ops/forbidden).
 // - 메일 링크: /app/verify · /app/reset · /app/invite (?token=).
+import { installTransitions } from './transitions';
 import { createRouter, createWebHistory, type RouteRecordRaw, type Router } from 'vue-router';
 import { ApiError, setNavigator } from '@/api/client';
 import { useSession } from '@/stores/session';
@@ -119,5 +120,6 @@ export function installGuards(router: Router) {
 export function makeRouter() {
   const router = createRouter({ history: createWebHistory(), routes });
   installGuards(router);
+  installTransitions(router); // D38 걷는 화면 전환
   return router;
 }
