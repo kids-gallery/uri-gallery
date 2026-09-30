@@ -39,7 +39,7 @@ describe('화면 문구(T035)', () => {
     expect(josa('7', '을/를')).toBe('7을');
     const [from, to] = ko.downgrade.animated_to_frame!;
     expect(ko.downgradeNote(from, to)).toBe('움직임을 만들지 못해 원본 액자로 바꿨어요. 원본 액자로 걸 수도 있어요');
-    expect(ko.notDelivered.reason('판정')).toContain('판정을 만들지');
+    expect(ko.notDelivered.reason('그림 살펴보기')).toContain('그림 살펴보기를 만들지');
     expect(ko.child.dup('별이')).toContain('같은 별칭 별이가 이미');
     expect(ko.del.childItems('하늘', 2)).toBe('하늘과 작품 2개가 모두 지워져요');
   });

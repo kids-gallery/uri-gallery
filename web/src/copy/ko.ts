@@ -28,13 +28,13 @@ const AGE = (age: number | null) => (age == null ? '나이 미정' : `${age}살`
 export const ko = {
   state: {
     received: '접수됨',
-    judging: '판정 중',
+    judging: '살펴보는 중',
     awaiting_confirm: '확정 대기',
     processing: '처리 중',
     processing_queued: '처리 중 - 순서를 기다리는 중',
     retrying: '다시 시도 중',
     awaiting_review: '확인 대기',
-    approved: '승인됨',
+    approved: '확인했어요',
     exhibited: '전시 중',
     not_delivered: '처리하지 못함',
     deleting: '삭제 중',
@@ -175,7 +175,7 @@ export const ko = {
   } as Record<string, readonly [string, string]>,
   downgradeNote: (from: string, to: string) => `${josa(from, '을/를')} 만들지 못해 ${josa(to, '으로/로')} 바꿨어요. 원본 액자로 걸 수도 있어요`,
   stageName: {
-    split: '분리', judge: '판정', animate_render: '움직임 만들기', depth_relief: '깊이 부조', frame_compose: '액자', sculpture: '3D 조각', caption: '설명',
+    split: '분리', judge: '그림 살펴보기', animate_render: '움직임 만들기', depth_relief: '입체로 만들기', frame_compose: '액자', sculpture: '3D 조각', caption: '설명',
   } as Record<string, string>,
   stageStatus: { waiting: '대기', running: '진행 중', done: '완료', retrying: '다시 시도 중', failed: '처리하지 못함', cancelled: '취소' } as Record<string, string>,
   list: {
@@ -183,15 +183,15 @@ export const ko = {
     untitled: '제목 없음', // [추론]
     toConfirm: '고르러 가기', toReview: '결과 확인으로', toStory: '이야기 쓰기', toGallery: '전시 보기', // [추론] 이야기 쓰기·전시 보기
     empty: '아직 올린 작품이 없어요', // [추론]
-    detailTitle: (t: string) => `${t} - 단계별 진행`,
-    progress: '단계별 진행',
+    detailTitle: (t: string) => `${t} - 어디까지 왔을까요`,
+    progress: '어디까지 왔을까요',
     colStep: '단계', colStepState: '상태', colNote: '안내',
     retried: (n: number) => `${n}번 다시 시도했어요`,
     backToList: '작품 목록',
   },
   notDelivered: {
     summary: '결과를 만들지 못했어요',
-    reason: (what: string) => `서버 문제로 ${josa(what, '을/를')} 만들지 못했어요 - 낮춘 결과가 아니에요`,
+    reason: (what: string) => `잠깐 문제가 생겨 ${josa(what, '을/를')} 만들지 못했어요 - 낮춘 결과가 아니에요`,
     releaser: '보호자 - 원본 액자로 걸기 또는 다시 찍기',
   },
   upload: {
@@ -221,7 +221,7 @@ export const ko = {
     suggestion: { animated: '움직일 수 있을 것 같아요', relief: '입체 부조로 만들어 볼까요?', frame: '원본 액자로 걸어 볼까요?' } as Record<string, string>, // U10 [추론 — UC 문구]
     howTitle: '어떻게 걸까요', submit: '확정하기', pickOne: '하나를 골라 주세요', later: '나중에 고르기',
     started: '만들기 시작했어요',
-    g7Reason: '작품을 살펴보는 서버에 문제가 있었어요', g7Releaser: '보호자 - 셋 중 하나를 직접 고르기', g7Next: '아래에서 고르면 확정할 수 있어요',
+    g7Reason: '작품을 살펴보는 곳에 잠깐 문제가 있었어요', g7Releaser: '보호자 - 셋 중 하나를 직접 고르기', g7Next: '아래에서 고르면 확정할 수 있어요',
   },
   review: {
     original: '원본', originalSub: '올린 그대로', result: (k: string) => `결과 - ${k}`,
@@ -401,7 +401,7 @@ export const ko = {
   del: {
     artwork: '작품 삭제', child: '아이 삭제',
     title: '되돌릴 수 없어요 - 지워지는 것',
-    artworkItems: ['원본 사진 - 잘라 낸 그림 - 깊이 정보 - 결과물', '이야기 - 작품 설명 - 임시 파일'],
+    artworkItems: ['원본 사진 - 잘라 낸 그림 - 입체용 자료 - 결과물', '이야기 - 작품 설명 - 임시 파일'],
     childItems: (alias: string, n: number) => `${josa(alias, '과/와')} 작품 ${n}개가 모두 지워져요`, // [추론]
     keeps: '통계용 숫자만 남고 누구의 작품인지는 남지 않아요',
     confirm: '삭제', cancel: '취소',
