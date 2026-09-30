@@ -6,8 +6,8 @@
 import { ref, watch } from 'vue';
 import { ko } from '@/copy/ko';
 
-const props = withDefaults(defineProps<{ src?: string | null; video?: string | null; playing?: boolean; alt?: string; size?: 'sm' | 'md' | 'lg'; variant?: 'mat' | 'bw' | 'gold' }>(),
-  { src: null, video: null, playing: false, alt: '', size: 'md', variant: 'mat' });
+const props = withDefaults(defineProps<{ src?: string | null; video?: string | null; playing?: boolean; alt?: string; size?: 'sm' | 'md' | 'lg'; variant?: 'mat' | 'bw' | 'gold'; lazy?: boolean; priority?: boolean }>(),
+  { src: null, video: null, playing: false, alt: '', size: 'md', variant: 'mat', lazy: false, priority: false });
 const emit = defineEmits<{ reload: [] }>();
 const broken = ref(false);
 const videoEl = ref<HTMLVideoElement | null>(null);
@@ -24,7 +24,7 @@ watch(() => props.playing, (p) => {
     <div class="mat">
       <template v-if="src && !broken">
         <video v-if="video" ref="videoEl" :src="video" :poster="src" playsinline loop muted preload="metadata" :aria-label="alt" @error="broken = true" />
-        <img v-else :src="src" :alt="alt" @error="broken = true">
+        <img v-else :src="src" :alt="alt" :loading="lazy ? 'lazy' : undefined" :fetchpriority="priority ? 'high' : undefined" @error="broken = true">
       </template>
       <div v-else-if="src && broken" class="fail t-body-sm" role="status">
         {{ ko.fail.file }} <button class="btn btn-tertiary" type="button" @click.stop="emit('reload')">{{ ko.fail.fileRetry }}</button>

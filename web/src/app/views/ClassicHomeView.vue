@@ -102,7 +102,7 @@ function goRoom(no: number) {
         <template v-if="latest">
           <p class="mc-lobby-h">{{ ko.museum.latest }}</p>
           <button class="mc-hero" type="button" :aria-label="ko.classic.plaqueOpen(latest.title)" :data-art="latest.id" @click="openArt(latest)">
-            <ArtFrame size="lg" :variant="frame" :src="still(latest) ?? null" :alt="latest.title" />
+            <ArtFrame size="lg" :variant="frame" priority :src="still(latest) ?? null" :alt="latest.title" />
           </button>
           <button class="mc-plaque" type="button" :aria-label="ko.classic.plaqueOpen(latest.title)" @click="openArt(latest)">
             <b>{{ latest.title }}</b><span>{{ ko.museum.plaque(latest.madeOn, latest.ageAtMaking) }}</span>
@@ -152,7 +152,7 @@ function goRoom(no: number) {
             <ul class="mc-hang">
               <li v-for="it in r.items" :key="it.id">
                 <button class="mc-piece" type="button" :aria-label="ko.classic.plaqueOpen(it.title)" :data-art="it.id" @click="openArt(it)">
-                  <ArtFrame size="md" :variant="frame" :src="still(it) ?? null" :alt="it.title" />
+                  <ArtFrame size="md" :variant="frame" lazy :src="still(it) ?? null" :alt="it.title" />
                 </button>
                 <button class="mc-plaque" type="button" :aria-label="ko.classic.plaqueOpen(it.title)" @click="openArt(it)">
                   <b>{{ it.title }}</b><span>{{ ko.museum.plaque(it.madeOn, it.ageAtMaking) }}</span>
