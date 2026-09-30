@@ -57,7 +57,8 @@ async function decide(code: string) {
     } else if (code === 'use_lower') {
       await router.push({ path: `/app/artworks/${id}`, query: { started: '1' } });
     } else {
-      await router.push({ path: `/app/artworks/${id}/story`, query: { approved: '1' } });
+      // D49 보강(SD_02 §17-9): 바꿔 건 그림이 벽에 걸리는 장면으로(이야기는 올릴 때 이미 적었고 고정 — D46)
+      await router.push({ path: '/app', query: { child: out.artwork?.childId ?? a.value.childId, hung: id } });
     }
   } catch (e) {
     block.value = toBlock(e instanceof ApiError ? e : new ApiError(0, null));

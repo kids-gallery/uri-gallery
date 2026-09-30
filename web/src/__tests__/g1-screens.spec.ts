@@ -180,12 +180,12 @@ describe('S3 확정(T067)', () => {
 
 describe('S5 결과 확인(T094)', () => {
   const frameResult = { ...base, state: 'awaiting_review', choices: ['like', 'retake'], result: { kind: 'frame', primaryUrl: null } };
-  it('액자 결과: 좋아요·다시 찍기, 좋아요 → 이야기(승인 안내)', async () => {
+  it('액자 결과: 좋아요·다시 찍기, 좋아요 → 아이 미술관 걸리는 장면(D49 보강)', async () => {
     serve({ '/v1/artworks/7': frameResult, 'POST /v1/artworks/7/decision': () => json({ artwork: { ...frameResult, state: 'approved' }, alreadyDecided: false }) });
     const w = await open(ReviewView, '/app/artworks/7/review');
     await btn(w, ko.review.decision.like!)!.trigger('click');
     await flushPromises();
-    expect(router.currentRoute.value.fullPath).toBe('/app/artworks/7/story?approved=1');
+    expect(router.currentRoute.value.fullPath).toBe('/app?child=1&hung=7');
     w.unmount();
   });
   it('다시 찍기는 확인 창 뒤에만 보내고, 응답 artwork가 null이어도 S2로(아이 미리 선택)', async () => {
