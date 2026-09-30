@@ -7,7 +7,7 @@ import { ApiError, setNavigator } from '@/api/client';
 import { useSession } from '@/stores/session';
 import { OPS_ROLES, safeNext } from './menu';
 import { isFirstVisit } from '@/app/entrance';
-import { isClassic } from '@/app/museumTheme';
+import { isClassic, museumTheme } from '@/app/museumTheme';
 
 declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
@@ -40,7 +40,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { shell: 'app' },
     children: [
       // 홈: 전환은 museumTheme.ts 한 줄(D31, SD_02 §17-6) — walk = 걸어 다니는 미술관, v2 = §17-3 홈
-      { path: '', name: 'app-home', component: () => (isClassic() ? import('@/app/views/WalkHomeView.vue') : import('@/app/views/PaperHomeView.vue')) },
+      { path: '', name: 'app-home', component: () => (museumTheme() === 'photo' ? import('@/app/views/PhotoWalkView.vue') : isClassic() ? import('@/app/views/WalkHomeView.vue') : import('@/app/views/PaperHomeView.vue')) }, // D33 1인칭 고전 회랑(SD_02 §17-9)
       { path: 'list', name: 'app-list', component: () => import('@/app/views/ClassicHomeView.vue') }, // 한눈에 보기(§17-5 목록형 — 금빛 액자 · 고른 벽 색)
       { path: 'hall', name: 'app-hall', component: () => import('@/app/views/MuseumView.vue') }, // 전시실 — 평면도 · N세관 · 작품 앞 ?art=(SD_02 §17-4)
       { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리

@@ -308,6 +308,17 @@ export const ko = {
     listTitle: (alias: string) => `${alias}의 미술관 - 한눈에 보기`, // [추론]
     scene: '미술관 장면', // [추론] 장면 영역 이름
   },
+  /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/C/C_화면문구.md "1인칭 고전 회랑") */
+  photo: {
+    scene: '고전 회랑 - 1인칭 장면', intro: '고전 회랑에 우리 아이 그림이 걸렸어요', enter: '입장하기', // [추론]
+    atGate: '고전 회랑 입구', atHall: '고전 회랑', room: (age: number) => `${age}살 전시실`, // [추론]
+    banner: (age: number, n: number) => `${age}살 전시실 · ${n}점`, art: (title: string, age: number) => `${title}, ${age}살 - 가까이 가기`, // [추론]
+    near: (madeOn: string, age: number) => `${madeOn} · ${age}살 · 눌러서 크게 보기`, // [추론]
+    next: '다음 작품', prev: '이전 작품으로 걸어가기', skip: '건너뛰기', map: '안내도 크게 보기', mapTitle: '안내도 - 고전 회랑', // [추론]
+    mapNote: '입구에서 안쪽으로 걸을수록 어릴 때 그림이에요. 작품 점을 누르면 그 앞으로 걸어가요', entrance: '입구', // [추론]
+    credit: (author: string, license: string) => `사진: ${author} · ${license} · 3D로 펴서 씀`, // [추론]
+    keys: 'W A S D 걷기 · 끌기 둘러보기 · Shift 빨리 · E 크게 보기 · Space 다음 작품', // [추론]
+  },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   // 카카오 로그인·초대 링크(D36, SD_02 §17-7 — 이제민 요청서 §3 문구)
   kakao: {

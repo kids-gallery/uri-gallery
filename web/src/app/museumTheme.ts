@@ -2,11 +2,11 @@
 // 'v2' = 이전 홈(§17-3 · §17-4) · 'walk' = 걸어 다니는 미술관(§17-6: 홈 /app, 한눈에 보기 /app/list — 금빛 액자 · 고른 벽 색).
 import { ko } from '../copy/ko'; // 상대 경로 — E2E(Playwright)에서도 같은 이름을 쓴다
 
-export type MuseumTheme = 'v2' | 'walk';
-const THEMES: readonly MuseumTheme[] = ['v2', 'walk'];
+export type MuseumTheme = 'v2' | 'walk' | 'photo';
+const THEMES: readonly MuseumTheme[] = ['v2', 'walk', 'photo'];
 
 /** 전환은 이 한 줄만 바꾼다. 빌드할 때는 VITE_MUSEUM_THEME로 덮어쓸 수 있다. */
-export const MUSEUM_THEME_DEFAULT: MuseumTheme = 'walk';
+export const MUSEUM_THEME_DEFAULT: MuseumTheme = 'photo'; // D33(이제민 결정): 1인칭 고전 회랑(SD_02 §17-9)
 
 export function museumTheme(): MuseumTheme {
   const env = import.meta.env?.VITE_MUSEUM_THEME as string | undefined; // E2E(node)에는 env가 없다
