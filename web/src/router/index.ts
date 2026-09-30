@@ -26,6 +26,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/app' },
   // 보호자 — 로그인 전
   { path: '/app/welcome', component: () => import('@/app/views/WelcomeView.vue'), meta: { shell: 'app', public: true } }, // S0w 입장(제안 SD_02 §17-2)
+  { path: '/app/sample', component: () => import('@/app/views/SampleMuseumView.vue'), meta: { shell: 'app', public: true } }, // 견본 미술관 — 로그인 없이, 서버 호출 없음(D48 ①, SD_02 §17-17)
   { path: '/app/login', component: () => import('@/app/views/LoginView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/signup', component: () => import('@/app/views/SignupView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/verify', component: () => import('@/app/views/VerifyView.vue'), meta: { shell: 'app', public: true } },

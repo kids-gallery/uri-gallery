@@ -46,4 +46,11 @@ export const m3 = {
 
   play: '움직여 보기',
   stop: '멈추기',
+
+  // 견본 미술관(D48, SD_02 §17-17)
+  sampleAlias: '견본이',
+  sampleBanner: '견본 미술관이에요 — 우리 아이 그림으로 만들어 볼까요?',
+  sampleStart: '카카오로 시작하기',
+  sampleExitLabel: '밖으로 — 첫 화면으로 나가기',
+  sampleNote: '견본 그림은 우리 팀이 그렸어요',
 } as const;

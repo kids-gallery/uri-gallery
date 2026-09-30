@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 방문자 크게 보기(D40, SD_02 §17-13 F) — 그림 · 제목만. 한마디 · 감상평 · 그린 날 · 저장하기 없음.
+// 방문자 · 견본 크게 보기(D40 §17-13 F · D48 §17-17) — 그림 · 제목(견본은 + 규칙 해설)만. 한마디 · 감상평 · 그린 날 · 저장하기 없음.
 // (가족은 walk/ArtViewer.vue를 그대로 쓴다.) Esc · [닫기] · 바깥 누름으로 닫고, 초점은 부르는 쪽이 돌려준다.
 import { nextTick, onMounted, ref } from 'vue';
 import ArtFrame from '@/components/ArtFrame.vue';
@@ -30,6 +30,7 @@ function trap(e: KeyboardEvent) {
         {{ playing ? m3.stop : m3.play }}
       </button>
       <h2 id="vw-title">{{ props.item.title ?? m3.untitled }}</h2>
+      <p v-if="props.item.caption" class="vw-cap">{{ props.item.caption }}</p>
       <p>{{ m3.title(props.alias) }}</p>
     </div>
   </div>
@@ -43,4 +44,5 @@ function trap(e: KeyboardEvent) {
 .vw-close{justify-self:end;min-height:44px;padding:8px 14px;border:1px solid #EBD5D6;border-radius:999px;background:rgba(255,251,247,.9);color:#6E3550;font:600 15px/1 var(--font-sans);cursor:pointer}
 .vw h2{margin:0;font:700 22px/1.35 var(--font-sans);text-align:center}
 .vw p{margin:0;font:500 14px/1.4 var(--font-sans)}
+.vw .vw-cap{max-width:52ch;padding:12px 16px;border-radius:14px;background:#FFFBF7;border:1px solid #EBD5D6;font:500 16px/1.6 var(--mc-serif,'Noto Serif KR',serif);text-align:center}
 </style>

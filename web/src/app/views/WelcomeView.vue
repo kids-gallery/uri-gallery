@@ -9,6 +9,7 @@ import { ko } from '@/copy/ko';
 import { markEntered } from '../entrance';
 import { safeNext } from '@/router/menu';
 import { useSession } from '@/stores/session';
+import { home as hc } from '@/app/town/copy';
 
 const route = useRoute();
 const router = useRouter();
@@ -52,6 +53,8 @@ const RING2 = spiro(90, 33, 44, 33);
 
     <div class="door">
       <button ref="btn" class="enter" type="button" @click="enter">{{ ko.museum.enter }} <span class="arrow" aria-hidden="true">→</span></button>
+      <!-- D48 ①: 로그인 없이 걸어 보는 견본 미술관 -->
+      <RouterLink class="sample" to="/app/sample">{{ hc.sampleTour }}</RouterLink>
     </div>
   </main>
 </template>
@@ -71,11 +74,12 @@ const RING2 = spiro(90, 33, 44, 33);
   background:linear-gradient(100deg,#b8618a 0%,#9a74c4 22%,#d0708f 38%,#4e9a96 52%,#7584c8 68%,#9a74c4 84%,#b8618a 100%) 0 0/200% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 14s linear infinite}
 @keyframes flow{to{background-position:200% 0}}
-.door{position:relative;display:flex;justify-content:flex-start;padding-bottom:clamp(8px,3vh,32px)}
+.door{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:flex-start;padding-bottom:clamp(8px,3vh,32px)}
 .enter{display:inline-flex;align-items:center;gap:14px;background:var(--color-canvas);color:var(--color-ink);border:1px solid var(--color-accent-magenta);
   border-radius:var(--r-pill);padding:14px 16px 14px 28px;font:700 20px/1 var(--font-sans);cursor:pointer}
 .enter .arrow{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);font-size:18px}
 .enter:hover{background:var(--color-surface-soft)}
+.sample{font:600 16px/1.3 var(--font-sans);color:var(--color-ink);text-decoration:underline;text-underline-offset:5px;padding:12px 4px;min-height:44px;display:inline-flex;align-items:center}
 @media (max-width:560px){.title{font-size:21vw;line-height:1}}
 @media (prefers-reduced-motion:reduce){.title{animation:none}}
 </style>

@@ -32,6 +32,8 @@ export interface MuseumInput {
   museumStyle?: string | null;
   visitor: boolean;
   groups: MuseumGroup[];
+  /** 방과 상관없이 가운데 홀 받침대에 바로 놓을 만들기 작품(견본 미술관 D48 등) — 방 진열대보다 앞 */
+  hallMaking?: MuseumItem[];
 }
 
 // ---------- 출력 ----------
@@ -150,7 +152,7 @@ export function buildMuseumLayout(input: MuseumInput): MuseumLayout {
   const murals: MuralSpot[] = [];
   const walkable: Rect[] = [];
   const blockers: Rect[] = [];
-  const extraMaking: MuseumItem[] = [];
+  const extraMaking: MuseumItem[] = [...(input.hallMaking ?? [])];
 
   seeds.forEach((seed, index) => {
     const side: -1 | 1 = index % 2 === 0 ? -1 : 1;

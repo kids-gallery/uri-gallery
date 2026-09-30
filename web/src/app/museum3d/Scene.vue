@@ -17,8 +17,8 @@ import {
 } from './layout';
 
 /** companion = 화면 아래 가운데 아이 캐릭터(D44, 방문자는 끔) · hang = 걸리는 장면으로 시작할 작품 id(D44 ④) */
-const props = withDefaults(defineProps<{ layout: MuseumLayout; character?: string | null; color?: string | null; paused?: boolean; companion?: boolean; hang?: string | null }>(), {
-  character: null, color: null, paused: false, companion: true, hang: null,
+const props = withDefaults(defineProps<{ layout: MuseumLayout; character?: string | null; color?: string | null; paused?: boolean; companion?: boolean; hang?: string | null; exitLabel?: string }>(), {
+  character: null, color: null, paused: false, companion: true, hang: null, exitLabel: undefined,
 });
 const emit = defineEmits<{ open: [item: MuseumItem]; exit: [] }>();
 
@@ -376,7 +376,7 @@ defineExpose({ goTo, playHang });
     </div>
 
     <p class="m3-hud m3-where" aria-live="polite">{{ where }}</p>
-    <button class="m3-hud m3-exit" type="button" :aria-label="m3.exitLabel" @click="emit('exit')">
+    <button class="m3-hud m3-exit" type="button" :aria-label="props.exitLabel ?? m3.exitLabel" @click="emit('exit')">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>{{ m3.exit }}
     </button>
     <button v-if="near" class="m3-hud m3-prompt" type="button" @click="emit('open', near.item)">

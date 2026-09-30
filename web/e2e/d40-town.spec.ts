@@ -76,3 +76,17 @@ test('모르는 가족 미술관은 주소로 열어도 들어갈 수 없다', a
   await expect(c.getByText(tc.locked)).toBeVisible();
   await ctx.close();
 });
+
+test('D48: 로그인 없이 입장 화면 → 견본 미술관(서버 호출 없음) → [카카오로 시작하기]', async ({ page }) => {
+  const api: string[] = [];
+  page.on('request', (r) => { if (new URL(r.url()).pathname.startsWith('/v1/')) api.push(r.url()); });
+  await page.goto('/app/welcome');
+  await page.getByRole('link', { name: '견본 미술관 둘러보기' }).click();
+  await expect(page).toHaveURL(/\/app\/sample/);
+  await expect(page.getByRole('region', { name: /견본이의 미술관/ })).toBeVisible();
+  await expect(page.getByText(/견본 미술관이에요/)).toBeVisible();
+  await noSideScroll(page);
+  expect(api).toEqual([]);
+  await page.getByRole('link', { name: /카카오로 시작하기/ }).click();
+  await expect(page).toHaveURL(/\/app\/login\?next=/);
+});

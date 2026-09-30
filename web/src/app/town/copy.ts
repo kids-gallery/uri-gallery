@@ -74,4 +74,5 @@ export const home = {
   makeCharacter: '캐릭터 만들며 등록하기',
   makeCharacterHint: '이름 · 동물 친구 · 미술관 모양을 골라 아이만의 미술관을 열어요',
   changeLook: '캐릭터 · 미술관 바꾸기',
+  sampleTour: '견본 미술관 둘러보기',
 };
