@@ -17,6 +17,7 @@
 > **개정 (2026-09-29, 웹 구현 전 점검 — 통합 결정 D21, 신지현)**: 구현 전 점검에서 드러난 빈틈을 채웠다. ① 로그인을 **S0a(보호자)**와 **S0o(팀원)** 두 화면으로 나눴다(쿠키·경로·셸이 다르다). ② **역할별 메뉴 표**(§2-1)를 정본으로 두었다 — 지표(S10)는 팀원 세 역할이 읽고 미도달 목록만 운영자 전용. ③ 운영 셸이 새로고침 뒤 역할을 되살리는 `GET /v1/ops/me`와 `POST /v1/ops/auth/logout`, S9 진행을 보는 `GET /v1/artworks/{id}/deletion`·`GET /v1/children/{id}/deletion`을 바인딩했다. ④ S3의 **비활성 모델 선택지**(`unavailable[]`, 409 `model_disabled`), S6의 **동시 수정 충돌**(409 `story_conflict`), S11의 **비활성화**(clarify 확정)를 넣었다. ⑤ §16에 G26~G29를 더해 30개 전건으로 맞췄다. ⑥ 보류 블록은 점선 테두리로 통일하고, 상태 모양을 스타일가이드 토큰에 사상했다(§3-5).
 > **개정 (2026-09-29, 디자인 검토 — 통합 결정 D22, 신지현)**: §3-5 토큰 사상 확정, S0a·S0o 와이어프레임 추가, 운영 화면 헤더를 역할별 메뉴 표대로, §18 #1·#2·#3·#10 닫음(요청 채널 없음 · 키는 운영 CLI · 3D 노출은 운영 CLI · 별칭 1~20자 · 입력 중 세션 만료 시 브라우저 임시 저장). 문구 정본은 `docs/C/C_화면문구.md`(D22 ⑦).
 > **개정 (2026-09-29, 통합 결정 D20 — 모델 점검)**: S11 모델 상태 표에 **"점검" 동작과 "마지막 점검" 열**을 더했다(SD_01 §10-4 · 7.8~7.10 · G30). 점검은 평가 묶음 사진 한 장으로 모델 하나를 돌려 보는 것이고, 결과는 통과/실패와 처리 시간만 보인다(점수 없음). 역할별 메뉴 표에 "S11 점검" 행, §16에 G30을 더했다(게이트 31개).
+> **개정 (2026-09-30, 통합 결정 D32 — 이진우)**: S2에 **작품 영역 자르기**(선택)를 더했다. 사진을 고르면 사진 전체를 덮은 사각형이 나오고 보호자가 작품에 맞춘다. 자르기는 브라우저에서 하고 자른 이미지만 올린다(잘린 부분·위치 정보는 서버에 오지 않음). §5-1 두 번째 와이어프레임, §5-2 "작품 영역" 행, §5-3·§5-4, 컴포넌트 C11 `CropBox`.
 > **시각 기준**: 색·글꼴·간격·모서리·버튼·칩은 `design/style-guide/스타일가이드_우리아이미술관.html`(R-20)을 따른다. 보조: 같은 폴더의 `스타일가이드_메뉴얼_우리아이미술관.md`, 화면 흐름 참고: `design/prototype/우리아이미술관_프로토타입.html`. 스타일가이드와 이 문서가 다르면 **문구·동작은 이 문서**, 모양은 스타일가이드가 앞선다(제안 미리 선택 금지는 이 문서가 앞선다).
 
 ---
@@ -286,6 +287,7 @@ ANY --> 삭제중 : S9 삭제 - G18
 | C8 | 전시 조건 체크 | G12의 두 조건(결과 확인 · 필수 이야기) 충족 여부 | S6 · S8(직접 주소) · C1 | UC4 BF5 · UC5 BF5 · UC6 E3 | UX1 |
 | C9 | 셸 헤더 | 보호자 앱(가족 표시) / 운영 화면(역할·계정 표시) 구분 | S1~S12 | INC1 · INC2 (UC1 BF1 · UC8 BF1 · UC9 BF1 · UC11 BF1) | UX8 |
 | C10 | 모델 상태 칩 | 모델별 준비됨 · 미준비 · 불러오는 중 · 적재 실패 · 내려감 짐작(M6) · 비활성(라이선스 확인 전) · CPU 실행 · 비노출 · 확인 불가 | S10 · S11 · S12 | UC8 BF3 · A1~A4 · E5 · UC9 BF2 · UC11 BF4 | UX8 · UX6 |
+| C11 | 작품 영역 자르기 (D32) | 미리보기 위 사각형으로 올릴 영역을 고른다. 처음엔 사진 전체, 손대지 않으면 그대로 | S2 | UC2 BF2 · A10 | UX7 · BR-PRV-01 |
 
 ### 3-2 C1 진행 레일
 
@@ -381,6 +383,7 @@ salt
 | C8 전시 조건 체크 | 둘 다 충족 · 결과 확인 빠짐 · 이야기 빠짐 · 둘 다 빠짐 | 체크 두 줄 | 빠진 줄을 누르면 해당 화면(S5 또는 S6 필수 칸)으로 간다 |
 | C9 셸 헤더 | 보호자(가족명 가림) · 팀원(역할 · 계정 가림) | 보호자 앱 헤더 · 운영 화면 헤더 | 운영 화면 헤더에는 보호자 앱으로 가는 링크가 없다. 역할에 없는 메뉴는 그리지 않는다(403 링크를 두지 않음). 메뉴는 §2-1 역할별 메뉴 표를 따른다. 좁은 화면(768px 이하)에서도 메뉴를 숨기지 않고 헤더 아래 줄에 가로로 둔다. 메뉴 이름은 줄바꿈하지 않고 한 줄에 두며, 줄에 다 들어가지 않으면 메뉴 줄을 가로로 밀어 본다(390px에서 "작품 올/리기"처럼 낱말이 끊기지 않게, 2026-09-29 이제민)(스타일가이드 목차는 960px 미만에서 숨기지만 앱 메뉴는 휴대폰에서도 써야 한다, 2026-09-29 [추론 — 신지현 검토], 구현 `web/src/styles/shell.css`). 보호자 셸은 `GET /v1/me`(계정·가족), 운영 셸은 `GET /v1/ops/me`(역할·가린 계정, 새로고침 뒤 복원)와 `POST /v1/ops/auth/logout`을 쓴다(D21) |
 | C10 모델 상태 칩 | 준비됨 · 미준비(`not_loaded`, 기동 순서 대기) · **불러오는 중**(`loading`: 경과 초, 예상 시간이 있으면 남은 시간, 예상의 1.5배를 넘으면 "예상보다 오래 걸려요") · **적재 실패**(`failed`: "60초마다 다시 시도해요") · **내려감 짐작**(`cold`, M6만: "첫 요청 때 올라가요", 짐작임을 표시) · 비활성(라이선스 확인 전) · **비활성(승격 전)**(라이선스는 확인됐으나 활성 버전이 없음 — model-api `load.diagnostic = no_active_version`, 2026-09-29 이제민: `licenseConfirmed`는 활성 버전 기준이라 활성 버전이 없으면 거짓이다) · 비활성(P0.5) · CPU 실행 · 비노출(P1) · 확인 불가 | 표 행(S10 · S11) · 인라인(S12) | "미준비"와 "비활성"과 "CPU 실행"은 모양과 문구를 모두 다르게 한다(§17). "불러오는 중"은 오류 색을 쓰지 않는다(적재 중은 오류가 아니다). 값은 `GET /v1/ops/models`의 `load.state` · `elapsedSeconds` · `remainingSeconds` · `expectedSeconds` · `lastLoadSeconds` · `expiresAt`(T109 · T143) |
+| C11 작품 영역 자르기 | 사진 전체(기본) · 잘림(크기 표시) · 열 수 없음(자르기 없이 그대로 올림 안내) | S2 미리보기 위 | 핸들 8개(모서리 4·변 4)와 가운데 "네모 옮기기"는 모두 초점을 받는 버튼이고 이름이 있다("왼쪽 위 모서리" 등). 화살표 1%, Shift+화살표 10%. 핸들은 44px 이상 터치 영역. 사각형 밖은 어둡게 덮는다(`--color-ink` 50%). 자른 크기는 픽셀로 보인다(`web/src/components/CropBox.vue`, 계산 `web/src/app/crop.ts`) |
 
 ### 3-5 상태 모양 → 스타일가이드 토큰 사상 (D21 · D22 확정)
 
@@ -792,6 +795,42 @@ salt
 
 **[「S2 작품 올리기 - 용량 초과 차단 상태」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/eNptk1FP02AUhu_7K07wRjEuOqMXvTAEMiYmMyReks1MIYYwNjPGFSyZ0JjBhgOk2GGLXdhg0yV2o8aa9Bf1nP4Hz9nqJNEtWb5-53vPed7v7WY2StliaXM9p2ysrebfZovZdXiVfb32pljYzC_PFXKFItyafzj_IDGrlFZLuRV4EQc6PwqPq0BGHy_7gefAPaCzHn7ZA3KrwbUP5HSx1gXafRfumspGNldStu4qW3zKYQWQrpHlAn73qGoHboX1eO2Ghkfnh7ANgVOh1kCFUDemUWvzzlI0Eb_2sGWlZQdbZvDTk06fd9NQVmIx6X-lhad76mTAxwEfhycT_YQ4zZthUydb50UwdARani2Pn1lKui--eG1rVDOj_pkprGrBjz5ZRnQHLBDas5MpBf5M3YaMkGeUsihop89UUl4aL_lyDkYEYkvv4vCEPh2SZkJwbWPHlRIfDut1snwVFlLJl9P8iT1NLMwBxB-nZrn6bDGR5EtbfC6_40qom8zUgfj91Kw4YIQxAF7thecGQPLRPzFBIj7iZi7TVmHMJxakCXZ8QM2gU5ftCZHuks0zLnwauuqNwDi8Whs7XqT_64NFXCGrDhwKNpoqp_b_k-PLmLxOt_GXFjZN0gZ3uPsNRxNE0XbR8kc4mseE6ei6pYkDeNweObOPqMqqpoYXdTw0sOdOguMgdtzwg8tGZCanLBU9cstbwnrJ4yoc7D6j8gtywg1EibVvHDY2BEOj9wfY8EVW5u_MSn5Z_k6_Ae7rysI=)** — 클릭 시 브라우저로 연결됩니다.
 
+
+```plantuml
+@startuml
+skinparam backgroundColor #F3F1EB
+title S2 작품 올리기 - 작품 영역 자르기 상태 (D32)
+salt
+{+
+{ 우리 아이 미술관 - 보호자 | 가족: 하*네 | [작품 목록] | [로그아웃] }
+..
+{ 진행: 아이 등록 > [작품 올리기] > 확정 > 결과 확인 > 이야기 > 전시 }
+..
+{^"누구의 작품인가요"
+  아이 | ^하*^
+}
+{^"사진"
+  [사진 찍기] | [앨범에서 고르기]
+  파일: IMG_****.JPG  3.1MB
+  JPEG - PNG - HEIC  한 장 20MB 이하
+}
+{^"작품 영역 (선택)"
+  작품에 맞게 네모를 줄여 주세요. 네모 밖은 올라가지 않아요
+  { 미리보기 위 사각형: [↖] -- [↑] -- [↗] | [←] [네모 옮기기] [→] | [↙] -- [↓] -- [↘] }
+  화살표로 조절, Shift+화살표는 크게
+  잘라서 올려요 1,820 x 1,360 | [사진 전체로]
+}
+{ [올리기] }
+{^"올린 뒤"
+  접수 완료되면 작품을 살펴보기 시작해요
+  기다리지 않고 화면을 닫아도 계속돼요
+}
+}
+@enduml
+```
+
+**[「S2 작품 올리기 - 작품 영역 자르기 상태 (D32)」 PlantUML 뷰어로 열기](https://plantuml.sumzip.com/plantuml/svg/LLDTIzjW5BxFhpYu6pzBRM6CNWpHgLDm5BoKT7JJRMBLKIiCLB0sI6VhRBMngKianJe_rcsnPgmN-JLUvZtv3pidJIkca9wFzvptUPvpChQHIQOpcwifQMDbUUrpCfrSXNV9zoiVq-kRQuiJwwdrD3oRYawDJevBcULCQWdc8u3dPUyu3wWrnO-csxPWv36KnUelyahYqkOCvh9UJeV-Lz78WBIHJ6MahI5f2_3Ceb90LK731l6dZNdJjNUfaRYtFQrD3M0RN6iNwtSny5HjK2WDYYm4zuZR6r4tP8w8kkx-QtEdxpaPTgHGYFjVATxfrrZlWfCxEWulU_Kzw385lPgAfag6sxBSUyVtZJRvL8ggmpJ8DXKiw47_H9_8A-xV9XfQm9mA6ErPfK-2xgtRa63a2Mc7At2lIQWulT0n0Qr37m7JKgz5guBL4YewkFTcHpsP3dl58XfE36RcfjyEqXEQZKy3H4EZS-EKdOrFJfDeyJVyVZqvCq45gawOBY4IdXjd1WGX0F1aHFsec5xE6F3nTYXKIo2kpjrM4KXiSNijBXt0Xe9L6jI5WqgRw8M270Zh58rTNqZ3OUfNvAW7JFsiGZstUAgaCStJtmET-EurNIlhQMeC5XxsJsKO6M6Zt3MglXGF-oMPfjgv1RNVLEshH8dZu42jMt7IDJIUF76lLN3FziewBGLWtK8pFmppdvO_P8OUKmSLyB9DekaprmW-Yyv4p0PXXz7X5v4mVA7_wFEmFvnWNBG1BPiwowmdXHztgACl-nQ8uuQlgLd6F6r7JH4NHL7In8tTMnMMmlQ-sLrj2ZfdLBkZ78L4eK6j0qbf7PWODU1AKVX96eiZXTP4mVr3SUHmsGxznfRM5lbB_Wy0)** — 클릭 시 브라우저로 연결됩니다.
+
 ### 5-2 영역별 설계
 
 | 영역 | 내용 | 데이터 바인딩 | UX 의도 |
@@ -799,6 +838,7 @@ salt
 | 여정 레일 | "작품 올리기" 단계 | — | UX7 |
 | 아이 선택 | 드롭다운. 다시 찍기로 왔으면 이전 작품의 아이가 미리 선택 | 2.1 Output 아이 목록 · H7 아이 ID | UC2 A7 |
 | 사진 | 찍기 · 앨범 · 파일 형식·용량 안내 · 미리보기 | 2.2 Input 사진 파일 · Output 미리보기 | 검사 기준을 먼저 보인다(BR-INT-01) |
+| 작품 영역 (선택, D32) | 미리보기 위 사각형(처음엔 사진 전체) · 네 모서리·네 변 핸들과 가운데 "네모 옮기기" · 안내 "작품에 맞게 네모를 줄여 주세요. 네모 밖은 올라가지 않아요" · 자른 크기 표시 · [사진 전체로] · 브라우저가 열지 못하는 사진이면 "이 사진은 화면에서 열 수 없어 자르지 않고 그대로 올려요" | 2.2 Input 자르기 사각형 · Output 올릴 사진(자른 이미지) | 아이 얼굴·교실 배경을 서버에 보내지 않는다(BR-PRV-01). 손대지 않아도 되는 선택 단계(UX7) |
 | 차단 블록 | G5(형식 E1 · 용량 E2 · 판독 E3) · G6(원본·기록 저장 실패 E4 · E5) | 2.2 · 2.3 Output 거절 사유 | UX6 |
 | 올린 뒤 안내 | "접수 완료되면 살펴보기 시작, 닫아도 계속" | 2.3 Output 202 · 상태 "판정 중" | UX7 |
 
@@ -806,14 +846,16 @@ salt
 
 | 조작 | 동작 | 근거 |
 |---|---|---|
-| 사진 고르기 | 화면에서 형식·용량·판독을 먼저 검사, 통과하면 미리보기 | UC2 BF2 |
-| 올리기 | `POST /v1/artworks`(요청 번호 포함). 버튼은 누르는 즉시 비활성(중복 전송 방지) | UC2 BF3 · A6 · BR-INT-03 |
+| 사진 고르기 | 화면에서 형식·용량·판독을 먼저 검사, 통과하면 미리보기와 사진 전체 사각형 | UC2 BF2 |
+| 사각형 조절 (D32) | 마우스·터치: 모서리·변 핸들 끌기, 가운데 끌면 옮기기. 키보드: 핸들에 초점 → 화살표 1%, Shift+화살표 10%. 한 변 48px 이상, 사진 밖으로 못 나감. 바꾸면 요청 번호를 새로 만든다(다른 사진) | UC2 A10 · D32 |
+| [사진 전체로] (D32) | 사각형을 사진 전체로 되돌린다 — 고른 파일을 그대로 올린다 | UC2 A10 |
+| 올리기 | 사각형이 사진 전체가 아니면 브라우저가 그 영역만 새 이미지(PNG 입력은 PNG, 그 밖은 JPEG 0.92, 1,600만 화소 넘으면 비율 유지 축소)로 만들고 20MB 검사 뒤 보낸다(D32). `POST /v1/artworks`(요청 번호 포함). 버튼은 누르는 즉시 비활성(중복 전송 방지) | UC2 BF3 · A6 · A10 · BR-INT-03 · D32 |
 | 접수 완료 | S3로 이동해 "살펴보는 중" 표시. 떠나도 S4에서 이어진다 | UC2 BF4 · A2 |
 | G6 실패 | "접수되지 않았어요, 다시 올려 주세요". 목록에 작품이 생기지 않음 | UC2 E4 · E5 |
 
 ### 5-4 상태 전이
 
-`빈 양식` → (사진 선택) → `검사 중` → `미리보기` 또는 `차단(G5)` · `미리보기` → (올리기) → `전송 중` → `접수 완료`(→ S3) 또는 `차단(G6)` → (다시 올리기) → `전송 중`.
+`빈 양식` → (사진 선택) → `검사 중` → `미리보기`(사각형 = 사진 전체) 또는 `차단(G5)` · `미리보기` → (사각형 조절) → `미리보기`(잘림) → ([사진 전체로]) → `미리보기` · `미리보기` → (올리기) → (`자르는 중`, 잘린 경우만) → `전송 중` → `접수 완료`(→ S3) 또는 `차단(G6)` → (다시 올리기) → `전송 중`.
 
 ---
 

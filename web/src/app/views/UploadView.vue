@@ -3,11 +3,15 @@
 // 화면이 먼저 형식(JPEG·PNG·HEIC)·용량(20MB)을 검사하고, 서버도 같은 검사를 한다(매직 바이트).
 // 같은 사진을 다시 보내면 같은 Idempotency-Key — 두 번 눌러도 작품은 하나(BR-INT-03). 접수(202)되면 S3로 간다.
 // 다시 찍기(S5 → S2)는 ?child=&retakeOf= 로 아이를 미리 고른다(UC2 A7, H7).
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+// 작품 영역 자르기(D32, C11, UC2 A10): 사각형이 사진 전체가 아니면 브라우저에서 그 영역만 새 이미지로 만들어 올린다 —
+// 잘린 부분과 위치 정보(EXIF)는 서버로 가지 않는다. 사각형을 바꾸지 않았거나 브라우저가 못 여는 사진은 고른 파일 그대로.
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
 import BlockNotice from '@/components/BlockNotice.vue';
+import CropBox from '@/components/CropBox.vue';
+import { croppedName, full, isFull, JPEG_QUALITY, outputSize, outputType, snap, type Rect } from '@/app/crop';
 import JourneyRail from '@/components/JourneyRail.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import { ko, problemCopy } from '@/copy/ko';
@@ -31,10 +35,20 @@ const busy = ref(false);
 const block = ref<Notice | null>(null);
 const cameraEl = ref<HTMLInputElement | null>(null);
 const albumEl = ref<HTMLInputElement | null>(null);
+// 자르기 상태 — ready: 사각형을 보인다 · unreadable: 브라우저가 못 연 사진(자르기 없이 그대로) · none: 사진 없음
+const crop = ref<'none' | 'ready' | 'unreadable'>('none');
+const size = ref({ w: 0, h: 0 });
+const rect = ref<Rect>(full(1, 1));
+const cutting = ref(false);
+let bitmap: ImageBitmap | null = null;
+let generatedPreview = false;
+const cropped = computed(() => crop.value === 'ready' && !isFull(rect.value, size.value.w, size.value.h));
+const outSize = computed(() => outputSize(snap(rect.value, size.value.w, size.value.h)));
+watch(rect, () => { if (file.value) key.value = crypto.randomUUID(); }, { deep: true }); // 다른 영역 = 다른 사진(BR-INT-03)
 
 const tooBig = computed(() => !!file.value && file.value.size > MAX_BYTES);
 const reason = computed(() => (!childId.value ? ko.upload.needChild : !file.value ? ko.upload.needPhoto
-  : tooBig.value ? ko.upload.tooBig : busy.value ? ko.upload.sending : ''));
+  : tooBig.value ? ko.upload.tooBig : cutting.value ? ko.upload.crop.cutting : busy.value ? ko.upload.sending : ''));
 
 onMounted(async () => {
   try {
@@ -43,7 +57,48 @@ onMounted(async () => {
     if (childId.value && !children.value.some((c) => c.id === childId.value)) childId.value = '';
   } catch (e) { block.value = toBlock(e instanceof ApiError ? e : new ApiError(0, null)); }
 });
-onBeforeUnmount(() => { if (preview.value) URL.revokeObjectURL(preview.value); });
+onBeforeUnmount(() => { clearPhoto(); });
+
+function clearPhoto() {
+  if (preview.value) URL.revokeObjectURL(preview.value);
+  preview.value = null; bitmap?.close?.(); bitmap = null; generatedPreview = false; crop.value = 'none';
+}
+
+/** 사진을 연다(EXIF 방향 보정). 못 열면 자르기 없이 그대로 올린다(D32 ⑥). HEIC처럼 <img>가 못 그리는 형식은 캔버스로 미리보기를 만든다. */
+async function openPhoto(f: File, isHeic: boolean) {
+  if (typeof createImageBitmap !== 'function') { crop.value = 'unreadable'; return; }
+  try {
+    const bm = await createImageBitmap(f, { imageOrientation: 'from-image' });
+    if (file.value !== f) { bm.close?.(); return; } // 그 사이 다른 사진을 골랐다
+    bitmap = bm; size.value = { w: bm.width, h: bm.height }; rect.value = full(bm.width, bm.height);
+    if (isHeic) {
+      const s = Math.min(1, 1600 / Math.max(bm.width, bm.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bm.width * s); c.height = Math.round(bm.height * s);
+      c.getContext('2d')!.drawImage(bm, 0, 0, c.width, c.height);
+      const blob = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', 0.85));
+      if (!blob) throw new Error('preview');
+      preview.value = URL.createObjectURL(blob); generatedPreview = true;
+    }
+    crop.value = 'ready';
+  } catch { crop.value = 'unreadable'; }
+}
+
+/** 올릴 파일 — 사각형이 사진 전체가 아니면 그 영역만 새 이미지로 만든다. 실패하면 null. */
+async function fileToSend(): Promise<File | null> {
+  const f = file.value!;
+  if (!cropped.value || !bitmap) return f;
+  const r = snap(rect.value, size.value.w, size.value.h); const o = outputSize(r); const type = outputType(f.type, f.name);
+  const c = document.createElement('canvas'); c.width = o.w; c.height = o.h;
+  const ctx = c.getContext('2d'); if (!ctx) return null;
+  ctx.drawImage(bitmap, r.x, r.y, r.w, r.h, 0, 0, o.w, o.h);
+  const blob = await new Promise<Blob | null>((res) => c.toBlob(res, type, type === 'image/jpeg' ? JPEG_QUALITY : undefined));
+  return blob ? new File([blob], croppedName(f.name, type), { type }) : null;
+}
+function cropFailed(): Notice {
+  const g = problemCopy({ gate: 'G5', reason: 'format' });
+  return { variant: 'block', gate: null, summary: ko.upload.crop.failed, reason: ko.upload.crop.failed, releaser: g.releaser, self: true,
+    actions: [ko.upload.crop.reset, g.actions[0]!], fields: [] };
+}
 
 function gate5(reasonCode: 'format' | 'over_20mb' | 'missing_photo'): Notice {
   return { ...problemCopy({ gate: 'G5', reason: reasonCode }), actions: [...problemCopy({ gate: 'G5', reason: reasonCode }).actions], gate: 'G5', fields: [] };
@@ -54,32 +109,40 @@ function pick(ev: Event) {
   (ev.target as HTMLInputElement).value = '';
   if (!f) return;
   block.value = null;
-  if (preview.value) { URL.revokeObjectURL(preview.value); preview.value = null; }
+  clearPhoto();
   file.value = f;
   key.value = crypto.randomUUID(); // 새 사진이면 새 요청 번호, 같은 사진 재전송은 같은 번호
   if (!(TYPES.includes(f.type) || EXT.test(f.name))) { block.value = gate5('format'); file.value = null; return; }
   if (f.size > MAX_BYTES) { block.value = gate5('over_20mb'); return; }
-  if (f.type !== 'image/heic' && f.type !== 'image/heif' && !/\.hei[cf]$/i.test(f.name)) preview.value = URL.createObjectURL(f); // HEIC는 브라우저가 못 그리므로 파일 이름만
+  const heic = f.type === 'image/heic' || f.type === 'image/heif' || /\.hei[cf]$/i.test(f.name);
+  if (!heic) preview.value = URL.createObjectURL(f); // HEIC는 <img>가 못 그리는 브라우저가 많다 — 열리면 openPhoto가 캔버스 미리보기를 만든다
+  void openPhoto(f, heic);
 }
 
 async function submit() {
   if (reason.value || !file.value) return;
   busy.value = true; block.value = null;
   try {
+    cutting.value = cropped.value;
+    const photo = await fileToSend();
+    cutting.value = false;
+    if (!photo) { block.value = cropFailed(); return; }
+    if (photo.size > MAX_BYTES) { block.value = gate5('over_20mb'); return; }
     const form = new FormData();
     form.append('childId', childId.value);
-    form.append('photo', file.value, file.value.name);
+    form.append('photo', photo, photo.name);
     if (retakeOf) form.append('retakeOf', retakeOf);
     const a = await api.post<ArtworkDetail>('/v1/artworks', { form, headers: { 'Idempotency-Key': key.value } });
     await router.push(`/app/artworks/${a.id}/confirm`);
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(0, null);
     block.value = err.status === 413 ? gate5('over_20mb') : toBlock(err);
-  } finally { busy.value = false; }
+  } finally { busy.value = false; cutting.value = false; }
 }
 
 function onBlock(label: string) {
   if (label === '다시 올리기') void submit();
+  else if (label === ko.upload.crop.reset) { rect.value = full(size.value.w, size.value.h); block.value = null; }
   else albumEl.value?.click();
 }
 </script>
@@ -109,7 +172,19 @@ function onBlock(label: string) {
         <input ref="cameraEl" class="hidden-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true" @change="pick">
         <input ref="albumEl" class="hidden-input" type="file" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif" tabindex="-1" aria-hidden="true" @change="pick">
         <!-- 형식 목록 · 파일 이름 · 크기는 보호자에게 보이지 않는다(D34 ④, SD_02 §17-8) — 검사는 그대로 -->
-        <img v-if="preview && !tooBig" :src="preview" alt="" class="preview">
+        <img v-if="preview && !tooBig && crop !== 'ready'" :src="preview" alt="" class="preview">
+        <p v-if="file && !tooBig && crop === 'unreadable'" class="hint">{{ ko.upload.crop.unreadable }}</p>
+      </fieldset>
+
+      <fieldset v-if="file && !tooBig && crop === 'ready' && preview" class="field">
+        <legend class="t-card-title">{{ ko.upload.crop.title }}</legend>
+        <p class="hint" id="up-crop-hint">{{ ko.upload.crop.hint }}</p>
+        <CropBox v-model="rect" :src="preview" :width="size.w" :height="size.h" aria-describedby="up-crop-hint up-crop-keys" />
+        <p class="hint" id="up-crop-keys">{{ ko.upload.crop.keys }}</p>
+        <div class="acts crop-row">
+          <p class="t-body-sm num" aria-live="polite">{{ cropped ? ko.upload.crop.cropped(outSize.w, outSize.h) : ko.upload.crop.whole }}</p>
+          <button v-if="cropped" class="btn btn-secondary" type="button" @click="rect = full(size.w, size.h)">{{ ko.upload.crop.reset }}</button>
+        </div>
       </fieldset>
 
       <BlockNotice v-if="block" :notice="block" @action="onBlock" />
@@ -134,4 +209,5 @@ legend{margin-bottom:var(--s-xs)}
 .hidden-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .preview{max-width:100%;max-height:320px;border-radius:var(--r-md);background:var(--color-surface-soft);object-fit:contain}
 .num{font-variant-numeric:tabular-nums}
+.crop-row{align-items:center;justify-content:space-between}
 </style>

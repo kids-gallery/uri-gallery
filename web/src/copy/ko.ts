@@ -203,6 +203,17 @@ export const ko = {
     needPhoto: '사진을 골라 주세요',
     tooBig: '더 작은 사진을 골라 주세요', // D34 ④ 숫자 없음
     sending: '올리는 중이에요', // [추론]
+    // 작품 영역 자르기(D32, docs/C/C_화면문구.md §4 S2 작품 영역 — [추론])
+    crop: {
+      title: '작품 영역 (선택)', hint: '작품에 맞게 네모를 줄여 주세요. 네모 밖은 올라가지 않아요',
+      keys: '화살표로 조절, Shift+화살표는 크게', reset: '사진 전체로',
+      cropped: (w: number, h: number) => `잘라서 올려요 ${w.toLocaleString('ko-KR')} x ${h.toLocaleString('ko-KR')}`,
+      whole: '사진 전체를 올려요',
+      unreadable: '이 사진은 화면에서 열 수 없어 자르지 않고 그대로 올려요',
+      failed: '사진을 자르지 못했어요. 사진 전체로 올리거나 다시 골라 주세요',
+      cutting: '자르는 중이에요',
+      handle: { nw: '왼쪽 위 모서리', n: '위', ne: '오른쪽 위 모서리', e: '오른쪽', se: '오른쪽 아래 모서리', s: '아래', sw: '왼쪽 아래 모서리', w: '왼쪽', move: '네모 옮기기' },
+    },
   },
   confirm: {
     cutout: '그림 부분', originalFallback: '원본 사진 - 액자 권장',
