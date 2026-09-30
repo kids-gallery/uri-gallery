@@ -26,6 +26,7 @@ from common.config import REPO_ROOT, load_settings
 from common.db import connect, tx
 
 from .auth import ApiError, Key, authenticate, check_rate, limits, record
+from .internal import models_view
 
 router = APIRouter(prefix="/v1/models")
 FUNC_MODEL = {"segment": "M1", "classify": "M2", "pose": "M3", "relief": "M5"}
@@ -133,6 +134,35 @@ def spec(request: Request):
         doc.setdefault("info", {})["x-model-versions"] = _versions_at_start
         return 200, doc, {}
     return _run("other", request, h, authed=False)
+
+
+# ---- 준비 상태(키 없이, 2026-09-30 API 개선 A1·A3·A4) --------------------------------------------------
+_FUNC_MODELS = {"segment": ("M1",), "classify": ("M2",), "pose": ("M3",), "relief": ("M1", "M5")}
+_STATE = {"ready": "ready", "loading": "loading", "not_loaded": "loading", "cold": "loading", "failed": "error"}
+
+
+@router.get("/health")
+def health():
+    """적재 상태를 실제로 읽는다(워커 적재 기록). 활성 모델이 모두 준비면 200 ok, 아니면 503 loading·error."""
+    try:
+        view = models_view()
+    except Exception:
+        return JSONResponse({"status": "error", "functions": {f: "error" for f in _FUNC_MODELS}}, status_code=503)
+    by_id = {m["modelId"]: m for m in view["models"]}
+    any_worker = any(w["alive"] for w in view.get("workers", []))
+    functions, versions = {}, {}
+    for fn, mids in _FUNC_MODELS.items():
+        ms = [by_id.get(m) or {} for m in mids]
+        versions[fn] = (by_id.get(FUNC_MODEL[fn]) or {}).get("activeVersion")   # 주 모델(relief는 M5)
+        if any(not m.get("activeVersion") for m in ms):
+            functions[fn] = "disabled"                    # 부르면 503 model_not_ready — 판정에서 뺀다
+            continue
+        st = [_STATE.get(((m.get("load") or {}).get("state")) or "", "error") for m in ms]
+        functions[fn] = "error" if "error" in st or not any_worker else "loading" if "loading" in st else "ready"
+    live = [v for v in functions.values() if v != "disabled"]
+    status = "error" if not live or "error" in live else "loading" if "loading" in live else "ok"
+    return JSONResponse({"status": status, "functions": functions, "modelVersions": versions},
+                        status_code=200 if status == "ok" else 503)
 
 
 # ---- 작업 상태·결과 -------------------------------------------------------------------------------

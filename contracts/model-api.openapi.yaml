@@ -154,6 +154,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         # 아직 done이 아니면 404 result_not_ready — SD_03 chk_ecl_status에 409가 없고 모든 호출을 기록하므로(2026-09-28, B)
 
+  /v1/models/health:
+    get:
+      summary: 모델 기능 준비 상태 (키 없이 · 2026-09-30 API 개선 A1·A3·A4)
+      description: |
+        적재 상태를 실제로 읽는다(워커가 남긴 적재 기록 — /internal/ready와 같은 원천). 기능마다 쓰는 모델(segment M1 · classify M2 · pose M3 · relief M1+M5) 중
+        활성 버전이 있는 모델이 모두 준비됐으면 200 `ok`, 하나라도 적재 중·아직 안 올라옴이면 503 `loading`, 적재 실패·워커 없음이면 503 `error`.
+        활성 버전이 없는 기능은 `disabled`로 표시하고 전체 판정에서 뺀다(부르면 503 model_not_ready). 기기·경로·점수 같은 내부 값은 싣지 않는다.
+      security: []
+      responses:
+        '200':
+          description: 준비됨
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelHealth' }
+        '503':
+          description: 준비 안 됨(적재 중·실패) — 부르는 쪽은 잠시 뒤 다시
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelHealth' }
   /v1/models/openapi.json:
     get:
       summary: 이 서버의 명세(API활용 엔드포인트 탭 원천)
@@ -299,6 +318,19 @@ components:
           schema: { $ref: '#/components/schemas/Problem' }
 
   schemas:
+    ModelHealth:
+      type: object
+      required: [status, functions]
+      properties:
+        status: { type: string, enum: [ok, loading, error], description: 'ok = 활성 모델이 모두 준비 · loading = 적재 중 · error = 적재 실패·워커 없음·활성 모델 0' }
+        functions:
+          type: object
+          description: 기능별 상태 — ready · loading · error · disabled(활성 버전 없음)
+          additionalProperties: { type: string, enum: [ready, loading, error, disabled] }
+        modelVersions:
+          type: object
+          description: 기능별 모델 버전 라벨(활성 버전, 없으면 null)
+          additionalProperties: { type: [string, 'null'] }
     Problem:
       type: object
       required: [type, title, status, code]
