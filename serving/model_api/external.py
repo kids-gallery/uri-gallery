@@ -136,6 +136,14 @@ def spec(request: Request):
     return _run("other", request, h, authed=False)
 
 
+# ---- 계약 문서 화면(키 없이, 2026-09-30 API 개선 A11) ------------------------------------------------
+@router.get("/docs", include_in_schema=False)
+def docs():
+    """계약 정본(/v1/models/openapi.json)을 그대로 읽는 Swagger 화면 — FastAPI 자동 문서가 아니다."""
+    from fastapi.openapi.docs import get_swagger_ui_html
+    return get_swagger_ui_html(openapi_url="/v1/models/openapi.json", title="우리 아이 미술관 모델 기능 API")
+
+
 # ---- 준비 상태(키 없이, 2026-09-30 API 개선 A1·A3·A4) --------------------------------------------------
 _FUNC_MODELS = {"segment": ("M1",), "classify": ("M2",), "pose": ("M3",), "relief": ("M1", "M5")}
 _STATE = {"ready": "ready", "loading": "loading", "not_loaded": "loading", "cold": "loading", "failed": "error"}

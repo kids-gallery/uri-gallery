@@ -154,6 +154,16 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         # 아직 done이 아니면 404 result_not_ready — SD_03 chk_ecl_status에 409가 없고 모든 호출을 기록하므로(2026-09-28, B)
 
+  /v1/models/docs:
+    get:
+      summary: 계약 문서 화면(Swagger UI, 키 없이 · 2026-09-30 API 개선 A11)
+      description: 이 문서(`/v1/models/openapi.json`)를 그대로 읽어 보여 준다 — FastAPI 자동 문서가 아니라 계약 정본과 같은 내용. Try it out은 `/v1/models/health`·`openapi.json`은 키 없이, 기능 경로는 `X-API-Key`를 넣어야 200·202.
+      security: []
+      responses:
+        '200':
+          description: HTML
+          content:
+            text/html: {}
   /v1/models/health:
     get:
       summary: 모델 기능 준비 상태 (키 없이 · 2026-09-30 API 개선 A1·A3·A4)
