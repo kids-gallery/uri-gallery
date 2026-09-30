@@ -1373,13 +1373,18 @@ export interface paths {
                         childId: string;
                         /** Format: binary */
                         photo: string;
+                        /**
+                         * Format: date
+                         * @description (D34) 사진 촬영일 — 브라우저가 EXIF DateTimeOriginal에서 날짜만 읽어 보낸다(위치·기기 정보는 보내지 않음). 그린 날로 쓴다. 없으면 올린 날, 미래면 오늘. 형식이 틀리면 422 captured_on
+                         */
+                        capturedOn?: string;
                         /** @description 다시 찍기(EXT2)로 올릴 때 이전 작품 ID. 아이 미리 선택용 참고값 */
                         retakeOf?: string;
                     };
                 };
             };
             responses: {
-                /** @description 접수 완료. 상태 `received`→`judging` */
+                /** @description 접수 완료. D34 — 같은 트랜잭션에서 원본 액자로 **바로 전시**된다(`exhibited: true`, `state: exhibited`, `hungResultKind: frame`). 이야기는 자동으로 채운다(제목 "제목 없는 그림 N"·그린 날·최근 나이). 판정(권유용)은 그대로 돈다 */
                 202: {
                     headers: {
                         [name: string]: unknown;
@@ -1673,6 +1678,66 @@ export interface paths {
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
                 422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/artworks/{artworkId}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 사진 고치기 (D39, SD_02 §17-12)
+         * @description 보호자가 브라우저에서 고친 사진(네 모서리 펴기 · 90° 돌리기)을 올린다. **원본은 그대로**(BR-INT-04) 두고 고친 사진을 따로 건다
+         *     (`stored_object.object_kind = display`). 다시 고치면 이전 고친 사진은 지운다. 원본 액자 · 전시 · 저장하기는 `photoUrl`(고친 사진)을 쓴다.
+         *     움직이는 그림 · 입체 그림은 다시 만들지 않는다. 형식 · 용량 · 판독 검사는 올리기와 같다(G5).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    artworkId: components["parameters"]["ArtworkId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description PNG · JPEG · HEIC, 20MB 이하
+                         */
+                        photo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description 고쳤음 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ArtworkDetail"];
+                    };
+                };
+                400: components["responses"]["InvalidInput"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                413: components["responses"]["PayloadTooLarge"];
+                503: components["responses"]["NotSaved"];
             };
         };
         post?: never;
@@ -3107,6 +3172,8 @@ export interface components {
             id: string;
             childId: string;
             state: components["schemas"]["ArtworkState"];
+            /** @description (D34) 전시에 걸려 있음 — 걸린 채 다시 만드는 중(processing·awaiting_review·failed)에도 true */
+            exhibited?: boolean;
             currentStage?: components["schemas"]["Stage"] | null;
             title?: string | null;
             /** @description /v1/files/{token} */
@@ -3121,9 +3188,17 @@ export interface components {
             id: string;
             childId: string;
             state: components["schemas"]["ArtworkState"];
+            /** @description (D34) 전시에 걸려 있음. state는 다시 만드는 중·확인 대기·실패면 그 진행을, 아니면 걸렸을 때 exhibited를 보인다 */
+            exhibited?: boolean;
+            /** @description (D34) 지금 전시에 걸린 결과 종류(처리 상태와 따로). null=안 걸림 */
+            hungResultKind?: components["schemas"]["ResultKind"] | null;
             /** @description 판정 중(대기) 표시용 */
             queued?: boolean;
             originalUrl?: string | null;
+            /** @description (D39) 액자 · 전시 · 저장에 쓰는 사진 — 고쳤으면 고친 사진, 아니면 원본 */
+            photoUrl?: string | null;
+            /** @description (D39) 보호자가 사진을 고쳤음 */
+            photoEdited?: boolean;
             cutoutUrl?: string | null;
             /** @description 제안 문구 코드만. 점수·확률·순위 없음(BR-SUG-02). null=제안 전 */
             suggestion?: components["schemas"]["Suggestion"] | null;
@@ -3172,6 +3247,8 @@ export interface components {
              */
             readonly updatedAt?: string | null;
             title?: string | null;
+            /** @description (D34) 제목이 "제목 없는 그림 N"으로 자동으로 붙음. 보호자가 제목을 고치면 false */
+            readonly titleAuto?: boolean;
             /**
              * Format: date
              * @description 만든 날. 오늘이나 지난 날짜만 — 미래 날짜는 422 made_on_in_future(G11, 서버·DB 트리거가 막는다)
@@ -3219,7 +3296,8 @@ export interface components {
         Gallery: {
             childId: string;
             groups: {
-                ageAtMaking: number;
+                /** @description (D34) null = 나이 미정 묶음(맨 뒤) */
+                ageAtMaking: number | null;
                 items: components["schemas"]["GalleryItem"][];
             }[];
         };
@@ -3231,10 +3309,15 @@ export interface components {
             auxUrl?: string | null;
             posterUrl?: string | null;
             originalUrl?: string;
+            /** @description (D39) 원본 액자 그림 — 고쳤으면 고친 사진 */
+            photoUrl?: string | null;
             title: string;
+            /** @description (D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다 */
+            titleAuto?: boolean;
             /** Format: date */
             madeOn: string;
-            ageAtMaking: number;
+            /** @description (D34) null = 나이 미정 */
+            ageAtMaking: number | null;
             childWords?: string | null;
             /** @description 보호자 감상평(D25) — 월 라벨에 한마디와 따로 */
             guardianNote?: string | null;

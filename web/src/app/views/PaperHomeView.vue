@@ -32,7 +32,7 @@ const latest = computed(() => byDate.value[byDate.value.length - 1] ?? null);
 const first = computed(() => byDate.value[0] ?? null);
 const lastWords = computed(() => [...byDate.value].reverse().find((it) => it.childWords)?.childWords ?? '');
 
-function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
+function still(it: Item) { return it.kind === 'frame' ? it.photoUrl ?? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.photoUrl ?? it.originalUrl; }
 
 async function load() {
   if (!childId.value) return;
@@ -169,7 +169,7 @@ const progress = computed(() => (byDate.value.length > 1 ? active.value / (byDat
         <article class="panel">
           <h2 class="panel-h">{{ ko.museum.plan }}</h2>
           <ul class="tickets">
-            <li v-for="r in rooms" :key="r.ageAtMaking"><RouterLink class="ticket" :to="{ path: '/app/hall', query: { child: childId } }"><b>{{ ko.museum.room(r.ageAtMaking) }}</b><span>{{ r.items.length }}</span></RouterLink></li>
+            <li v-for="r in rooms" :key="r.ageAtMaking ?? 'none'"><RouterLink class="ticket" :to="{ path: '/app/hall', query: { child: childId } }"><b>{{ ko.museum.room(r.ageAtMaking) }}</b><span>{{ r.items.length }}</span></RouterLink></li>
           </ul>
         </article>
         <article v-if="lastWords" class="panel quote">

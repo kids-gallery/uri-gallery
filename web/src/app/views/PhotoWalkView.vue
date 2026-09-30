@@ -48,7 +48,7 @@ const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
 const groups = computed(() => (g.value?.groups ?? []).map((r) => ({ age: (r.ageAtMaking as number | null) ?? null, items: r.items })));
 const all = computed(() => groups.value.flatMap((r) => r.items));
-function still(it: Item) { return (it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl) ?? null; }
+function still(it: Item) { return (it.kind === 'frame' ? it.photoUrl ?? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.photoUrl ?? it.originalUrl) ?? null; }
 const where = computed(() => (!entered.value ? ko.photo.atGate : whereSec.value ? ko.photo.room(whereSec.value.age) : ko.photo.atHall));
 const touch = matchMedia('(hover: none), (pointer: coarse)').matches;
 

@@ -279,9 +279,9 @@ export const ko = {
     childWords: '아이의 한마디', guardianNote: '보호자 감상평', commentary: '작품 해설 - AI 작성', menuHall: '미술관', // [추론] 미술관
     // 전시 해설(월 라벨, SD_02 §17-2 — 규칙 문장, AI 아님). 한마디는 원문 그대로 따옴표 안에(화면에서 끼운다)
     label: '전시 해설',
-    artist: (alias: string, age: number, year: string) => `${alias} (${age}세 작, ${year})`, // [추론]
-    intro: (title: string, alias: string, age: number, year: string, month: number) =>
-      `「${title}」${josa(title, '은/는').slice(title.length)} ${josa(alias, '이/가')} ${age}살이던 ${year}년 ${month}월에 그린 작품입니다.`, // [추론]
+    artist: (alias: string, age: number | null, year: string) => (age == null ? `${alias} (${year})` : `${alias} (${age}세 작, ${year})`), // [추론] 나이 미정이면 나이 빼고(D34)
+    intro: (title: string, alias: string, age: number | null, year: string, month: number) =>
+      `「${title}」${josa(title, '은/는').slice(title.length)} ${josa(alias, '이/가')} ${age == null ? '' : `${age}살이던 `}${year}년 ${month}월에 그린 작품입니다.`, // [추론] 나이 미정이면 나이 빼고(D34)
     wordsBefore: '작가는 이 그림을 두고 “', wordsAfter: '”라고 말했습니다.', // [추론]
     kindLine: { animated: '종이에 그린 그림이 움직이는 작품으로 걸렸습니다.', relief: '종이 그림이 입체 부조로 걸렸습니다.', sculpture: '종이 그림이 3D 조각으로 걸렸습니다.' } as Record<string, string>, // [추론]
     // 건축 평면도·로비(D25 ⑥)
@@ -315,14 +315,18 @@ export const ko = {
     enter: '입장하기', skip: '건너뛰기', upload: '작품 올리기', list: '한눈에 보기', wall: '벽 색', // [추론] 벽 색
     forward: '앞으로', backward: '뒤로', toCorridor: '회랑으로', close: '닫기', toWalk: '걸어서 보기', // [추론]
     atGate: '입구', atCorridor: (i: number, n: number) => `회랑 ${i}/${n}`, atJunction: '갈림길', // [추론]
-    room: (age: number) => `${age}살 전시실`, roomCount: (n: number) => `${n}점`, // [추론]
-    toLeft: (age: number) => `← ${age}살 전시실`, toRight: (age: number) => `${age}살 전시실 →`, toOnly: (age: number) => `${age}살 전시실로 →`, // [추론]
+    room: (age: number | null) => (age == null ? '나이 미정 전시실' : `${age}살 전시실`), roomCount: (n: number) => `${n}점`, // [추론]
+    toLeft: (age: number | null) => `← ${AGE(age)} 전시실`, toRight: (age: number | null) => `${AGE(age)} 전시실 →`, toOnly: (age: number | null) => `${AGE(age)} 전시실로 →`, // [추론]
     wallTitle: '벽 색 고르기', wallNames: { cream: '크림', pink: '분홍 구름', mint: '민트 하늘', lilac: '라일락', sky: '하늘', butter: '버터' } as Record<string, string>,
     wallCustom: '직접 고르기', wallReset: '처음 색으로', wallAdjusted: '글자가 잘 보이도록 조금 밝게 했어요', // [추론]
     listTitle: (alias: string) => `${alias}의 미술관 - 한눈에 보기`, // [추론]
     scene: '미술관 장면', // [추론] 장면 영역 이름
   },
   /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/C/C_화면문구.md "1인칭 고전 회랑") */
+  /** 사진 고치기(D39, SD_02 §17-12 · docs/C/C_화면문구.md) [추론] */
+  fix: { open: '사진 고치기', title: '사진 고치기', hint: '네 모서리를 그림 끝에 맞춰 주세요. 원본 사진은 그대로 남아요.', preview: '액자에 걸릴 모습',
+    left: '왼쪽으로 돌리기', right: '오른쪽으로 돌리기', reset: '원래대로', save: '저장', done: '사진을 고쳤어요', fail: '고치지 못했어요 — 다시 해 볼까요?',
+    corner: ['왼쪽 위 모서리', '오른쪽 위 모서리', '오른쪽 아래 모서리', '왼쪽 아래 모서리'] },
   /** 저장하기(D37, SD_02 §17-10 · docs/C/C_화면문구.md) [추론] */
   save: { framed: '액자 그림 저장', moving: '움직이는 그림 저장', busy: '저장하는 중…', done: '저장했어요', fail: '저장하지 못했어요 — 다시 해 볼까요?' },
   photo: {

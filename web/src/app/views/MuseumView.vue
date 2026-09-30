@@ -46,7 +46,7 @@ const theme = museumTheme();
 const frameVariant = theme === 'walk' ? 'gold' : 'mat';
 const wall = computed(() => (theme === 'walk' ? loadWall(childId.value) : undefined));
 const roomNo = computed(() => roomNumbers(rooms.value));
-const roomName = (age: number) => roomLabel(roomNo.value.get(age) ?? 1, age, theme);
+const roomName = (age: number | null) => roomLabel(roomNo.value.get(age) ?? 1, age, theme);
 const rooms = computed(() => g.value?.groups ?? []);
 const all = computed(() => rooms.value.flatMap((r) => r.items));
 const count = computed(() => all.value.length);
@@ -59,7 +59,7 @@ const open = computed<Item | null>(() => {
 const BLOCKS = ['pink', 'lime', 'lilac', 'coral', 'cream', 'mint'];
 const blockOf2 = (i: number) => `var(--color-block-${BLOCKS[i % BLOCKS.length]})`;
 
-function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
+function still(it: Item) { return it.kind === 'frame' ? it.photoUrl ?? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.photoUrl ?? it.originalUrl; }
 
 async function load() {
   if (!childId.value) return;
@@ -107,7 +107,7 @@ function onKey(e: KeyboardEvent) { if (e.key === 'Escape' && open.value) { e.pre
 onMounted(() => window.addEventListener('keydown', onKey));
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
-async function goRoom(age: number) {
+async function goRoom(age: number | null) { // 나이 미정 = room-null
   await nextTick();
   const el = document.getElementById(`room-${age}`);
   el?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -167,7 +167,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
           <p class="bp-title" aria-hidden="true">{{ ko.museum.floorPlan }}</p>
           <div class="plan-map" :style="{ gridTemplateRows: `repeat(${planRows}, minmax(64px,auto)) 56px` }">
             <div class="corridor" aria-hidden="true" :style="{ gridRow: `1 / span ${planRows}` }"><span>{{ ko.museum.corridor }}</span></div>
-            <button v-for="(r, i) in rooms" :key="r.ageAtMaking" type="button" class="plan-room" :class="i % 2 ? 'right' : 'left'"
+            <button v-for="(r, i) in rooms" :key="r.ageAtMaking ?? 'none'" type="button" class="plan-room" :class="i % 2 ? 'right' : 'left'"
               :style="{ gridRow: Math.floor(i / 2) + 1, '--blk': blockOf2(i) }" @click="goRoom(r.ageAtMaking)">
               <span class="no" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
               <b>{{ roomName(r.ageAtMaking) }}</b><span class="n">{{ r.items.length }}</span>
@@ -179,7 +179,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
       </nav>
 
       <!-- N세관: 평평한 구획을 번갈아 -->
-      <section v-for="(r, ri) in rooms" :id="`room-${r.ageAtMaking}`" :key="r.ageAtMaking" class="room" :class="{ alt: ri % 2 === 0 }" :aria-labelledby="`rh-${r.ageAtMaking}`">
+      <section v-for="(r, ri) in rooms" :id="`room-${r.ageAtMaking}`" :key="r.ageAtMaking ?? 'none'" class="room" :class="{ alt: ri % 2 === 0 }" :aria-labelledby="`rh-${r.ageAtMaking}`">
         <div class="container room-head">
           <h2 :id="`rh-${r.ageAtMaking}`" class="signplate" tabindex="-1">{{ roomName(r.ageAtMaking) }}</h2>
           <p class="room-meta">{{ ko.museum.roomMeta(r.items.length, r.items[0]?.madeOn ?? '') }}</p>

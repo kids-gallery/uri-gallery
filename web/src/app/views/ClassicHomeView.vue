@@ -42,7 +42,7 @@ const latest = computed(() => [...all.value].sort((a, b) => a.madeOn.localeCompa
 /** 고른 벽 색(걸어 다니는 미술관과 같은 값, 이 기기 · 아이마다) */
 const wall = computed(() => loadWall(childId.value));
 
-function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
+function still(it: Item) { return it.kind === 'frame' ? it.photoUrl ?? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.photoUrl ?? it.originalUrl; }
 
 async function load() {
   if (!childId.value) return;
@@ -123,7 +123,7 @@ function goRoom(no: number) {
         <p class="mc-map-h">{{ ko.classic.map }}</p>
         <div class="mc-plan">
           <ol class="mc-rooms">
-            <li v-for="r in rooms" :key="r.ageAtMaking">
+            <li v-for="r in rooms" :key="r.ageAtMaking ?? 'none'">
               <a class="mc-cell" :href="`#mc-room-${r.no}`" @click.prevent="goRoom(r.no)">
                 <span class="no" aria-hidden="true">{{ String(r.no).padStart(2, '0') }}</span>
                 <b>{{ ko.classic.roomNo(r.no) }}</b>
@@ -138,7 +138,7 @@ function goRoom(no: number) {
       </nav>
 
       <!-- 4 전시실 구획 -->
-      <section v-for="r in rooms" :id="`mc-room-${r.no}`" :key="r.ageAtMaking" class="mc-room" :aria-labelledby="`mc-rh-${r.no}`">
+      <section v-for="r in rooms" :id="`mc-room-${r.no}`" :key="r.ageAtMaking ?? 'none'" class="mc-room" :aria-labelledby="`mc-rh-${r.no}`">
         <div class="mc-wall">
           <span class="mc-sky" aria-hidden="true"></span><span class="mc-cornice" aria-hidden="true"></span>
           <span class="mc-pil l" aria-hidden="true"></span><span class="mc-pil r" aria-hidden="true"></span>

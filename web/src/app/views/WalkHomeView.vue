@@ -12,6 +12,7 @@ import type { components } from '@/api/types.gen';
 import ArtFrame from '@/components/ArtFrame.vue';
 import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
+import { byAge } from '../museumTheme';
 import { blockOf } from '../artwork';
 import Corridor from '../walk/Corridor.vue';
 import Room from '../walk/Room.vue';
@@ -43,7 +44,7 @@ const viewing = ref<Item | null>(null);
 let opener: HTMLElement | null = null;
 
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
-const rooms = computed(() => [...(g.value?.groups ?? [])].sort((a, b) => a.ageAtMaking - b.ageAtMaking)
+const rooms = computed(() => [...(g.value?.groups ?? [])].sort((a, b) => byAge(a.ageAtMaking, b.ageAtMaking)) // 나이 미정은 맨 뒤
   .map((r) => ({ age: r.ageAtMaking, items: [...r.items].sort((a, b) => a.madeOn.localeCompare(b.madeOn)) })));
 const all = computed(() => rooms.value.flatMap((r) => r.items));
 /** 회랑: 최근 걸린 작품부터 6점 */
@@ -52,7 +53,7 @@ const current = computed(() => hall.value[stop.value] ?? null);
 const room = computed(() => rooms.value[roomIdx.value] ?? null);
 const loaded = computed(() => g.value !== null);
 
-function still(it: Item) { return (it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl) ?? null; }
+function still(it: Item) { return (it.kind === 'frame' ? it.photoUrl ?? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.photoUrl ?? it.originalUrl) ?? null; }
 const sideArts = computed(() => (scene.value === 'corridor' ? hall.value.slice(stop.value + 1) : scene.value === 'gate' ? hall.value : []).map(still));
 
 const where = computed(() => {
@@ -250,13 +251,13 @@ function resetWall() { wall.value = WALL_DEFAULT; saveWall(childId.value, null);
           <button v-if="leftRoom && !rightRoom" class="wk-door c" type="button" data-focus @click="toRoom(0)">{{ ko.walk.toOnly(leftRoom.age) }}</button>
         </div>
         <ul v-if="rooms.length > 2" class="wk-chips">
-          <li v-for="(r, i) in rooms" :key="r.age"><button class="wk-pill" type="button" @click="toRoom(i)">{{ ko.walk.room(r.age) }} · {{ ko.walk.roomCount(r.items.length) }}</button></li>
+          <li v-for="(r, i) in rooms" :key="r.age ?? 'none'"><button class="wk-pill" type="button" @click="toRoom(i)">{{ ko.walk.room(r.age) }} · {{ ko.walk.roomCount(r.items.length) }}</button></li>
         </ul>
         <div class="wk-nav"><button class="wk-pill" type="button" @click="backward"><span aria-hidden="true">↓</span> {{ ko.walk.backward }}</button></div>
       </section>
 
       <!-- 전시실 -->
-      <section v-else-if="scene === 'room' && room" class="wk-room" :aria-labelledby="`wk-rh`" :key="room.age">
+      <section v-else-if="scene === 'room' && room" class="wk-room" :aria-labelledby="`wk-rh`" :key="room.age ?? 'none'">
         <header class="rm-head">
           <h2 id="wk-rh" tabindex="-1" data-focus>{{ ko.walk.room(room.age) }}</h2>
           <p>{{ ko.walk.roomCount(room.items.length) }}</p>
