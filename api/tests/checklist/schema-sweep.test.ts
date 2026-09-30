@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import request from 'supertest';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 import { afterAll, describe, it } from 'vitest';
 import { resetData } from '../helpers/db.js';
 import { contractViolations, testApp } from '../helpers/app.js';
@@ -13,7 +13,7 @@ import { familyWithChild, png, seedModels, simulateResult, staff, upload } from 
 
 type S = Record<string, any>;
 const ROOT = path.resolve(__dirname, '../../..');
-const SPEC = yaml.load(fs.readFileSync(path.join(ROOT, 'contracts/openapi.yaml'), 'utf8')) as S;
+const SPEC = YAML.parse(fs.readFileSync(path.join(ROOT, 'contracts/openapi.yaml'), 'utf8')) as S;
 const OUT = process.env.SWEEP_OUT ?? path.join(ROOT, 'ops/checklist/schema-sweep.json');
 const deref = (s: S | undefined): S => {
   if (!s) return {};

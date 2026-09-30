@@ -13,6 +13,10 @@ info:
     - 보호자 경로 공통 오류(D21, 경로별로 반복해 적지 않음): 세션 없음·만료는 401 `unauthorized`(reason `login_required`·`session_revoked`, gate G0),
       가족이 없는 계정(나가거나 해제됨)은 409 `conflict`·reason `no_family`·gate G0 — 화면은 S1d로 간다. 예외: `/v1/me`·`POST /v1/family`·초대 수락은 가족 없이도 된다.
     - 운영 경로 공통 오류: 세션 없음은 401, 역할 없음은 403 `forbidden_role`·reason `role_missing`·gate G1.
+    - 경로·쿼리 입력 공통 오류(2026-09-30, API 서비스 점검표 계약 2·4·5행, 경로별로 반복해 적지 않음): 숫자 id 자리(경로 `childId`·`artworkId`·`inviteId`·`memberId`·`runId`·`captionId`·`checkId`·`jobId`, 쿼리 `child`)는
+      1~18자리 양의 정수 문자열이다(`^[1-9][0-9]{0,17}$`). 어기면 — 그리고 필수 쿼리가 없거나, `modelId`가 목록 밖이거나, 날짜 쿼리가 `YYYY-MM-DD`가 아니면 —
+      처리 전에 422 `validation_failed`·reason `invalid_param`·`fields: [{name, reason}]`(reason `required`·`not_positive_integer`·`not_in_enum`·`not_date`)로 거절한다.
+      이 검사는 로그인 확인(401)·소유·존재 확인(404)보다 먼저다(형식만 보고 자원 존재는 알리지 않는다) — 형식이 맞는 id만 404로 존재를 숨긴다(BR-ACC-01). DB 오류(503)로 번지지 않는다.
     - 오류→화면 사상은 `code`가 아니라 `reason`(+`gate`)으로 한다. 해제 주체·다음 행동 문구는 화면 문구 사전(web `copy/ko.ts`)이 gate·reason으로 정한다.
 servers:
   - url: /
@@ -315,7 +319,7 @@ paths:
       summary: 초대 취소 (UC15)
       security: [{ guardianSession: [] }]
       parameters:
-        - { name: inviteId, in: path, required: true, schema: { type: string } }
+        - { name: inviteId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       responses:
         '204': { description: 취소됨 }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -390,7 +394,7 @@ paths:
       summary: 공동 보호자 해제 (UC15, G29) — 만든 보호자만. 해제된 계정의 세션은 즉시 모두 삭제
       security: [{ guardianSession: [] }]
       parameters:
-        - { name: memberId, in: path, required: true, schema: { type: string } }
+        - { name: memberId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       responses:
         '204': { description: 해제됨. 그 보호자가 올린 자료는 가족 공간에 남음 }
         '403':
@@ -492,7 +496,7 @@ paths:
       parameters:
         - name: child
           in: query
-          schema: { type: string }
+          schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
       responses:
         '200':
           description: 작품 요약 목록
@@ -707,7 +711,7 @@ paths:
       - name: captionId
         in: path
         required: true
-        schema: { type: string }
+        schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
     put:
       tags: [보호자 앱]
       summary: (P0.5) 설명 수정·승인·폐기 (UC10, BR-CAP-04, D6)
@@ -766,7 +770,7 @@ paths:
         - name: child
           in: query
           required: true
-          schema: { type: string }
+          schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
         - name: q
           in: query
           description: 제목 부분 일치 검색 [추론]
@@ -998,7 +1002,7 @@ paths:
       security: [{ staffSession: [operator, evaluator, integrator] }]
       x-permission: models.check.read   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
-        - { name: checkId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
+        - { name: checkId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       responses:
         '200':
           description: 점검 기록
@@ -1074,7 +1078,7 @@ paths:
       security: [{ staffSession: [evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
-        - { name: runId, in: path, required: true, schema: { type: string } }
+        - { name: runId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       responses:
         '200':
           description: 평가 기록과 항목별 결과(기대 대비·낮춤·오인 사례)
@@ -1088,7 +1092,7 @@ paths:
       security: [{ staffSession: [evaluator] }]
       x-permission: models.manage   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
-        - { name: runId, in: path, required: true, schema: { type: string } }
+        - { name: runId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       requestBody:
         required: true
         content:
@@ -1299,7 +1303,7 @@ paths:
       security: [{ staffSession: [operator, integrator] }]
       x-permission: apiGuide.use   # D24 — 역할(보안 범위)은 api/src/auth/policy.ts와 같다
       parameters:
-        - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
+        - { name: jobId, in: path, required: true, schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' } }
       responses:
         '200':
           description: 외부 작업 상태
@@ -1324,12 +1328,12 @@ components:
       name: childId
       in: path
       required: true
-      schema: { type: string }
+      schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
     ArtworkId:
       name: artworkId
       in: path
       required: true
-      schema: { type: string }
+      schema: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
     ModelId:
       name: modelId
       in: path

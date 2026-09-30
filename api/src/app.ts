@@ -6,6 +6,7 @@ import type { Pool } from 'mysql2/promise';
 import type { Config } from './config.js';
 import { log } from './lib/logger.js';
 import { Problem, parseSignal } from './lib/problem.js';
+import { paramGuard } from './lib/paramGuard.js';
 import type { StoragePort } from './storage/LocalFsDriver.js';
 import { filesRouter } from './modules/files/routes.js';
 
@@ -29,6 +30,7 @@ export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDe
   app.use(express.json({ limit: '64kb' }));
 
   for (const m of before) app.use(m);
+  app.use(paramGuard(cfg.contractsDir)); // 경로·쿼리 입력 공통 오류(계약 머리말) — 라우터·로그인 확인보다 먼저
   app.use(filesRouter(db, cfg, storage));
   for (const r of routers) app.use(r);
 
