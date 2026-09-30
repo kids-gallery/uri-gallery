@@ -1,15 +1,15 @@
 {
   "tracks": [
     {
-      "id": "satie-gymnopedie-1-v1",
-      "title": "Gymnopédie No. 1 (Lent et douloureux)",
-      "composer": "Erik Satie",
-      "performer": "Robin Alciatore (Musopen)",
-      "source": "https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
-      "license": "PD",
-      "files": { "mp3": "satie-gymnopedie-1-v1.mp3", "ogg": "satie-gymnopedie-1-v1.ogg" },
-      "bytes": { "mp3": 2163297, "ogg": 1710032 },
-      "durationSec": 180.2
+      "id": "mozart-twinkle-variations-v1",
+      "title": "12 Variations on \"Ah vous dirai-je, Maman\" K. 265 — Theme, Var. I–II",
+      "composer": "Wolfgang Amadeus Mozart",
+      "performer": "Stefano Ligoratti",
+      "source": "https://commons.wikimedia.org/wiki/File:Mozart_-_12_Variations_K._265_-_Stefano_Ligoratti.mp3",
+      "license": "CC BY 3.0",
+      "files": { "mp3": "mozart-twinkle-variations-v1.mp3", "ogg": "mozart-twinkle-variations-v1.ogg" },
+      "bytes": { "mp3": 1637609, "ogg": 1511224 },
+      "durationSec": 136.4
     }
   ]
 }
