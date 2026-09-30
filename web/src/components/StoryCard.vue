@@ -2,20 +2,36 @@
 // C7 이야기 카드(T093, SD_02 §3 C7 · UX5, BR-STY-03·04, BR-EXH-05, D6). 작품명 · 작가 줄 · 결과 종류 · 규칙 문장 해설(아이의 한마디는 원문 그대로)
 // · 보호자 감상평 · AI 작성 해설을 칸을 나눠 보인다 — 한마디와 AI 문장은 절대 한 칸에 섞지 않는다.
 // 모양은 S8 "작품 앞" 월 라벨(SD_02 §17-4, D26 ⑥ 색 틀 v2 — 토큰만). 뒤로가기·재생 같은 조작은 부르는 쪽(slot before/after)이 둔다.
+// D42(SD_02 §17-15 A): 제목 아래 [들려주기] — 화면에 보이는 문장만 차례로 읽는다(제목 → 해설 → 감상평 → AI 해설).
+import { computed } from 'vue';
 import { ko } from '@/copy/ko';
 import type { components } from '@/api/types.gen';
+import SpeakButton from '@/app/sound/SpeakButton.vue';
+import { sc } from '@/app/sound/copy';
 
 type Item = components['schemas']['GalleryItem'];
-defineProps<{ item: Item; alias: string; titleId?: string }>();
+const props = defineProps<{ item: Item; alias: string; titleId?: string }>();
 
 const yearOf = (d: string) => d.slice(0, 4);
 const monthOf = (d: string) => Number(d.slice(5, 7));
+const readParts = computed(() => {
+  const i = props.item;
+  return [
+    `${i.title}.`,
+    ko.museum.intro(i.title, props.alias, i.ageAtMaking, yearOf(i.madeOn), monthOf(i.madeOn)),
+    i.childWords ? `${ko.museum.wordsBefore}${i.childWords}${ko.museum.wordsAfter}` : '',
+    ko.museum.kindLine[i.kind] ?? '',
+    i.guardianNote ? `${ko.museum.guardianNote}. ${i.guardianNote}` : '',
+    i.aiCaption?.body ? `${sc.aiPrefix} ${i.aiCaption.body}` : '',
+  ];
+});
 </script>
 
 <template>
   <slot name="before" />
   <p class="wl-eyebrow">{{ ko.museum.label }}</p>
   <h1 :id="titleId" class="wl-title">{{ item.title }}</h1>
+  <SpeakButton :parts="readParts" :title="item.title" />
   <p class="wl-artist">{{ ko.museum.artist(alias, item.ageAtMaking, yearOf(item.madeOn)) }}</p>
   <p class="wl-kind">{{ ko.museum.kind[item.kind] }}</p>
   <p class="wl-desc">

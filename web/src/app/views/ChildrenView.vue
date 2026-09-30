@@ -13,6 +13,9 @@ import { ko, problemCopy } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { JOURNEY_FROM_CHILD } from '../authForm';
 import DeleteDialog from '../components/DeleteDialog.vue';
+import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
+import { DEFAULT_COLOR, DEFAULT_KIND, isColor, isKind } from '@/app/character/names';
+import { home as hc } from '@/app/town/copy';
 
 type Child = components['schemas']['Child'];
 const MAX = 20;
@@ -86,10 +89,11 @@ function fixDup() { if (dup.value) startEdit(dup.value); }
           <thead><tr><th>{{ ko.child.colAlias }}</th><th>{{ ko.child.colArtworks }}</th><th>{{ ko.child.colActions }}</th></tr></thead>
           <tbody>
             <tr v-for="c in children" :key="c.id">
-              <td class="alias">{{ c.alias }}</td>
+              <td class="alias"><CharacterAvatar class="ch-av" :kind="isKind(c.character) ? c.character : DEFAULT_KIND" :color="isColor(c.color) ? c.color : DEFAULT_COLOR" :size="36" />{{ c.alias }}</td>
               <td class="num">{{ c.artworkCount ?? 0 }}</td>
               <td class="row-acts">
                 <button class="btn btn-secondary btn-sm" type="button" @click="startEdit(c)">{{ ko.child.edit }}</button>
+                <RouterLink class="btn btn-secondary btn-sm" :to="`/app/children/new?edit=${c.id}`">{{ hc.changeLook }}</RouterLink>
                 <button class="btn btn-secondary btn-sm" type="button" @click="removing = c">{{ ko.child.remove }}</button>
               </td>
             </tr>
@@ -109,6 +113,11 @@ function fixDup() { if (dup.value) startEdit(dup.value); }
         <button class="btn btn-secondary" type="button" @click="fixDup">{{ ko.child.edit }}</button>
       </template>
     </NoticeBlock>
+
+    <section class="card stack-sm make" aria-labelledby="ch-make">
+      <p id="ch-make" class="t-body-sm">{{ hc.makeCharacterHint }}</p>
+      <div><RouterLink class="btn btn-primary" to="/app/children/new">{{ hc.makeCharacter }}</RouterLink></div>
+    </section>
 
     <form class="card stack child-form" novalidate @submit.prevent="save">
       <h2 class="t-card-title">{{ editing ? ko.child.edit : ko.child.addTitle }}</h2>
@@ -146,4 +155,6 @@ table.plain th{font:400 12px/1 var(--font-mono);letter-spacing:.6px;text-transfo
 .num{font-variant-numeric:tabular-nums}
 .btn-sm{min-height:44px;font-size:16px;padding:6px 14px}
 .row-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs)}
+.ch-av{vertical-align:middle;margin-right:6px}
+.make{max-width:560px;display:grid;gap:var(--s-sm)}
 </style>

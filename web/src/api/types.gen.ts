@@ -1145,6 +1145,367 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/town": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 미술관 마을 (D40, SD_02 §17-13 D) — 내 건물 · 이웃 건물(문 열림, 아이 캐릭터·별칭) · 모르는 가족 건물(겉모양만, 문 잠김)
+         * @description 가족(계정)마다 건물 1채. 건물 자리(x, y)는 가족 번호로 정해진 격자. 모르는 가족은 최대 12채, 이름·아이 정보 없이 모양만(BR-ACC-01 — 존재 외에는 드러내지 않는다).
+         *     건물 id는 가족 번호가 아니라 서명한 불투명 값이다.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 마을 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            buildings: components["schemas"]["TownBuilding"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/neighbors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 이웃 가족 목록 (D40, UC_16) — 건물 id · 아이 캐릭터·별칭 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 이웃 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TownBuilding"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/neighbors/{buildingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 이웃 끊기 (D40, UC_16 A2) — 어느 쪽이든 바로, 끊으면 서로의 미술관 문이 즉시 잠김 */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    buildingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 끊음 */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/neighbors/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 대기 중인 이웃 초대 링크 (D40) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 대기 중(가족당 1건) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** Format: date-time */
+                            expiresAt: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** 이웃 초대 링크 만들기 (D40, UC_16 BF1) — 한 번 · 7일 · 가족당 대기 1건(새로 만들면 이전 링크 무효), 링크 원문은 이 응답에서만 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    /** @example {} */
+                    "application/json": Record<string, never>;
+                };
+            };
+            responses: {
+                /** @description 링크 */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description APP_BASE_URL/app/neighbor?token=… */
+                            link: string;
+                            /** Format: date-time */
+                            expiresAt: string;
+                        };
+                    };
+                };
+                /** @description 이웃이 이미 30가족 — code conflict, reason neighbor_full */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/neighbors/invites/{inviteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 대기 중인 이웃 초대 취소 (D40) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    inviteId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 취소 */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/neighbors/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 이웃 초대 받기 (D40, UC_16 BF3) — 두 가족이 서로 이웃 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description 이웃이 됨(이미 이웃이어도 204) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["TokenInvalid"];
+                /** @description 자기 가족의 링크 — reason own_family · 이웃 30가족 — reason neighbor_full */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/visit/children/{childId}/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 이웃 아이의 미술관 보기 (D40, UC_16 BF4, SD_02 §17-13 F) — 그림 · 별칭 · 제목 · 캐릭터만
+         * @description 이웃이 아니면 404(존재를 숨김). 나이 · 한마디 · 감상평 · 그린 날 · 원본은 싣지 않는다. 방은 번호로만("전시실 1"). 파일은 방문 전용 경로(/v1/visit/files)로만.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    childId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 방문 미술관 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VisitGallery"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/visit/files/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 방문 전용 그림 파일 (D40) — 받을 때마다 이웃 관계를 다시 확인, 끊으면 바로 404 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 그림 파일 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/children": {
         parameters: {
             query?: never;
@@ -3130,6 +3491,9 @@ export interface components {
         ChildInput: {
             /** @description 별칭만. 실명·생년월일 필드 없음(BR-CHD-01). 앞뒤 공백을 뺀 1~20자, 허용 문자 제한 없음(D22). DB 컬럼 VARCHAR(100)은 여유 */
             alias: string;
+            character?: components["schemas"]["CharacterKind"];
+            color?: components["schemas"]["CharacterColor"];
+            museumStyle?: components["schemas"]["MuseumStyle"];
         };
         Child: {
             /** @description 아이 ID — 아이를 구분하는 기준(D18) */
@@ -3139,6 +3503,66 @@ export interface components {
             artworkCount?: number;
             /** @description 같은 가족에 같은 별칭이 이미 있음 — 저장은 했고 "같은 별칭이 이미 있어요" 안내만(FR-1 v2.2) */
             aliasDuplicate?: boolean;
+            /** @description 캐릭터(D40) — 아직 안 골랐으면 null(화면 기본값) */
+            character?: components["schemas"]["CharacterKind"] | null;
+            color?: components["schemas"]["CharacterColor"] | null;
+            museumStyle?: components["schemas"]["MuseumStyle"] | null;
+        };
+        /**
+         * @description 캐릭터 8종(D40) — 곰·토끼·고양이·강아지·여우·펭귄·공룡·부엉이, 자체 제작 그림
+         * @enum {string}
+         */
+        CharacterKind: "bear" | "rabbit" | "cat" | "dog" | "fox" | "penguin" | "dino" | "owl";
+        /**
+         * @description 캐릭터 색 6(D40) — 해바라기·복숭아·하늘·풀잎·라벤더·구름
+         * @enum {string}
+         */
+        CharacterColor: "sunflower" | "peach" | "sky" | "leaf" | "lavender" | "cloud";
+        /**
+         * @description 미술관 모양 8(D40) — 세계 유명 미술관·박물관 모티브(모양만, 이름·로고 없음 D33): 유리 피라미드·하얀 나선 탑·기둥 신전·시계탑 기차역·붉은 벽돌 굴뚝·황금 돔 궁전·기와 한옥·은빛 물결 지붕
+         * @enum {string}
+         */
+        MuseumStyle: "glass_pyramid" | "white_spiral" | "column_temple" | "clock_station" | "brick_chimney" | "golden_dome" | "hanok_roof" | "silver_wave";
+        TownChild: {
+            /** @description 아이 ID — 방문 미술관 주소(/v1/visit/children/{id}/gallery). 내 아이면 내 미술관 */
+            id: string;
+            alias: string;
+            character?: components["schemas"]["CharacterKind"] | null;
+            color?: components["schemas"]["CharacterColor"] | null;
+            museumStyle?: components["schemas"]["MuseumStyle"] | null;
+        };
+        TownBuilding: {
+            /** @description 건물 id(서명한 불투명 값, 가족 번호 아님) */
+            id: string;
+            /** @description 마을 격자 칸 */
+            x: number;
+            y: number;
+            /**
+             * @description stranger는 문 잠김 — 아래 children 없음
+             * @enum {string}
+             */
+            relation: "mine" | "neighbor" | "stranger";
+            /** @description 건물 모양 = 그 가족 첫 아이의 미술관 모양 [추론] */
+            style?: components["schemas"]["MuseumStyle"] | null;
+            /** @description mine·neighbor만 */
+            children?: components["schemas"]["TownChild"][];
+        };
+        VisitGallery: {
+            child: components["schemas"]["TownChild"];
+            /** @description 전시실 1·2… (나이는 싣지 않는다) */
+            rooms: {
+                room: number;
+                items: {
+                    id: string;
+                    /** @enum {string} */
+                    kind: "animated" | "relief" | "frame" | "sculpture";
+                    title: string | null;
+                    /** @description 방문 전용 파일 경로 — frame은 그림 사진(고친 사진 우선), animated·relief·sculpture는 결과 파일 */
+                    primaryUrl?: string | null;
+                    /** @description animated는 그림 사진(포스터) · relief는 오려 낸 그림(시차 앞면) · 그 밖 null */
+                    auxUrl?: string | null;
+                }[];
+            }[];
         };
         /**
          * @description SD_03 artwork.status + 유도 exhibited(v_artwork_display). failed = 처리하지 못함. deleting 작품은 응답하지 않음(404)

@@ -41,7 +41,14 @@ export const routes: RouteRecordRaw[] = [
     meta: { shell: 'app' },
     children: [
       // 홈: 전환은 museumTheme.ts 한 줄(D31, SD_02 §17-6) — walk = 걸어 다니는 미술관, v2 = §17-3 홈
-      { path: '', name: 'app-home', component: () => (museumTheme() === 'photo' ? import('@/app/views/PhotoWalkView.vue') : isClassic() ? import('@/app/views/WalkHomeView.vue') : import('@/app/views/PaperHomeView.vue')) }, // D33 1인칭 고전 회랑(SD_02 §17-9)
+      // 홈 = 아이 미술관(D43, SD_02 §17-13 G): 1명 바로 · 여럿 고르기 · 0명 캐릭터 만들기. ?child=&hung=은 그 미술관으로 넘긴다(D44)
+      { path: '', name: 'app-home', component: () => import('@/app/views/MuseumHomeView.vue') },
+      { path: 'museum/:childId', name: 'app-museum', component: () => import('@/app/views/Museum3DView.vue') }, // 아이 미술관(D40 B·C) · 이웃은 ?visit=1(F)
+      { path: 'town', name: 'app-town', component: () => import('@/app/views/TownView.vue') }, // 미술관 마을(D40 D)
+      { path: 'neighbor', component: () => import('@/app/views/NeighborAcceptView.vue') }, // 이웃 초대 받기(D40 E, UC_16)
+      { path: 'children/new', component: () => import('@/app/views/CharacterCreateView.vue') }, // 캐릭터 만들기 · ?edit={childId}(D40 A)
+      // 예전 홈(D33 사진 회랑 등)은 전환 한 줄(museumTheme) 그대로 여기로(D43 ②)
+      { path: 'corridor', name: 'app-corridor', component: () => (museumTheme() === 'photo' ? import('@/app/views/PhotoWalkView.vue') : isClassic() ? import('@/app/views/WalkHomeView.vue') : import('@/app/views/PaperHomeView.vue')) },
       { path: 'list', name: 'app-list', component: () => import('@/app/views/ClassicHomeView.vue') }, // 한눈에 보기(§17-5 목록형 — 금빛 액자 · 고른 벽 색)
       { path: 'hall', name: 'app-hall', component: () => import('@/app/views/MuseumView.vue') }, // 전시실 — 평면도 · N세관 · 작품 앞 ?art=(SD_02 §17-4)
       { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리

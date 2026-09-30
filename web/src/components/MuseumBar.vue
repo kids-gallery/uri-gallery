@@ -5,6 +5,10 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { ko } from '@/copy/ko';
 import type { MenuItem } from './RoleHeader.vue';
+import MusicButton from '@/app/sound/MusicButton.vue';
+import { track } from '@/app/sound/bgm';
+import { sc } from '@/app/sound/copy';
+// D42(SD_02 §17-15 B): 지름길 옆 [음악] — 누를 때만 재생. CC BY 곡이면 메뉴 판 아래에 출처 한 줄
 
 defineProps<{ account?: string; menu: MenuItem[] }>();
 const emit = defineEmits<{ logout: [] }>();
@@ -26,6 +30,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
     <nav class="mbar-quick" :aria-label="ko.shell.quick">
       <RouterLink class="mbar-pill" to="/app/upload" :aria-label="ko.shell.quickUpload"><span class="full">{{ ko.shell.quickUpload }}</span><span class="short" aria-hidden="true">{{ ko.shell.quickUploadShort }}</span></RouterLink>
       <RouterLink class="mbar-pill" :to="{ path: '/app/list', query: route.query.child ? { child: route.query.child } : {} }" :aria-label="ko.shell.quickList"><span class="full">{{ ko.shell.quickList }}</span><span class="short" aria-hidden="true">{{ ko.shell.quickListShort }}</span></RouterLink>
+      <MusicButton />
       <button ref="btn" class="mbar-pill mbar-menu" type="button" :aria-expanded="open" aria-controls="mbar-panel" @click="open ? hide() : show()">
         <span aria-hidden="true">☰</span> {{ ko.shell.menuOpen }}
       </button>
@@ -40,6 +45,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         <button class="btn btn-secondary" type="button" @click="emit('logout')">{{ ko.auth.logout }}</button>
         <button class="btn btn-tertiary" type="button" @click="hide">{{ ko.walk.close }}</button>
       </div>
+      <p v-if="track && /^CC BY/.test(track.license)" class="mbar-credit">
+        <a :href="track.source" target="_blank" rel="noopener">{{ sc.credit(track.title, track.performer, track.license) }}</a>
+      </p>
     </div>
   </header>
 </template>
@@ -60,5 +68,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .mbar-link:hover,.mbar-link:focus-visible{background:var(--color-surface-soft)}
 .mbar-foot{display:flex;gap:8px;justify-content:space-between;border-top:1px solid var(--color-hairline);padding-top:var(--s-sm)}
 .mbar-pill .short{display:none}
+.mbar-credit{margin:0;font:400 12px/1.4 var(--font-sans)}
+.mbar-credit a{color:var(--color-ink)}
 @media (max-width:420px){.mbar-mark{font-size:16px}.mbar-pill{padding:8px 10px;font-size:13px}.mbar-pill .full{display:none}.mbar-pill .short{display:inline}}
 </style>

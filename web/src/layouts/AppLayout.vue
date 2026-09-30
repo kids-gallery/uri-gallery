@@ -12,7 +12,7 @@ const s = useSession();
 const router = useRouter();
 const route = useRoute();
 /** 미술관 화면에서는 메뉴를 한 버튼으로 접는다(D34 ④ · SD_02 §17-8) */
-const inMuseum = computed(() => ['/app', '/app/list', '/app/hall'].includes(route.path));
+const inMuseum = computed(() => ['/app', '/app/list', '/app/hall'].includes(route.path) || ['/app/town', '/app/corridor'].includes(route.path) || route.path.startsWith('/app/museum/')); // D40·D43 미술관 · 마을은 방 틀 없이
 /** 미술관 밖 보호자 화면은 방으로(D38, SD_02 §17-11) */
 const room = computed(() => {
   const p = route.path;

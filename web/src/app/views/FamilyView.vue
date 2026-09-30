@@ -3,6 +3,7 @@
 // 초대하기·해제·대기 초대 취소는 만든 보호자 화면에만. 두 명 찼으면 초대는 사유 달린 C3. 공동 보호자 화면은 [가족 공간에서 나가기]만.
 // 2026-09-30 D36(UC15 §0, SD_02 §17-7): 초대는 [초대 링크 복사하기] — 메일을 보내지 않는다. 서버 거절(403 invite_owner_only · 409 co_guardian_full)은 C2.
 // 나가기는 세션이 모두 지워져 로그인 화면으로 간다(다시 로그인하면 S1d).
+// D40(SD_02 §17-13 E): 이웃 가족 칸 — 만든 · 공동 보호자 모두(#neighbors, 마을의 [이웃 초대하기]가 여기로 온다).
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
@@ -11,6 +12,7 @@ import ReasonButton from '@/components/ReasonButton.vue';
 import { ko } from '@/copy/ko';
 import { useSession } from '@/stores/session';
 import NoticeBlock from '../components/NoticeBlock.vue';
+import NeighborPanel from '../town/NeighborPanel.vue';
 
 interface Member { id?: string; role?: 'owner' | 'co'; emailMasked?: string | null; isMe?: boolean }
 interface Invite { id?: string; emailMasked?: string | null; expiresAt?: string }
@@ -123,6 +125,8 @@ async function confirm() {
     <div v-else-if="members">
       <button class="btn btn-secondary" type="button" @click="asking = { kind: 'leave' }">{{ ko.family.leave }}</button>
     </div>
+
+    <NeighborPanel v-if="members" />
   </main>
 </template>
 
