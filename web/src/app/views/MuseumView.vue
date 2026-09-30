@@ -12,6 +12,7 @@ import type { BlockNotice as Notice } from '@/api/client';
 import type { components } from '@/api/types.gen';
 import ArtFrame from '@/components/ArtFrame.vue';
 import StoryCard from '@/components/StoryCard.vue';
+import SaveButtons from '@/components/SaveButtons.vue';
 import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
@@ -133,6 +134,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
         <aside ref="labelEl" class="walllabel" tabindex="-1" aria-live="polite">
           <button class="wl-back" type="button" @click="back"><span aria-hidden="true">←</span> {{ ko.museum.back }}</button>
           <StoryCard :item="open" :alias="alias" title-id="wl-title" />
+          <SaveButtons :item="open" :alias="alias" :still="still(open) ?? null" /><!-- D37 저장하기 -->
           <div v-if="open.kind !== 'frame'" class="wl-acts">
             <button v-if="open.kind === 'animated' && !showOriginal && open.primaryUrl && !reducedMotion()" class="btn btn-primary" type="button" :aria-pressed="playing"
               @click="playing = !playing">{{ playing ? ko.museum.stop : ko.museum.play }}</button>

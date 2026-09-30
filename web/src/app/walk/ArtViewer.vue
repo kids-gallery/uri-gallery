@@ -5,6 +5,7 @@ import { nextTick, onMounted, ref } from 'vue';
 import type { components } from '@/api/types.gen';
 import ArtFrame from '@/components/ArtFrame.vue';
 import StoryCard from '@/components/StoryCard.vue';
+import SaveButtons from '@/components/SaveButtons.vue';
 import { ko } from '@/copy/ko';
 import { reducedMotion } from '@/composables/usePolling';
 
@@ -43,6 +44,7 @@ function trap(e: KeyboardEvent) {
         <p v-if="(props.item as { titleAuto?: boolean }).titleAuto" class="av-ask">{{ ko.photo.titleAsk }}
           <RouterLink :to="`/app/artworks/${props.item.id}/story`">{{ ko.photo.titleWrite }}</RouterLink></p>
         <StoryCard :item="props.item" :alias="props.alias" title-id="av-title" />
+        <SaveButtons :item="props.item" :alias="props.alias" :still="props.still" /><!-- D37 저장하기 -->
       </aside>
     </div>
   </div>

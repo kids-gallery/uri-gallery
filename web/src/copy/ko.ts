@@ -323,6 +323,8 @@ export const ko = {
     scene: '미술관 장면', // [추론] 장면 영역 이름
   },
   /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/C/C_화면문구.md "1인칭 고전 회랑") */
+  /** 저장하기(D37, SD_02 §17-10 · docs/C/C_화면문구.md) [추론] */
+  save: { framed: '액자 그림 저장', moving: '움직이는 그림 저장', busy: '저장하는 중…', done: '저장했어요', fail: '저장하지 못했어요 — 다시 해 볼까요?' },
   photo: {
     scene: '고전 회랑 - 1인칭 장면', intro: '고전 회랑에 우리 아이 그림이 걸렸어요', enter: '입장하기', // [추론]
     atGate: '고전 회랑 입구', atHall: '고전 회랑', room: (age: number | null) => `${AGE(age)} 전시실`, // [추론]
