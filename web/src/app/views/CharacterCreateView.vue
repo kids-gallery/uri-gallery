@@ -146,6 +146,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 <template>
   <main class="container page cc">
     <h1 class="t-headline">{{ title }}</h1>
+    <p v-if="route.query.welcome === '1'" class="cc-welcome t-body" role="status">{{ ko.kakao.welcome }}</p><!-- D47: 카카오 첫 가입은 흰 표 대신 여기로 -->
 
     <nav class="dots" :aria-label="cc.stepNav">
       <ol>
@@ -351,4 +352,5 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
   .kcard{transition:none}
   .ribbon{display:none}
 }
+.cc-welcome{margin:0;padding:10px 14px;border-radius:14px;background:var(--color-block-lime);font-weight:600}
 </style>

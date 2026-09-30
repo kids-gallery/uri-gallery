@@ -2,17 +2,23 @@
 // S0w 입장(SD_02 §17-4, D26 ⑥ — 동작은 §17-2 그대로) — 로그인 전 첫 방문 한 번만. 아이보리 한 면에 아주 큰 굵은 글자
 // "우리 아이 미술관", 글자 안은 아이 그림 같은 색 띠(background-clip), 태그라인 · 짧은 소개 두 줄 · 빨간 가는 선 고리 문양,
 // [입장하기](빨간 원형 테두리 + 화살표) → S0a(next 유지). 외부 이미지 없음. 움직임 줄이기면 색 띠 흐름을 멈춘다(motion.css).
+// D47(§17-16): 로그인한 사람도 탭 세션마다 한 번 여기부터 — 로그인했으면 [입장하기] → next(없으면 홈 /app = 아이 미술관).
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ko } from '@/copy/ko';
 import { markEntered } from '../entrance';
+import { safeNext } from '@/router/menu';
+import { useSession } from '@/stores/session';
 
 const route = useRoute();
 const router = useRouter();
 const btn = ref<HTMLButtonElement | null>(null);
 onMounted(() => btn.value?.focus());
+const s = useSession();
 async function enter() {
   markEntered();
+  const signedIn = await s.loadGuardian(true).then(() => true, () => false);
+  if (signedIn) { await router.replace(safeNext(route.query.next, 'app')); return; }
   await router.replace({ path: '/app/login', query: typeof route.query.next === 'string' ? { next: route.query.next } : {} });
 }
 

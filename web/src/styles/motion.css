@@ -23,6 +23,7 @@ html[data-vt="door"]::view-transition-new(root){animation:vt-door-in 640ms var(-
 @keyframes vt-door-in{from{opacity:0;transform:translateX(22%)}}
 /* 메뉴 섬은 움직이지 않는다 · 작품 액자는 이어진다(공유 요소, view-transition-name: art-{id}) */
 .mbar{view-transition-name:mbar}
+::view-transition-group(mbar),::view-transition-old(mbar),::view-transition-new(mbar){animation:none} /* D47: 화면 전환 때 메뉴 줄은 제자리 */
 ::view-transition-group(*){animation-duration:var(--dur-2);animation-timing-function:var(--ease-spring)}
 
 /* 차례로 떠오르기(v-reveal) */

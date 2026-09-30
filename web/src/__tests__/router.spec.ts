@@ -42,10 +42,21 @@ describe('보호자 가드', () => {
     await r.push('/app/invite?token=abc');
     expect(r.currentRoute.value.path).toBe('/app/invite');
   });
-  it('가족 있으면 S4가 진입 홈', async () => {
+  it('가족 있으면 홈(아이 미술관) — 이 탭에서 입장 화면을 거쳤으면 바로', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, { hasFamily: true, role: 'owner' })));
+    sessionStorage.setItem('uam.enteredSession', '1');
     const r = mk();
     await r.push('/');
+    expect(r.currentRoute.value.name).toBe('app-home');
+    sessionStorage.removeItem('uam.enteredSession');
+  });
+  it('D47: 로그인했어도 탭 세션마다 한 번 입장 화면부터, 홈 버튼(?pick=1)은 건너뜀', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, { hasFamily: true, role: 'owner' })));
+    sessionStorage.removeItem('uam.enteredSession');
+    const r = mk();
+    await r.push('/app');
+    expect(r.currentRoute.value.fullPath).toBe('/app/welcome?next=/app');
+    await r.push('/app?pick=1');
     expect(r.currentRoute.value.name).toBe('app-home');
   });
   it('로그인 전 화면은 세션을 묻지 않는다', async () => {

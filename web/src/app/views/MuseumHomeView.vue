@@ -31,8 +31,8 @@ async function load() {
     const last = lastChild();
     const asked = typeof route.query.child === 'string' ? route.query.child : null;
     if (asked && list.some((c) => c.id === asked)) return void (await go(asked));
+    if (list.length === 1) return void (await go(list[0]!.id)); // 홈 버튼(?pick=1)도 1명이면 그 미술관(D47)
     if (route.query.pick !== '1') {
-      if (list.length === 1) return void (await go(list[0]!.id));
       if (last && list.some((c) => c.id === last)) return void (await go(last));
     }
     kids.value = list;

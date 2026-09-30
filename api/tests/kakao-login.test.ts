@@ -27,7 +27,7 @@ describe('카카오 로그인 — 가입·로그인', () => {
   });
   it('첫 로그인: 가족 공간 + 만든 보호자, 이메일·비밀번호 없이 회원번호만 저장 → 아이 등록으로', async () => {
     const { a, to } = await kakaoLogin('1001');
-    expect(to).toBe('/app/children?welcome=1');
+    expect(to).toBe('/app/children/new?welcome=1');
     expect((await a.get('/v1/me').expect(200)).body).toEqual({ emailMasked: null, loginMethod: 'kakao', hasFamily: true, role: 'owner' });
     expect(await q(`SELECT email, password_hash, kakao_id, role, family_id IS NOT NULL fam FROM guardian_account`))
       .toEqual([{ email: null, password_hash: null, kakao_id: '1001', role: 'owner', fam: 1 }]);
@@ -35,7 +35,7 @@ describe('카카오 로그인 — 가입·로그인', () => {
   it('다시 로그인: 같은 계정, 새 계정·가족을 만들지 않고 마지막 전시실로', async () => {
     await kakaoLogin('1002');
     const { to } = await kakaoLogin('1002');
-    expect(to).toBe('/app/after-login');
+    expect(to).toBe('/app');
     expect((await q<{ n: number }>(`SELECT COUNT(*) n FROM guardian_account`))[0].n).toBe(1);
     expect((await q<{ n: number }>(`SELECT COUNT(*) n FROM family`))[0].n).toBe(1);
   });

@@ -7,7 +7,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type Router } from
 import { ApiError, setNavigator } from '@/api/client';
 import { useSession } from '@/stores/session';
 import { OPS_ROLES, safeNext } from './menu';
-import { isFirstVisit } from '@/app/entrance';
+import { isFirstVisit, needsEntrance } from '@/app/entrance';
 import { isClassic, museumTheme } from '@/app/museumTheme';
 
 declare module 'vue-router' {
@@ -61,7 +61,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'account', component: () => import('@/app/views/AccountView.vue') }, // S0c 비밀번호 변경(T161)
       { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
       // 카카오로 다시 온 보호자 → 마지막으로 본 전시실(D36, SD_02 §17-7). 이 브라우저에 남긴 경로, 없으면 전시실
-      { path: 'after-login', redirect: () => lastHall() },
+      { path: 'after-login', redirect: '/app' }, // D47: 로그인 뒤 = 홈(아이 미술관). 예전 카카오 링크 호환
       { path: 'draft/paper', redirect: (to) => ({ path: '/app', query: to.query }) }, // 시안 경로는 홈으로(D26 ⑥)
       { path: 'gallery', redirect: (to) => ({ path: '/app/hall', query: to.query }) }, // S8 = 전시실(SD_02 §17-4)
     ],
@@ -94,6 +94,8 @@ export function installGuards(router: Router) {
       try {
         const me = await s.loadGuardian();
         if (!me.hasFamily && !to.matched.some((r) => r.meta.noFamilyOk)) return '/app/no-family';
+        // D47(§17-16): 로그인했어도 탭 세션마다 한 번 입장 화면부터 — 홈 /app로 들어올 때만(홈 버튼 ?pick · 올리기 끝 ?hung 등은 건너뜀)
+        if (to.path === '/app' && !Object.keys(to.query).length && needsEntrance()) return { path: '/app/welcome', query: { next: '/app' } };
       } catch (e) {
         // 로그인 전 첫 방문이면 입장 화면(S0w)을 한 번 거친다
         if (e instanceof ApiError && e.status === 401) return isFirstVisit() ? { path: '/app/welcome', query: login.query } : login;

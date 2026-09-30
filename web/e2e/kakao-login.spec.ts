@@ -28,11 +28,11 @@ test('로그인 화면: 크게 [카카오로 시작하기], 작게 이메일 로
   await shot(page, '01_로그인', info.project.name);
 });
 
-test('처음 카카오 로그인 → "아이를 등록해 볼까요?" → 다시 오면 마지막 전시실', async ({ page }, info) => {
+test('처음 카카오 로그인 → 캐릭터 만들기 "아이를 등록해 볼까요?" → 다시 오면 입장 화면 → 아이 미술관(D47)', async ({ page }, info) => {
   const id = member();
   await page.goto('/app/login');
   await viaKakao(page, id);
-  await expect(page).toHaveURL(/\/app\/children\?welcome=1/);
+  await expect(page).toHaveURL(/\/app\/children\/new\?welcome=1/);
   await expect(page.getByText(ko.kakao.welcome)).toBeVisible();
   await shot(page, '02_처음로그인_아이등록', info.project.name);
   // 아이를 등록하고 전시실을 본 뒤 로그아웃 → 다시 카카오로
@@ -43,7 +43,9 @@ test('처음 카카오 로그인 → "아이를 등록해 볼까요?" → 다시
   await page.getByRole('button', { name: ko.auth.logout }).click();
   await expect(page).toHaveURL(/\/app\/login/);
   await viaKakao(page, id);
-  await expect(page).toHaveURL(/\/app\/hall/);
+  await expect(page).toHaveURL(/\/app\/welcome\?next=%2Fapp|\/app\/welcome\?next=\/app/);
+  await page.getByRole('button', { name: new RegExp(ko.museum.enter) }).click();
+  await expect(page).toHaveURL(/\/app\/museum\/\d+/);
 });
 
 test('카카오에서 취소하면 "로그인을 취소했어요. 다시 해 볼까요?"', async ({ page }, info) => {
