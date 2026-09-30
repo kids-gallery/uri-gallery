@@ -17,6 +17,9 @@
 -- 개정 (2026-09-29, 통합 결정 D20 — 모델 점검): model_check 신설(테이블 36), stage_job.origin 'check'·model_check_id,
 --   trg_model_check_bi(G30 점검 입력, 트리거 16), 점검 작업을 운영 뷰에서 뺌(BR-OPS-05), 게이트 G30 시드(31개)
 -- 개정 (2026-09-29, D25 — B 이제민): story.guardian_note(보호자 감상평, BR-STY-04) + 기존 DB용 ADD COLUMN IF NOT EXISTS, v_gallery에 싣는다
+-- 개정 (2026-09-30, 이제민 결정 — 카카오 로그인, research R-26): guardian_account.kakao_id(카카오 회원번호, UNIQUE) 추가,
+--   email·password_hash를 NULL 허용(카카오 계정은 둘 다 없음), chk_guardian_login(카카오 회원번호 또는 이메일+비밀번호 중 하나는 있어야),
+--   family_invite.email NULL 허용(초대 링크 복사 — 이메일 없는 초대). 기존 DB용 멱등 ALTER는 family_invite 정의 뒤에 둔다
 --
 -- 표준 SQL을 기준으로 썼다. 검증 DBMS는 MariaDB 12.0.2다. 아래는 MariaDB 때문에
 -- 표준에서 벗어난 곳이다(이탈 사유).
@@ -89,11 +92,14 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   -- 1c460b0 사용자 결정(부모 두 명까지): 가족당 공동 보호자 1명. 같은 방식(조건부 생성 컬럼 + UNIQUE)
   co_family_id         BIGINT    GENERATED ALWAYS AS (CASE WHEN role = 'co' THEN family_id END) STORED,
   -- D18 · BR-ACC-06: 로그인 아이디는 이메일. 따로 아이디 컬럼을 두지 않는다
-  email                VARCHAR(254) NOT NULL,
+  -- 2026-09-30 카카오 로그인(R-26): 카카오 계정은 이메일이 없다(NULL). 이메일 계정(기존·팀원 시험)은 그대로
+  email                VARCHAR(254) NULL,
   -- 대소문자 무시 유일(BR-ACC-06, G26). 이탈 사유 5) 생성 컬럼 STORED + UNIQUE
   email_norm           VARCHAR(254) GENERATED ALWAYS AS (LOWER(email)) STORED,
   -- BR-ACC-07: 비밀번호는 해시로만 저장한다
-  password_hash        VARCHAR(255) NOT NULL,
+  password_hash        VARCHAR(255) NULL,
+  -- 2026-09-30 카카오 회원번호(카카오에서 받는 유일한 값, 동의 항목 없음). 탈퇴 시 계정과 함께 지운다
+  kakao_id             VARCHAR(32)  NULL,
   -- 인증 시각 규칙(D18): email_verified_at · password_changed_at · auth_email_token의 시각은 모두
   --   DATETIME에 UTC로 저장하고, 만료 비교도 UTC_TIMESTAMP()로 한다(서버 시간대와 무관)
   -- UC13 BF5: 확인 메일 링크를 누르기 전에는 NULL
@@ -104,6 +110,9 @@ CREATE TABLE IF NOT EXISTS guardian_account (
   created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT pk_guardian_account PRIMARY KEY (account_id),
   CONSTRAINT uq_guardian_email UNIQUE (email_norm),
+  CONSTRAINT uq_guardian_kakao UNIQUE (kakao_id),
+  -- 로그인 수단이 하나는 있어야 한다: 카카오 회원번호, 또는 이메일 + 비밀번호
+  CONSTRAINT chk_guardian_login CHECK (kakao_id IS NOT NULL OR (email IS NOT NULL AND password_hash IS NOT NULL)),
   CONSTRAINT chk_guardian_email_format CHECK (email LIKE '%_@_%._%'),
   CONSTRAINT fk_guardian_family FOREIGN KEY (family_id) REFERENCES family (family_id),
   -- U1 확정: 한 가족에 여러 보호자. uq_guardian_family를 풀고 만든 보호자만 가족당 1명으로 제한한다
@@ -123,7 +132,8 @@ CREATE TABLE IF NOT EXISTS family_invite (
   invite_id           BIGINT       NOT NULL AUTO_INCREMENT,
   family_id           BIGINT       NOT NULL,
   invited_by          BIGINT       NULL,
-  email               VARCHAR(254) NOT NULL,
+  -- 2026-09-30 초대 링크 복사(UC15 §0): 이메일 없는 초대는 NULL
+  email               VARCHAR(254) NULL,
   email_norm          VARCHAR(254) GENERATED ALWAYS AS (LOWER(email)) STORED,
   token_hash          CHAR(64)     NOT NULL,
   expires_at          DATETIME     NOT NULL,
@@ -147,6 +157,14 @@ CREATE TABLE IF NOT EXISTS family_invite (
 );
 -- 같은 가족·같은 이메일의 이전 초대를 찾아 무효로 만든다(재초대 시)
 CREATE INDEX IF NOT EXISTS ix_invite_family_email ON family_invite (family_id, email_norm);
+-- 2026-09-30 카카오 로그인(R-26) — 기존 DB용 멱등 변경. 새 DB는 위 CREATE TABLE이 이미 이 모양이다
+ALTER TABLE guardian_account MODIFY COLUMN email VARCHAR(254) NULL;
+ALTER TABLE guardian_account MODIFY COLUMN password_hash VARCHAR(255) NULL;
+ALTER TABLE guardian_account ADD COLUMN IF NOT EXISTS kakao_id VARCHAR(32) NULL AFTER password_hash;
+ALTER TABLE guardian_account ADD UNIQUE KEY IF NOT EXISTS uq_guardian_kakao (kakao_id);
+ALTER TABLE guardian_account DROP CONSTRAINT IF EXISTS chk_guardian_login;
+ALTER TABLE guardian_account ADD CONSTRAINT chk_guardian_login CHECK (kakao_id IS NOT NULL OR (email IS NOT NULL AND password_hash IS NOT NULL));
+ALTER TABLE family_invite MODIFY COLUMN email VARCHAR(254) NULL;
 
 -- D18 · BR-ACC-08: 가입 확인(verify)·비밀번호 재설정(reset) 메일 링크 토큰.
 -- 토큰 원문은 저장하지 않고 해시만 둔다. 1회용(used_at)·유효 시간(expires_at)·재발급 시 무효(revoked_at)

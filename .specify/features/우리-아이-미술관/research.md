@@ -245,11 +245,25 @@
   - 로그에는 메일 종류·결과 코드만. 수신 주소·토큰·링크는 남기지 않는다(BR-PRV-01).
 - **Rationale**: 결정 ⑤(B 선정, P0는 Mailpit). 팀 내부 검증 단계에서 실제 발송 서비스 계약·도메인 인증(SPF/DKIM) 없이 흐름을 끝까지 시험할 수 있다.
 - **Alternatives considered**: Gmail SMTP(개인 계정 자격 증명 공유 필요, 발송 한도), 상용 발송 API(계약·키 필요 — U19 확정 뒤).
-- **Decision update (2026-09-30, 이제민 — U19 중 발송 경로 닫음)**: p1에 실제 가입자가 생겨(확인 메일이 Mailpit에 갇혀 가입이 막힘) **Mailpit 자동 중계 → Gmail SMTP**로 실제 받은편지함에 보낸다.
+- **Decision update 2 (2026-09-30 오후, 이제민 — 위 Gmail 중계를 쓰지 않는다, U19 닫음)**: 메일을 실제로 보내지 않는다. 이유: 발송 계정(개인 Gmail) 자격 증명이 서버에 놓이고, 하루 한도·스팸함·도메인 인증(SPF·DKIM) 불가 문제가 남으며, 보호자에게는 메일 확인 단계 자체가 번거롭다. 보호자 로그인은 **카카오 로그인**(R-26)으로 바꿔 확인 메일·로그인 정보 찾기를 없앤다. 메일 기능은 지우지 않고 설정 `MAIL_ENABLED=false`로 끈다(끄면 발송 대신 로그에 종류만 — 기존 이메일 계정·팀원 흐름과 E2E 시험은 켜서 쓴다). 아래 중계 구성(설정 파일 예시·점검 스크립트)은 쓰지 않는 채로 남긴다 — `.data/mailpit-relay.yaml`을 만들지 않으면 동작하지 않는다.
+- **(쓰지 않음) Decision update (2026-09-30 오전, 이제민 — U19 중 발송 경로 닫음)**: p1에 실제 가입자가 생겨(확인 메일이 Mailpit에 갇혀 가입이 막힘) **Mailpit 자동 중계 → Gmail SMTP**로 실제 받은편지함에 보낸다.
   - 앱은 그대로(nodemailer → `127.0.0.1:1025` Mailpit). Mailpit이 `--smtp-relay-config <파일> --smtp-relay-all`로 새 메일을 모두 `smtp.gmail.com:587`(STARTTLS, 앱 비밀번호)로 넘긴다 — Mailpit 화면에 기록이 남아 발송 확인·재전송(Release)이 된다.
   - 중계 설정 파일 `.data/mailpit-relay.yaml`(git 제외, 권한 600)에만 계정·앱 비밀번호를 둔다. 실행 인자에는 파일 경로만(비밀값을 인자로 넘기지 않는다 — API 점검 D8). 파일이 없으면 지금처럼 Mailpit에만 쌓인다(서비스는 깨지지 않음).
   - 발신 주소: Gmail은 인증 계정으로 보내므로 `override-from`에 그 Gmail 주소를 둔다(앱의 `MAIL_FROM`은 바꾸지 않아도 된다). 한도 하루 약 500통 — 요청 한도(R-24)보다 넉넉하다.
   - 남은 U19: 도메인 발신(no-reply@p1.sumzip.com, SPF·DKIM)·상용 발송 서비스는 운영 전 다시 정한다.
+
+## R-26. 보호자 카카오 로그인 (2026-09-30 이제민 결정, UC13 §0 · UC15 §0, U19 닫음)
+
+- **Decision**: 보호자 가입·로그인의 기본은 카카오 로그인(OAuth 2.0 인가 코드). 카카오에서 받는 값은 **회원번호뿐**(동의 항목 없음 — 닉네임·프로필 사진·이메일 요청 안 함).
+  - 경로(app-api): `GET /v1/auth/kakao/start[?invite=<토큰>]` → state(32바이트 난수)를 10분 쿠키 `uam_kakao_state`(HttpOnly·Secure·SameSite=Lax, 값은 state와 초대 토큰의 HMAC 묶음)에 두고 `https://kauth.kakao.com/oauth/authorize`로 302. `GET /v1/auth/kakao/callback?code&state` → state 대조 → `POST https://kauth.kakao.com/oauth/token`(client_id=REST API 키, client_secret, redirect_uri, code) → `GET https://kapi.kakao.com/v2/user/me`의 `id` → 계정 찾기·만들기 → 세션 쿠키 `uam_sid` → 웹으로 302. 액세스 토큰은 쓰고 버린다(저장 안 함). `GET /v1/auth/providers` → `{kakao: 설정 여부, emailSignup}`(화면이 버튼 활성·비활성을 정한다).
+  - 돌려보내는 곳(웹): 처음 `/app/children?welcome=1`("아이를 등록해 볼까요?") · 다시 온 보호자 `/app/after-login`(마지막으로 본 전시실) · 초대로 합류 `/app/family?joined=1` · 취소 `/app/login?kakao=cancelled` · 실패 `/app/login?kakao=failed`.
+  - 첫 로그인: 한 트랜잭션에서 `family` + `guardian_account(kakao_id, role=owner)`(UC13 E4). 초대 토큰이 있으면 새 가족 대신 그 가족의 `co`로(G28·G29, 초대는 한 번만·7일·취소 가능). 동시 첫 로그인은 `uq_guardian_kakao`가 최종 판정 — 중복 키면 다시 읽어 로그인.
+  - 비밀값: REST API 키·Client Secret은 저장소 루트 `.env`(git 제외, 600)의 `KAKAO_REST_API_KEY`·`KAKAO_CLIENT_SECRET`에만. pm2가 환경변수로 넘긴다(실행 인자 아님, API 점검 D8). Redirect URI는 `APP_BASE_URL + /v1/auth/kakao/callback`(p1: `https://p1.sumzip.com/v1/auth/kakao/callback`, 카카오 디벨로퍼스에 같은 값 등록). 키가 없으면 `/start`는 503 `kakao_not_configured`, 화면 버튼은 "준비 중이에요"로 비활성, 이메일 로그인은 그대로.
+  - 로그: 결과 코드(`kakao_login`·`kakao_signup`·`kakao_cancelled`·`kakao_failed`와 단계)만. 인가 코드·토큰·회원번호 원문을 남기지 않는다(BR-PRV-01).
+  - 개인정보: 받는 항목 회원번호 1개. 계정이 있는 동안 보관, 탈퇴 시 계정과 함께 삭제하고 카카오 연결 끊기(`POST https://kapi.kakao.com/v1/user/unlink`, Admin 키 필요 — 탈퇴 범위와 함께 팀 결정). 카카오 쪽에는 앱 연결 기록만 남는다.
+  - 기존 이메일 로그인(`/v1/auth/login`)은 남긴다(시험 계정·팀원·기존 가입자·자동 점검). 이메일 계정에 카카오를 잇는 기능은 만들지 않는다(필요하면 팀 결정). 새 이메일 가입을 계속 받을지는 팀 결정 — 결정 전에는 경로는 두고 화면에서 내린다(메일이 꺼져 있어 확인 메일이 가지 않는다).
+- **Rationale**: 메일 발송(R-23)을 없애면서 가입 확인·로그인 정보 찾기 문제가 함께 사라진다. 보호자는 대부분 카카오 계정이 있고, 회원번호만 받으면 개인정보를 최소로 둔다.
+- **Alternatives considered**: Gmail 중계(R-23 오전안 — 자격 증명·한도·스팸), 네이버 로그인(보호자 가입 비율이 카카오보다 낮을 것 [추론]), 이메일 매직 링크(여전히 메일 발송 필요).
 
 ## R-24. 보호자 가입·확인·찾기·재설정 (FR-31·32, UC13·UC14, G26·G27, D18)
 
