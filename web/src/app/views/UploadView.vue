@@ -14,6 +14,8 @@ import CropBox from '@/components/CropBox.vue';
 import { croppedName, full, isFull, JPEG_QUALITY, outputSize, outputType, snap, type Rect } from '@/app/crop';
 import JourneyRail from '@/components/JourneyRail.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
+import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
+import { DEFAULT_COLOR, DEFAULT_KIND, type CharacterColor, type CharacterKind } from '@/app/character/names';
 import { ko, problemCopy } from '@/copy/ko';
 import { JOURNEY_FROM_CHILD } from '../authForm';
 import type { ArtworkDetail } from '../artwork';
@@ -27,6 +29,11 @@ const route = useRoute();
 const router = useRouter();
 const children = ref<Child[] | null>(null);
 const childId = ref(typeof route.query.child === 'string' ? route.query.child : '');
+/** 아틀리에의 아이 캐릭터(D40 캐릭터 · D38 움직임): 사진을 고르면 그림을 들고 이젤로, 올리면 벽에 걸러 걸어 나간다 */
+const buddy = computed(() => {
+  const c = children.value?.find((x) => x.id === childId.value) as (Child & { character?: CharacterKind | null; color?: CharacterColor | null }) | undefined;
+  return { kind: c?.character ?? DEFAULT_KIND, color: c?.color ?? DEFAULT_COLOR };
+});
 const retakeOf = typeof route.query.retakeOf === 'string' ? route.query.retakeOf : undefined;
 const file = ref<File | null>(null);
 const preview = ref<string | null>(null);
@@ -133,7 +140,8 @@ async function submit() {
     form.append('photo', photo, photo.name);
     if (retakeOf) form.append('retakeOf', retakeOf);
     const a = await api.post<ArtworkDetail>('/v1/artworks', { form, headers: { 'Idempotency-Key': key.value } });
-    await router.push(`/app/artworks/${a.id}/confirm`);
+    // D34: 올리면 바로 걸린다 → 전시로 가서 걸리는 장면(?hung)을 본다(옛 확정 화면으로 가지 않는다)
+    await router.push({ path: '/app', query: { child: childId.value, hung: a.id } });
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(0, null);
     block.value = err.status === 413 ? gate5('over_20mb') : toBlock(err);
@@ -198,11 +206,23 @@ function onBlock(label: string) {
         <p class="t-body-sm">{{ ko.upload.after2 }}</p>
       </section>
     </form>
+    <div class="up-buddy" :class="{ carry: !!file, go: busy }" aria-hidden="true"><CharacterAvatar :kind="buddy.kind" :color="buddy.color" :size="104" /><span v-if="file" class="up-sheet"></span></div>
   </main>
 </template>
 
 <style scoped>
 .up-form{max-width:640px}
+/* 아틀리에의 아이 캐릭터 — 사진을 고르면 종이를 들고 이젤 옆으로 통통 걸어 오고, 올리면 벽에 걸러 나간다(D38 · 로블록스 느낌 살짝) */
+.up-buddy{position:fixed;left:4vw;bottom:5vh;z-index:2;pointer-events:none;transition:transform var(--dur-3,800ms) var(--ease-spring,ease)}
+.up-buddy :deep(svg){animation:buddy-bob 1.6s ease-in-out infinite}
+.up-buddy.carry{transform:translateX(min(22vw,180px))}
+.up-buddy.carry :deep(svg){animation:buddy-hop .5s ease-in-out 3,buddy-bob 1.6s ease-in-out 1.5s infinite}
+.up-buddy.go{transform:translateX(110vw);transition-duration:1.4s}
+.up-sheet{position:absolute;left:62%;top:38%;width:34px;height:26px;background:#fff;border-radius:2px;box-shadow:0 0 0 2px #e4572e,0 4px 8px -4px rgba(0,0,0,.4);transform:rotate(-8deg)}
+@keyframes buddy-bob{50%{transform:translateY(-4px)}}
+@keyframes buddy-hop{40%{transform:translateY(-18px) rotate(-4deg)}80%{transform:translateY(0) rotate(3deg)}}
+@media (max-width:560px){.up-buddy{left:2vw;bottom:2vh;transform:scale(.8)}.up-buddy.carry{transform:translateX(24vw) scale(.8)}}
+@media (prefers-reduced-motion:reduce){.up-buddy,.up-buddy :deep(svg){animation:none;transition:none}}
 fieldset{border:0;margin:0;padding:0}
 legend{margin-bottom:var(--s-xs)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--s-sm)}

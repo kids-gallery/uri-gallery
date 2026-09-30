@@ -1,8 +1,8 @@
 /* 방 안의 내용(D38, SD_02 §17-11): 흰 카드가 빈 바탕에 떠 있지 않고 방 안 사물(이젤 위 캔버스 · 작업 카드 · 명패 카드)처럼 보이게. */
 .in-room .container.page{max-width:min(1120px,100%);padding-top:clamp(12px,3vh,32px)}
-.in-room h1,.in-room .t-headline{font-family:var(--mc-serif,'Noto Serif KR',serif);font-weight:700;letter-spacing:-.01em;color:#3a2a1f;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.in-room h1,.in-room .t-headline{font-family:var(--mc-serif,'Noto Serif KR',serif);font-weight:700;letter-spacing:-.01em;color:#4a3526;text-shadow:0 1px 0 rgba(255,255,255,.9)}
 .in-room .card{background:rgba(255,251,245,.94);border:0;border-radius:22px;
-  box-shadow:0 0 0 1px rgba(201,165,82,.45),0 1px 0 rgba(255,255,255,.8) inset,0 34px 60px -30px rgba(60,40,20,.55),0 10px 20px -14px rgba(60,40,20,.35);
+  box-shadow:0 0 0 1px rgba(201,165,82,.45),0 1px 0 rgba(255,255,255,.8) inset,0 30px 50px -32px rgba(120,90,50,.35),0 8px 18px -14px rgba(120,90,50,.2);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .in-room .card,.in-room .stack>section{animation:room-obj var(--dur-3,800ms) var(--ease-spring,ease) both}
 .in-room .stack>*:nth-child(2){animation-delay:60ms}.in-room .stack>*:nth-child(3){animation-delay:120ms}.in-room .stack>*:nth-child(4){animation-delay:180ms}
@@ -12,7 +12,14 @@
 .in-room .input,.in-room input,.in-room select,.in-room textarea{background:#fffdf8}
 /* 아틀리에: 올리기 판 = 이젤 위 캔버스(살짝 뒤로 기운) */
 .room-upload .up-form{transform-origin:50% 100%;transform:perspective(1200px) rotateX(3deg);border-radius:10px;
-  box-shadow:0 0 0 10px #f3ead8,0 0 0 12px #a8784a,0 40px 60px -30px rgba(50,30,10,.6)}
+  box-shadow:0 0 0 10px #fbf5ea,0 0 0 12px #d9b98b,0 36px 50px -32px rgba(120,90,50,.35)}
 /* 명패 쓰는 책상: 이야기 판 = 책상 위 카드 */
 .room-desk .story-form{transform-origin:50% 100%;transform:perspective(1400px) rotateX(4deg)}
 @media (prefers-reduced-motion:reduce){.in-room .card,.in-room .stack>section{animation:none}}
+/* 로블록스 느낌 살짝(이제민 지시): 두툼하게 눌리는 선명한 버튼 · 통통 튀는 반응 */
+.in-room .btn{border-radius:14px;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.18);transition:transform 120ms var(--ease-spring,ease),box-shadow 120ms}
+.in-room .btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 rgba(0,0,0,.18)}
+.in-room .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.in-room .btn-primary{background:linear-gradient(#b8577d,#a0496b);box-shadow:0 5px 0 #6e3550,0 12px 18px -10px rgba(110,53,80,.6)}
+.in-room .btn-primary:active{box-shadow:0 1px 0 #6e3550}
+@media (prefers-reduced-motion:reduce){.in-room .btn,.in-room .btn:hover,.in-room .btn:active{transform:none;transition:none}}

@@ -120,7 +120,7 @@ describe('S2 올리기(T066)', () => {
     expect(btn(w, ko.upload.submit)!.text()).toContain(ko.upload.tooBig);
     w.unmount();
   });
-  it('올리면 multipart + Idempotency-Key로 보내고 S3로 간다', async () => {
+  it('올리면 multipart + Idempotency-Key로 보내고 전시로 가서 걸리는 장면을 본다(D34, ?hung)', async () => {
     serve({ '/v1/children': [{ id: '1', alias: '하늘' }], 'POST /v1/artworks': () => json({ ...base, state: 'awaiting_confirm' }, 202) });
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => undefined }));
     const w = await open(UploadView, '/app/upload');
@@ -132,7 +132,8 @@ describe('S2 올리기(T066)', () => {
     const [, init] = calls('POST', '/v1/artworks')[0]!;
     expect((init!.headers as Record<string, string>)['Idempotency-Key']).toMatch(/^[0-9a-f-]{36}$/);
     expect((init!.body as FormData).get('childId')).toBe('1');
-    expect(router.currentRoute.value.path).toBe('/app/artworks/7/confirm');
+    expect(router.currentRoute.value.path).toBe('/app');
+    expect(router.currentRoute.value.query).toMatchObject({ hung: '7' });
     w.unmount();
   });
 });
