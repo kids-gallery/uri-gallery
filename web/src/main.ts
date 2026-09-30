@@ -2,7 +2,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import './styles/index.css';
-import './styles/motion.css'; // D38 움직임 · 전환
 import './styles/room.css'; // D38 방 안의 내용
 import App from './App.vue';
 import { makeRouter } from './router';
