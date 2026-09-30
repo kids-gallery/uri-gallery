@@ -41,7 +41,7 @@ async function mountAt(C: object, url = '/app/town') {
 describe('마을 배치(layoutTown)', () => {
   it('격자 칸을 아이소메트릭 좌표로, 판 안(0 이상)에 두고 뒤에서 앞 순서로 그린다', () => {
     const l = layoutTown(TOWN);
-    expect(iso(1, 0)).toEqual({ cx: 120, cy: 60 });
+    expect(iso(1, 0)).toEqual({ cx: 180, cy: 90 });
     for (const b of l.buildings) { expect(b.cx).toBeGreaterThan(0); expect(b.cy).toBeGreaterThan(0); expect(b.cx).toBeLessThan(l.width); expect(b.cy).toBeLessThan(l.height); }
     const ys = l.buildings.map((b) => b.cy);
     expect([...ys].sort((a, b) => a - b)).toEqual(ys);

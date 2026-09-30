@@ -3,6 +3,7 @@ export const sc = {
   speak: '들려주기',
   speakStop: '그만 듣기',
   speakLabel: (title: string) => `「${title}」 해설 들려주기`,
+  speakStopLabel: (title: string) => `「${title}」 해설 그만 듣기`, // 보이는 글자와 읽히는 이름을 맞춘다(WCAG 2.5.3)
   speakNone: '이 브라우저는 읽어 주기를 지원하지 않아요',
   aiPrefix: 'AI가 쓴 해설이에요.',
   music: '음악',

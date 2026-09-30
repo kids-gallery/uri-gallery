@@ -15,7 +15,7 @@ onBeforeUnmount(() => stopSpeaking(me));
 </script>
 
 <template>
-  <button v-if="ok" class="speak" type="button" :aria-pressed="on" :aria-label="sc.speakLabel(title)" @click="toggle">
+  <button v-if="ok" class="speak" type="button" :aria-pressed="on" :aria-label="on ? sc.speakStopLabel(title) : sc.speakLabel(title)" @click="toggle">
     <span aria-hidden="true">{{ on ? '⏹' : '🔊' }}</span> {{ on ? sc.speakStop : sc.speak }}
   </button>
   <p v-else class="speak-none">{{ sc.speakNone }}</p>

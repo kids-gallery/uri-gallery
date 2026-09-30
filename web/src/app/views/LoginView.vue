@@ -30,7 +30,12 @@ const kakaoNote = route.query.kakao === 'cancelled' ? ko.kakao.cancelled : route
 onMounted(async () => {
   try { kakaoOn.value = (await api.get<{ kakao: boolean }>('/v1/auth/providers', { noRedirect: true })).kakao; } catch { kakaoOn.value = false; }
 });
-function startKakao() { if (kakaoOn.value) window.location.assign('/v1/auth/kakao/start'); }
+// D47: 로그인 전에 연 주소(이웃 링크 등)는 카카오를 다녀와도 그대로 — next를 넘긴다(safeNext, 기본 /app이면 넘기지 않음)
+function startKakao() {
+  if (!kakaoOn.value) return;
+  const next = safeNext(route.query.next, 'app');
+  window.location.assign(next === '/app' ? '/v1/auth/kakao/start' : `/v1/auth/kakao/start?next=${encodeURIComponent(next)}`);
+}
 // 초대 링크(S1c)로 왔는데 계정이 없으면 초대받은 이메일로 가입(UC15 A4) — next의 token을 가입에 넘긴다
 const inviteToken = computed(() => {
   const n = typeof route.query.next === 'string' ? route.query.next : '';

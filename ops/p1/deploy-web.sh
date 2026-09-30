@@ -24,9 +24,16 @@ rm -rf "$ROOT/.data/p1-web.old"
 mv "$NEW" "$ROOT/.data/p1-web"
 
 # 공개 주소에서 확인(캐시 없음) — 다르면 되돌린다
-seen=$(curl -fsS -H 'Cache-Control: no-cache' "$URL/version.json?t=$(date +%s)" 2>/dev/null | sed -n 's/.*"commit":"\([0-9a-f]*\)".*/\1/p' || true)
+# 일시 실패에 되돌리지 않게 2초 간격 5번까지 — 마지막 응답의 형식을 실패 메시지에 남긴다
+seen=""; ctype=""
+for try in 1 2 3 4 5; do
+  ctype=$(curl -sS -o "$BUILD/version.seen" -w '%{http_code} %{content_type}' -H 'Cache-Control: no-cache' "$URL/version.json?t=$(date +%s)" 2>/dev/null || echo "연결 안 됨")
+  seen=$(sed -n 's/.*"commit":"\([0-9a-f]*\)".*/\1/p' "$BUILD/version.seen" 2>/dev/null || true)
+  [[ "$seen" == "$COMMIT" ]] && break
+  sleep 2
+done
 if [[ "$seen" != "$COMMIT" ]]; then
-  echo "배포 확인 실패: 공개 주소 커밋 '${seen:-없음}' ≠ $COMMIT — 이전 판으로 되돌림" >&2
+  echo "배포 확인 실패(5번): 공개 주소 커밋 '${seen:-없음}' ≠ $COMMIT · 마지막 응답 $ctype — 이전 판으로 되돌림(nginx /version.json 설정이 읽혔는지 확인)" >&2
   if [[ -d "$ROOT/.data/p1-web.old" ]]; then
     rm -rf "$ROOT/.data/p1-web.bad" && mv "$ROOT/.data/p1-web" "$ROOT/.data/p1-web.bad" && mv "$ROOT/.data/p1-web.old" "$ROOT/.data/p1-web"
   fi

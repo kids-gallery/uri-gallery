@@ -27,12 +27,15 @@ describe('보호자 가드', () => {
     expect(r.currentRoute.value.fullPath).toBe('/app/login?next=/app/works');
     localStorage.removeItem('uam.entered');
   });
-  it('세션 없고 첫 방문이면 입장 화면(S0w)을 먼저, next 유지(SD_02 §17-2)', async () => {
+  it('세션 없고 첫 방문이면 홈으로 올 때만 입장 화면(S0w), 깊은 주소는 바로 로그인(next 유지, §17-16)', async () => {
     localStorage.removeItem('uam.entered');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(unauth()));
     const r = mk();
-    await r.push('/app/works');
-    expect(r.currentRoute.value.fullPath).toBe('/app/welcome?next=/app/works');
+    await r.push('/app');
+    expect(r.currentRoute.value.fullPath).toBe('/app/welcome?next=/app');
+    await r.push('/app/neighbor?token=abc');
+    expect(r.currentRoute.value.path).toBe('/app/login');
+    expect(r.currentRoute.value.query.next).toBe('/app/neighbor?token=abc');
   });
   it('가족 없으면 S1d, 초대 링크는 그대로 연다', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => json(200, { hasFamily: false, role: null })));

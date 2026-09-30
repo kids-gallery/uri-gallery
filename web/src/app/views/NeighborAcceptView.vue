@@ -20,7 +20,10 @@ async function accept() {
     done.value = true;
   } catch (e) {
     const r = e instanceof ApiError ? e.reason : null;
-    err.value = r === 'own_family' ? nc.ownFamily : r === 'neighbor_full' ? nc.fullAccept : nc.tokenInvalid; // 쓰임·만료·취소·형식 오류는 한 말
+    const st = e instanceof ApiError ? e.status : 0;
+    // 링크 문제(400 token_invalid · 422 형식)만 "이미 쓰였거나 끝났어요", 끊김 · 서버 문제는 잠시 뒤 다시(링크는 아직 쓸 수 있다)
+    err.value = r === 'own_family' ? nc.ownFamily : r === 'neighbor_full' ? nc.fullAccept
+      : r === 'token_invalid' || st === 400 || st === 422 ? nc.tokenInvalid : nc.tryLater;
   } finally { busy.value = false; }
 }
 </script>

@@ -13,8 +13,8 @@ export interface PlacedBuilding {
 }
 export interface TownLayout { buildings: PlacedBuilding[]; width: number; height: number; minX: number; minY: number }
 
-export const TILE_W = 240;   // 마름모 칸 가로
-export const TILE_H = 120;   // 마름모 칸 세로
+export const TILE_W = 360;   // 마름모 칸 가로(건물 170px + 사이 길 — 겹치지 않게)
+export const TILE_H = 180;   // 마름모 칸 세로
 export const PAD = 200;      // 판 가장자리 여백(건물 높이 몫 포함)
 
 /** 격자 칸 → 판 좌표(아이소메트릭) */

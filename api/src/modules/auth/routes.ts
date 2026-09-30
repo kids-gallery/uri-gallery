@@ -52,8 +52,8 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
   const KAKAO_COOKIE = 'uam_kakao_state';
   const kakaoCookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: cfg.secureCookies, path: '/v1/auth/kakao', maxAge: 10 * 60 * 1000 };
   const sign = (v: string) => createHmac('sha256', cfg.sessionSecret).update(`kakao-state:${v}`).digest('base64url');
-  const packState = (st: { s: string; i?: string }) => { const v = Buffer.from(JSON.stringify(st)).toString('base64url'); return `${v}.${sign(v)}`; };
-  const unpackState = (raw: unknown): { s: string; i?: string } | null => {
+  const packState = (st: { s: string; i?: string; n?: string }) => { const v = Buffer.from(JSON.stringify(st)).toString('base64url'); return `${v}.${sign(v)}`; };
+  const unpackState = (raw: unknown): { s: string; i?: string; n?: string } | null => {
     if (typeof raw !== 'string') return null;
     const [v, mac] = raw.split('.');
     if (!v || !mac) return null;
@@ -71,7 +71,9 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
       if (!kakao.configured) throw new Problem('not_saved', 'kakao_not_configured');
       const invite = typeof req.query.invite === 'string' && /^[A-Za-z0-9_-]{10,200}$/.test(req.query.invite) ? req.query.invite : undefined;
       const s = randomBytes(32).toString('base64url');
-      res.cookie(KAKAO_COOKIE, packState({ s, ...(invite ? { i: invite } : {}) }), kakaoCookieOpts);
+      // D47: 로그인 전에 연 보호자 앱 주소(이웃 링크 등)로 돌아간다 — 같은 셸 상대 경로만(계약 pattern · 여기서 한 번 더)
+      const next = typeof req.query.next === 'string' && /^\/app(\/[^/].*)?$/.test(req.query.next) && !req.query.next.includes('://') ? req.query.next : undefined;
+      res.cookie(KAKAO_COOKIE, packState({ s, ...(invite ? { i: invite } : {}), ...(next ? { n: next } : {}) }), kakaoCookieOpts);
       res.redirect(302, kakao.authorizeUrl(s));
     } catch (e) { next(e); }
   });
@@ -104,10 +106,10 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
           await conn.query(`UPDATE family_invite SET accepted_at = UTC_TIMESTAMP(), accepted_account = ? WHERE invite_id = ?`, [id, inv.invite_id]);
           return { to: '/app/family?joined=1', event: 'kakao_invite_joined', id };
         }
-        if (acc) return { to: '/app', event: 'kakao_login', id: acc.account_id }; // D47: 홈 = 아이 미술관(입장 화면은 웹이 탭 세션마다 한 번)
+        if (acc) return { to: st.n ?? '/app', event: 'kakao_login', id: acc.account_id }; // D47: 홈 = 아이 미술관(입장 화면은 웹이 탭 세션마다 한 번)
         const [f] = await conn.query(`INSERT INTO family () VALUES ()`);    // 첫 로그인: 가족 공간 + 만든 보호자(UC13 §0 5, E4 한 트랜잭션)
         const [g] = await conn.query(`INSERT INTO guardian_account (family_id, role, kakao_id) VALUES (?, 'owner', ?)`, [(f as { insertId: number }).insertId, memberId]);
-        return { to: '/app/children/new?welcome=1', event: 'kakao_signup', id: (g as { insertId: number }).insertId }; // D47: 흰 표 대신 캐릭터 만들기
+        return { to: st.n ?? '/app/children/new?welcome=1', event: 'kakao_signup', id: (g as { insertId: number }).insertId }; // D47: 흰 표 대신 캐릭터 만들기
       });
       if (out.id) setGuardianCookie(res, await createSession(db, 'guardian', out.id));
       return done(out.to, out.event);

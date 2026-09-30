@@ -210,7 +210,7 @@ onBeforeUnmount(() => { ro?.disconnect(); window.removeEventListener('keydown', 
   radial-gradient(circle at 20% 30%,rgba(255,255,255,.5) 0 2px,transparent 3px) 0 0/48px 48px,
   radial-gradient(circle at 70% 60%,rgba(120,180,90,.35) 0 2px,transparent 3px) 0 0/64px 64px}
 .lot{position:absolute;width:0;height:0}
-.tile{position:absolute;left:-120px;top:-60px;width:240px;height:120px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+.tile{position:absolute;left:-130px;top:-65px;width:260px;height:130px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
   background:linear-gradient(135deg,#f4ecd8,#e8dcc0)}
 .lot.mine .tile{background:linear-gradient(135deg,#fde4e8,#f6c7d4)}
 .lot.neighbor .tile{background:linear-gradient(135deg,#e2f3ff,#bfe2fa)}

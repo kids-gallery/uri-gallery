@@ -173,6 +173,7 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
       <section v-if="step === 1" class="step card" data-step="1" aria-labelledby="cc-h">
         <h2 id="cc-h" ref="head" class="t-card-title" tabindex="-1">{{ cc.askName }}</h2>
         <form class="stack" novalidate @submit.prevent="next">
+          <span class="name-pal" aria-hidden="true"><CharacterAvatar :kind="kind" :color="color" :size="96" /></span><!-- ①단계 미리보기: 이름표를 들 친구 -->
           <div class="tag">
             <span class="tag-hole" aria-hidden="true" />
             <label class="tag-label" for="cc-alias">{{ cc.nameTag }}</label>
@@ -183,7 +184,10 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
           <p id="cc-alias-n" class="hint t-body-sm num" aria-live="polite">{{ cc.remaining(Math.max(left, 0)) }}<template v-if="left < 0"> - {{ aliasErr }}</template></p>
           <p class="t-body-sm">{{ cc.notCollected }}</p>
           <div class="acts">
-            <ReasonButton class="big" :label="cc.next" :disabled="!!aliasErr" :reason="aliasErr" @click="next" @blocked="focusAlias" />
+            <!-- 막힌 [다음]은 흐리게 + 쉬운 안내 한 줄(공통 "(비활성) -" 표시 대신, 세션2 판별 A8). 누르면 이름표로 초점 -->
+            <button class="btn btn-primary big" :class="{ soft: !!aliasErr }" type="submit" :aria-disabled="aliasErr ? 'true' : undefined"
+              :aria-describedby="aliasErr ? 'cc-next-why' : undefined">{{ cc.next }}</button>
+            <p v-if="aliasErr" id="cc-next-why" class="t-body-sm next-why">{{ !trimmed ? cc.nameFirst : aliasErr }}</p>
           </div>
         </form>
       </section>
@@ -293,6 +297,9 @@ onMounted(() => { void loadEdit(); if (!editId) focusAlias(); });
 .step{display:flex;flex-direction:column;gap:var(--s-md);min-width:0}
 .step h2:focus{outline:none}
 .step h2:focus-visible{outline:2px solid var(--color-ink);outline-offset:4px}
+.name-pal{display:flex;justify-content:center}
+.btn.soft{opacity:.45;box-shadow:none}
+.next-why{width:100%;margin:0;color:var(--color-ink)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center}
 .big{min-height:56px;padding-left:32px;padding-right:32px;font-size:22px}
 @media (max-width:560px){.acts .big{flex:1 1 100%}}

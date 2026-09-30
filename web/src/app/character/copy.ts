@@ -16,7 +16,8 @@ export const cc = {
   nameTag: '이름표',
   nameHint: '실명 대신 가족이 부르는 이름을 적어 주세요',
   remaining: (n: number) => `남은 글자 ${n}/20`,
-  notCollected: '실명 - 생년월일 - 출생연도는 받지 않아요',
+  notCollected: '실명 · 생년월일 · 출생연도는 받지 않아요',
+  nameFirst: '이름을 먼저 적어 주세요',
 
   pickTitle: '어떤 친구와 함께할까요?',
   friends: '동물 친구',

@@ -80,7 +80,7 @@ describe('캐릭터 만들기(/app/children/new)', () => {
     expect(stepOf(w)).toBe('1');
     await w.find('#cc-alias').setValue('가'.repeat(21));
     expect(next().attributes('aria-disabled')).toBe('true');
-    expect(next().text()).toContain('20자까지');
+    expect(w.find('#cc-next-why').text()).toContain('20자까지'); // 이유는 버튼 아래 한 줄(세션2 판별 A8)
     await next().trigger('click');
     expect(stepOf(w)).toBe('1');
     await w.find('#cc-alias').setValue('   ');

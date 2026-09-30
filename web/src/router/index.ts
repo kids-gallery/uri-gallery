@@ -99,7 +99,8 @@ export function installGuards(router: Router) {
         if (to.path === '/app' && !Object.keys(to.query).length && needsEntrance()) return { path: '/app/welcome', query: { next: '/app' } };
       } catch (e) {
         // 로그인 전 첫 방문이면 입장 화면(S0w)을 한 번 거친다
-        if (e instanceof ApiError && e.status === 401) return isFirstVisit() ? { path: '/app/welcome', query: login.query } : login;
+        // 입장 화면은 홈 /app로 올 때만 — 이웃 · 초대 링크 · 작품 주소로 바로 오면 로그인(next 유지, D47 §17-16)
+        if (e instanceof ApiError && e.status === 401) return isFirstVisit() && to.path === '/app' ? { path: '/app/welcome', query: login.query } : login;
         if (e instanceof ApiError && e.reason === 'no_family') return '/app/no-family';
         // 그 밖(무응답 등)은 화면이 §17 전역 실패 규칙으로 보인다
       }
