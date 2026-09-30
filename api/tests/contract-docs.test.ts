@@ -58,6 +58,7 @@ describe('E3 예시 = examples 파일, 그리고 실제로 통과', () => {
     const art = (await upload(g.a, g.childId, await png()).expect(202)).body.id;
     await simulateResult(t.db, art, 'animated');
     await g.a.post(`/v1/artworks/${art}/decision`).send(example('decision.post.json')).expect(200);
-    await g.a.put(`/v1/artworks/${art}/story`).send(example('story.put.json')).expect(200);
+    // D46: 올린 뒤에는 이야기를 고칠 수 없다 — 예시 본문은 형식이 맞아도 409 artwork_locked
+    expect((await g.a.put(`/v1/artworks/${art}/story`).send(example('story.put.json')).expect(409)).body.reason).toBe('artwork_locked');
   });
 });

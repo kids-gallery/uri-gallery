@@ -29,7 +29,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
   const url = (objectId: number | null | undefined) => (objectId ? `/v1/files/${signFileToken(cfg.sessionSecret, Number(objectId), familyId)}` : null);
 
   const orig = await one<{ object_id: number }>(db, `SELECT object_id FROM artwork_original WHERE artwork_id = ?`, [artworkId]);
-  const disp = await one<{ display_object_id: number | null }>(db, `SELECT display_object_id FROM artwork WHERE artwork_id = ?`, [artworkId]); // D39 고친 사진
+  const disp = await one<{ display_object_id: number | null; making: number }>(db, `SELECT display_object_id, making FROM artwork WHERE artwork_id = ?`, [artworkId]); // D39(폐기 — 비어 있음) · D46 만들기
   const j = await one<{ cutout_object_id: number | null; suggestion: string | null; suggestion_state: string }>(db,
     `SELECT cutout_object_id, suggestion, suggestion_state FROM judgment WHERE artwork_id = ?`, [artworkId]);
   const oc = await one<{ confirmed_path: string | null }>(db, `SELECT confirmed_path FROM artwork_outcome WHERE artwork_id = ?`, [artworkId]);
@@ -79,6 +79,8 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     originalUrl: url(orig?.object_id),
     photoUrl: url(disp?.display_object_id ?? orig?.object_id), // D39: 액자 · 전시 · 저장에 쓰는 사진(고쳤으면 고친 것)
     photoEdited: Boolean(disp?.display_object_id),
+    making: Boolean(disp?.making), // D46 만들기(올릴 때만 고름)
+    locked: true, // D46 올린 작품은 고정 — 이야기 · 사진 · 종류를 고칠 수 없다
     cutoutUrl: url(j?.cutout_object_id),
     suggestion: j?.suggestion_state === 'presented' ? j.suggestion : j?.suggestion_state === 'exhausted' ? 'none' : null,
     confirmedKind: oc?.confirmed_path ?? null,

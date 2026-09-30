@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { testApp } from './helpers/app.js';
-import { familyWithChild, png, seedModels, simulateResult, staff, upload } from './helpers/fixtures.js';
+import { setStory, familyWithChild, png, seedModels, simulateResult, staff, upload } from './helpers/fixtures.js';
 
 const t = testApp();
 afterAll(async () => t.close());
@@ -38,7 +38,7 @@ describe('지표(FR-13·26, BR-OPS-02~04)', () => {
       await simulateResult(t.db, r.body.id, kind, { cause: kind === 'relief' ? 'guardian_choice' : null });
       await f.a.post(`/v1/artworks/${r.body.id}/decision`).send({ decision }).expect(200);
       titles.push(`비밀제목${r.body.id}`);
-      await f.a.put(`/v1/artworks/${r.body.id}/story`).send({ title: titles.at(-1) }).expect(200);
+      await setStory(t.db, r.body.id, { title: titles.at(-1) }); // D46 시험 준비만 DB로
     }
     // 인프라 실패(저장소) 1건 — 모델 낮춤으로 섞이지 않아야 한다
     await t.db.query(`UPDATE stage_job SET error_class = 'storage', attempt_count = 2 WHERE stage_kind = 'split' LIMIT 1`);

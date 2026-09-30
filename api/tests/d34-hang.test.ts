@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { testApp } from './helpers/app.js';
-import { familyWithChild, png, seedModels, simulateResult, upload } from './helpers/fixtures.js';
+import { setStory, familyWithChild, png, seedModels, simulateResult, upload } from './helpers/fixtures.js';
 
 const t = testApp();
 afterAll(async () => t.close());
@@ -30,13 +30,13 @@ describe('D34 올리기 = 바로 전시', () => {
     expect(r1.body.story).toMatchObject({ title: '제목 없는 그림 1', ageAtMaking: null });
     let g = await a.get(`/v1/gallery?child=${childId}`).expect(200);
     expect(g.body.groups).toMatchObject([{ ageAtMaking: null, items: [{ title: '제목 없는 그림 1', titleAuto: true, kind: 'frame' }] }]);
-    await a.put(`/v1/artworks/${r1.body.id}/story`).send({ ageAtMaking: 6 }).expect(200);
+    await setStory(t.db, r1.body.id, { ageAtMaking: 6 }); // D46: 올린 뒤 고정 — 시험 준비만 DB로
     const r2 = await upload(a, childId, await png()).expect(202);
     expect(r2.body.story).toMatchObject({ title: '제목 없는 그림 2', ageAtMaking: 6 });
-    await a.put(`/v1/artworks/${r2.body.id}/story`).send({ ageAtMaking: null }).expect(200); // 걸린 작품의 나이는 비울 수 있다
+    await setStory(t.db, r2.body.id, { ageAtMaking: null }); // 나이 미정 작품
     g = await a.get(`/v1/gallery?child=${childId}`).expect(200);
     expect(g.body.groups.map((x: { ageAtMaking: number | null }) => x.ageAtMaking)).toEqual([6, null]);
-    expect((await a.put(`/v1/artworks/${r2.body.id}/story`).send({ madeOn: null })).status).toBe(422); // 그린 날은 못 지움
+    expect((await a.put(`/v1/artworks/${r2.body.id}/story`).send({ madeOn: null })).status).toBe(409); // D46 올린 뒤 고정
   });
   it('걸린 채 다시 만들기: 처리 중·확인 대기에도 원본 액자로 전시, 좋아요 하면 새 결과로 바꿔 걸림', async () => {
     const { a, childId } = await familyWithChild(t, 'h3@test.local');

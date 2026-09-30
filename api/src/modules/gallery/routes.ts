@@ -21,7 +21,7 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
       if (typeof req.query.madeOn === 'string') { where.push('g.made_on = ?'); p.push(req.query.madeOn); }
       const [rows] = await db.query(
         `SELECT g.artwork_id, g.age_group, g.made_on, g.title, g.title_auto, g.utterance, g.guardian_note, g.display_kind, g.result_object_id,
-                g.caption_body, g.ai_badge, j.cutout_object_id, ao.object_id original_id, aw.display_object_id
+                g.caption_body, g.ai_badge, g.making, j.cutout_object_id, ao.object_id original_id, aw.display_object_id
            FROM v_gallery g
            JOIN artwork aw ON aw.artwork_id = g.artwork_id
            LEFT JOIN judgment j ON j.artwork_id = g.artwork_id
@@ -39,6 +39,7 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
           posterUrl: null,
           originalUrl: url(g.original_id as number | null),
           photoUrl: url((g.display_object_id ?? g.original_id) as number | null), // D39 고친 사진(없으면 원본)
+          making: Boolean(g.making), // D46 만들기 → 미술관 받침대(D45)
           title: g.title, titleAuto: Boolean(g.title_auto), madeOn: new Date(g.made_on as Date).toISOString().slice(0, 10),
           ageAtMaking: g.age_group === null ? null : Number(g.age_group),
           childWords: g.utterance ?? null,

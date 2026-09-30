@@ -15,8 +15,8 @@ import { MAX_BYTES, validateUpload } from './validateUpload.js';
 import { JUDGE_MODELS, KIND_MODEL, PRIMARY_MODEL, activeVersions, confirmChoices, type ConfirmKind } from './models.js';
 import { artworkDetail, artworkList, type ViewHooks } from './view.js';
 import { decide, decisionOptions, type DecisionCode } from './decision.js';
-import { saveStory } from './story.js';
 import { hangOriginalFrame } from './hang.js';
+import { mountComments } from './comments.js';
 
 const LOCKED = `UTC_TIMESTAMP() + INTERVAL 5 YEAR`; // 판정 전 확정·split 전 judge 잠금(stage-job §2). TIMESTAMP는 2038년까지라 100년은 넘친다
 
@@ -24,7 +24,7 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
   const hooks: ViewHooks = hooksIn ?? { decisionChoices: (q, id) => decisionOptions(q, storage, id), modelLoads: modelApi ? () => modelApi.models() : undefined };
   const r = Router();
   const auth = guardianAuth(db, { requireFamily: true });
-  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1, fields: 5 } });
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1, fields: 12 } });
   const detail = async (familyId: number, id: number) => {
     const d = await artworkDetail(db, cfg, familyId, id, hooks);
     if (!d) throw new Problem('not_found');
@@ -57,6 +57,8 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
       const cap = capRaw === undefined || capRaw === '' ? null : z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((v) => !Number.isNaN(Date.parse(v))).safeParse(capRaw);
       if (cap && !cap.success) throw new Problem('validation_failed', 'captured_on', 'G5', [{ name: 'capturedOn', reason: 'format' }]);
       const capturedOn = cap && cap.success ? cap.data : null;
+      // D46: 올린 뒤에는 고칠 수 없으니 만들기 여부 · 이야기를 올릴 때 함께 받는다(모두 선택). 비우면 D34 기본값
+      const up = uploadStory(req.body as Record<string, unknown>);
       const [c] = await db.query(`SELECT child_id FROM child WHERE child_id = ? AND family_id = ?`, [childId, familyId]);
       if (!(c as unknown[]).length) throw new Problem('not_found');
       let type;
@@ -71,7 +73,7 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
       }
       let artworkId: number;
       try {
-        artworkId = await withTx(db, async (conn) => intakeTx(conn, familyId, childId, reqNo.data, key, capturedOn));
+        artworkId = await withTx(db, async (conn) => intakeTx(conn, familyId, childId, reqNo.data, key, capturedOn, up));
       } catch (e) {
         await storage.delete(key).catch(() => undefined); // 흔적 남기지 않음(FR-2)
         if (isDup(e, 'uq_artwork_request')) {
@@ -152,70 +154,29 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
     } catch (e) { next(e); }
   });
 
-  // --- 사진 고치기(D39, SD_02 §17-12): 원본은 그대로(BR-INT-04), 고친 사진(display)을 따로 건다. 다시 고치면 이전 것은 지운다 ---
-  r.put('/v1/artworks/:id/photo', auth, (req, res, next) => {
-    upload.single('photo')(req, res, (err: unknown) => {
-      if (!err) return next();
-      next((err as { code?: string })?.code === 'LIMIT_FILE_SIZE' ? new Problem('payload_too_large', 'over_20mb', 'G5') : new Problem('invalid_input', 'bad_multipart', 'G5'));
-    });
-  }, async (req, res, next) => {
-    const familyId = req.guardian!.familyId!;
-    const id = Number(req.params.id);
-    try {
-      const [rows] = await db.query(`SELECT status FROM artwork WHERE artwork_id = ? AND family_id = ?`, [id, familyId]);
-      const a = (rows as { status: string }[])[0];
-      if (!a) throw new Problem('not_found');
-      if (a.status === 'deleting') throw new Problem('conflict', 'deleting');
-      const type = await validateUpload(req.file?.buffer);
-      const key = LocalFsDriver.newKey(LocalFsDriver.newArtworkPrefix(), 'display', type.ext);
-      try { await storage.putNew(key, req.file!.buffer); } catch { throw new Problem('not_saved', 'photo_not_saved', 'G6'); }
-      let oldKey: string | null = null;
-      try {
-        await withTx(db, async (conn) => {
-          const [lk] = await conn.query(
-            `SELECT a.status, a.display_object_id, so.object_key FROM artwork a LEFT JOIN stored_object so ON so.object_id = a.display_object_id
-              WHERE a.artwork_id = ? AND a.family_id = ? FOR UPDATE`, [id, familyId]);
-          const cur = (lk as { status: string; display_object_id: number | null; object_key: string | null }[])[0];
-          if (!cur || cur.status === 'deleting') throw new Problem('conflict', 'deleting');
-          const [so] = await conn.query(
-            `INSERT INTO stored_object (owner_kind, family_id, artwork_id, object_kind, object_key) VALUES ('family', ?, ?, 'display', ?)`, [familyId, id, key]);
-          await conn.query(`UPDATE artwork SET display_object_id = ? WHERE artwork_id = ?`, [(so as { insertId: number }).insertId, id]);
-          if (cur.display_object_id) { await conn.query(`DELETE FROM stored_object WHERE object_id = ?`, [cur.display_object_id]); oldKey = cur.object_key; }
-        });
-      } catch (e) {
-        await storage.delete(key).catch(() => undefined);
-        if (e instanceof Problem) throw e;
-        throw new Problem('not_saved', 'photo_not_saved', 'G6');
-      }
-      if (oldKey) await storage.delete(oldKey).catch(() => undefined);
-      res.json(await detail(familyId, id));
-    } catch (e) { next(e); }
-  });
-
   // --- 이야기(G11·G12, UC5, T142) ---
+  // D46: 한 번 올라간 작품은 고치지 않는다 — 이야기 저장은 늘 409 artwork_locked(바꾸려면 지우고 다시 올린다)
   r.put('/v1/artworks/:id/story', auth, async (req, res, next) => {
     const familyId = req.guardian!.familyId!;
-    const id = Number(req.params.id);
     try {
-      await withTx(db, (conn) => saveStory(conn, familyId, id, req.body)).catch(async (e) => {
-        if (e instanceof Problem) { if (e.gate) await recordGate(db, e.gate, 'artwork', id, 'guardian', e.reason ?? e.code); throw e; }
-        throw e;
-      });
-      res.json(await detail(familyId, id));
+      const [rows] = await db.query(`SELECT artwork_id FROM artwork WHERE artwork_id = ? AND family_id = ? AND status <> 'deleting'`, [Number(req.params.id), familyId]);
+      if (!(rows as unknown[]).length) throw new Problem('not_found');
+      throw new Problem('conflict', 'artwork_locked', 'G11');
     } catch (e) { next(e); }
   });
+  mountComments(r, db, auth); // D46 ④ 부모 댓글
 
   return r;
 }
 
 /** 접수 트랜잭션(data-model §4): artwork + stored_object(original) + artwork_original + split·judge(또는 제안 없음).
  *  D34: 같은 트랜잭션에서 원본 액자 결과를 만들어 건다(작업 없음) + 이야기 자동 채우기. 판정은 권유용으로 그대로 돈다. */
-async function intakeTx(conn: PoolConnection, familyId: number, childId: number, reqNo: string, key: string, capturedOn: string | null): Promise<number> {
+async function intakeTx(conn: PoolConnection, familyId: number, childId: number, reqNo: string, key: string, capturedOn: string | null, up: UploadStory): Promise<number> {
   const active = await activeVersions(conn);
   const canJudge = JUDGE_MODELS.every((m) => active.has(m));
   const [a] = await conn.query(
-    `INSERT INTO artwork (family_id, child_id, request_no, status) VALUES (?, ?, ?, ?)`,
-    [familyId, childId, reqNo, canJudge ? 'judging' : 'awaiting_confirm'],
+    `INSERT INTO artwork (family_id, child_id, request_no, status, making) VALUES (?, ?, ?, ?, ?)`,
+    [familyId, childId, reqNo, canJudge ? 'judging' : 'awaiting_confirm', up.making],
   );
   const artworkId = (a as { insertId: number }).insertId;
   const [so] = await conn.query(
@@ -224,7 +185,7 @@ async function intakeTx(conn: PoolConnection, familyId: number, childId: number,
   );
   await conn.query(`INSERT INTO artwork_original (artwork_id, object_id) VALUES (?, ?)`, [artworkId, (so as { insertId: number }).insertId]);
   await hangOriginalFrame(conn, artworkId);
-  await autoStory(conn, artworkId, childId, capturedOn);
+  await autoStory(conn, artworkId, childId, capturedOn, up);
   if (canJudge) {
     await conn.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id) VALUES (?, 'split', 'intake', 'cpu_vision', ?)`,
       [artworkId, active.get(PRIMARY_MODEL.split)]);
@@ -238,19 +199,36 @@ async function intakeTx(conn: PoolConnection, familyId: number, childId: number,
 }
 
 /** D34 ③: 이야기 자동 채우기 — 제목 "제목 없는 그림 N"(title_auto) · 그린 날 = 촬영일 또는 오늘(DB 날짜로 자름) · 나이 = 그 아이의 가장 최근 기록 */
-async function autoStory(conn: PoolConnection, artworkId: number, childId: number, capturedOn: string | null): Promise<void> {
+export interface UploadStory { making: boolean; title: string | null; madeOn: string | null; ageAtMaking: number | null; childWords: string | null; guardianNote: string | null }
+/** D46 ②: 올릴 때 함께 받는 칸(모두 선택). 틀리면 422 — 올린 뒤에는 고칠 수 없으니 여기서 막는다 */
+function uploadStory(b: Record<string, unknown>): UploadStory {
+  const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : null);
+  const bad: { name: string; reason: string }[] = [];
+  const title = str(b.title); if (title !== null && (!title.trim() || title.length > 100)) bad.push({ name: 'title', reason: title.trim() ? 'too_long' : 'blank' });
+  const madeOn = str(b.madeOn); if (madeOn !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(madeOn) || Number.isNaN(Date.parse(madeOn)))) bad.push({ name: 'madeOn', reason: 'format' });
+  if (madeOn && madeOn > new Date().toISOString().slice(0, 10)) throw new Problem('validation_failed', 'made_on_in_future', 'G11', [{ name: 'madeOn', reason: 'future' }]); // 안내 문장 재사용
+  const ageRaw = str(b.ageAtMaking); const age = ageRaw === null ? null : Number(ageRaw);
+  if (age !== null && !(Number.isInteger(age) && age >= 0 && age <= 18)) bad.push({ name: 'ageAtMaking', reason: 'range' });
+  const childWords = str(b.childWords); if (childWords && childWords.length > 2000) bad.push({ name: 'childWords', reason: 'too_long' });
+  const guardianNote = str(b.guardianNote); if (guardianNote && guardianNote.length > 1000) bad.push({ name: 'guardianNote', reason: 'too_long' });
+  const mk = str(b.making); if (mk !== null && !['true', 'false', '1', '0'].includes(mk)) bad.push({ name: 'making', reason: 'format' });
+  if (bad.length) throw new Problem('validation_failed', 'invalid_fields', 'G5', bad);
+  return { making: mk === 'true' || mk === '1', title: title?.trim() ?? null, madeOn, ageAtMaking: age, childWords, guardianNote };
+}
+
+async function autoStory(conn: PoolConnection, artworkId: number, childId: number, capturedOn: string | null, up: UploadStory): Promise<void> {
   const [ag] = await conn.query(
     `SELECT s.age_at_creation age FROM story s JOIN artwork a ON a.artwork_id = s.artwork_id
       WHERE a.child_id = ? AND a.artwork_id <> ? AND a.status <> 'deleting' AND s.age_at_creation IS NOT NULL
       ORDER BY s.made_on DESC, s.updated_at DESC LIMIT 1`, [childId, artworkId]);
-  const age = (ag as { age: number }[])[0]?.age ?? null;
+  const age = up.ageAtMaking ?? (ag as { age: number }[])[0]?.age ?? null;
   const [nr] = await conn.query(
     `SELECT COUNT(*) n FROM story s JOIN artwork a ON a.artwork_id = s.artwork_id WHERE a.child_id = ? AND s.title_auto`, [childId]);
   const n = Number((nr as { n: number }[])[0].n) + 1;
   await conn.query(
-    `INSERT INTO story (artwork_id, title, title_auto, made_on, age_at_creation, updated_at)
-     VALUES (?, ?, TRUE, LEAST(COALESCE(?, CURRENT_DATE), CURRENT_DATE), ?, CURRENT_TIMESTAMP)`,
-    [artworkId, `제목 없는 그림 ${n}`, capturedOn, age]);
+    `INSERT INTO story (artwork_id, title, title_auto, made_on, age_at_creation, utterance, guardian_note, updated_at)
+     VALUES (?, ?, ?, LEAST(COALESCE(?, CURRENT_DATE), CURRENT_DATE), ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [artworkId, up.title ?? `제목 없는 그림 ${n}`, up.title === null, up.madeOn ?? capturedOn, age, up.childWords, up.guardianNote]);
 }
 
 /** 확정 트랜잭션(data-model §4, stage-job §2·§6). */

@@ -162,7 +162,7 @@ export function neighborsRouter(db: Pool, cfg: Config, storage: StoragePort, acc
       if (!child) throw new Problem('not_found');
       const owner = Number(child.family_id);
       const rows = await rowsOf<Record<string, unknown>>(db,
-        `SELECT g.artwork_id, g.age_group, g.title, g.display_kind, g.result_object_id, j.cutout_object_id, ao.object_id original_id, aw.display_object_id
+        `SELECT g.artwork_id, g.age_group, g.title, g.display_kind, g.result_object_id, g.making, j.cutout_object_id, ao.object_id original_id, aw.display_object_id
            FROM v_gallery g
            JOIN artwork aw ON aw.artwork_id = g.artwork_id
            LEFT JOIN judgment j ON j.artwork_id = g.artwork_id
@@ -178,6 +178,7 @@ export function neighborsRouter(db: Pool, cfg: Config, storage: StoragePort, acc
           id: String(g.artwork_id), kind, title: (g.title as string | null) ?? null,
           primaryUrl: url(kind === 'frame' ? photo : g.result_object_id),
           auxUrl: kind === 'relief' ? url(g.cutout_object_id) : kind === 'animated' ? url(photo) : null,
+          making: Boolean(g.making), // D46 만들기 → 받침대(D45)
         };
         const age = g.age_group === null ? null : Number(g.age_group);
         if (!rooms.has(age)) rooms.set(age, []);

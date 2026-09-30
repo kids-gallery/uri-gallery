@@ -1,5 +1,6 @@
 // 오류 안내(contracts/openapi.yaml 머리말 "오류 안내", 2026-09-30 점검표 W5·E4·E7):
 // 이상한 값을 넣으면 부르는 쪽에 무엇이 틀렸고 어떤 값을 넣어야 하는지 사람 말로 돌려준다 — detail + fields[].message.
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
@@ -50,7 +51,8 @@ describe('422 — 올바른 값을 알려 준다', () => {
   });
   it('미래 날짜(DB 트리거 G11): 오늘이나 지난 날짜', async () => {
     const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-    const b = guided(await g.a.put(`/v1/artworks/${art}/story`).send({ title: 't', madeOn: tomorrow, ageAtMaking: 5 }), 422);
+    // D46: 이야기는 올릴 때 함께 — 미래 그린 날은 올리기에서 422
+    const b = guided(await g.a.post('/v1/artworks').set('Idempotency-Key', randomUUID()).field('childId', g.childId).field('madeOn', tomorrow).attach('photo', await png(), 'p.png'), 422);
     expect(`${b.detail} ${msgOf(b, 'madeOn')}`).toMatch(/미래|오늘/);
   });
 });

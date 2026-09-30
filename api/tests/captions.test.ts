@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { testApp } from './helpers/app.js';
-import { familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
+import { setStory, familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
 
 const t = testApp({ CAPTION_ENABLED: 'true' });
 const off = testApp();
@@ -16,7 +16,7 @@ async function artwork() {
   const f = await familyWithChild(t, `c${Math.random()}@test.local`);
   const r = await upload(f.a, f.childId, await png()).expect(202);
   await t.db.query(`INSERT INTO tag_candidate (artwork_id, label) VALUES (?, '바다'), (?, '해')`, [r.body.id, r.body.id]);
-  await f.a.put(`/v1/artworks/${r.body.id}/story`).send({ ageAtMaking: 5, childWords: '엄마랑 바다 갔어', title: '비밀제목' }).expect(200);
+  await setStory(t.db, r.body.id, { ageAtMaking: 5, childWords: '엄마랑 바다 갔어', title: '비밀제목' }); // D46 올린 뒤 고정 — 시험 준비만 DB로
   return { ...f, id: r.body.id as string };
 }
 const job = async (id: string) => ((await t.db.query(`SELECT status, attempt_count, downgrade_cause, error_class FROM stage_job WHERE artwork_id = ? AND stage_kind = 'caption' ORDER BY job_id DESC LIMIT 1`, [id]))[0] as Record<string, unknown>[])[0];

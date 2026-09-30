@@ -3,7 +3,8 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { testApp } from './helpers/app.js';
-import { familyWithChild, png, seedModels, simulateResult, upload } from './helpers/fixtures.js';
+import { randomUUID } from 'node:crypto';
+import { familyWithChild, png, seedModels, setStory, simulateResult, upload } from './helpers/fixtures.js';
 
 const t = testApp();
 afterAll(async () => t.close());
@@ -73,19 +74,28 @@ describe('결과 확인 결정(UC4)', () => {
   });
 });
 
-describe('이야기·전시(UC5·UC6)', () => {
-  it('미래 제작일·연령 19는 422(G11), 한마디는 받은 그대로, 부분 저장', async () => {
-    const f = await reviewed('s1@test.local', 'animated');
-    expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ madeOn: '2999-01-01' })).body.reason).toBe('made_on_in_future');
-    expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ ageAtMaking: 19 })).status).toBe(422);
-    await f.a.put(`/v1/artworks/${f.id}/story`).send({ childWords: STORY.childWords }).expect(200);
-    const d = await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: STORY.title }).expect(200);
-    expect(d.body.story).toMatchObject({ title: '우리 가족', titleAuto: false, childWords: '  엄마랑 바다 갔어  ' }); // D34: 그린 날은 올리기 때 자동으로
-    expect(d.body.story.madeOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+describe('이야기·전시(UC5·UC6) — D46 올린 작품은 고정', () => {
+  const up = async (a: Parameters<typeof upload>[0], childId: string, fields: Record<string, string>) => {
+    let r = a.post('/v1/artworks').set('Idempotency-Key', randomUUID()).field('childId', childId);
+    for (const [k, v] of Object.entries(fields)) r = r.field(k, v);
+    return r.attach('photo', await png(), 'p.png');
+  };
+  it('이야기는 올릴 때 함께 적는다(한마디 받은 그대로) · 칸 검사 422 · 올린 뒤에는 409 artwork_locked', async () => {
+    const f = await familyWithChild(t, 's1@test.local');
+    expect((await up(f.a, f.childId, { madeOn: '2999-01-01' })).body.reason).toBe('made_on_in_future');
+    expect((await up(f.a, f.childId, { ageAtMaking: '19' })).status).toBe(422);
+    expect((await up(f.a, f.childId, { making: 'maybe' })).status).toBe(422);
+    const r = await up(f.a, f.childId, { title: STORY.title, madeOn: STORY.madeOn, ageAtMaking: '5', childWords: STORY.childWords, guardianNote: '감상', making: 'true' });
+    expect(r.status).toBe(202);
+    expect(r.body).toMatchObject({ making: true, locked: true, story: { title: '우리 가족', titleAuto: false, madeOn: '2026-09-20', ageAtMaking: 5, childWords: '  엄마랑 바다 갔어  ', guardianNote: '감상' } });
+    const locked = await f.a.put(`/v1/artworks/${r.body.id}/story`).send({ title: '고침' });
+    expect(locked.status).toBe(409);
+    expect(locked.body.reason).toBe('artwork_locked');
+    expect((await f.a.get(`/v1/gallery?child=${f.childId}`)).body.groups[0].items[0]).toMatchObject({ making: true, title: '우리 가족' });
   });
-  it('올리면 원본 액자로 전시, 좋아요 뒤 결과로 바꿔 걸림, 낮춤 표시 없음, 걸린 작품 제목은 못 지움(BR-EXH-01·07 · D34)', async () => {
+  it('올리면 원본 액자로 전시, 좋아요 뒤 결과로 바꿔 걸림, 낮춤 표시 없음(BR-EXH-01·07 · D34)', async () => {
     const f = await reviewed('s2@test.local', 'relief', { cause: 'model_downgrade' });
-    await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200);
+    await setStory(t.db, f.id, STORY);
     expect((await f.a.get(`/v1/gallery?child=${f.childId}`)).body.groups[0].items).toMatchObject([{ kind: 'frame', title: '우리 가족' }]);
     const r = await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
     expect(r.body.artwork.state).toBe('exhibited');
@@ -93,25 +103,10 @@ describe('이야기·전시(UC5·UC6)', () => {
     expect(g.body.groups).toHaveLength(1);
     expect(g.body.groups[0]).toMatchObject({ ageAtMaking: 5, items: [{ kind: 'relief', title: '우리 가족', childWords: '  엄마랑 바다 갔어  ' }] });
     expect(JSON.stringify(g.body)).not.toMatch(/downgrade|cause|score/);
-    expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: null })).status).toBe(422);
-  });
-  it('보호자 감상평(D25, BR-STY-04): 선택·원문 그대로 저장, 상세와 전시에 한마디와 따로, 1000자 넘으면 422, 전시 조건 아님', async () => {
-    const f = await reviewed('s-note@test.local', 'relief');
-    await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
-    await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200); // 감상평 없이도 전시
-    let g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
-    expect(g.body.groups[0].items[0]).toMatchObject({ childWords: STORY.childWords, guardianNote: null });
-    const d0 = await f.a.get(`/v1/artworks/${f.id}`).expect(200);
-    const note = '  바다를 처음 본 날의 설렘이 파란 선에 다 담겼어요  ';
-    const d = await f.a.put(`/v1/artworks/${f.id}/story`).send({ guardianNote: note, baseUpdatedAt: d0.body.story.updatedAt }).expect(200);
-    expect(d.body.story).toMatchObject({ guardianNote: note, childWords: STORY.childWords });
-    g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
-    expect(g.body.groups[0].items[0]).toMatchObject({ guardianNote: note, childWords: STORY.childWords });
-    expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ guardianNote: '가'.repeat(1001) })).status).toBe(422);
   });
   it('액자로 걸기면 전시는 원본 액자(SD_03 §19 #17)', async () => {
     const f = await reviewed('s3@test.local', 'animated');
-    await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200);
+    await setStory(t.db, f.id, STORY);
     await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'frame' }).expect(200);
     const g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
     expect(g.body.groups[0].items[0]).toMatchObject({ kind: 'frame', primaryUrl: null });
@@ -120,9 +115,9 @@ describe('이야기·전시(UC5·UC6)', () => {
   it('연령 묶음 → 제작일 순, 제목 찾기', async () => {
     const f = await familyWithChild(t, 's4@test.local');
     for (const [title, madeOn, age] of [['셋', '2026-03-01', 6], ['하나', '2025-05-01', 5], ['둘', '2025-01-01', 5]] as const) {
-      const r = await upload(f.a, f.childId, await png()).expect(202);
+      const r = await up(f.a, f.childId, { title, madeOn, ageAtMaking: String(age) });
+      expect(r.status).toBe(202);
       await simulateResult(t.db, r.body.id, 'frame');
-      await f.a.put(`/v1/artworks/${r.body.id}/story`).send({ title, madeOn, ageAtMaking: age }).expect(200);
       await f.a.post(`/v1/artworks/${r.body.id}/decision`).send({ decision: 'like' }).expect(200);
     }
     const g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);
@@ -130,14 +125,23 @@ describe('이야기·전시(UC5·UC6)', () => {
       .toEqual([[5, ['둘', '하나']], [6, ['셋']]]);
     expect((await f.a.get(`/v1/gallery?child=${f.childId}&q=셋`)).body.groups[0].items).toHaveLength(1);
   });
-  it('공동 보호자 동시 수정: 오래된 baseUpdatedAt이면 409 story_conflict(T142)', async () => {
-    const f = await reviewed('s5@test.local', 'frame');
-    await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: '처음' }).expect(200);
-    await t.db.query(`UPDATE story SET updated_at = CURRENT_TIMESTAMP - INTERVAL 10 SECOND`);
-    const stale = (await f.a.get(`/v1/artworks/${f.id}`)).body.story.updatedAt;
-    await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: '먼저 고침', baseUpdatedAt: stale }).expect(200);
-    const r = await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: '늦게 고침', baseUpdatedAt: stale });
-    expect(r.body).toMatchObject({ code: 'conflict', reason: 'story_conflict' });
+  it('부모 댓글(D46 ④): 쓰고 읽기 · 입력 그대로 · 자기 것만 지움 · 빈칸·500자 초과 422 · 다른 가족 404', async () => {
+    const f = await familyWithChild(t, 's5@test.local');
+    const r = await upload(f.a, f.childId, await png()).expect(202);
+    expect((await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body).toEqual([]);
+    const c = await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '  하늘이 정말 파래요  ' }).expect(201);
+    expect(c.body).toMatchObject({ body: '  하늘이 정말 파래요  ', mine: true, author: 'me' });
+    expect((await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '   ' })).status).toBe(422);
+    expect((await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '가'.repeat(501) })).status).toBe(422);
+    await t.db.query(`INSERT INTO artwork_comment (artwork_id, account_id, body) VALUES (?, NULL, '다른 보호자')`, [r.body.id]);
+    const list = (await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body as { id: string; mine: boolean }[];
+    expect(list).toHaveLength(2);
+    const other = list.find((x) => !x.mine)!;
+    expect((await f.a.delete(`/v1/artworks/${r.body.id}/comments/${other.id}`)).status).toBe(403);
+    await f.a.delete(`/v1/artworks/${r.body.id}/comments/${c.body.id}`).expect(204);
+    const B = await familyWithChild(t, 's6@test.local');
+    expect((await B.a.get(`/v1/artworks/${r.body.id}/comments`)).status).toBe(404);
+    expect((await B.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: 'x' })).status).toBe(404);
   });
 });
 

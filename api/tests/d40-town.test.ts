@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { contractViolations, testApp, tokenOf } from './helpers/app.js';
-import { familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
+import { setStory, familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
 
 const t = testApp();
 afterAll(async () => { expect(contractViolations).toEqual([]); await t.close(); });
@@ -92,7 +92,7 @@ describe('마을 · 방문(D40 D·F)', () => {
     const A = await familyWithChild(t, 'v1@test.local');
     const B = await familyWithChild(t, 'v2@test.local');
     const art = await upload(B.a, B.childId, await png()).expect(202);
-    await B.a.put(`/v1/artworks/${art.body.id}/story`).send({ title: '우리 집', childWords: '엄마랑', ageAtMaking: 5 }).expect((r) => expect(r.status).toBeLessThan(300));
+    await setStory(t.db, art.body.id, { title: '우리 집', childWords: '엄마랑', ageAtMaking: 5 }); // D46 올린 뒤 고정 — 시험 준비만 DB로
     // 이웃 전에는 존재를 숨긴다
     await A.a.get(`/v1/visit/children/${B.childId}/gallery`).expect(404);
     await neighbors(A, B);
@@ -101,7 +101,7 @@ describe('마을 · 방문(D40 D·F)', () => {
     expect(g.rooms).toHaveLength(1);
     expect(g.rooms[0].room).toBe(1);
     const item = g.rooms[0].items[0];
-    expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'primaryUrl', 'title']);
+    expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'making', 'primaryUrl', 'title']); // D46 making(받침대, 8c 요청)
     expect(JSON.stringify(g)).not.toMatch(/엄마랑|ageAtMaking|madeOn|originalUrl/);
     expect(item.primaryUrl).toMatch(/^\/v1\/visit\/files\//);
     await A.a.get(item.primaryUrl).expect(200);

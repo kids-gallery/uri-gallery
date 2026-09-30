@@ -17,6 +17,7 @@
 -- 개정 (2026-09-29, 통합 결정 D20 — 모델 점검): model_check 신설(테이블 36), stage_job.origin 'check'·model_check_id,
 --   trg_model_check_bi(G30 점검 입력, 트리거 16), 점검 작업을 운영 뷰에서 뺌(BR-OPS-05), 게이트 G30 시드(31개)
 -- 개정 (2026-09-29, D25 — B 이제민): story.guardian_note(보호자 감상평, BR-STY-04) + 기존 DB용 ADD COLUMN IF NOT EXISTS, v_gallery에 싣는다
+-- 개정 (2026-09-30, D46 — B 이제민): 올린 작품 고정 · artwork.making(만들기, 올릴 때만) · artwork_comment(부모 댓글, 가족 안에서만) · v_gallery.making. D39 사진 고치기 폐기(display 칸은 남김)
 -- 개정 (2026-09-30, D39 — B 이제민): 사진 고치기 — stored_object.object_kind 'display'(고친 사진), artwork.display_object_id(FK, 지우면 NULL). 원본(artwork_original)은 그대로
 -- 개정 (2026-09-30, D34 — B 이제민): artwork.hung_result_id·hung_at(걸린 결과, 트리거 17번째 trg_artwork_hung_bu), result.job_id frame만 NULL(chk_rs_job),
 --   story.title_auto, G12 = 걸림 + 제목·그린 날(v_exhibit_gate), v_gallery는 걸린 결과, trg_story_bu 개정, 파일 끝 옮기기(멱등)
@@ -534,6 +535,20 @@ ALTER TABLE stored_object ADD CONSTRAINT chk_so_kind CHECK (object_kind IN ('ori
     'result_animated','result_relief','result_frame','result_glb','temp','eval_input','display'));
 ALTER TABLE artwork ADD COLUMN IF NOT EXISTS display_object_id BIGINT NULL AFTER hung_at;
 ALTER TABLE artwork ADD CONSTRAINT fk_artwork_display FOREIGN KEY IF NOT EXISTS (display_object_id) REFERENCES stored_object (object_id) ON DELETE SET NULL;
+-- (D46, 2026-09-30) 올린 작품은 고정 · 만들기는 올릴 때만 고른다(making) · 부모(가족 보호자) 댓글. D39 사진 고치기는 폐기(칸은 남긴다 — 비어 있음)
+ALTER TABLE artwork ADD COLUMN IF NOT EXISTS making BOOLEAN NOT NULL DEFAULT FALSE AFTER request_no;
+CREATE TABLE IF NOT EXISTS artwork_comment (
+  comment_id   BIGINT       NOT NULL AUTO_INCREMENT,
+  artwork_id   BIGINT       NOT NULL,
+  account_id   BIGINT       NULL,      -- 쓴 보호자(계정을 지우면 NULL — 글은 가족 기록으로 남는다 [추론])
+  body         VARCHAR(500) NOT NULL,  -- 입력 그대로(트림·교정 없음). 가족 밖에는 보이지 않는다(D46 ④)
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT pk_artwork_comment PRIMARY KEY (comment_id),
+  CONSTRAINT fk_ac_artwork FOREIGN KEY (artwork_id) REFERENCES artwork (artwork_id) ON DELETE CASCADE,
+  CONSTRAINT fk_ac_account FOREIGN KEY (account_id) REFERENCES guardian_account (account_id) ON DELETE SET NULL,
+  CONSTRAINT chk_ac_body CHECK (TRIM(body) <> '')
+);
+CREATE INDEX IF NOT EXISTS ix_ac_artwork ON artwork_comment (artwork_id, created_at);
 
 -- 작품 설명 (P0.5, H10) — 한마디와 다른 테이블(BR-STY-03)
 CREATE TABLE IF NOT EXISTS caption (
@@ -1181,7 +1196,7 @@ SELECT c.child_id, c.family_id, c.alias, COUNT(a.artwork_id) AS artwork_count
 -- S8 가족 전시 — 전시 중만, 연령 묶음 → 제작일 순. 3D는 노출 꺼지면 액자로(D10). 낮춤 원인 비노출(BR-EXH-07)
 CREATE OR REPLACE VIEW v_gallery AS
 SELECT a.family_id, a.child_id, a.artwork_id,
-       s.age_at_creation AS age_group, s.made_on, s.title, s.title_auto, s.utterance, s.guardian_note,
+       s.age_at_creation AS age_group, s.made_on, s.title, s.title_auto, s.utterance, s.guardian_note, a.making,
        -- D34: 걸린 결과(hung_result_id)를 보인다 — 걸린 채 다시 만드는 중에도 전시는 그대로. 원본 액자 결과는 파일이 없다
        CASE WHEN hr.result_kind IS NULL OR hr.result_kind = 'frame' THEN 'frame'
             WHEN hr.result_kind = 'sculpture'

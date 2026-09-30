@@ -76,3 +76,12 @@ export async function staff(t: { app: import('node:http').Server; db: Pool }, em
   const res = await a.post('/v1/ops/auth/login').send({ email, password: PW }).expect(200);
   return { a, roles: res.body.roles as string[] };
 }
+
+/** D46: 올린 뒤에는 이야기 API로 고칠 수 없다 — 시험 준비용으로 DB에 직접 넣는다 */
+export async function setStory(db: Pool, artworkId: string | number, v: { title?: string | null; madeOn?: string | null; ageAtMaking?: number | null; childWords?: string | null; guardianNote?: string | null }) {
+  const map: [keyof typeof v, string][] = [['title', 'title'], ['madeOn', 'made_on'], ['ageAtMaking', 'age_at_creation'], ['childWords', 'utterance'], ['guardianNote', 'guardian_note']];
+  const cols = map.filter(([k]) => v[k] !== undefined);
+  if (!cols.length) return;
+  const extra = v.title ? ', title_auto = FALSE' : '';
+  await db.query(`UPDATE story SET ${cols.map(([, c]) => `${c} = ?`).join(', ')}${extra} WHERE artwork_id = ?`, [...cols.map(([k]) => v[k]), Number(artworkId)]);
+}
