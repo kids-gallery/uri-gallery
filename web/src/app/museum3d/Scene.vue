@@ -12,7 +12,7 @@ import Minimap from './Minimap.vue';
 import Mural from './Mural.vue';
 import { m3 } from './copy';
 import {
-  areaOf, canStand, clampMove, isNear, nearestTarget, pathTo, planeStyle, planeTf, screenToFloor, yawOf,
+  areaOf, canStand, clampMove, clampPitch, isNear, nearestTarget, pathTo, perspectiveFor, planeStyle, planeTf, PLINTH_H, screenToFloor, yawOf, HALL_H,
   type MuseumItem, type MuseumLayout, type Pose, type Vec,
 } from './layout';
 
@@ -22,7 +22,8 @@ const props = withDefaults(defineProps<{ layout: MuseumLayout; character?: strin
 });
 const emit = defineEmits<{ open: [item: MuseumItem]; exit: [] }>();
 
-const WALK = 2.2; const RUN = 1.8; const TURN = 80; const DRAG = 0.25; const PITCH = 35;
+// D45(§17-13 I) 어지럽지 않게: 걷기 1.4m/s · Shift 1.6배 · 가속 · 감속 0.35초 · 끌기 감도 낮게 + 관성 · 휠 한 칸 0.4m · 머리 흔들림 거의 없음
+const WALK = 1.4; const RUN = 1.6; const TURN = 55; const DRAG = 0.14; const EASE_S = 0.35; const WHEEL_M = 0.4; const BOB_PX = 0.8;
 const kind = computed(() => (isKind(props.character) ? props.character : DEFAULT_KIND));
 const tint = computed(() => (isColor(props.color) ? props.color : DEFAULT_COLOR));
 const touch = typeof matchMedia === 'function' && matchMedia('(hover: none), (pointer: coarse)').matches;
@@ -37,9 +38,16 @@ function archClip(w: number, h: number): string {
   pts.push(`0 ${H}px`);
   return `polygon(${pts.join(',')})`;
 }
-const planes = computed(() => [...props.layout.planes, ...props.layout.pedestals.flatMap((p) => p.planes)]
-  .map((p) => ({ key: p.key, cls: p.cls.split(' ').map((c) => `pl-${c}`), text: p.text ?? '',
-    style: p.cls.includes('lintel') ? { ...planeStyle(p), clipPath: archClip(p.w, p.h) } : planeStyle(p) })));
+/** 두 번 누르기로 그 앞에 서는 자리(액자 · 진열대 · 받침대 — 빈 받침대도) */
+const poseOf = computed(() => new Map<string, Pose>([
+  ...props.layout.frames.map((f) => [f.key, f.pose] as const), ...props.layout.pedestals.map((p) => [p.key, p.pose] as const),
+  ...props.layout.plinths.map((p) => [p.key, p.pose] as const)]));
+const planes = computed(() => [
+  ...props.layout.planes.map((p) => ({ p, tk: '' })),
+  ...props.layout.pedestals.flatMap((d) => d.planes.map((p) => ({ p, tk: d.key }))),
+  ...props.layout.plinths.flatMap((d) => d.planes.map((p) => ({ p, tk: d.key }))),
+].map(({ p, tk }) => ({ key: p.key, tk, cls: p.cls.split(' ').map((c) => `pl-${c}`), text: p.text ?? '',
+  style: p.cls.includes('lintel') ? { ...planeStyle(p), clipPath: archClip(p.w, p.h), '--r': `${p.w * 50}px` } : planeStyle(p) })));
 const titleOf = (it: MuseumItem) => it.title ?? m3.untitled;
 const frames = computed(() => props.layout.frames.map((f) => ({
   key: f.key, item: f.item, title: titleOf(f.item), style: planeStyle(f), t: { key: f.key, x: f.x, z: f.z, item: f.item, pose: f.pose } as Target,
@@ -48,13 +56,19 @@ const pedArts = computed(() => props.layout.pedestals.filter((p) => p.item).map(
   key: `${p.key}-art`, item: p.item!, title: titleOf(p.item!), x: p.x, y: 1.33, z: p.z, w: 0.7, h: 0.75,
   t: { key: p.key, x: p.x, z: p.z, item: p.item!, pose: p.pose } as Target,
 })));
+/** 가운데 홀 받침대 위 만들기 작품(배경 없는 모습 = cutout, 없으면 사진) · 위 스포트라이트 */
+const plArts = computed(() => props.layout.plinths.filter((p) => p.item).map((p) => ({
+  key: `${p.key}-art`, item: p.item!, title: titleOf(p.item!), x: p.x, y: PLINTH_H + 0.5, z: p.z, w: 0.9, h: 1,
+  t: { key: p.key, x: p.x, z: p.z, item: p.item!, pose: p.pose } as Target,
+})));
+const beams = computed(() => props.layout.plinths.map((p) => ({ key: `${p.key}-beam`, x: p.x, z: p.z, y: (PLINTH_H + HALL_H) / 2, w: 1.5, h: HALL_H - PLINTH_H })));
 const statues = computed(() => props.layout.statues.map((s) => {
   const size = s.kind === 'character' ? { w: 1.5, h: 2.6 } : s.kind === 'art' ? { w: 0.7, h: 1.55 } : { w: 0.8, h: 1.3 };
   return { ...s, ...size, y: size.h / 2 };
 }));
 const bbStyle = (b: { w: number; h: number }) => ({ width: `${b.w * 100}px`, height: `${b.h * 100}px`, margin: `${-b.h * 50}px 0 0 ${-b.w * 50}px` });
 const murals = computed(() => props.layout.murals.map((m) => ({ ...m, style: planeStyle(m) })));
-const targets = computed<Target[]>(() => [...frames.value.map((f) => f.t), ...pedArts.value.map((p) => p.t)]);
+const targets = computed<Target[]>(() => [...frames.value.map((f) => f.t), ...pedArts.value.map((p) => p.t), ...plArts.value.map((p) => p.t)]);
 
 // ---------- 카메라 ----------
 const vp = ref<HTMLElement | null>(null);
@@ -77,13 +91,13 @@ let bbs: { el: HTMLElement; x: number; y: number; z: number }[] = [];
 function measure() {
   const el = vp.value; if (!el) return;
   const w = el.clientWidth || 800; const h = el.clientHeight || 600;
-  P = Math.max(460, Math.max(w, h) / 2 / Math.tan((35 * Math.PI) / 180));
+  P = perspectiveFor(w, h); // 화각 65°(D45)
   el.style.perspective = `${P.toFixed(1)}px`;
   render();
 }
 function render() {
   const w = world.value; if (!w) return;
-  w.style.transform = `translateZ(${(P - 1).toFixed(1)}px) rotateX(${cam.pitch.toFixed(2)}deg) rotateY(${(-cam.yaw).toFixed(2)}deg) translate3d(${(-cam.x * 100).toFixed(1)}px,0px,${(cam.z * 100).toFixed(1)}px)`;
+  w.style.transform = `translateZ(${(P - 1).toFixed(1)}px) rotateX(${cam.pitch.toFixed(2)}deg) rotateY(${(-cam.yaw).toFixed(2)}deg) translate3d(${(-cam.x * 100).toFixed(1)}px,${bobY.toFixed(2)}px,${(cam.z * 100).toFixed(1)}px)`;
   for (const b of bbs) b.el.style.transform = planeTf({ x: b.x, y: b.y, z: b.z, ry: Math.round((Math.atan2(cam.x - b.x, -(cam.z - b.z)) * 180) / Math.PI) });
 }
 let lastPub = 0;
@@ -109,7 +123,7 @@ function startPath(pts: Vec[], yaw: number): Promise<void> {
   for (let i = 1; i < all.length; i++) cum.push(cum[i - 1]! + Math.hypot(all[i]!.x - all[i - 1]!.x, all[i]!.z - all[i - 1]!.z));
   const total = cum[cum.length - 1]!;
   let y1 = yaw; while (y1 - cam.yaw > 180) y1 -= 360; while (y1 - cam.yaw < -180) y1 += 360;
-  const dur = Math.min(4500, Math.max(500, (total / 2.4) * 1000 + Math.abs(y1 - cam.yaw) * 3));
+  const dur = Math.min(6000, Math.max(700, (total / 1.8) * 1000 + Math.abs(y1 - cam.yaw) * 4));
   tween = { pts: all, cum, total, dur, t0: performance.now(), yaw0: cam.yaw, yaw1: y1, pitch0: cam.pitch };
   const done = new Promise<void>((r) => { tweenDone = r; });
   kick();
@@ -140,25 +154,48 @@ const rafFn: (cb: FrameRequestCallback) => number = typeof requestAnimationFrame
 const cancelFn: (id: number) => void = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame : (id) => window.clearTimeout(id);
 function kick() { if (running) return; running = true; last = performance.now(); raf = rafFn(tick); }
 function moving() { return ['w', 's', 'a', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some((k) => keys.has(k)) || stick.x !== 0 || stick.y !== 0; }
+/** 걷기 속도(앞 · 옆, m/s) — 목표 속도로 0.35초 동안 부드럽게 붙는다 */
+const vel = { f: 0, r: 0 };
+/** 끌기를 놓은 뒤 관성(도/초) */
+const spin = { yaw: 0, pitch: 0 };
+let wheelLeft = 0;
+let bobT = 0; let bobY = 0;
+function busy() { return !!tween || (!props.paused && moving()) || Math.hypot(vel.f, vel.r) > 0.01 || Math.abs(spin.yaw) + Math.abs(spin.pitch) > 0.5 || Math.abs(wheelLeft) > 0.005; }
+function walkBy(df: number, dr: number) {
+  const y = (cam.yaw * Math.PI) / 180;
+  const to = { x: cam.x - Math.sin(y) * df + Math.cos(y) * dr, z: cam.z + Math.cos(y) * df + Math.sin(y) * dr };
+  const p = clampMove(props.layout, cam, to); const moved = Math.hypot(p.x - cam.x, p.z - cam.z); cam.x = p.x; cam.z = p.z; return moved;
+}
 function tick(t: number) {
   const dt = Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t;
+  const ease = 1 - Math.exp(-dt / (EASE_S / 3)); // 0.35초에 약 95%
   if (tween) stepTween(t);
-  else if (!props.paused && moving()) {
-    const f = (keys.has('w') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('s') || keys.has('ArrowDown') ? 1 : 0) - stick.y;
-    const r = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0) + stick.x;
-    cam.yaw += ((keys.has('ArrowLeft') ? 1 : 0) - (keys.has('ArrowRight') ? 1 : 0)) * TURN * dt;
-    const m = Math.hypot(f, r);
-    if (m > 0.05) {
-      const n = Math.max(1, m); const sp = (WALK * (keys.has('Shift') ? RUN : 1) * dt) / n; const y = (cam.yaw * Math.PI) / 180;
-      const to = { x: cam.x + (-Math.sin(y) * f + Math.cos(y) * r) * sp, z: cam.z + (Math.cos(y) * f + Math.sin(y) * r) * sp };
-      const p = clampMove(props.layout, cam, to); cam.x = p.x; cam.z = p.z;
+  else {
+    let f = 0; let r = 0;
+    if (!props.paused) {
+      f = (keys.has('w') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('s') || keys.has('ArrowDown') ? 1 : 0) - stick.y;
+      r = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0) + stick.x;
+      cam.yaw += ((keys.has('ArrowLeft') ? 1 : 0) - (keys.has('ArrowRight') ? 1 : 0)) * TURN * dt;
     }
+    const m = Math.hypot(f, r); const n = Math.max(1, m); const sp = WALK * (keys.has('Shift') ? RUN : 1);
+    vel.f += ((f / n) * sp - vel.f) * ease; vel.r += ((r / n) * sp - vel.r) * ease;
+    if (Math.hypot(vel.f, vel.r) > 0.005) walkBy(vel.f * dt, vel.r * dt); else { vel.f = 0; vel.r = 0; }
+    if (Math.abs(wheelLeft) > 0.005) { // 휠: 남은 거리를 부드럽게 걷는다
+      const step = wheelLeft * (1 - Math.exp(-dt / 0.18));
+      const moved = walkBy(step, 0); wheelLeft = moved < Math.abs(step) * 0.5 ? 0 : wheelLeft - step;
+    } else wheelLeft = 0;
+    if (!drag && Math.abs(spin.yaw) + Math.abs(spin.pitch) > 0.5) { // 관성
+      cam.yaw += spin.yaw * dt; cam.pitch = clampPitch(cam.pitch + spin.pitch * dt);
+      const k = Math.exp(-dt / 0.28); spin.yaw *= k; spin.pitch *= k;
+    } else if (!drag) { spin.yaw = 0; spin.pitch = 0; }
   }
+  const speed = tween ? 1 : Math.hypot(vel.f, vel.r) / WALK;
+  if (reducedMotion() || speed < 0.05) bobY *= 0.8; else { bobT += dt * 7; bobY = Math.sin(bobT) * BOB_PX * Math.min(1, speed); }
   render(); sense(); publish();
-  const w = !!tween || (!props.paused && moving());
+  const w = !!tween || Math.hypot(vel.f, vel.r) > 0.2 || Math.abs(wheelLeft) > 0.05;
   if (w !== walking.value) walking.value = w;
-  if (w) raf = rafFn(tick);
-  else { running = false; publish(true); }
+  if (busy()) raf = rafFn(tick);
+  else { running = false; bobY = 0; render(); publish(true); }
 }
 
 // ---------- 입력 ----------
@@ -173,30 +210,52 @@ function onKey(e: KeyboardEvent) {
 function onKeyUp(e: KeyboardEvent) { keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key); }
 function onBlur() { keys.clear(); }
 
-let drag: { id: number; x: number; y: number; yaw: number; pitch: number; moved: boolean } | null = null;
+let drag: { id: number; x: number; y: number; yaw: number; pitch: number; moved: boolean; lx: number; ly: number; lt: number } | null = null;
 let lastTap: { t: number; x: number; y: number } | null = null;
 let swallowClick = false;
 function onDown(e: PointerEvent) {
   if (props.paused || drag || (e.button ?? 0) > 0 || (e.target as HTMLElement).closest?.('.m3-hud')) return;
-  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch, moved: false };
+  spin.yaw = 0; spin.pitch = 0;
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch, moved: false, lx: e.clientX, ly: e.clientY, lt: performance.now() };
 }
 function onMove(e: PointerEvent) {
   const d = drag; if (!d || e.pointerId !== d.id) return;
   const dx = e.clientX - d.x; const dy = e.clientY - d.y;
   if (!d.moved && Math.hypot(dx, dy) < 6) return;
   if (!d.moved) { d.moved = true; stopTween(); try { vp.value?.setPointerCapture(e.pointerId); } catch { /* 없어도 됨 */ } }
-  cam.yaw = d.yaw - dx * DRAG; cam.pitch = Math.max(-PITCH, Math.min(PITCH, d.pitch - dy * DRAG));
+  cam.yaw = d.yaw - dx * DRAG; cam.pitch = clampPitch(d.pitch - dy * DRAG);
+  // 관성용 속도(도/초, 부드럽게)
+  const now = performance.now(); const ddt = Math.max(1, now - d.lt) / 1000;
+  spin.yaw = spin.yaw * 0.6 + (-(e.clientX - d.lx) * DRAG / ddt) * 0.4; spin.pitch = spin.pitch * 0.6 + (-(e.clientY - d.ly) * DRAG / ddt) * 0.4;
+  d.lx = e.clientX; d.ly = e.clientY; d.lt = now;
   render(); sense(); publish();
 }
 function onUp(e: PointerEvent) {
   const d = drag; if (!d || e.pointerId !== d.id) return;
   drag = null;
-  if (d.moved) { swallowClick = true; setTimeout(() => { swallowClick = false; }); publish(true); return; }
+  if (d.moved) {
+    swallowClick = true; setTimeout(() => { swallowClick = false; });
+    if (reducedMotion() || performance.now() - d.lt > 80) { spin.yaw = 0; spin.pitch = 0; } // 멈췄다 놓으면 관성 없음
+    spin.yaw = Math.max(-240, Math.min(240, spin.yaw)); spin.pitch = Math.max(-120, Math.min(120, spin.pitch));
+    kick(); publish(true); return;
+  }
   const target = e.target as HTMLElement;
   if (target.closest?.('button,a,.m3-hud')) return;
   const now = performance.now();
-  if (lastTap && now - lastTap.t < 360 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { lastTap = null; if (target.classList.contains('pl-floor')) floorWalk(e.clientX, e.clientY); }
+  if (lastTap && now - lastTap.t < 360 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+    lastTap = null;
+    const tk = target.closest?.<HTMLElement>('[data-tk]')?.dataset.tk; const pose = tk ? poseOf.value.get(tk) : undefined;
+    if (pose) void goTo(pose); // 받침대 · 진열대 → 그 앞에서 정면으로
+    else if (target.classList.contains('pl-floor')) floorWalk(e.clientX, e.clientY);
+  }
   else lastTap = { t: now, x: e.clientX, y: e.clientY };
+}
+/** 휠: 천천히 앞뒤로 걷기(한 칸 약 0.4m, 부드럽게) */
+function onWheel(e: WheelEvent) {
+  if (props.paused) return;
+  e.preventDefault();
+  const notches = Math.max(-3, Math.min(3, e.deltaMode === 1 ? e.deltaY / 3 : e.deltaY / 100));
+  stopTween(); wheelLeft = Math.max(-2, Math.min(2, wheelLeft - notches * WHEEL_M)); kick();
 }
 function onClickCapture(e: MouseEvent) { if (swallowClick) { e.preventDefault(); e.stopPropagation(); swallowClick = false; } }
 /** 바닥 두 번 누르기 → 그 자리로(벽 여유 안으로 당겨서) */
@@ -232,11 +291,12 @@ function stickUp() { stickId = null; knob.value = { x: 0, y: 0 }; stick.x = 0; s
 onMounted(() => {
   bbs = [...(world.value?.querySelectorAll<HTMLElement>('[data-bb]') ?? [])].map((el) => ({ el, x: Number(el.dataset.x), y: Number(el.dataset.y), z: Number(el.dataset.z) }));
   measure(); sense(); publish(true);
+  vp.value?.addEventListener('wheel', onWheel, { passive: false });
   if (props.hang) void playHang(props.hang); else if (props.companion) void walkIn();
   window.addEventListener('keydown', onKey); window.addEventListener('keyup', onKeyUp); window.addEventListener('blur', onBlur); window.addEventListener('resize', measure);
 });
 onBeforeUnmount(() => {
-  cancelFn(raf); running = false;
+  cancelFn(raf); running = false; vp.value?.removeEventListener('wheel', onWheel);
   window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onKeyUp); window.removeEventListener('blur', onBlur); window.removeEventListener('resize', measure);
 });
 // ---------- 아이 캐릭터(3인칭 살짝, D44) ----------
@@ -255,7 +315,7 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 async function walkIn() {
   if (reducedMotion()) return;
   entering.value = true; cam.z = 0.25; render();
-  await goTo({ x: 0, z: 1.35, yaw: 0 });
+  await goTo({ x: 0, z: 2.2, yaw: 0 });
   entering.value = false;
 }
 /** 걸리는 장면(D44 ④): 캐릭터가 그림을 들고 그 방으로 → 벽 자리에 건다(입체는 진열대) → 금빛 반짝 → 크게 보기 */
@@ -280,7 +340,8 @@ defineExpose({ goTo, playHang });
     <div ref="vp" class="m3-vp" role="region" :aria-label="m3.scene(layout.alias)"
       @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="onUp" @click.capture="onClickCapture" @scroll="noScroll">
       <div ref="world" class="m3-world">
-        <div v-for="p in planes" :key="p.key" class="m3-pl" :class="p.cls" :style="p.style" aria-hidden="true">{{ p.text }}</div>
+        <div v-for="p in planes" :key="p.key" class="m3-pl" :class="p.cls" :style="p.style" :data-tk="p.tk || undefined" aria-hidden="true">{{ p.text }}</div>
+        <div v-for="b in beams" :key="b.key" class="m3-pl m3-beam" :style="bbStyle(b)" data-bb :data-x="b.x" :data-y="b.y" :data-z="b.z" aria-hidden="true"></div>
         <div v-for="m in murals" :key="m.key" class="m3-pl" :class="m.big ? 'mural-big' : 'mural-mini'" :style="m.style" aria-hidden="true">
           <Mural v-if="m.big" :tint="layout.color" />
         </div>
@@ -290,6 +351,11 @@ defineExpose({ goTo, playHang });
           <video v-else-if="f.item.videoUrl" :src="f.item.videoUrl" muted playsinline preload="metadata" aria-hidden="true"></video>
         </button>
         <button v-for="p in pedArts" :key="p.key" type="button" class="m3-pl m3-ped-art" :class="{ near: nearKey === p.t.key, pending: pendingKey === p.t.key, appear: appearKey === p.t.key }" :style="bbStyle(p)"
+          data-bb :data-x="p.x" :data-y="p.y" :data-z="p.z" :aria-label="m3.artButton(p.title)" @click="activate(p.t)" @focus="face(p.t)">
+          <img v-if="p.item.imageUrl" :src="p.item.imageUrl" alt="" draggable="false" decoding="async">
+          <i v-else class="m3-blob" aria-hidden="true"></i>
+        </button>
+        <button v-for="p in plArts" :key="p.key" type="button" class="m3-pl m3-ped-art m3-pl-art" :class="{ near: nearKey === p.t.key, pending: pendingKey === p.t.key, appear: appearKey === p.t.key }" :style="bbStyle(p)"
           data-bb :data-x="p.x" :data-y="p.y" :data-z="p.z" :aria-label="m3.artButton(p.title)" @click="activate(p.t)" @focus="face(p.t)">
           <img v-if="p.item.imageUrl" :src="p.item.imageUrl" alt="" draggable="false" decoding="async">
           <i v-else class="m3-blob" aria-hidden="true"></i>
@@ -349,7 +415,7 @@ defineExpose({ goTo, playHang });
 /* 바닥: 밝은 대리석 — 크림 + 연회색 1m 체크 */
 .pl-floor{background:linear-gradient(135deg,rgba(255,255,255,.35),rgba(255,255,255,0) 40%,rgba(255,255,255,.25)),
   repeating-conic-gradient(#F6F1E8 0 25%,#E7E4DF 0 50%) 0 0/200px 200px}
-.pl-hall{background:radial-gradient(ellipse 42% 30% at 50% 50%,rgba(255,246,214,.7),rgba(255,246,214,0) 70%) 0 0/100% 600px repeat-y,
+.pl-hall{background:radial-gradient(ellipse 42% 30% at 50% 50%,rgba(255,246,214,.7),rgba(255,246,214,0) 70%) 0 0/100% 800px repeat-y,
   repeating-conic-gradient(#F6F1E8 0 25%,#E7E4DF 0 50%) 0 0/200px 200px}
 .pl-lobby{background:radial-gradient(circle at 50% 50%,#EDE3D0 0 92px,#FFFFFF 93px 104px,#D9C49A 105px 110px,rgba(0,0,0,0) 111px),
   repeating-conic-gradient(#F6F1E8 0 25%,#E7E4DF 0 50%) 0 0/200px 200px}
@@ -370,7 +436,7 @@ defineExpose({ goTo, playHang });
 .pl-wall{background:linear-gradient(to bottom,#F3E7C9 0 10px,#C9A24A 10px 14px,#FFF8E8 14px 26px,#E7D6AE 26px 30px,#C9A24A 30px 32px,rgba(0,0,0,0) 32px),
   linear-gradient(to top,#EFE6D6 0 22px,#C9A24A 22px 24px,#F6EFE2 24px 92px,#D9C08A 92px 94px,rgba(0,0,0,0) 94px),
   linear-gradient(to bottom,#FFFFFF,#FDFBF7 40%,#F7F2E9)}
-.pl-lintel{background:radial-gradient(circle at 50% 100%,rgba(0,0,0,0) 0 100px,#C9A24A 100px 104px,#F3E7C9 104px 112px,#C9A24A 112px 114px,rgba(0,0,0,0) 114px),
+.pl-lintel{background:radial-gradient(circle at 50% 100%,rgba(0,0,0,0) 0 var(--r,100px),#C9A24A var(--r,100px) calc(var(--r,100px) + 4px),#F3E7C9 calc(var(--r,100px) + 4px) calc(var(--r,100px) + 12px),#C9A24A calc(var(--r,100px) + 12px) calc(var(--r,100px) + 14px),rgba(0,0,0,0) calc(var(--r,100px) + 14px)),
   linear-gradient(to bottom,#F3E7C9 0 10px,#C9A24A 10px 14px,#FFF8E8 14px 26px,#E7D6AE 26px 30px,#C9A24A 30px 32px,rgba(0,0,0,0) 32px),linear-gradient(#FFFFFF,#FAF7F1)}
 .pl-entry{background:linear-gradient(to bottom,#D8EEFF,#EEF8E6) 50% 100%/200px 300px no-repeat,
   linear-gradient(#E6CB86,#C9A552) 50% 100%/224px 312px no-repeat,
@@ -384,6 +450,18 @@ defineExpose({ goTo, playHang });
 .pl-note{display:grid;place-items:center;padding:4px 8px;text-align:center;border:1px dashed #D8C5A0;border-radius:4px;background:rgba(255,251,244,.95);font:600 11px/1.3 var(--font-sans);color:#7A5A48}
 .pl-plinth{background:linear-gradient(#FFFFFF,#EEE8DE);box-shadow:inset 0 -10px 0 #E6DECF}
 .pl-plinth.pl-top{background:#F8F5EF;box-shadow:none}
+/* 가운데 홀 받침대(D45): 대리석 · 위 스포트라이트 · 황동 명패(세리프). 비면 점선 */
+.pl-marble{background:linear-gradient(160deg,rgba(255,255,255,.6),rgba(255,255,255,0) 45%),
+  linear-gradient(115deg,rgba(0,0,0,0) 30%,rgba(170,160,145,.18) 31%,rgba(0,0,0,0) 33%,rgba(0,0,0,0) 62%,rgba(170,160,145,.14) 63%,rgba(0,0,0,0) 65%),
+  linear-gradient(#FBF9F4,#ECE7DE);box-shadow:inset 0 10px 0 -4px #F5F0E6,inset 0 -8px 0 #E2DACB}
+.pl-marble.pl-top{background:#F9F6F0;box-shadow:inset 0 0 0 3px #E8E0D0}
+.pl-marble.pl-empty{background:rgba(251,249,244,.55);border:2px dashed #C9A24A;box-shadow:none}
+.pl-pool{pointer-events:none;background:radial-gradient(circle,rgba(255,244,210,.8),rgba(255,244,210,0) 65%)}
+.pl-plaque{display:grid;place-items:center;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:2px;
+  background:linear-gradient(135deg,#F1E2B6,#D8BC72 55%,#B8913A);color:#2B2007;font:600 10px/1 var(--mc-serif,'Noto Serif KR',serif);box-shadow:0 2px 3px -2px rgba(0,0,0,.4)}
+.m3-beam{pointer-events:none;background:linear-gradient(to bottom,rgba(255,250,228,.55),rgba(255,250,228,.12) 70%,rgba(255,250,228,0));
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent)}
+.m3-pl-art img{filter:drop-shadow(0 10px 8px rgba(74,52,65,.3))}
 .pl-glass{pointer-events:none;border:1px solid rgba(255,255,255,.9);background:linear-gradient(135deg,rgba(225,243,255,.32),rgba(255,255,255,.06) 55%,rgba(225,243,255,.28))}
 /* 벽화 */
 .mural-big{border:10px solid #E6CB86;box-shadow:0 0 0 4px #FFF8EA,0 20px 40px -24px rgba(74,52,65,.4);background:#FFF8EC}

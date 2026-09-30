@@ -33,6 +33,7 @@ export function fromGallery(g: Gallery, child: ChildInfo): MuseumInput {
         id: it.id, kind: it.kind as ItemKind, title: it.title ?? null, imageUrl: stillOf(it),
         auxUrl: it.auxUrl ?? null, videoUrl: it.kind === 'animated' ? it.primaryUrl ?? null : null,
         caption: it.aiCaption?.body ?? null,
+        making: (it as { making?: boolean }).making === true, // (D45) 서버 칸이 생기면 그대로 받는다
       })),
     }));
   return { childAlias: child.alias, character: child.character ?? null, color: child.color ?? null, museumStyle: child.museumStyle ?? null, visitor: false, groups };
@@ -42,7 +43,8 @@ export function fromGallery(g: Gallery, child: ChildInfo): MuseumInput {
 function visitItem(it: VisitGallery['rooms'][number]['items'][number]): MuseumItem {
   const p = it.primaryUrl ?? null; const a = it.auxUrl ?? null;
   const imageUrl = it.kind === 'frame' ? p : it.kind === 'animated' ? a : it.kind === 'relief' ? a : null;
-  return { id: it.id, kind: it.kind, title: it.title ?? null, imageUrl, auxUrl: a, videoUrl: it.kind === 'animated' ? p : null, caption: null };
+  return { id: it.id, kind: it.kind, title: it.title ?? null, imageUrl, auxUrl: a, videoUrl: it.kind === 'animated' ? p : null, caption: null,
+    making: (it as { making?: boolean }).making === true };
 }
 
 export function fromVisit(v: VisitGallery): MuseumInput {

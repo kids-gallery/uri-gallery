@@ -19,6 +19,7 @@ export const m3 = {
   roomCount: (label: string, n: number) => `${label} · ${n}점`,
 
   pedestalEmpty: '입체로 만들면 여기에 놓여요',
+  plinthEmpty: '여기에 만들기 작품이 놓여요',
   nearOpen: '눌러서 크게 보기',
 
   exit: '밖으로',

@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import {
-  areaOf, buildMuseumLayout, canStand, clampMove, domEstimate, EYE, MAX_ROOMS, nearestTarget, pathTo, screenToFloor,
+  areaOf, ARCH_TOP, buildMuseumLayout, canStand, clampMove, clampPitch, domEstimate, EYE, FOV_DEG, HALL_H, HALL_HALF, MAX_ROOMS, MIN_PLINTHS,
+  nearestTarget, pathTo, perspectiveFor, ROOM_H, screenToFloor,
   type MuseumInput, type MuseumItem,
 } from '../app/museum3d/layout';
 import { fromGallery, fromVisit, type VisitGallery } from '../app/museum3d/adapters';
@@ -31,10 +32,13 @@ describe('방 나누기', () => {
     expect(L.rooms[7]!.count).toBe(4);
     expect(L.frames).toHaveLength(11);
   });
-  it('방은 홀 양옆에 번갈아(1 왼쪽 · 2 오른쪽), 6×6m', () => {
+  it('방은 홀 양옆에 번갈아(1 왼쪽 · 2 오른쪽), 8×8m · 홀 폭 12m · 층고 7m 이상 · 문 아치 4m(D45)', () => {
     const L = buildMuseumLayout(input([{ label: 'a', items: [it_('a')] }, { label: 'b', items: [it_('b')] }, { label: 'c', items: [it_('c')] }]));
     expect(L.rooms.map((r) => r.side)).toEqual([-1, 1, -1]);
-    for (const r of L.rooms) { expect(r.rect.x1 - r.rect.x0).toBe(6); expect(r.rect.z1 - r.rect.z0).toBe(6); }
+    for (const r of L.rooms) { expect(r.rect.x1 - r.rect.x0).toBe(8); expect(r.rect.z1 - r.rect.z0).toBe(8); }
+    expect(L.hall.x1 - L.hall.x0).toBe(12);
+    expect(Math.min(ROOM_H, HALL_H)).toBeGreaterThanOrEqual(7);
+    expect(ARCH_TOP).toBe(4);
     expect(L.rooms[2]!.rect.z0).toBe(L.rooms[0]!.rect.z1);
   });
   it('나이 미정은 1번 방(가족 전시 응답에서)', () => {
@@ -69,12 +73,42 @@ describe('진열대 · 동상', () => {
     expect(L.rooms[0]!.statues.map((s) => s.kind)).toEqual(['art', 'plant']);
     expect(L.rooms[1]!.statues.map((s) => s.kind)).toEqual(['plant', 'plant']);
   });
-  it('끝벽 큰 벽화 1 + 요소 수가 적당하다(최대 8방 · 72점도 ~450 아래)', () => {
+  it('끝벽 큰 벽화 1 + 요소 수가 적당하다(최대 8방 · 80점도 ~500 아래)', () => {
     const groups = Array.from({ length: 8 }, (_, i) => ({ label: `${i}`, items: Array.from({ length: 10 }, (_, k) => it_(`${i}-${k}`, k === 0 ? 'relief' : 'frame')) }));
     const L = buildMuseumLayout(input(groups));
     expect(L.murals.filter((m) => m.big)).toHaveLength(1);
-    expect(domEstimate(L)).toBeLessThan(460);
-    expect(domEstimate(buildMuseumLayout(input([{ label: 'a', items: [it_('a')] }])))).toBeLessThan(160);
+    expect(domEstimate(L)).toBeLessThan(500);
+    expect(domEstimate(buildMuseumLayout(input([{ label: 'a', items: [it_('a')] }])))).toBeLessThan(200);
+  });
+});
+
+describe('가운데 홀 받침대(D45)', () => {
+  it('만들기 작품이 없어도 빈 받침대 2개(점선 + 안내)', () => {
+    const L = buildMuseumLayout(input([{ label: 'a', items: [it_('f1')] }]));
+    expect(L.plinths).toHaveLength(MIN_PLINTHS);
+    for (const p of L.plinths) {
+      expect(p.item).toBeNull();
+      expect(p.planes.find((q) => q.cls === 'note')?.text).toBe(m3.plinthEmpty);
+      expect(p.planes.some((q) => q.cls.includes('empty'))).toBe(true);
+    }
+    expect(new Set(L.plinths.map((p) => p.side))).toEqual(new Set([-1, 1])); // 양옆 번갈아
+  });
+  it('방 진열대 다음의 만들기 작품(relief · sculpture · making 표시)은 홀 받침대로, 명패는 제목', () => {
+    const L = buildMuseumLayout(input([{ label: 'a', items: [it_('r1', 'relief'), it_('f1'), it_('s1', 'sculpture'), { ...it_('m1'), making: true }, it_('r2', 'relief')] }]));
+    expect(L.pedestals[0]!.item?.id).toBe('r1');
+    expect(L.plinths.map((p) => p.item?.id)).toEqual(['s1', 'm1', 'r2']);
+    expect(L.frames.map((f) => f.item.id)).toEqual(['f1']);
+    expect(L.plinths[0]!.planes.find((q) => q.cls === 'plaque')?.text).toBe('그림 s1');
+    for (const p of L.plinths) { expect(Math.abs(p.x)).toBeLessThan(HALL_HALF); expect(canStand(L, p.pose.x, p.pose.z)).toBe(true); expect(canStand(L, p.x, p.z)).toBe(false); }
+  });
+});
+
+describe('어지럽지 않은 조작(D45)', () => {
+  it('위아래는 ±25°까지, 화각은 60~70°', () => {
+    expect(clampPitch(40)).toBe(25); expect(clampPitch(-90)).toBe(-25); expect(clampPitch(10)).toBe(10);
+    expect(FOV_DEG).toBeGreaterThanOrEqual(60); expect(FOV_DEG).toBeLessThanOrEqual(70);
+    const P = perspectiveFor(1440, 800);
+    expect((2 * Math.atan(720 / P) * 180) / Math.PI).toBeCloseTo(FOV_DEG);
   });
 });
 
@@ -115,26 +149,27 @@ describe('걷기 · 충돌 · 길', () => {
   it('홀 · 방 안은 설 수 있고 벽 밖 · 동상 자리는 못 선다', () => {
     expect(canStand(L, 0, 1)).toBe(true);
     expect(canStand(L, 0, 3)).toBe(false); // 로비 동상
-    expect(canStand(L, -7, L.rooms[0]!.center.z + 2)).toBe(true); // 방 안
-    expect(canStand(L, -4, L.rooms[0]!.rect.z0 + 0.2)).toBe(false); // 문 아닌 벽
-    expect(canStand(L, -4, L.rooms[0]!.center.z)).toBe(true); // 문
-    expect(canStand(L, 20, 5)).toBe(false);
+    expect(canStand(L, L.rooms[0]!.center.x, L.rooms[0]!.center.z + 2)).toBe(true); // 방 안
+    expect(canStand(L, -HALL_HALF, L.rooms[0]!.rect.z0 + 0.2)).toBe(false); // 문 아닌 벽
+    expect(canStand(L, -HALL_HALF, L.rooms[0]!.center.z)).toBe(true); // 문
+    expect(canStand(L, 30, 5)).toBe(false);
     expect(canStand(L, 0, -1)).toBe(false);
   });
   it('벽에 막히면 미끄러지고, 안으로 못 들어가면 그 자리', () => {
-    const p = clampMove(L, { x: 3.5, z: 2 }, { x: 4.5, z: 2.4 });
-    expect(p).toEqual({ x: 3.5, z: 2.4 });
+    const p = clampMove(L, { x: HALL_HALF - 0.5, z: 2 }, { x: HALL_HALF + 0.5, z: 2.4 });
+    expect(p).toEqual({ x: HALL_HALF - 0.5, z: 2.4 });
     expect(clampMove(L, { x: 0, z: 0.5 }, { x: 0, z: -1 })).toEqual({ x: 0, z: 0.5 });
   });
   it('다른 방으로 갈 때는 문을 지난다', () => {
     const a = L.rooms[0]!; const b = L.rooms[1]!;
     expect(areaOf(L, a.center)).toBe(0);
     expect(areaOf(L, { x: 0, z: 1 })).toBe('lobby');
-    const path = pathTo(L, { x: -7, z: a.center.z + 2 }, { x: 7, z: b.center.z - 2 });
-    expect(path).toEqual([a.door.inside, a.door.hall, b.door.hall, b.door.inside, { x: 7, z: b.center.z - 2 }]);
+    const path = pathTo(L, { x: a.center.x, z: a.center.z + 2 }, { x: b.center.x, z: b.center.z - 2 });
+    expect(path).toEqual([a.door.inside, a.door.hall, b.door.hall, b.door.inside, { x: b.center.x, z: b.center.z - 2 }]);
     expect(pathTo(L, { x: 0, z: 1 }, { x: 1, z: 8 })).toEqual([{ x: 1, z: 8 }]);
   });
-  it('방 버튼 · 로비 · 홀 자리는 모두 설 수 있다', () => {
+  it('방 버튼 · 로비 · 홀 · 받침대 앞 자리는 모두 설 수 있다', () => {
+    for (const p of L.plinths) expect(canStand(L, p.pose.x, p.pose.z)).toBe(true);
     for (const p of [L.start, L.hallEntry, ...L.rooms.map((r) => r.entry)]) expect(canStand(L, p.x, p.z)).toBe(true);
   });
   it('액자 앞 서는 자리는 설 수 있고, 거기서 그 액자가 가까운 작품이다', () => {

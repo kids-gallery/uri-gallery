@@ -16,6 +16,7 @@ const vb = computed(() => { const b = props.layout.bounds; return `${b.x0 - 0.6}
 const dots = computed(() => [
   ...props.layout.frames.map((f) => ({ key: f.key, x: f.x, z: f.z, pose: f.pose, solid: false })),
   ...props.layout.pedestals.filter((p) => p.item).map((p) => ({ key: p.key, x: p.x, z: p.z, pose: p.pose, solid: true })),
+  ...props.layout.plinths.filter((p) => p.item).map((p) => ({ key: p.key, x: p.x, z: p.z, pose: p.pose, solid: true })),
 ]);
 const cone = computed(() => {
   const c = props.cam; const y = (c.yaw * Math.PI) / 180; const L = 4.2; const a = 0.55;

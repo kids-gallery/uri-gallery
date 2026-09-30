@@ -39,6 +39,7 @@ test('처음 카카오 로그인 → "아이를 등록해 볼까요?" → 다시
   const c = await page.request.post('/v1/children', { data: { alias: '별이' } });
   expect(c.status()).toBeLessThan(300);
   await page.goto('/app/hall');
+  await page.getByRole('button', { name: ko.shell.menuOpen }).click(); // 로그아웃은 [메뉴] 판 안(D34 ④ · D38)
   await page.getByRole('button', { name: ko.auth.logout }).click();
   await expect(page).toHaveURL(/\/app\/login/);
   await viaKakao(page, id);
