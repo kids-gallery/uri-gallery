@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API_PORT, MAIL_PORT, SMTP_PORT, STAFF, WEB_PORT } from './ports';
+import { API_PORT, KAKAO_PORT, MAIL_PORT, SMTP_PORT, STAFF, WEB_PORT } from './ports';
+import { startKakaoFake } from './kakao-fake';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const API = path.join(ROOT, 'api');
@@ -40,6 +41,9 @@ export default async function globalSetup() {
     APP_PORT: String(API_PORT), SESSION_SECRET: 'e2e-session-secret', AUTH_HMAC_SECRET: 'e2e-hmac',
     STORAGE_ROOT: store, SECURE_COOKIES: 'false', APP_BASE_URL: `http://127.0.0.1:${WEB_PORT}`,
     MAIL_SMTP_URL: `smtp://127.0.0.1:${SMTP_PORT}`, MAIL_FROM: 'no-reply@e2e.test',
+    // 카카오 로그인(D36)은 가짜 카카오로 — 실제 카카오·실제 키를 쓰지 않는다
+    KAKAO_REST_API_KEY: 'e2e-kakao-key', KAKAO_CLIENT_SECRET: 'e2e-kakao-secret',
+    KAKAO_AUTH_BASE: `http://127.0.0.1:${KAKAO_PORT}`, KAKAO_API_BASE: `http://127.0.0.1:${KAKAO_PORT}`,
     MODEL_API_INTERNAL_URL: 'http://127.0.0.1:9', LLM_SERVER_URL: 'http://127.0.0.1:9', CAPTION_ENABLED: 'false',
   };
   execFileSync(path.join(API, 'node_modules/.bin/tsx'), ['scripts/migrate.ts'], { cwd: API, env, stdio: 'ignore' });
@@ -47,6 +51,7 @@ export default async function globalSetup() {
   execFileSync(path.join(API, 'node_modules/.bin/tsx'), ['scripts/ops/staff.ts', 'add', '--email', STAFF.email, '--role', 'operator,evaluator,integrator'],
     { cwd: API, env, input: STAFF.password, stdio: ['pipe', 'ignore', 'ignore'] });
 
+  const kakaoFake = await startKakaoFake(KAKAO_PORT);
   procs.push(spawn(path.join(os.homedir(), '.local/bin/mailpit'), ['--smtp', `127.0.0.1:${SMTP_PORT}`, '--listen', `127.0.0.1:${MAIL_PORT}`, '--database', path.join(dir, 'mail.db')], { stdio: ['ignore', log('mailpit'), log('mailpit')] }));
   procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] }));
   // 삭제(S9)를 끝까지 처리하는 sweeper(10초 주기, pm2 'sweeper'와 같은 진입점)
@@ -63,6 +68,7 @@ export default async function globalSetup() {
   process.env.E2E_DB_SOCKET = sock; // 흐름 시험이 상태를 직접 확인할 때만(쓰기 금지 원칙은 시험 파일에서)
   process.env.E2E_DIR = dir;
   return async () => {
+    kakaoFake.close();
     // 끝나기를 기다린 뒤 지운다(MariaDB가 닫히며 파일을 쓰는 중이면 ENOTEMPTY)
     await Promise.all(procs.reverse().map((p) => new Promise<void>((r) => {
       if (p.exitCode !== null || p.signalCode) return r();
