@@ -2,7 +2,7 @@
 // 미니맵(D40, SD_02 §17-13 C) — 오른쪽 아래. 미술관 평면도 · 방 · 작품 점 · 지금 위치 · 시야 부채꼴.
 // 작은 안내도를 누르면 그곳으로 걸어간다(팀장 요구 2026-09-30 — 손가락만으로), 귀퉁이 [크게] 버튼 = 큰 안내도(§17-13 C "누르면 크게").
 // 큰 안내도의 점을 누르면 그 작품 앞으로, 전시실 목록 버튼은 키보드 · 화면 읽기로도 닿는다.
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { canStand, yawOf, type MuseumLayout, type Pose } from './layout';
 import { m3 } from './copy';
 
@@ -25,9 +25,21 @@ const cone = computed(() => {
   return { x: c.x, y: -c.z, d: `M${c.x} ${-c.z} L${l[0]} ${l[1]} L${r[0]} ${r[1]} Z` };
 });
 
-async function show() { open.value = true; await nextTick(); closeBtn.value?.focus(); }
-async function hide() { open.value = false; await nextTick(); openBtn.value?.focus(); }
-function go(p: Pose) { open.value = false; emit('go', p); }
+const box = ref<HTMLElement | null>(null);
+/** 큰 안내도가 열린 동안: Tab은 안에서만 돌고, 초점이 어디 있든 Esc로 닫는다(문서 전체에서 듣는다) */
+function onDocKey(e: KeyboardEvent) {
+  if (!open.value) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); void hide(); return; }
+  if (e.key !== 'Tab' || !box.value) return;
+  const f = [...box.value.querySelectorAll<HTMLElement>('button, [href]')];
+  const first = f[0]; const last = f[f.length - 1];
+  if (!box.value.contains(document.activeElement)) { e.preventDefault(); first?.focus(); return; }
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+}
+async function show() { open.value = true; document.addEventListener('keydown', onDocKey, true); await nextTick(); closeBtn.value?.focus(); }
+async function hide() { open.value = false; document.removeEventListener('keydown', onDocKey, true); await nextTick(); openBtn.value?.focus(); }
+onBeforeUnmount(() => document.removeEventListener('keydown', onDocKey, true));
+function go(p: Pose) { if (open.value) void hide(); emit('go', p); }
 /** 작은 안내도 누름 → 그 자리(작품 점 가까이면 그 작품 앞, 방 안 빈 곳이면 그 자리, 벽이면 그 방 문턱) */
 function tapSmall(e: MouseEvent) {
   const svg = e.currentTarget as SVGSVGElement; const r = svg.getBoundingClientRect(); const b = props.layout.bounds;
@@ -40,7 +52,6 @@ function tapSmall(e: MouseEvent) {
   const room = props.layout.rooms.find((q) => x >= q.rect.x0 && x <= q.rect.x1 && z >= q.rect.z0 && z <= q.rect.z1);
   if (room) emit('go', room.entry);
 }
-function key(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); void hide(); } }
 </script>
 
 <template>
@@ -58,7 +69,7 @@ function key(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); e
     </div>
 
     <div v-if="open" class="mm-scrim" @click.self="hide">
-      <div class="mm-box" role="dialog" aria-modal="true" aria-labelledby="mm-title" @keydown="key">
+      <div ref="box" class="mm-box" role="dialog" aria-modal="true" aria-labelledby="mm-title">
         <h2 id="mm-title">{{ m3.mapTitle }}</h2>
         <svg class="mm-big" :viewBox="vb" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <rect :x="layout.hall.x0" :y="-layout.hall.z1" :width="layout.hall.x1 - layout.hall.x0" :height="layout.hall.z1 - layout.lobby.z0" class="mm-hall" />

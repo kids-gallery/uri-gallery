@@ -10,6 +10,8 @@ export const m3 = {
   // 방 이름 — 방문자는 번호만(§17-13 F)
   ageRoom: (age: number) => `${age}살 전시실`,
   noAgeRoom: '나이 미정 전시실',
+  ageAutoRoom: '나이를 적지 않은 작품',
+  autoTitle: '제목이 아직 없는 작품',
   visitRoom: (n: number) => `전시실 ${n}`,
   mergedAges: (from: number, to: number) => `${from}~${to}살 전시실`,
   mergedMore: (label: string) => `${label} 외`,
@@ -23,7 +25,7 @@ export const m3 = {
   nearOpen: '눌러서 크게 보기',
 
   exit: '밖으로',
-  exitLabel: '밖으로 — 마을로 나가기',
+  exitLabel: '밖으로 — 미술관 앞 광장으로',
   map: '안내도 크게 보기',
   mapTitle: '미술관 안내도',
   mapRooms: '전시실로 가기',
@@ -33,14 +35,15 @@ export const m3 = {
   mapTap: '안내도를 눌러 그곳으로 걸어가기',
   close: '닫기',
 
-  keys: ['끌어서 둘러보기', '두 번 눌러 걷기', 'WASD 걷기', 'Shift 빨리'],
+  // 안내는 누르기만(D52 B) — 끌기 · 키보드는 덤
+  keys: ['그림을 누르면 가까이 가요', '다음 작품 ▶으로 차례로 봐요'],
   touchKeys: '끌어서 둘러보고, 바닥을 두 번 눌러 걸어가요',
 
   loading: '미술관 문을 여는 중이에요',
   empty: '아직 걸린 그림이 없어요. 그림을 올리면 여기에 걸려요.',
   emptyVisit: '아직 걸린 그림이 없어요',
-  visitLocked: '이웃이 되면 들어갈 수 있어요',
-  visitBadge: '이웃의 미술관',
+  visitLocked: '친구가 되면 들어갈 수 있어요',
+  visitBadge: '친구의 미술관',
   retry: '다시 열기',
   toTown: '마을로 가기',
 
@@ -51,6 +54,23 @@ export const m3 = {
   sampleAlias: '견본이',
   sampleBanner: '견본 미술관이에요 — 우리 아이 그림으로 만들어 볼까요?',
   sampleStart: '카카오로 시작하기',
-  sampleExitLabel: '밖으로 — 첫 화면으로 나가기',
+  sampleExitLabel: '밖으로 — 미술관 앞 광장으로',
   sampleNote: '견본 그림은 우리 팀이 그렸어요',
+
+  // D52 B · C: 앞 · 다음 작품, 첫 안내, 외관 · 친구
+  prev: '앞 작품',
+  next: '다음 작품',
+  restart: '처음으로',
+  tourLabel: '작품 차례로 보기',
+  coachTitle: '미술관 둘러보는 법',
+  coachSteps: ['그림을 누르면 가까이 가요', '[다음 작품 ▶]으로 차례로 봐요', '끌면 둘러볼 수 있어요'],
+  coachStep: (n: number, total: number) => `${total}개 중 ${n}번째 안내`,
+  coachNext: '다음',
+  coachOk: '알겠어요',
+  invite: '친구 초대',
+  town: '미술관 마을',
+  toTownShort: '마을로',
+  enter: '들어가기',
+  outsideRegion: (alias: string) => `${alias}의 미술관 — 바깥 광장`,
+  outsideSub: '문을 열고 들어가 볼까요?',
 } as const;

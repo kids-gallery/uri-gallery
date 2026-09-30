@@ -6,6 +6,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Scene from '../museum3d/Scene.vue';
 import Viewer from '../museum3d/Viewer.vue';
+import Exterior from '../museum3d/Exterior.vue';
 import { buildMuseumLayout, type MuseumItem } from '../museum3d/layout';
 import { buildSampleInput } from '../museum3d/sample';
 import { m3 } from '../museum3d/copy';
@@ -19,7 +20,13 @@ const login = { path: '/app/login', query: { next: '/app' } };
 
 function open(item: MuseumItem) { opener = document.activeElement as HTMLElement | null; viewing.value = item; }
 async function close() { viewing.value = null; await nextTick(); opener?.focus({ preventScroll: true }); }
-function exit() { void router.push('/app/welcome'); }
+/** 견본도 바깥 광장에서 시작(D52 C): [들어가기] · [카카오로 시작하기]. 안의 [밖으로] = 광장 */
+const outside = ref(true);
+const scene = ref<InstanceType<typeof Scene> | null>(null);
+const outsideActions = [{ key: 'enter', label: m3.enter, primary: true }, { key: 'start', label: m3.sampleStart, to: login }];
+function onOutside(key: string) { if (key === 'enter') { outside.value = false; void nextTick(() => scene.value?.walkIn()); } }
+function exit() { outside.value = true; }
+void router;
 </script>
 
 <template>
@@ -30,9 +37,10 @@ function exit() { void router.push('/app/welcome'); }
       <RouterLink class="sm-go" :to="login">{{ m3.sampleStart }}</RouterLink>
     </div>
     <div class="sm-stage">
-      <Scene :layout="layout" :character="input.character" :color="input.color" :paused="!!viewing" :exit-label="m3.sampleExitLabel" @open="open" @exit="exit">
+      <Scene ref="scene" :layout="layout" :character="input.character" :color="input.color" :paused="!!viewing || outside" :auto-walk-in="false" :exit-label="m3.sampleExitLabel" @open="open" @exit="exit">
         <p class="sm-note">{{ m3.sampleNote }}</p>
       </Scene>
+      <Exterior v-if="outside" :alias="input.childAlias" :museum-style="input.museumStyle" :tint="layout.color" :actions="outsideActions" @action="onOutside" />
     </div>
     <Viewer v-if="viewing" :item="viewing" :alias="input.childAlias" @close="close" />
   </main>

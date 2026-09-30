@@ -29,7 +29,7 @@ function trap(e: KeyboardEvent) {
   <div class="vw-scrim" @click.self="emit('close')">
     <div class="vw" role="dialog" aria-modal="true" aria-labelledby="vw-title" @keydown="trap">
       <button ref="closeBtn" class="vw-close" type="button" @click="emit('close')">{{ m3.close }} <span aria-hidden="true">✕</span></button>
-      <ArtFrame size="lg" variant="gold" :src="props.item.imageUrl" :video="props.item.kind === 'animated' ? props.item.videoUrl ?? null : null" :playing="playing" :alt="props.item.title ?? m3.untitled" />
+      <figure class="vw-art"><ArtFrame size="lg" variant="gold" :src="props.item.imageUrl" :video="props.item.kind === 'animated' ? props.item.videoUrl ?? null : null" :playing="playing" :alt="props.item.title ?? m3.untitled" /></figure>
       <button v-if="props.item.kind === 'animated' && props.item.videoUrl && !reducedMotion()" class="btn btn-primary" type="button" :aria-pressed="playing" @click="playing = !playing">
         {{ playing ? m3.stop : m3.play }}
       </button>
@@ -43,9 +43,13 @@ function trap(e: KeyboardEvent) {
 
 <style scoped>
 .vw-scrim{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;overflow-y:auto;background:rgba(44,34,56,.55)}
-.vw{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;display:grid;justify-items:center;gap:12px;padding:clamp(16px,3vw,32px);
+.vw{position:relative;box-sizing:border-box;width:min(760px,100%);min-width:0;max-height:calc(100dvh - 32px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;display:grid;justify-items:center;gap:12px;padding:clamp(16px,3vw,32px);
   border-radius:24px;background:#FFF6EA;color:#6E3550;box-shadow:0 16px 48px rgba(110,53,80,.14)}
-.vw :deep(.is-lg){--art-max-w:min(calc(100vw - 96px),560px)}
+/* 그림 칸 = 컨테이너: 액자는 칸 너비에 맞춘다(매트 여백 36×2 + 금테 ≈ 110px). .artframe 너비는 건드리지 않는다(금테만 늘어나지 않게) */
+.vw > *{min-width:0;max-width:100%}
+.vw-art{margin:0;width:100%;container-type:inline-size;display:grid;justify-items:center}
+.vw-art :deep(.is-lg){--art-h:min(50vh,420px)}
+.vw-art :deep(.mat img),.vw-art :deep(.mat video){max-width:calc(100cqi - 110px);height:auto;max-height:var(--art-h)}
 .vw-close{justify-self:end;min-height:44px;padding:8px 14px;border:1px solid #EBD5D6;border-radius:999px;background:rgba(255,251,247,.9);color:#6E3550;font:600 15px/1 var(--font-sans);cursor:pointer}
 .vw h2{margin:0;font:700 22px/1.35 var(--font-sans);text-align:center}
 .vw p{margin:0;font:500 14px/1.4 var(--font-sans)}

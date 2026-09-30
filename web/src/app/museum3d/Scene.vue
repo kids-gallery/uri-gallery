@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 아이 미술관 1인칭 장면(D40, SD_02 §17-13 B · C) — layout.ts가 정한 자리를 CSS perspective · preserve-3d 면으로 세운다. 3D 엔진 · 소리 없음.
-// 조작: 끌기 = 360° 둘러보기(위아래 −35~35°) · 바닥 두 번 누르기 = 그 자리로 · W A S D · ↑↓ 걷기, ←→ 몸 돌리기, Shift 빨리 · 조이스틱(터치)
-//       액자 · 진열대 누르기 = 가까우면(2.5m) 크게 보기, 멀면 그 앞으로 · E/Enter = 가까운 작품 크게 보기 · 움직임 줄이기면 걷지 않고 바로 옮김.
+// 아이 미술관 1인칭 장면(D40 → D52, SD_02 §17-13 · §17-18) — layout.ts가 정한 자리를 CSS perspective · preserve-3d 면으로 세운다. 3D 엔진 · 소리 없음.
+// 조작(D52 B, 누르기만으로): 아래 가운데 [◀ 앞 작품] · [다음 작품 ▶] · 작품 · 받침대 · 문 한 번 누르기 = 그 앞으로(가까우면 크게 보기) · 방 버튼 줄 · 미니맵.
+//   덤: 끌기 = 둘러보기 · 바닥 두 번 누르기 · W A S D · 방향키 · 휠 · Space = 캐릭터 점프(카메라도 살짝). 조이스틱 없음. 움직임 줄이기면 걷지 않고 바로 옮김.
 // D41 hall3d/engine.ts는 곧은 홀 하나만 다뤄(방 · 문 · 길 찾기 · 바닥 누르기 없음) 따로 두되, 1m = 100px · 눈높이 · 걷는 속도 · 가까움 2.5m · 끌기 방향 · 조이스틱은 맞췄다.
 // 카메라는 반응형 상태가 아니라 매 프레임 world transform만 바꾼다(transform만 움직임). 미니맵 · 위치 글자는 0.1초마다만 갱신.
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
@@ -9,16 +9,19 @@ import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
 import { DEFAULT_COLOR, DEFAULT_KIND, isColor, isKind } from '@/app/character/names';
 import { reducedMotion } from '@/composables/usePolling';
 import Minimap from './Minimap.vue';
+import Coach, { coachSeen } from './Coach.vue';
 import Mural from './Mural.vue';
 import { m3 } from './copy';
 import {
-  areaOf, canStand, clampMove, clampPitch, isNear, nearestTarget, pathTo, perspectiveFor, planeStyle, planeTf, PLINTH_H, screenToFloor, yawOf, HALL_H,
+  areaOf, canStand, clampMove, clampPitch, floorAt, isNear, nearestTarget, pathTo, perspectiveFor, planeStyle, planeTf, PLINTH_H, screenToFloor, yawOf, WALL_H,
   type MuseumItem, type MuseumLayout, type Pose, type Vec,
 } from './layout';
 
 /** companion = 화면 아래 가운데 아이 캐릭터(D44, 방문자는 끔) · hang = 걸리는 장면으로 시작할 작품 id(D44 ④) */
-const props = withDefaults(defineProps<{ layout: MuseumLayout; character?: string | null; color?: string | null; paused?: boolean; companion?: boolean; hang?: string | null; exitLabel?: string; openAfterHang?: boolean }>(), {
-  character: null, color: null, paused: false, companion: true, hang: null, exitLabel: undefined, openAfterHang: true,
+const props = withDefaults(defineProps<{ layout: MuseumLayout; character?: string | null; color?: string | null; paused?: boolean; companion?: boolean; hang?: string | null; exitLabel?: string; openAfterHang?: boolean;
+  /** 올라오자마자 걸어 들어오기(바깥 광장이 있으면 false — 부르는 쪽이 walkIn()) · 친구 초대 버튼(가족만) · 첫 안내 */
+  autoWalkIn?: boolean; invite?: boolean; coach?: boolean }>(), {
+  character: null, color: null, paused: false, companion: true, hang: null, exitLabel: undefined, openAfterHang: true, autoWalkIn: true, invite: false, coach: true,
 });
 /** hangDone = 걸리는 장면이 끝남(액자가 벽에 · 반짝 끝, 움직임 줄이기면 바로) — 움직이게 물어보기(AnimateAsk)가 이때 나온다 */
 const emit = defineEmits<{ open: [item: MuseumItem]; exit: []; hangDone: [id: string] }>();
@@ -27,8 +30,10 @@ const emit = defineEmits<{ open: [item: MuseumItem]; exit: []; hangDone: [id: st
 const WALK = 1.4; const RUN = 1.6; const TURN = 55; const DRAG = 0.14; const EASE_S = 0.35; const WHEEL_M = 0.4; const BOB_PX = 0.8;
 const kind = computed(() => (isKind(props.character) ? props.character : DEFAULT_KIND));
 const tint = computed(() => (isColor(props.color) ? props.color : DEFAULT_COLOR));
-const touch = typeof matchMedia === 'function' && matchMedia('(hover: none), (pointer: coarse)').matches;
-const keyHints: readonly string[] = touch ? m3.keys.slice(0, 2) : m3.keys;
+/** 키 이름(E · WASD · Shift · Space)을 숨길 때: 굵은 포인터(손가락) 또는 좁은 화면(600px 이하) — 좁은 데스크톱 창도 누르기 말만 */
+const mq = (q: string) => typeof matchMedia === 'function' && matchMedia(q).matches;
+const touch = mq('(hover: none), (pointer: coarse)') || mq('(max-width: 600px)');
+const keyHints: readonly string[] = m3.keys;
 const meSize = typeof matchMedia === 'function' && matchMedia('(max-width: 600px)').matches ? 86 : 110;
 
 // ---------- 장면 요소(한 번 계산) ----------
@@ -43,16 +48,24 @@ function archClip(w: number, h: number): string {
 /** 두 번 누르기로 그 앞에 서는 자리(액자 · 진열대 · 받침대 — 빈 받침대도) */
 const poseOf = computed(() => new Map<string, Pose>([
   ...props.layout.frames.map((f) => [f.key, f.pose] as const), ...props.layout.pedestals.map((p) => [p.key, p.pose] as const),
-  ...props.layout.plinths.map((p) => [p.key, p.pose] as const)]));
+  ...props.layout.plinths.map((p) => [p.key, p.pose] as const),
+  ...props.layout.rooms.map((r) => [`r${r.index}-label`, r.entry] as const)]));
 const planes = computed(() => [
-  ...props.layout.planes.map((p) => ({ p, tk: '' })),
+  // 문 위 방 이름판을 누르면 그 방 문턱으로(D52 B "문 한 번 누르기")
+  ...props.layout.planes.map((p) => ({ p, tk: /^r\d+-label$/.test(p.key) ? p.key : '' })),
   ...props.layout.pedestals.flatMap((d) => d.planes.map((p) => ({ p, tk: d.key }))),
   ...props.layout.plinths.flatMap((d) => d.planes.map((p) => ({ p, tk: d.key }))),
 ].map(({ p, tk }) => ({ key: p.key, tk, cls: p.cls.split(' ').map((c) => `pl-${c}`), text: p.text ?? '',
   style: p.cls.includes('lintel') ? { ...planeStyle(p), clipPath: archClip(p.w, p.h), '--r': `${p.w * 50}px` } : planeStyle(p) })));
 const titleOf = (it: MuseumItem) => it.title ?? m3.untitled;
+/** 액자는 2배 크기로 그린 뒤 scale(.5) — 가까이 서도 아이 그림이 흐리지 않게 */
+const FR_K = 2;
+function frameStyle(f: { x: number; y: number; z: number; w: number; h: number; ry: number }) {
+  const st = planeStyle({ ...f, w: f.w * FR_K, h: f.h * FR_K });
+  return { ...st, transform: `${st.transform} scale(${1 / FR_K})` };
+}
 const frames = computed(() => props.layout.frames.map((f) => ({
-  key: f.key, item: f.item, title: titleOf(f.item), style: planeStyle(f), t: { key: f.key, x: f.x, z: f.z, item: f.item, pose: f.pose } as Target,
+  key: f.key, item: f.item, title: titleOf(f.item), style: frameStyle(f), t: { key: f.key, x: f.x, z: f.z, item: f.item, pose: f.pose } as Target,
 })));
 const pedArts = computed(() => props.layout.pedestals.filter((p) => p.item).map((p) => ({
   key: `${p.key}-art`, item: p.item!, title: titleOf(p.item!), x: p.x, y: 1.33, z: p.z, w: 0.7, h: 0.75,
@@ -63,10 +76,10 @@ const plArts = computed(() => props.layout.plinths.filter((p) => p.item).map((p)
   key: `${p.key}-art`, item: p.item!, title: titleOf(p.item!), x: p.x, y: PLINTH_H + 0.5, z: p.z, w: 0.9, h: 1,
   t: { key: p.key, x: p.x, z: p.z, item: p.item!, pose: p.pose } as Target,
 })));
-const beams = computed(() => props.layout.plinths.map((p) => ({ key: `${p.key}-beam`, x: p.x, z: p.z, y: (PLINTH_H + HALL_H) / 2, w: 1.5, h: HALL_H - PLINTH_H })));
+const beams = computed(() => props.layout.plinths.map((p) => ({ key: `${p.key}-beam`, x: p.x, z: p.z, y: (PLINTH_H + WALL_H) / 2, w: 1.6, h: WALL_H - PLINTH_H })));
 const statues = computed(() => props.layout.statues.map((s) => {
-  // 로비 동상 = 캐릭터 1.3m + 둥근 대리석 받침 0.9m(폭 1.4m) — 실제 동상 크기
-  const size = s.kind === 'character' ? { w: 1.5, h: 2.3 } : s.kind === 'art' ? { w: 0.7, h: 1.55 } : { w: 0.8, h: 1.3 };
+  // 층계참 동상(D52) = 캐릭터 약 1.8m + 둥근 대리석 받침 1.2m(폭 1.6m) — 받침 포함 약 3m
+  const size = s.kind === 'character' ? { w: 1.9, h: 3.0 } : s.kind === 'art' ? { w: 0.7, h: 1.55 } : { w: 0.8, h: 1.3 };
   return { ...s, ...size, y: size.h / 2 };
 }));
 /** 카메라를 향해 도는 판. 그림이 흐려지지 않게 BB_K배 크게 그린 뒤 scale(1/BB_K)로 줄인다(안쪽은 zoom) */
@@ -79,7 +92,7 @@ const targets = computed<Target[]>(() => [...frames.value.map((f) => f.t), ...pe
 // ---------- 카메라 ----------
 const vp = ref<HTMLElement | null>(null);
 const world = ref<HTMLElement | null>(null);
-const cam = { ...props.layout.start, pitch: 0 };
+const cam = { ...props.layout.start, pitch: props.layout.start.pitch ?? 0 };
 const view = shallowRef<Pose>({ ...props.layout.start });
 const nearKey = ref<string | null>(null);
 const near = computed(() => targets.value.find((t) => t.key === nearKey.value) ?? null);
@@ -103,7 +116,7 @@ function measure() {
 }
 function render() {
   const w = world.value; if (!w) return;
-  w.style.transform = `translateZ(${(P - 1).toFixed(1)}px) rotateX(${cam.pitch.toFixed(2)}deg) rotateY(${(-cam.yaw).toFixed(2)}deg) translate3d(${(-cam.x * 100).toFixed(1)}px,${bobY.toFixed(2)}px,${(cam.z * 100).toFixed(1)}px)`;
+  w.style.transform = `translateZ(${(P - 1).toFixed(1)}px) rotateX(${cam.pitch.toFixed(2)}deg) rotateY(${(-cam.yaw).toFixed(2)}deg) translate3d(${(-cam.x * 100).toFixed(1)}px,${(floorAt(cam.z) * 100 + bobY + hopY).toFixed(2)}px,${(cam.z * 100).toFixed(1)}px)`;
   for (const b of bbs) b.el.style.transform = `${planeTf({ x: b.x, y: b.y, z: b.z, ry: Math.round((Math.atan2(cam.x - b.x, -(cam.z - b.z)) * 180) / Math.PI) })}${b.k !== 1 ? ` scale(${(1 / b.k).toFixed(4)})` : ''}`;
 }
 let lastPub = 0;
@@ -154,12 +167,11 @@ function stepTween(t: number) {
 
 // ---------- 매 프레임(움직일 때만 돈다) ----------
 const keys = new Set<string>();
-const stick = { x: 0, y: 0 };
 let raf = 0; let running = false; let last = 0;
 const rafFn: (cb: FrameRequestCallback) => number = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb) => window.setTimeout(() => cb(performance.now()), 16);
 const cancelFn: (id: number) => void = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame : (id) => window.clearTimeout(id);
 function kick() { if (running) return; running = true; last = performance.now(); raf = rafFn(tick); }
-function moving() { return ['w', 's', 'a', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some((k) => keys.has(k)) || stick.x !== 0 || stick.y !== 0; }
+function moving() { return ['w', 's', 'a', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some((k) => keys.has(k)); }
 /** 걷기 속도(앞 · 옆, m/s) — 목표 속도로 0.35초 동안 부드럽게 붙는다 */
 const vel = { f: 0, r: 0 };
 /** 끌기를 놓은 뒤 관성(도/초) */
@@ -180,8 +192,8 @@ function tick(_ts: number) {
   else {
     let f = 0; let r = 0;
     if (!props.paused) {
-      f = (keys.has('w') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('s') || keys.has('ArrowDown') ? 1 : 0) - stick.y;
-      r = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0) + stick.x;
+      f = (keys.has('w') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('s') || keys.has('ArrowDown') ? 1 : 0);
+      r = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0);
       cam.yaw += ((keys.has('ArrowLeft') ? 1 : 0) - (keys.has('ArrowRight') ? 1 : 0)) * TURN * dt;
     }
     const m = Math.hypot(f, r); const n = Math.max(1, m); const sp = WALK * (keys.has('Shift') ? RUN : 1);
@@ -210,6 +222,11 @@ const typing = (e: Event) => { const t = e.target as HTMLElement | null; return 
 const MOVE_KEYS = ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Shift'];
 function onKey(e: KeyboardEvent) {
   if (props.paused || typing(e)) return;
+  if (e.key === ' ' || e.code === 'Space') {
+    const t = e.target as HTMLElement | null;
+    if (t?.closest?.('button, a, input, textarea, select, [contenteditable]')) return;
+    e.preventDefault(); jump(); return;
+  }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if (MOVE_KEYS.includes(k)) { keys.add(k); if (k !== 'Shift') { e.preventDefault(); stopTween(); kick(); } return; }
   if ((k === 'e' || k === 'Enter') && near.value && !(e.target as HTMLElement)?.closest?.('button,a')) { e.preventDefault(); emit('open', near.value.item); }
@@ -248,12 +265,13 @@ function onUp(e: PointerEvent) {
   }
   const target = e.target as HTMLElement;
   if (target.closest?.('button,a,.m3-hud')) return;
+  // 받침대 · 진열대 · 문 이름판: 한 번 누르면 그 앞으로(D52 B)
+  const tk = target.closest?.<HTMLElement>('[data-tk]')?.dataset.tk; const pose = tk ? poseOf.value.get(tk) : undefined;
+  if (pose) { lastTap = null; void goTo(pose); return; }
   const now = performance.now();
   if (lastTap && now - lastTap.t < 360 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
     lastTap = null;
-    const tk = target.closest?.<HTMLElement>('[data-tk]')?.dataset.tk; const pose = tk ? poseOf.value.get(tk) : undefined;
-    if (pose) void goTo(pose); // 받침대 · 진열대 → 그 앞에서 정면으로
-    else if (target.classList.contains('pl-floor')) floorWalk(e.clientX, e.clientY);
+    if (target.classList.contains('pl-floor') || target.classList.contains('pl-step')) floorWalk(e.clientX, e.clientY);
   }
   else lastTap = { t: now, x: e.clientX, y: e.clientY };
 }
@@ -277,29 +295,42 @@ function floorWalk(cx: number, cy: number) {
   }
 }
 /** 액자 · 진열대: 가까우면 크게 보기, 멀면 그 앞으로 */
-function activate(t: Target) { if (isNear(cam, t)) emit('open', t.item); else goTo(t.pose); }
+function activate(t: Target) {
+  const i = props.layout.tour.findIndex((s) => s.key === t.key); if (i >= 0) tourAt.value = i;
+  if (isNear(cam, t)) emit('open', t.item); else void goTo(t.pose);
+}
 function face(t: Target) { if (tween || drag) return; cam.yaw = yawOf(t.x - cam.x, t.z - cam.z); cam.pitch = 0; render(); sense(); publish(true); }
 /** 3D 버튼에 초점이 가면 브라우저가 감싼 상자를 밀 수 있다 — 늘 제자리로 */
 function noScroll(e: Event) { const el = e.currentTarget as HTMLElement | null; if (el && (el.scrollTop || el.scrollLeft)) { el.scrollTop = 0; el.scrollLeft = 0; } }
 
-// 조이스틱(터치 기기, 왼쪽 아래)
-const stickEl = ref<HTMLElement | null>(null);
-const knob = ref({ x: 0, y: 0 });
-let stickId: number | null = null;
-function stickMove(e: PointerEvent) {
-  const r = stickEl.value!.getBoundingClientRect(); const dx = e.clientX - (r.left + r.width / 2); const dy = e.clientY - (r.top + r.height / 2);
-  const m = Math.min(1, Math.hypot(dx, dy) / 40); const a = Math.atan2(dy, dx);
-  const v = { x: Math.cos(a) * m, y: Math.sin(a) * m }; knob.value = v; stick.x = Math.abs(v.x) < 0.12 ? 0 : v.x; stick.y = Math.abs(v.y) < 0.12 ? 0 : v.y;
-  stopTween(); kick();
+// ---------- 앞 · 다음 작품(D52 B): 방 순서 → 벽 순서, 받침대 포함. 끝에서 [다음]은 [처음으로] ----------
+const tourAt = ref(-1);
+const atEnd = computed(() => tourAt.value >= props.layout.tour.length - 1);
+function tourGo(i: number) {
+  const stop = props.layout.tour[i]; if (!stop) return;
+  tourAt.value = i; void goTo(stop.pose);
 }
-function stickDown(e: PointerEvent) { stickId = e.pointerId; try { stickEl.value?.setPointerCapture(e.pointerId); } catch { /* 없어도 됨 */ } stickMove(e); }
-function stickUp() { stickId = null; knob.value = { x: 0, y: 0 }; stick.x = 0; stick.y = 0; }
+function tourNext() { if (!props.layout.tour.length) return; tourGo(atEnd.value ? 0 : tourAt.value + 1); }
+function tourPrev() { if (!props.layout.tour.length) return; tourGo(Math.max(0, tourAt.value - 1)); }
+
+// ---------- Space = 점프(D52 C): 입력 칸 · 버튼 초점이면 무시, 움직임 줄이기면 없음. 장면이 있을 때만 듣는다 ----------
+let hopY = 0; let hopT0 = 0; let hopRaf = 0;
+function jump() {
+  if (reducedMotion()) return;
+  hop(); hopT0 = performance.now(); cancelFn(hopRaf);
+  const step = () => {
+    const k = (performance.now() - hopT0) / 480;
+    hopY = k >= 1 ? 0 : Math.sin(Math.PI * k) * 22; render();
+    if (k < 1) hopRaf = rafFn(step);
+  };
+  hopRaf = rafFn(step);
+}
 
 onMounted(() => {
   bbs = [...(world.value?.querySelectorAll<HTMLElement>('[data-bb]') ?? [])].map((el) => ({ el, x: Number(el.dataset.x), y: Number(el.dataset.y), z: Number(el.dataset.z), k: Number(el.dataset.k ?? BB_K) || 1 }));
   measure(); sense(); publish(true);
   vp.value?.addEventListener('wheel', onWheel, { passive: false });
-  if (props.hang) void playHang(props.hang); else if (props.companion) void walkIn();
+  if (props.hang) void playHang(props.hang); else if (props.autoWalkIn) void walkIn();
   window.addEventListener('keydown', onKey); window.addEventListener('keyup', onKeyUp); window.addEventListener('blur', onBlur); window.addEventListener('resize', measure);
 });
 onBeforeUnmount(() => {
@@ -318,13 +349,17 @@ const appearKey = ref<string | null>(null);
 let hopTimer = 0;
 function hop() { if (reducedMotion() || !props.companion) return; jumping.value = false; clearTimeout(hopTimer); rafFn(() => { jumping.value = true; }); hopTimer = window.setTimeout(() => { jumping.value = false; }, 520); }
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-/** 처음 들어올 때: 입구에서 로비 동상 앞까지 걸어 들어온다(움직임 줄이기면 그대로 서 있음) */
+/** 들어올 때: 정문에서 대계단 아래까지 걸어 들어와 층계참 동상을 올려 본다 · 끝나면 처음이면 3칸 안내 */
 async function walkIn() {
-  if (reducedMotion()) return;
-  entering.value = true; cam.z = 0.3; render();
-  await goTo({ x: 0, z: 1.1, yaw: 0, pitch: 3 }); // 동상까지 약 5.4m — 뒤로 홀 · 아치가 보인다
-  entering.value = false;
+  const s = props.layout.start;
+  if (!reducedMotion() && props.companion) {
+    entering.value = true; cam.x = s.x; cam.z = 0.3; cam.yaw = s.yaw; cam.pitch = 2; render();
+    await goTo(s);
+    entering.value = false;
+  } else { cam.x = s.x; cam.z = s.z; cam.yaw = s.yaw; cam.pitch = s.pitch ?? 0; render(); sense(); publish(true); }
+  if (props.coach && !coachSeen()) showCoach.value = true;
 }
+const showCoach = ref(false);
 /** 걸리는 장면(D44 ④): 캐릭터가 그림을 들고 그 방으로 → 벽 자리에 건다(입체는 진열대) → 금빛 반짝 → 크게 보기 */
 async function playHang(id: string) {
   const t = targets.value.find((x) => x.item.id === id); if (!t) { emit('hangDone', id); return; }
@@ -339,8 +374,8 @@ async function playHang(id: string) {
   sparkle.value = false; appearKey.value = null;
   finish();
 }
-onBeforeUnmount(() => { clearTimeout(hopTimer); stopTween(); });
-defineExpose({ goTo, playHang });
+onBeforeUnmount(() => { clearTimeout(hopTimer); cancelFn(hopRaf); stopTween(); });
+defineExpose({ goTo, playHang, walkIn, jump, tourNext, tourPrev });
 </script>
 
 <template>
@@ -369,7 +404,7 @@ defineExpose({ goTo, playHang });
         <div v-for="s in statues" :key="s.key" class="m3-pl m3-statue" :class="`st-${s.kind}`" :style="bbStyle(s)"
           data-bb :data-x="s.x" :data-y="s.y" :data-z="s.z" aria-hidden="true"><div class="bb-z bb-st" :style="zStyle(s)">
           <template v-if="s.kind === 'character'">
-            <div class="st-hero"><CharacterAvatar :kind="kind" :color="tint" :size="130" /></div>
+            <div class="st-hero"><CharacterAvatar :kind="kind" :color="tint" :size="175" /></div>
             <div class="st-cyl big"><span>{{ m3.plaque(layout.alias) }}</span></div>
           </template>
           <template v-else-if="s.kind === 'art'">
@@ -382,18 +417,19 @@ defineExpose({ goTo, playHang });
     </div>
 
     <p class="m3-hud m3-where" aria-live="polite">{{ where }}</p>
+    <RouterLink v-if="invite" class="m3-hud m3-invite" :to="{ path: '/app/family', hash: '#neighbors' }">{{ m3.invite }}</RouterLink>
     <button class="m3-hud m3-exit" type="button" :aria-label="props.exitLabel ?? m3.exitLabel" @click="emit('exit')">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>{{ m3.exit }}
     </button>
     <button v-if="near" class="m3-hud m3-prompt" type="button" @click="emit('open', near.item)">
       <kbd v-if="!touch" aria-hidden="true">E</kbd><span><b>{{ titleOf(near.item) }}</b><small>{{ m3.nearOpen }}</small></span>
     </button>
-    <div v-if="touch" ref="stickEl" class="m3-hud m3-stick" aria-hidden="true"
-      @pointerdown="stickDown" @pointermove="(e) => stickId === e.pointerId && stickMove(e)" @pointerup="stickUp" @pointercancel="stickUp">
-      <i :style="{ transform: `translate(${knob.x * 30}px,${knob.y * 30}px)` }"></i>
+    <!-- 도움말: 누르기만 적는다(D52 B). 낱말마다 줄바꿈 없이 " · "로 잇는다 -->
+    <p v-if="!near" class="m3-hud m3-keys" :class="{ touch }" aria-hidden="true"><template v-for="(k, i) in keyHints" :key="k"><span v-if="i" class="sep"> · </span><span>{{ k }}</span></template></p>
+    <div v-if="layout.tour.length" class="m3-hud m3-tour" role="group" :aria-label="m3.tourLabel">
+      <button type="button" class="t-prev" :disabled="tourAt <= 0" @click="tourPrev"><span aria-hidden="true">◀ </span>{{ m3.prev }}</button>
+      <button type="button" class="t-next" @click="tourNext">{{ atEnd ? m3.restart : m3.next }}<span v-if="!atEnd" aria-hidden="true"> ▶</span></button>
     </div>
-    <!-- 도움말: 낱말마다 줄바꿈 없이 " · "로 잇는다. 터치 기기는 키 이름 없이 두 가지만 -->
-    <p v-if="!touch || !near" class="m3-hud m3-keys" :class="{ touch }" aria-hidden="true"><template v-for="(k, i) in keyHints" :key="k"><span v-if="i" class="sep"> · </span><span>{{ k }}</span></template></p>
     <p v-if="touch" class="m3-hud m3-sr">{{ m3.touchKeys }}</p>
     <nav class="m3-hud m3-bar" :aria-label="m3.roomBar">
       <button v-for="b in bar" :key="b.key" type="button" :aria-current="b.here ? 'location' : undefined" @click="goRoom(b.pose)">{{ b.label }}</button>
@@ -407,6 +443,7 @@ defineExpose({ goTo, playHang });
       <i class="me-shadow"></i>
     </div>
     <div v-if="sparkle" class="m3-spark" aria-hidden="true"><i v-for="n in 10" :key="n" :style="{ '--a': `${n * 36}deg` }"></i></div>
+    <Coach v-if="showCoach" @done="showCoach = false" />
     <slot />
   </div>
 </template>
@@ -484,7 +521,7 @@ defineExpose({ goTo, playHang });
   radial-gradient(ellipse 80% 42% at 28% 100%,#BDE8A8 0 60%,rgba(0,0,0,0) 61%),radial-gradient(ellipse 90% 45% at 82% 106%,#9ED98C 0 60%,rgba(0,0,0,0) 61%),
   linear-gradient(#DDF0FF,#FFF8EC)}
 /* 액자: 금빛 두 겹 테 + 매트 + 부드러운 위 조명 + 명패(제목만) */
-.m3-frame{padding:7px;border:0;border-radius:1px;cursor:pointer;background:linear-gradient(135deg,#E6CB86,#C9A552 38%,#8E6B2A 62%,#E6CB86);
+.m3-frame{backface-visibility:hidden;padding:7px;border:0;border-radius:1px;cursor:pointer;background:linear-gradient(135deg,#E6CB86,#C9A552 38%,#8E6B2A 62%,#E6CB86);
   box-shadow:inset 0 0 0 2px rgba(255,241,200,.55),0 18px 26px -18px rgba(74,52,65,.55)}
 .m3-frame::before{content:'';position:absolute;left:-45%;right:-45%;top:-85%;bottom:88%;pointer-events:none;
   background:radial-gradient(ellipse 45% 70% at 50% 100%,rgba(255,246,214,.75),rgba(255,246,214,0) 70%)}
@@ -533,9 +570,6 @@ defineExpose({ goTo, playHang });
 .m3-keys{position:absolute;left:14px;top:70px;margin:0;max-width:360px;display:flex;flex-wrap:wrap;gap:2px 0;pointer-events:none;font:600 12px/1.6 var(--font-sans);color:#6E3550;
   padding:8px 12px;border-radius:14px;background:rgba(255,251,247,.72)}
 .m3-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.m3-stick{position:absolute;left:16px;bottom:92px;width:100px;height:100px;border-radius:50%;touch-action:none;
-  background:radial-gradient(circle,rgba(255,251,247,.35),rgba(255,251,247,.7));box-shadow:0 0 0 1px rgba(160,73,107,.25)}
-.m3-stick i{position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;background:#A0496B;box-shadow:0 8px 16px -8px rgba(74,52,65,.6)}
 .m3s :focus-visible{outline:2px solid #6E3550;outline-offset:3px}
 /* 큰 방 버튼 줄: 미니맵 왼쪽, 넘치면 줄 안에서만 가로로 밀림(화면은 넘치지 않음) */
 .m3-bar{position:absolute;left:14px;right:192px;bottom:14px;display:flex;gap:8px;padding:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;
@@ -552,8 +586,7 @@ defineExpose({ goTo, playHang });
   .m3-where{left:auto;right:14px;transform:none;max-width:calc(100% - 150px);font-size:14px}
   .m3-bar{right:140px;left:8px;bottom:10px;padding:4px;gap:6px}
   .m3-bar button{min-height:52px;min-width:76px;padding:8px 14px;font-size:16px}
-  .m3-stick{bottom:84px}
-}
+  }
 /* 걸리는 장면: 자리는 비워 두었다가 걸리면 나타난다(opacity만) */
 .m3-frame.pending,.m3-ped-art.pending{opacity:0}
 .m3-frame.appear,.m3-ped-art.appear{animation:m3-appear .6s ease-out}
@@ -582,4 +615,95 @@ defineExpose({ goTo, playHang });
 @keyframes m3-spark{0%{opacity:0;transform:rotate(var(--a)) translateY(0) rotate(45deg) scale(.2)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-150px) rotate(45deg) scale(1)}}
 @media (max-width:600px){.m3-me{left:56%;bottom:76px;width:90px;margin-left:-45px}.me-carry{bottom:70px}}
 @media (prefers-reduced-motion:reduce){.m3s *{transition:none!important;animation:none!important}.m3-bar button:hover,.m3-exit:hover{transform:none}}
+
+/* ===== D52(§17-18 A) 압도적인 유럽 미술관 — 붉은 비단 홀 · 초록/붉은 방 · 금빛 코니스 · 코퍼 볼트 · 천창 빛(밝게, 가장자리 어둠 없음) ===== */
+.pl-silk,.pl-wall.pl-red,.pl-wall.pl-green{--base1:#9C3236;--base2:#8E2A2E;--base3:#7C2327;
+  background:
+    linear-gradient(to bottom,#F6EACB 0 14px,#C9A24A 14px 20px,#FFF3D6 20px 34px,#C9A24A 34px 38px,rgba(0,0,0,0) 38px),
+    linear-gradient(to top,#EEE3CE 0 86px,#C9A24A 86px 91px,#F7EFDF 91px 96px,#C9A24A 96px 98px,rgba(0,0,0,0) 98px),
+    radial-gradient(ellipse 9px 15px at 50% 50%,rgba(246,200,140,.22) 0 60%,rgba(0,0,0,0) 64%) 0 0/56px 64px,
+    radial-gradient(circle at 50% 50%,rgba(246,200,140,.14) 0 3px,rgba(0,0,0,0) 4px) 28px 32px/56px 64px,
+    linear-gradient(var(--base1),var(--base2) 45%,var(--base3))}
+.pl-wall.pl-green{--base1:#386A52;--base2:#2F5A45;--base3:#264B39}
+.pl-far{box-shadow:inset 0 0 0 40px rgba(0,0,0,0)}
+.pl-silk.pl-lintel,.pl-wall.pl-lintel.pl-red,.pl-wall.pl-lintel.pl-green{
+  background:
+    radial-gradient(circle at 50% 100%,rgba(0,0,0,0) 0 var(--r,100px),#C9A24A var(--r,100px) calc(var(--r,100px) + 5px),#F6EACB calc(var(--r,100px) + 5px) calc(var(--r,100px) + 14px),#C9A24A calc(var(--r,100px) + 14px) calc(var(--r,100px) + 17px),rgba(0,0,0,0) calc(var(--r,100px) + 17px)),
+    linear-gradient(to bottom,#F6EACB 0 14px,#C9A24A 14px 20px,#FFF3D6 20px 34px,#C9A24A 34px 38px,rgba(0,0,0,0) 38px),
+    radial-gradient(ellipse 9px 15px at 50% 50%,rgba(246,200,140,.22) 0 60%,rgba(0,0,0,0) 64%) 0 0/56px 64px,
+    linear-gradient(var(--base1,#9C3236),var(--base2,#8E2A2E))}
+.pl-entry.pl-silk{background:
+    linear-gradient(to bottom,#FFF6DF,#DDF0FF 45%,#EAF6E2) 50% 100%/340px 480px no-repeat,
+    linear-gradient(#C9A24A,#C9A24A) 50% 100%/370px 498px no-repeat,
+    radial-gradient(ellipse 9px 15px at 50% 50%,rgba(246,200,140,.22) 0 60%,rgba(0,0,0,0) 64%) 0 0/56px 64px,
+    linear-gradient(#9C3236,#8E2A2E 45%,#7C2327)}
+/* 원통 볼트: 크림 격자(코퍼) + 금선, 꼭대기 띠 = 천창(하늘빛 · 흰 창살) */
+.pl-vault{background:
+    radial-gradient(circle at 50% 50%,rgba(201,162,74,.5) 0 5px,rgba(0,0,0,0) 6px) 60px 60px/120px 120px,
+    repeating-linear-gradient(90deg,#C9A24A 0 5px,#EFE1C0 5px 12px,rgba(0,0,0,0) 12px 120px),
+    repeating-linear-gradient(0deg,#C9A24A 0 5px,#EFE1C0 5px 12px,rgba(0,0,0,0) 12px 120px),
+    radial-gradient(ellipse at 50% 50%,#FFFDF7,#F4E9D2);box-shadow:none}
+.pl-vault.pl-sky{background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.95) 0 8px,rgba(0,0,0,0) 8px 150px),
+    linear-gradient(90deg,#C9A24A 0 6px,rgba(0,0,0,0) 6px calc(100% - 6px),#C9A24A calc(100% - 6px)),
+    linear-gradient(90deg,rgba(255,255,255,.95) 0 3px,rgba(0,0,0,0) 3px) 50% 0/50% 100% no-repeat,
+    linear-gradient(90deg,#D8EEFF,#F2FAFF 50%,#D8EEFF)}
+/* 대계단 · 난간 */
+.pl-step{background:linear-gradient(to bottom,#FFFFFF 0 6px,#F4EEE4 6px);box-shadow:inset 0 -2px 0 #E4D9C6}
+.pl-riser{background:linear-gradient(#E9E0CF,#DDD2BE)}
+.pl-balustrade{background:linear-gradient(to bottom,#C9A24A 0 6px,#F6EFE2 6px 18px,#E9E0CF 18px);box-shadow:inset 0 -10px 0 #DDD2BE}
+.pl-balustrade.pl-top{background:#F6F0E4;box-shadow:inset 0 0 0 4px #C9A24A}
+.pl-landing{background:radial-gradient(circle at 50% 48%,#E9DCC2 0 120px,#FFFFFF 121px 134px,#C9A24A 135px 140px,rgba(0,0,0,0) 141px),
+  repeating-conic-gradient(#F6F1E8 0 25%,#E7E4DF 0 50%) 0 0/200px 200px}
+.pl-hall.pl-floor{background:radial-gradient(ellipse 40% 26% at 50% 50%,rgba(255,244,205,.75),rgba(255,244,205,0) 70%) 0 0/100% 600px repeat-y,
+  linear-gradient(90deg,rgba(0,0,0,0) 0 calc(50% - 160px),rgba(160,73,107,.08) calc(50% - 160px) calc(50% + 160px),rgba(0,0,0,0) calc(50% + 160px)),
+  repeating-conic-gradient(#F7F2E9 0 25%,#E6E2DB 0 50%) 0 0/200px 200px}
+/* 쌍기둥(코린트식 느낌): 세로 홈 · 금빛 머리 · 받침 */
+.pl-col.pl-pair{background:
+    linear-gradient(to bottom,#C9A24A 0 10px,#F3E3B8 10px 44px,#C9A24A 44px 50px,rgba(0,0,0,0) 50px calc(100% - 40px),#C9A24A calc(100% - 40px) calc(100% - 36px),#EFE6D6 calc(100% - 36px)),
+    repeating-linear-gradient(90deg,rgba(120,90,40,.10) 0 3px,rgba(0,0,0,0) 3px 11px),
+    linear-gradient(90deg,#E9E1D2,#FFFFFF 35%,#F2ECE2 60%,#DCD2C1)}
+/* 벤치 */
+.pl-bench.pl-seat{background:linear-gradient(90deg,#B84A48,#9C3236);border:4px solid #C9A24A;border-radius:6px}
+.pl-bench.pl-front{background:linear-gradient(#8E2A2E,#6F2023);border-top:4px solid #C9A24A}
+/* 방 제목판 · 문 이름판(둥근 · 금테) — 누르면 그 방으로 */
+.pl-label.pl-door{cursor:pointer;border-radius:999px}
+.pl-label.pl-title{border-radius:999px}
+/* 아이 그림: 명패는 그림 오른쪽 아래, 둥근 모서리(D52 A) */
+.m3-frame::after{left:calc(100% + 10px);top:auto;bottom:0;transform:none;max-width:180px;border-radius:10px;padding:4px 10px;white-space:normal;line-height:1.3;width:max-content}
+.mural-mini{border-radius:14px;border-width:6px}
+/* 앞 · 다음 작품(아래 가운데 큰 버튼, 캐릭터 양옆) · 친구 초대 */
+.m3-tour{position:absolute;left:0;right:0;bottom:96px;height:0;z-index:9}
+.m3-tour button{position:absolute;bottom:0;min-height:56px;padding:10px 20px;border:1.5px solid #C9A24A;border-radius:999px;cursor:pointer;background:#FFF9EE;color:#4A3526;white-space:nowrap;
+  font:800 17px/1 var(--font-sans);box-shadow:0 3px 0 #D9C08A,0 10px 20px -12px rgba(74,53,38,.5);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .12s}
+.m3-tour .t-prev{right:calc(50% + 72px)}
+.m3-tour .t-next{left:calc(50% + 72px);background:#A0496B;border-color:#6E2B47;color:#FFFBF7;box-shadow:0 3px 0 #6E2B47,0 10px 20px -12px rgba(74,53,38,.5)}
+.m3-tour button:disabled{opacity:.55;cursor:default}
+.m3-tour button:not(:disabled):active{transform:translateY(3px);box-shadow:0 0 0 #D9C08A}
+.m3-invite{position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;min-height:46px;padding:8px 18px;border:1.5px solid #C9A24A;border-radius:999px;background:#FFF9EE;color:#4A3526;
+  font:700 15px/1 var(--font-sans);text-decoration:none;box-shadow:0 3px 0 #D9C08A}
+.m3-invite:active{transform:translateY(3px);box-shadow:none}
+@media (max-width:600px){
+  .m3-where{left:50%;right:auto;transform:translateX(-50%);max-width:calc(100% - 250px)}
+  .m3-tour{bottom:136px}
+  .m3-tour button{min-height:50px;padding:8px 14px;font-size:15px}
+  .m3-tour .t-prev{right:auto;left:8px}
+  .m3-tour .t-next{left:auto;right:8px}
+  .m3-me{left:50%;bottom:78px}
+  .m3-invite{padding:8px 12px;font-size:14px}
+  .m3-frame::after{max-width:120px}
+}
+@media (prefers-reduced-motion:reduce){.m3-tour button{transition:none}}
+.pl-lobby.pl-floor{background:linear-gradient(135deg,rgba(255,255,255,.35),rgba(255,255,255,0) 40%),repeating-conic-gradient(#F6F1E8 0 25%,#E7E4DF 0 50%) 0 0/200px 200px}
+
+/* 액자 2배 그리기(FR_K) — 금테 · 매트 · 명패 크기도 2배 단위 */
+.m3-frame{padding:14px;box-shadow:inset 0 0 0 4px rgba(255,241,200,.55),0 36px 52px -36px rgba(74,52,65,.55)}
+.m3-frame img,.m3-frame video{padding:18px;backface-visibility:hidden;box-shadow:inset 0 0 0 2px rgba(142,107,42,.45),inset 0 12px 20px -12px rgba(0,0,0,.2)}
+.m3-frame::after{left:calc(100% + 20px);font-size:24px;padding:8px 20px;border-radius:20px;max-width:360px}
+.m3-frame.near{box-shadow:0 0 0 6px rgba(255,248,230,.95),0 0 100px 16px rgba(255,226,160,.6)}
+.m3-frame:focus-visible{outline:8px solid #6E3550;outline-offset:12px}
+.pl-step{background:linear-gradient(90deg,rgba(0,0,0,0) calc(50% - 150px),#A83A3D calc(50% - 150px) calc(50% - 140px),#9C3236 calc(50% - 140px) calc(50% + 140px),#A83A3D calc(50% + 140px) calc(50% + 150px),rgba(0,0,0,0) calc(50% + 150px)),
+  linear-gradient(to bottom,#FFFFFF 0 6px,#F4EEE4 6px);box-shadow:inset 0 -2px 0 #E4D9C6}
+.pl-riser{background:linear-gradient(90deg,rgba(0,0,0,0) calc(50% - 150px),#7E2428 calc(50% - 150px) calc(50% + 150px),rgba(0,0,0,0) calc(50% + 150px)),linear-gradient(#E9E0CF,#DDD2BE)}
+@media (max-width:600px){.m3-frame::after{max-width:240px}}
 </style>

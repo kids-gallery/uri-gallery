@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// 아이 미술관 — 1인칭 CSS 3D(D40, SD_02 §17-13 B · C · F). 경로 파라미터 childId, ?visit=1이면 이웃 방문.
+// 아이 미술관 — 1인칭 CSS 3D(D40 → D52, SD_02 §17-13 · §17-18). 경로 파라미터 childId, ?visit=1이면 친구 미술관 방문.
+// D52 C: 바깥 광장(외관)에서 시작 — [들어가기] · [미술관 마을] · [친구 초대](방문자 [들어가기] · [마을로]). ?hung= · ?open=inside면 건너뛴다.
 // 가족: GET /v1/children(별칭 · 캐릭터 · 색) + GET /v1/gallery?child= → 크게 보기는 walk/ArtViewer(한마디 · 해설 · 저장하기).
-// 방문자: GET /v1/visit/children/{id}/gallery → 방 이름 "전시실 N", 크게 보기는 그림 · 제목만(저장 없음). 이웃이 아니면 404 → 자물쇠 안내.
-// [밖으로] → 마을(/app/town).
+// 방문자: GET /v1/visit/children/{id}/gallery → 방 이름 "전시실 N", 크게 보기는 그림 · 제목만(저장 없음). 친구가 아니면 404 → 자물쇠 안내.
+// 안의 [밖으로] → 바깥 광장. 광장의 [미술관 마을] → exitTo(/app/town).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError } from '@/api/client';
@@ -14,6 +15,7 @@ import { blockOf } from '../artwork';
 import ArtViewer from '../walk/ArtViewer.vue';
 import Scene from '../museum3d/Scene.vue';
 import Viewer from '../museum3d/Viewer.vue';
+import Exterior, { type OutsideAction } from '../museum3d/Exterior.vue';
 import { fromGallery, fromVisit, type ChildInfo, type VisitGallery } from '../museum3d/adapters';
 import { buildMuseumLayout, type MuseumInput, type MuseumItem } from '../museum3d/layout';
 import { m3 } from '../museum3d/copy';
@@ -50,6 +52,13 @@ function onAskClosed() {
 }
 const viewing = ref<MuseumItem | null>(null);
 let opener: HTMLElement | null = null;
+/** 바깥 광장에 있나(D52 C) — 올리기 끝(?hung=)이나 ?open=inside면 바로 안 */
+const outside = ref(true);
+const scene = ref<InstanceType<typeof Scene> | null>(null);
+const outsideActions = computed<OutsideAction[]>(() => (visitor.value
+  ? [{ key: 'enter', label: m3.enter, primary: true }, { key: 'town', label: m3.toTownShort, to: props.exitTo }]
+  : [{ key: 'enter', label: m3.enter, primary: true }, { key: 'town', label: m3.town, to: props.exitTo }, { key: 'invite', label: m3.invite, to: { path: '/app/family', hash: '#neighbors' } }]));
+function onOutside(key: string) { if (key === 'enter') { outside.value = false; void nextTick(() => scene.value?.walkIn()); } }
 
 const layout = computed(() => (input.value ? buildMuseumLayout(input.value) : null));
 const itemCount = computed(() => input.value?.groups.reduce((n, g) => n + g.items.length, 0) ?? 0);
@@ -70,6 +79,7 @@ async function load() {
       const hung = typeof route.query.hung === 'string' ? route.query.hung : '';
       if (hung) { hangId.value = hung; askId.value = hung; const q = { ...route.query }; delete q.hung; void router.replace({ query: q }); }
     }
+    outside.value = !hangId.value && route.query.open !== 'inside';
   } catch (e) {
     if (visitor.value && e instanceof ApiError && e.status === 404) locked.value = true;
     else block.value = blockOf(e);
@@ -79,7 +89,9 @@ watch([childId, visitor], () => { void load(); });
 
 function open(item: MuseumItem) { opener = document.activeElement as HTMLElement | null; viewing.value = item; }
 async function close() { viewing.value = null; await nextTick(); opener?.focus({ preventScroll: true }); }
-function exit() { void router.push(props.exitTo); }
+/** 안의 [밖으로] = 바깥 광장으로(D52 C) · 잠긴 미술관의 [마을로] = exitTo */
+function exit() { outside.value = true; }
+function toTown() { void router.push(props.exitTo); }
 
 // 장면 높이: 셸 머리 아래를 꽉 채운다(가로 넘침 없음)
 const rootEl = ref<HTMLElement | null>(null);
@@ -92,8 +104,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
 <template>
   <main ref="rootEl" class="m3v" :style="{ '--m3-top': `${top}px` }">
     <h1 class="m3v-sr">{{ m3.title(input?.childAlias ?? layout?.alias ?? '') }}</h1>
-    <Scene v-if="layout" :key="loadNo" :layout="layout" :character="input?.character" :color="input?.color" :paused="!!viewing"
-      :companion="!visitor" :hang="visitor ? null : hangId" :open-after-hang="!(askId && !visitor)" @open="open" @exit="exit" @hang-done="onHangDone">
+    <Scene v-if="layout" ref="scene" :key="loadNo" :layout="layout" :character="input?.character" :color="input?.color" :paused="!!viewing || outside"
+      :companion="!visitor" :hang="visitor ? null : hangId" :open-after-hang="!(askId && !visitor)" :auto-walk-in="!outside" :invite="!visitor"
+      @open="open" @exit="exit" @hang-done="onHangDone">
       <p v-if="visitor" class="m3v-badge">{{ m3.visitBadge }}</p>
       <div v-if="!itemCount" class="m3v-empty" role="status">
         <p>{{ visitor ? m3.emptyVisit : m3.empty }}</p>
@@ -103,11 +116,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
       <p v-if="loading" role="status">{{ m3.loading }}</p>
       <template v-else-if="locked">
         <p role="alert">{{ m3.visitLocked }}</p>
-        <button class="btn btn-primary" type="button" @click="exit">{{ m3.toTown }}</button>
+        <button class="btn btn-primary" type="button" @click="toTown">{{ m3.toTown }}</button>
       </template>
       <BlockNotice v-else-if="block" :notice="block" @action="load" />
     </div>
 
+    <Exterior v-if="layout && outside" :alias="layout.alias" :museum-style="input?.museumStyle" :tint="layout.color" :actions="outsideActions" @action="onOutside" />
     <ArtViewer v-if="viewing && familyItem" :item="familyItem" :alias="layout?.alias ?? ''" :still="viewing.imageUrl" @close="close" />
     <Viewer v-else-if="viewing" :item="viewing" :alias="layout?.alias ?? ''" @close="close" />
     <AnimateAsk v-if="askId && !visitor" :key="askId" :artwork-id="askId" overlay :ready="hangDone" @closed="onAskClosed" />

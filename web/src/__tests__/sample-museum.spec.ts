@@ -49,7 +49,7 @@ describe('견본 미술관 자료', () => {
 
 describe('SampleMuseumView', () => {
   afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = ''; });
-  it('서버를 부르지 않고 열리며, 띠 · 로그인 버튼 · [밖으로]가 맞다', async () => {
+  it('서버를 부르지 않고 열리며, 띠 · 로그인 버튼 · 바깥 광장 · [밖으로]가 맞다', async () => {
     const fetch = vi.fn(() => { throw new Error('견본 미술관은 서버를 부르면 안 돼요'); });
     vi.stubGlobal('fetch', fetch);
     const router = createRouter({ history: createMemoryHistory(), routes: [
@@ -66,8 +66,16 @@ describe('SampleMuseumView', () => {
     expect(w.findAll('button[aria-label$="— 가까이 가기"]').length).toBeGreaterThanOrEqual(11);
     expect(w.findAll('.m3-bar button').map((b) => b.text())).toEqual([m3.lobby, m3.hall, m3.ageRoom(7), m3.ageRoom(6), m3.ageRoom(5)]);
     expect(w.find('.m3-me').exists()).toBe(true);
-    await w.find('.m3-exit').trigger('click'); await flushPromises();
-    expect(router.currentRoute.value.path).toBe('/app/welcome');
+    // D52 C: 바깥 광장에서 시작 — [들어가기] · [카카오로 시작하기]
+    const ex = w.find('.ex');
+    expect(ex.findAll('.ex-b').map((b) => b.text())).toEqual([m3.enter, m3.sampleStart]);
+    expect(ex.find('a.ex-b').attributes('href')).toBe('/app/login?next=/app');
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
+    await ex.find('button.ex-b').trigger('click'); await flushPromises();
+    expect(w.find('.ex').exists()).toBe(false);
+    await w.find('.m3-exit').trigger('click'); await flushPromises(); // 안의 [밖으로] = 광장
+    expect(w.find('.ex').exists()).toBe(true);
+    expect(w.find('.m3-invite').exists()).toBe(false); // 견본엔 친구 초대 없음
     expect(fetch).not.toHaveBeenCalled();
     w.unmount();
   });
