@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>루브르 회랑 시안</title>
+<title>고전 회랑 시안</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
 <style>
@@ -142,12 +142,12 @@ body:not(.in) .post{visibility:hidden}
 </style>
 </head>
 <body>
-<div class="vp" id="vp" role="region" aria-label="루브르 회랑 — 1인칭 장면"><div class="world" id="world"></div></div>
+<div class="vp" id="vp" role="region" aria-label="고전 회랑 — 1인칭 장면"><div class="world" id="world"></div></div>
 <div class="vig" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="veil" id="veil" aria-hidden="true"></div>
 
-<div class="island shell" aria-live="polite"><div class="core"><i id="tag">Entrée</i><p id="where">그랑드 갤러리 입구</p></div></div>
+<div class="island shell" aria-live="polite"><div class="core"><i id="tag">Entrée</i><p id="where">고전 회랑 입구</p></div></div>
 <div class="mapbox shell"><button class="core" id="mapBtn" type="button" aria-label="안내도 크게 보기"><svg id="mini" aria-hidden="true"></svg></button></div>
 <div class="tools shell"><div class="core">
   <button class="ico" id="skip" type="button" aria-label="건너뛰기 — 가장 최근 작품 앞으로"><svg viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
@@ -158,8 +158,8 @@ body:not(.in) .post{visibility:hidden}
 <section class="title" id="title" aria-labelledby="h1">
   <div class="in">
     <span class="eyebrow">Musée · 우리 아이 미술관</span>
-    <h1 id="h1"><em>la Grande Galerie</em>하늘의 미술관</h1>
-    <p>루브르 회랑에 우리 아이 그림이 걸렸어요</p>
+    <h1 id="h1"><em>la Galerie</em>하늘의 미술관</h1>
+    <p>고전 회랑에 우리 아이 그림이 걸렸어요</p>
     <button class="cta" id="enter" type="button">입장하기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span></button>
   </div>
 </section>
@@ -180,7 +180,7 @@ body:not(.in) .post{visibility:hidden}
   <button class="close" id="vclose" type="button">닫기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
 </div></div></div>
 <div class="modal" id="planM" hidden role="dialog" aria-modal="true" aria-labelledby="pmT"><div class="shell"><div class="core">
-  <h3 id="pmT">안내도 — 그랑드 갤러리</h3>
+  <h3 id="pmT">안내도 — 고전 회랑</h3>
   <svg class="plan" id="plan" role="img" aria-label="회랑 평면도와 지금 위치"></svg>
   <p>입구에서 안쪽으로 걸을수록 <b>어릴 때 그림</b>입니다. 아치로 나뉜 구역이 나이별 전시실이고, 작품 점을 누르면 그 앞으로 걸어갑니다.</p>
   <button class="close" id="pmClose" type="button">닫기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
@@ -188,7 +188,7 @@ body:not(.in) .post{visibility:hidden}
 
 <script>
 /* =====================================================================
-   루브르 회랑 1인칭 시안 (이제민세션2 · 2026-09-30)
+   고전 회랑 1인칭 시안(사진: 그랑드 갤러리, 화면에는 미술관 이름을 쓰지 않음 — D33 ②) (이제민세션2 · 2026-09-30)
    ▸ 사진 한 장(한 점 투시)을 "Tour Into the Picture"로 3D 상자 5면으로 펴고(tip.py → faces.json),
      CSS perspective · preserve-3d 로 그 안을 1인칭으로 걷는다. 3D 엔진 없음.
    ▸ 좌표: 미터. Z = 사진 찍은 자리에서 앞으로, X = 오른쪽 +, 눈높이 1.5m. CSS는 1m = 100px.
@@ -375,7 +375,7 @@ let lastWhere = '';
 function section(z){ return SECTIONS.slice().reverse().find((s) => z >= s.z0 - 1) ?? null; }
 function updateHud(){
   const s = entered ? section(cam.z) : null;
-  const where = !entered ? '그랑드 갤러리 입구' : s ? `${s.age}살 전시실` : '회랑 입구';
+  const where = !entered ? '고전 회랑 입구' : s ? `${s.age}살 전시실` : '회랑 입구';
   const tag = !entered ? 'Entrée' : s ? `Salle ${s.age}` : 'Galerie';
   if (where !== lastWhere){ lastWhere = where; $('where').textContent = where; $('tag').textContent = tag; }
   drawCam();
