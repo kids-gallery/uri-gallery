@@ -5,7 +5,7 @@
 **Created**: 2026-09-28
 **Last Updated**: 2026-09-28
 **Spec**: [spec.md](./spec.md) v2.2 — main `5a774f0` 기준(D18 `5fb8cc4`·`9f45a8b`, U1 확정 `ee62c57`, 공동 보호자 `c736817`·`5a774f0`, 모두 B 조건부 승인 뒤 병합)
-**Branch**: `main` (작업은 `a/model-serving` · `b/api` · `c/web`, 병합 요청으로 합침 — `docs/역할분담.md`)
+**Branch**: `main` (작업은 `a/model-serving` · `b/api` · `c/web`, 병합 요청으로 합침 — `docs/공통/역할분담.md`)
 **입력**: `Intent-Plan.md`(Vue.js + Node.js, **Docker 없이 전개**), `design/` 설계 전체 — REF 재작성 공통기준(§3~§11, D1~D18), SD_01 프로세스설계서(개정 3, P0~P10, G0~G27, H1~H16), SD_02 UI/UX 설계서(S0·S0b·S1~S12, C1~C10), **SD_03 데이터베이스 설계서·`uri_gallery_ddl.sql`(스키마 정본)**, UC_00~UC_14·UC_ALL(BR), 스타일가이드
 **산출물**: [research.md](./research.md) · [data-model.md](./data-model.md) · [contracts/](./contracts/) (`openapi.yaml`, `model-api.openapi.yaml`, `stage-job.md`, `llm-contract.md`) · [quickstart.md](./quickstart.md)
 
@@ -153,22 +153,22 @@
 
 ## Phase 2: Implementation Sequencing
 
-제안 작업일 8일(`docs/역할분담.md`) 기준. **P0 흐름이 가짜 모델로 한 번 끝까지 돈 뒤**에 실제 모델을 끼우고, P0 완료 전에는 P0.5를 착수하지 않는다(spec Risks 범위 확장). 세부 작업·완료 조건은 `/speckit.tasks`에서 A/B/C 담당·UC·BR과 함께 만든다.
+제안 작업일 8일(`docs/공통/역할분담.md`) 기준. **P0 흐름이 가짜 모델로 한 번 끝까지 돈 뒤**에 실제 모델을 끼우고, P0 완료 전에는 P0.5를 착수하지 않는다(spec Risks 범위 확장). 세부 작업·완료 조건은 `/speckit.tasks`에서 A/B/C 담당·UC·BR과 함께 만든다.
 
 | 단계 | 범위 | 산출물 | 선행 조건 | 담당 |
 |------|------|--------|-----------|------|
 | 0 (1일차) | **완료(2026-09-28)** — SD_03 보완 S1~S9를 설계서·DDL에 반영, 임시 MariaDB 검증 17/17. D18·공동 보호자는 main `5a774f0`에 병합 완료 | SD_03 §18-2 | — | B |
 | 1 (1일차) | 저장소 골격(`web/`·`api/`·`serving/`·`caption/`·`eval/`·`ops/`), `.nvmrc`, lint·타입·CI 검사, 계약 사본을 루트 `contracts/`로 | 빈 앱이 `/live` 응답, CI 녹색 | 이 계획 | B(골격)·A·C |
 | 2 (1~2일차) | DB: `0001_sd03_baseline`(= `uri_gallery_ddl.sql`, 보완 S1~S9 포함), 로컬 `uam_test` | 무오류·재실행·위반 거부(SD_03 DDL 검증 3종) | 0, 1 | B |
-| 3 (1~2일차) | 팀 서버 자원·GPU 확인(U2), M1·M2·M3·M5 재현·시간 측정(R-22 체크포인트), TorchServe 네이티브 헤드리스 렌더 확인(R-03 위험), 라이선스 확정 기록(U4, A2) | `docs/A_팀서버_자원확인.md`, `docs/A_모델재현기록.md`, `docs/A_모델_라이선스_확정.md`, `models/manifest.yaml` 초안 | 없음(병행) | A |
+| 3 (1~2일차) | 팀 서버 자원·GPU 확인(U2), M1·M2·M3·M5 재현·시간 측정(R-22 체크포인트), TorchServe 네이티브 헤드리스 렌더 확인(R-03 위험), 라이선스 확정 기록(U4, A2) | `docs/A/A_팀서버_자원확인.md`, `docs/A/A_모델재현기록.md`, `docs/A/A_모델_라이선스_확정.md`, `models/manifest.yaml` 초안 | 없음(병행) | A |
 | 4 (2~4일차) | app-api P0: **인증 7경로 + 가족 7경로 + Mailpit 메일(UC13·UC14·UC15)**, 팀원 로그인, children, artworks(접수·상세·목록·확정·결정·이야기), gallery, files 토큰, 삭제(G18), `/live`·`/ready`, `gate_event` 기록 | openapi.yaml 계약 시험, Scenario 1·3·9·10·12·13 + 가입·찾기(가입 여부 비노출·토큰 1회용·재설정 뒤 세션 무효) + 공동 보호자(같은 권한·해제 즉시 접근 불가·자료 유지·동시 결정은 첫 결정만) | 2 | B |
 | 5 (2~4일차) | 워커 골격: 점유·heartbeat·이어받기·재시도·소진·취소·낮춤 체인·`frame_compose`, 가짜 어댑터(`UAM_FAKE_MODELS`), sweeper | stage-job.md 전 항목 pytest, 장애 주입으로 Scenario 4·5·6·7·11 | 2 | A(워커 절)·B(sweeper·트랜잭션) |
 | 6 (2~5일차) | 웹 보호자 S0 가입·S0b 찾기·S1·S1b 가족 보호자·S2~S6·S8·S9: 토큰·C1~C9 컴포넌트, 폴링, 문구 `copy/ko.ts`, 접근성(aria-disabled, 390/1440px) | Playwright 주 흐름(가입 → 전시), 점수·미리 선택·토스트 없음 점검 | 4 계약(모킹 가능) | C |
 | 7 (3~6일차) | 실제 어댑터 M1·M2·M3·M4·M5, 매니페스트 동기화, 활성화 게이트(라이선스·평가) | 가짜 → 실제 전환 뒤 같은 시험 통과, 활성 버전 매니페스트 필드 누락 0 | 3, 5 | A |
 | 8 (4~6일차) | 운영·관리: 지표 API(`v_metrics_*`)·`/metrics`·p95, 미도달 목록, 매니페스트·평가(`origin='eval'`)·승격·롤백·비활성, 평가 묶음 등록, 웹 S10·S11 | Scenario 14·15, 지표에 식별 정보 0 | 4, 5 | B(API)·C(화면)·A(평가 실행기 `eval/`) |
 | 9 (5~6일차) | model-api: 키 인증·한도(`external_call_log`)·크기·`external_job`·결과 1회 수령·만료, `pose` 팀 내부·시험 키 전용, `classify` 라이선스 게이트, 운영 CLI(`ops:key`), API활용 S12·시험 호출 | Scenario 16·18, 외부 입력 잔존 0, 401/403/413/422/429/503 계약 시험 | 5, 7 | B(인증·한도)·A(어댑터 공유)·C(S12) |
-| 10 (7~8일차) | 통합 시험: 장애 주입 5종 × 결과 단계, 삭제 완전성, 가족 교차 접근, 가입 여부 비노출, 로그 표본 점검, 성능 1차(움직임 p95·액자 p95), 평가 1차 측정·임계값 제안(U5) | `docs/B_통합시험.md`, `docs/A_평가묶음_1차측정.md` — spec SC 정량 항목 점검표 | 4~9 | B·A |
-| 11 (7~8일차) | 사용 관찰(팀원 보호자 역할), 막힌 지점 기록 | `docs/C_사용관찰.md` | 10 | C |
+| 10 (7~8일차) | 통합 시험: 장애 주입 5종 × 결과 단계, 삭제 완전성, 가족 교차 접근, 가입 여부 비노출, 로그 표본 점검, 성능 1차(움직임 p95·액자 p95), 평가 1차 측정·임계값 제안(U5) | `docs/B/B_통합시험.md`, `docs/A_평가묶음_1차측정.md` — spec SC 정량 항목 점검표 | 4~9 | B·A |
+| 11 (7~8일차) | 사용 관찰(팀원 보호자 역할), 막힌 지점 기록 | `docs/C/C_사용관찰.md` | 10 | C |
 | P0.5 (P0 완료 뒤) | M6 Qwen3-4B 재현(Q4_K_M 다이제스트 고정), `llm-server`, caption 패키지·규칙 검사·템플릿, S7, `/captions`, 외부 `caption`, 약관 | llm-contract.md 시험, Scenario 17 | U3·U11·U16·U12(약관) 확정 — 예외: T127은 U11 임시 기준표로 먼저(REF D29, research R-26, p1 비노출 유지) | C·A·B·D |
 | P1 (GPU 확인 뒤) | M7 재현·어댑터, sculpture 확정·전시(`<model-viewer>`), 노출 설정 | Scenario 19 | U2 GPU 확인, U4 TRELLIS 제외 확인 | A·C |
 

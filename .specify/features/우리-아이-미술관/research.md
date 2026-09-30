@@ -3,7 +3,7 @@
 **Created**: 2026-09-28
 **Revised**: 2026-09-28 — SD_03(`15d63f8`)·D18(`e2091c0`, spec v2.2)·U1 확정(`ee62c57`)·공동 보호자(`c736817`) 반영, `llm-server`(R-18)·모델 구체 사양(R-22)·메일(R-23)·보호자 인증(R-24) 추가
 **Plan**: [plan.md](./plan.md) · **Spec**: [spec.md](./spec.md) v2.2
-**입력**: `Intent-Plan.md`(웹스택 Vue.js + Node.js, **Docker 컨테이너를 쓰지 않고 전개**), `design/REF_재작성공통기준_우리아이미술관.md`(§3 서빙 구조, §4 엔드포인트, §5 상태 모델, §8 BR, §11 D1~D17), `design/SD_01_프로세스설계서_우리아이미술관.md`(P0~P10, G0~G25, H1~H16), `design/SD_02_UIUX설계서_우리아이미술관.md`(S1~S12, C1~C10), `design/UC_ALL_우리아이미술관_통합명세.md`, **`design/SD_03_데이터베이스설계서_우리아이미술관.md`·`design/uri_gallery_ddl.sql`(스키마 정본)**, D18(UC13·UC14, G26·G27), `docs/역할분담.md`
+**입력**: `Intent-Plan.md`(웹스택 Vue.js + Node.js, **Docker 컨테이너를 쓰지 않고 전개**), `design/REF_재작성공통기준_우리아이미술관.md`(§3 서빙 구조, §4 엔드포인트, §5 상태 모델, §8 BR, §11 D1~D17), `design/SD_01_프로세스설계서_우리아이미술관.md`(P0~P10, G0~G25, H1~H16), `design/SD_02_UIUX설계서_우리아이미술관.md`(S1~S12, C1~C10), `design/UC_ALL_우리아이미술관_통합명세.md`, **`design/SD_03_데이터베이스설계서_우리아이미술관.md`·`design/uri_gallery_ddl.sql`(스키마 정본)**, D18(UC13·UC14, G26·G27), `docs/공통/역할분담.md`
 
 > **표기**: 원천에 없고 이 계획에서 정한 값은 `[추론]`, 확정이 아닌 예시값은 `[예시값]`으로 표시한다. U 번호는 spec·REF §10의 공통 미해결 번호다. 이 문서의 각 항목은 **Decision / Rationale / Alternatives considered** 형식을 따른다.
 > **실측 사실(2026-09-28, Studio-B에서 확인)**: 팀 DB는 MariaDB **12.0.2**, 문자셋 `utf8mb4`, 콜레이션 `utf8mb4_general_ci`, `lower_case_table_names=2`, 스키마 비어 있음. 개발 호스트는 Apple M1 Ultra(Metal, CUDA 없음) · Node v25.3.0(설치됨) · Python 3.11/3.14 · Homebrew `nginx 1.29.4`, `mariadb 12.0.2`, `openjdk 26`(링크 전) · `ollama` 설치됨 · `pm2` 사용 가능.
@@ -43,7 +43,7 @@
   - `.mar` 파일 2개(검출·자세)의 SHA-256을 매니페스트에 기록한다.
   - 매니페스트의 `image_digest` 필드는 컨테이너 이미지 대신 **실행 환경 다이제스트**(`requirements-*.lock` + 런타임 설정 파일 + `.mar` 해시를 이은 SHA-256)를 담는다. 필드 이름은 BR-MDL-01·SD_03과 맞추려고 유지한다. **2026-09-29 확장(SD_04 §9-2)**: M3 외 모델도 같은 필드를 채운다 — M1·M2·M5·(M7)은 `serving/requirements.lock` + `serving/requirements-models.lock` + 매니페스트 `runtime` 문자열, M6은 `serving/requirements.lock` + `runtime`(Ollama 버전 포함), M4는 등록하지 않는다. 계산은 재료마다 `<저장소 기준 상대 경로 또는 "runtime">\t<파일 SHA-256 또는 문자열>\n`을 이어 붙인 UTF-8 글의 SHA-256(`python -m ops.models digest <ID> --write`). 매니페스트에는 `sha256:` 접두어, 등록 API 본문(`imageDigest`)에는 16진수 64자만. 후보 등록은 app-api `POST /v1/admin/models/:mid/versions` 하나로 하고, `ops.models register`는 그 요청 본문 JSON만 출력한다(DB에 쓰지 않음).
 - **Rationale**: 격리의 목적(외부 접근 차단, 고정 버전, 변조 탐지)은 루프백 바인딩·해시 잠금·체크섬으로 같은 수준을 지킨다. 관리 포트(9562)는 외부로 열지 않고 방화벽으로도 막는다.
-- **확인 필요(위험)**: Animated Drawings의 렌더는 OpenGL을 쓴다. 개인 PC 실측(53~62초)은 Docker 기반이었으므로 **네이티브 macOS/Linux 헤드리스 렌더 재현을 1~2일차에 먼저 확인**한다(A 담당, `docs/A_모델재현기록.md`). 실패하면 예비안(그림 전용 YOLOv8 자세 모델 ONNX, AGPL → U4 결정 전 비활성)으로 가지 않고, M3를 `model_not_ready`로 두어 움직임 경로만 인프라 재시도 규칙을 따르게 한다(FR-12). 이때도 2.5D·액자 경로는 동작한다.
+- **확인 필요(위험)**: Animated Drawings의 렌더는 OpenGL을 쓴다. 개인 PC 실측(53~62초)은 Docker 기반이었으므로 **네이티브 macOS/Linux 헤드리스 렌더 재현을 1~2일차에 먼저 확인**한다(A 담당, `docs/A/A_모델재현기록.md`). 실패하면 예비안(그림 전용 YOLOv8 자세 모델 ONNX, AGPL → U4 결정 전 비활성)으로 가지 않고, M3를 `model_not_ready`로 두어 움직임 경로만 인프라 재시도 규칙을 따르게 한다(FR-12). 이때도 2.5D·액자 경로는 동작한다.
 - **Alternatives considered**: Docker 예외 허용(Intent-Plan 위반), TorchServe 없이 Animated Drawings 파이썬 API 직접 호출(검출·자세 모델이 TorchServe `.mar` 전제로 배포되어 재포장 비용이 큼).
 
 ## R-04. 작업 DB·큐 — 단계 작업 점유와 이어받기
@@ -184,7 +184,7 @@
 - **Decision**:
   - 웹: Vitest + Vue Test Utils(컴포넌트), Playwright(모바일 390px·데스크톱 1440px, SD_02 확인 너비).
   - 앱 API: Vitest + Supertest, **실제 MariaDB**(로컬 Homebrew MariaDB 12의 `uam_test` 스키마, 없으면 팀 DB에 `t_` 접두 스키마를 쓰지 않고 로컬만 허용). 트랜잭션 롤백으로 격리.
-  - Python: pytest. 어댑터마다 `FakeAdapter`(환경변수 `UAM_FAKE_MODELS=1`)가 지정한 분류(`quality_below`, `engine_down`, `timeout`, `storage`, `db`, `model_not_ready`)를 돌려주게 해 **장애 주입 시험**(spec SC "원인 분리 정확도", `docs/B_통합시험.md`)을 모델 없이 돌린다.
+  - Python: pytest. 어댑터마다 `FakeAdapter`(환경변수 `UAM_FAKE_MODELS=1`)가 지정한 분류(`quality_below`, `engine_down`, `timeout`, `storage`, `db`, `model_not_ready`)를 돌려주게 해 **장애 주입 시험**(spec SC "원인 분리 정확도", `docs/B/B_통합시험.md`)을 모델 없이 돌린다.
   - 계약 시험: `contracts/openapi.yaml`로 요청·응답을 검증(`express-openapi-validator` 응답 검증 모드는 시험에서만).
 - **Rationale**: 모델 재현(U6·U14)이 끝나기 전에도 B·C가 전체 흐름을 검증할 수 있게 한다.
 
@@ -202,7 +202,7 @@
 
 ## R-22. 모델 구체 사양 — 무엇을 어떤 형식으로 올리는가 (FR-16, BR-MDL-01, D16)
 
-- **Decision**: 모델은 실행기(Ollama·TorchServe·PyTorch) 이름이 아니라 **체크포인트 ID·변형·형식·실행 설정**으로 고정한다. 아래가 P0·P0.5·P1의 채택 기준값이며, 정확한 버전(커밋·리비전·다이제스트)과 SHA-256은 A가 재현할 때(`docs/A_모델재현기록.md`) `models/manifest.yaml`에 기록한다. `[추론]` 표시는 원천(REF §2)이 변형까지 정하지 않아 이 계획에서 고른 것이다.
+- **Decision**: 모델은 실행기(Ollama·TorchServe·PyTorch) 이름이 아니라 **체크포인트 ID·변형·형식·실행 설정**으로 고정한다. 아래가 P0·P0.5·P1의 채택 기준값이며, 정확한 버전(커밋·리비전·다이제스트)과 SHA-256은 A가 재현할 때(`docs/A/A_모델재현기록.md`) `models/manifest.yaml`에 기록한다. `[추론]` 표시는 원천(REF §2)이 변형까지 정하지 않아 이 계획에서 고른 것이다.
 
 | ID | 모델(원천 체크포인트) | 변형·형식 | 입력 → 출력 | 실행기·장치 | 라이선스 상태 |
 |:--:|---|---|---|---|---|
@@ -223,8 +223,8 @@
   | M2 | `laion/CLIP-ViT-B-32-laion2B-s34B-b79K` `open_clip_model.safetensors` | 605MB | open_clip(`worker-cpu`) | 미측정 |
   | M3 | `drawn_humanoid_detector.mar` + `drawn_humanoid_pose_estimator.mar` | 327MB + 375MB = 702MB | TorchServe(네이티브) | RAM 약 3.1GB(1차 실측) |
   | M5 | `depth-anything/Depth-Anything-V2-Small-hf` `model.safetensors` | 99MB | PyTorch(`worker-gpu`) | 미측정 |
-  | M6 | Ollama `qwen3:4b-instruct-2507-q4_K_M` | 2.5GB | Ollama | 적재 1.07초(디스크 캐시)~13.47초(첫 읽기), `num_ctx 8192`(A 실측, `docs/A_모델재현기록.md`) |
-  | M7 | `stabilityai/TripoSR` `model.ckpt` | 1,677MB | PyTorch(`worker-gpu`가 전용 환경 하위 프로세스로) | 최대 RSS 3.8GB·통합 메모리 약 8.3GB(MPS, D 시험 `docs/D_M7_TripoSR_시험기록.md`) |
+  | M6 | Ollama `qwen3:4b-instruct-2507-q4_K_M` | 2.5GB | Ollama | 적재 1.07초(디스크 캐시)~13.47초(첫 읽기), `num_ctx 8192`(A 실측, `docs/A/A_모델재현기록.md`) |
+  | M7 | `stabilityai/TripoSR` `model.ckpt` | 1,677MB | PyTorch(`worker-gpu`가 전용 환경 하위 프로세스로) | 최대 RSS 3.8GB·통합 메모리 약 8.3GB(MPS, D 시험 `docs/D/D_M7_TripoSR_시험기록.md`) |
 
   - **M7 실행 환경(2026-09-29 A 결정, T131)**: TripoSR는 `numpy<2`·`transformers 4.35`·`trimesh 4.0.5`·`torchmcubes`(소스 빌드)가 필요해 `serving/.venv`(numpy 2.4)와 같이 쓸 수 없다. 그래서 M3 AD 렌더(R-03)와 같이 **전용 환경 `serving/.venv-m7`(Python 3.11, 잠금 `serving/requirements-m7.lock`)에서 작업마다 하위 프로세스**(`serving/adapters/m7_run.py`)로 적재 → 추론 → 메시 추출 → GLB 내보내기 → GLB 다시 읽기를 한다. 적재 약 3초가 작업마다 더해진다(한 건 약 10초, `sculpture.timeout_s` 600 안). 가중치·설정은 `$MODEL_ROOT/m7/TripoSR/`(`model.ckpt`·`config.yaml`, 리비전 `5b521936`), 이미지 인코더 설정(`facebook/dino-vitb16` config 12KB)은 HF 캐시 형태로 `$MODEL_ROOT/m7/hf/`에 두고 `HF_HUB_OFFLINE=1`로 적재, 공식 코드는 `$MODEL_ROOT/m7/TripoSR-src/`(커밋 `107cefd`, 고치지 않음). MPS 보완 2건(연산 대체 · 메시 추출 입력 CPU 넘김)은 `m7_run.py`에서 한다. 배경 제거는 rembg 대신 M1 컷아웃을 쓰고(SD_01 0.7), `tsr.utils`가 부르는 `rembg`는 빈 모듈로 대신해 u2net·onnxruntime을 설치하지 않는다. 품질 미달 기준(U5)이 없어 면이 없을 때만 `quality_below`. 라이선스 팀 확정 전이라 매니페스트 `license_confirmed: false`(활성화 금지).
   - 합계: P0(M1·M2·M3·M5) 약 1.85GB, P0.5까지 약 4.35GB, P1까지 약 6.0GB.
@@ -303,9 +303,9 @@
 |:--:|---|---|
 | U1 | **닫힘(clarify)** | 공동 보호자 초대·같은 권한, 감상 전용 없음(`ee62c57`). 구현은 R-25 |
 | U20 | 일부 | 만든 보호자 탈퇴·권한 이전은 열림. 가족 없는 계정 재로그인은 P0 기본값 `[추론]`: 자동 생성 없이 "초대 대기 / 새 가족 공간 만들기" 중 선택 |
-| U2 | **P0 범위 닫음**(2026-09-29, `docs/A_팀서버_자원확인.md`) | Studio-B: CUDA 없음, Apple GPU(MPS) — M5는 MPS로 GPU 워커(`GPU_ENABLED=true` 권고 `[추론]`). M7 가능 여부는 P1 게이트에서 확인(비노출 유지). 팀 서버 = Studio-B `[추론 — 팀 확인]` |
+| U2 | **P0 범위 닫음**(2026-09-29, `docs/A/A_팀서버_자원확인.md`) | Studio-B: CUDA 없음, Apple GPU(MPS) — M5는 MPS로 GPU 워커(`GPU_ENABLED=true` 권고 `[추론]`). M7 가능 여부는 P1 게이트에서 확인(비노출 유지). 팀 서버 = Studio-B `[추론 — 팀 확인]` |
 | U3 | 열림 | 기본 Ollama 자체 호스팅. P0.5 착수 전 |
-| U4 | **닫음**(2026-09-29 팀 확정 — 신지현, `51dba7b`) | `docs/A_모델_라이선스_확정.md` §4: **M1·M3·M5 켬**(M3는 내부망 격리 조건, M5는 Small만), **M2 보류**(모델 카드 배포 권고, T137 오인율 뒤 재검토) → 같은 날 팀 합의로 보류 해제(이진우 전달, 승격은 평가 통과 뒤), M6·M7은 해당 구간 착수 때. 매니페스트 `license_confirmed`는 M1·M3·M5만 true. 켬 확정은 활성화가 아니다 — 활성은 평가 통과(G22) 뒤 승격. 이미 라이선스 false로 등록된 후보(버전 1~4)는 고치지 않고 매니페스트 반영 뒤 app-api로 새 후보를 등록한다(DB 직접 수정 금지) |
+| U4 | **닫음**(2026-09-29 팀 확정 — 신지현, `51dba7b`) | `docs/A/A_모델_라이선스_확정.md` §4: **M1·M3·M5 켬**(M3는 내부망 격리 조건, M5는 Small만), **M2 보류**(모델 카드 배포 권고, T137 오인율 뒤 재검토) → 같은 날 팀 합의로 보류 해제(이진우 전달, 승격은 평가 통과 뒤), M6·M7은 해당 구간 착수 때. 매니페스트 `license_confirmed`는 M1·M3·M5만 true. 켬 확정은 활성화가 아니다 — 활성은 평가 통과(G22) 뒤 승격. 이미 라이선스 false로 등록된 후보(버전 1~4)는 고치지 않고 매니페스트 반영 뒤 app-api로 새 후보를 등록한다(DB 직접 수정 금지) |
 | U5 | 열림 | 임계값을 `serving/config/thresholds.yaml`로 두고 평가 1차 측정 뒤 채움. 그 전에는 어댑터가 "명백한 실패"(마스크 면적 0, 인물 미검출, 렌더 파일 없음, 깊이맵 분산 0)만 `quality_below`로 낸다 `[추론]` |
 | U6 | 일부 | 움직임 렌더 10분만 원천. 나머지 시간 상한 기본값 `[추론]`: 분리 60초·판정 120초·깊이 180초(CPU 600초)·설명 30초. 재현 뒤 교체 |
 | U7 | **닫음** | R-01 |

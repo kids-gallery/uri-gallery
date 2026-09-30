@@ -2,7 +2,7 @@
 
 > 기록: B 이제민 · 2026-09-28 · 대상: main `380929b`(b/api 병합) · 원본 폴더 `/Users/pioneer1/project2610`에서 실행
 > 환경: 모두 **임시 MariaDB**(팀 DB 아님) · 가짜 모델 어댑터(`UAM_FAKE_MODELS=1`) · Node 20.20.2 · Python 3.11
-> 기준: spec Success Criteria, plan 단계 10. 요구 → 증거 연결은 `docs/추적성.md`.
+> 기준: spec Success Criteria, plan 단계 10. 요구 → 증거 연결은 `docs/공통/추적성.md`.
 
 ## 1. 실행 결과
 

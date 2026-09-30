@@ -46,7 +46,7 @@ keywords와 tags가 모두 비면 app-api가 422(G14, "키워드를 하나 이�
 ## 3. 처리 (caption 패키지)
 
 1. 프롬프트 조립: 시스템 지시(입력에 없는 사건·감정·발달 상태를 쓰지 말 것, 2~3문장, 해요체) + 입력 JSON. 프롬프트 원문 로그 금지.
-2. 생성: 모델 **Qwen3-4B-Instruct-2507**(원천 `Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, 매니페스트의 블롭 다이제스트와 일치할 때만 호출, research R-22). 호출 옵션 `temperature 0.3`, `num_predict 160`, **`num_ctx 8192` 고정**(공유 Ollama 규칙 — 값이 요청마다 다르면 모델을 다시 올림), `stream: false` `[추론]`. 태그를 바꾼 이유(A 실측, `docs/A_모델재현기록.md`): 공유 서버의 `qwen3:4b`는 생각 전용 모델(Thinking-2507)과 같은 블롭이라 `think: false`로도 추론 문장이 섞였다. Instruct-2507은 생각 모드가 없어 `think` 옵션이 필요 없다.
+2. 생성: 모델 **Qwen3-4B-Instruct-2507**(원천 `Qwen/Qwen3-4B-Instruct-2507`, GGUF Q4_K_M — Ollama 태그 `qwen3:4b-instruct-2507-q4_K_M`, 매니페스트의 블롭 다이제스트와 일치할 때만 호출, research R-22). 호출 옵션 `temperature 0.3`, `num_predict 160`, **`num_ctx 8192` 고정**(공유 Ollama 규칙 — 값이 요청마다 다르면 모델을 다시 올림), `stream: false` `[추론]`. 태그를 바꾼 이유(A 실측, `docs/A/A_모델재현기록.md`): 공유 서버의 `qwen3:4b`는 생각 전용 모델(Thinking-2507)과 같은 블롭이라 `think: false`로도 추론 문장이 섞였다. Instruct-2507은 생각 모드가 없어 `think` 옵션이 필요 없다.
 3. **규칙 검사(G16, BR-CAP-02)**: 결과 문장을 검사한다. 걸리는 분류는 `fail_event`(입력에 없는 사건) · `fail_emotion`(입력에 없는 감정) · `fail_development`(발달·재능 평가). 판별 방식은 금지어 사전 + 입력 대조, 초안 하나에 분류 하나(형식 → 지어낸 아이 말 → 발달 → 감정 → 사건 순). **지금 값은 U11 임시 기준표**(`caption/rules.yaml` `tmp-2026-09-30`, research R-26, REF D29) — 확정은 `docs/C_설명규칙검사.md`(U11)에서 하고 같은 파일 교체 + `llm-server` 재시작으로 반영한다.
 4. 걸리면 재생성. **재생성 상한 2회** `[추론 U11]` — 총 생성 3회까지. 값은 규칙 파일 `max_regen`. 모두 걸리면 템플릿으로 낮춘다(`llm_to_template`).
 5. 템플릿(기준선): `"{ageAtMaking}살 때 그린 작품이에요. {keywords·tags}을/를 그렸어요."` `[추론]` — 을/를은 마지막 낱말 받침으로 고르고(2026-09-30), 없는 필드는 문장에서 뺀다. 문구는 규칙 파일 `template`.

@@ -1,5 +1,5 @@
 // S0·S0b 입력 검사(T052·T053). UC13 E2·E3 · UC14 E3 — 화면이 먼저 막고 API도 같은 검사를 한다.
-// 문구는 docs/C_화면문구.md §4 S0(ko.auth). 비밀번호 규칙은 계약 예시값 8자 이상(U19).
+// 문구는 docs/C/C_화면문구.md §4 S0(ko.auth). 비밀번호 규칙은 계약 예시값 8자 이상(U19).
 import { ko } from '@/copy/ko';
 import type { ApiError } from '@/api/client';
 

@@ -13,7 +13,7 @@
 | weights_sha256 | `85e4a5b7b8ef0e48af0e8658f5aaab9c2324c76c1641493f4d1e25fce54b18b9` (`ollama show --modelfile`의 FROM 블롭) |
 | config_hash | `ops.models`가 시스템 지시·예시·생성 옵션으로 계산(매니페스트) |
 | 호출 | `/api/chat`, `think:false`, 끝에 `/no_think`, `keep_alive "5m"`, **`num_ctx 8192`(공유 서버 고정값)**, `temperature 0.3`, `num_predict 160`, 타임아웃 300초, 동시 1 |
-| 규칙 정본 | `docs/Ollama 유저 가이드.md`(원본 `/Users/Shared/ollama/ollama-user-guide.md`, 2026-09-28판) |
+| 규칙 정본 | `docs/참고/Ollama 유저 가이드.md`(원본 `/Users/Shared/ollama/ollama-user-guide.md`, 2026-09-28판) |
 | 응답 시간 | 적재된 상태 0.3~0.5초/건 |
 | 라이선스 | 모델 카드 Apache-2.0. **팀 확정 기록 전 `license_confirmed=false`**(U4) — llm-server는 `disabled` |
 

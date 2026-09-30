@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // S12 API활용 메뉴(T125, SD_02 §15, UC11 BF2~BF6·A1·A4·A5·E2~E4, BR-API-07~09, G23·G25). 운영자·연동 개발만(§2-1).
 // - 엔드포인트: GET /v1/admin/api-guide/spec의 4묶음을 경로 표로. 버전 대조가 어긋나면 경고(차단 아님). 명세를 못 읽으면 마지막 확인 명세와 시각.
-// - 가이드라인·매뉴얼: docs/B_API활용_가이드라인_매뉴얼.md 본문(apiGuideContent.ts).
+// - 가이드라인·매뉴얼: docs/B/B_API활용_가이드라인_매뉴얼.md 본문(apiGuideContent.ts).
 // - 시험 호출: 평가 묶음 작품만 고르는 드롭다운(파일 업로드 칸 없음). 202 → 상태 폴링 → H16 응답. 거절(G23·G25·G24·G2)은 C2.
 import { computed, onMounted, ref } from 'vue';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';

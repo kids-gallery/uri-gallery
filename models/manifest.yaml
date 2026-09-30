@@ -96,7 +96,7 @@ models:
         — 화면은 둘 사이를 안내
     note: weights_sha256 = `ollama show <tag> --modelfile`의 FROM 블롭 다이제스트(Studio-B
       공유 Ollama v0.34.0). 공유 서버의 `qwen3:4b`는 Qwen3-4B-Thinking-2507과 같은 블롭(sha256:3e4cb141…)이라
-      생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A_모델재현기록.md). 라이선스 Apache-2.0(모델 카드)이나
+      생각 모드를 끌 수 없어 쓰지 않는다(2026-09-28 실측, docs/A/A_모델재현기록.md). 라이선스 Apache-2.0(모델 카드)이나
       팀 확정 기록 전 비활성(U4). expected_seconds는 공유 서버 대기 포함 실측
     image_digest: sha256:fd15e9b41339cc2fda806ab4b62f8a727087024a2372cc0a981636a063630593
   M7:

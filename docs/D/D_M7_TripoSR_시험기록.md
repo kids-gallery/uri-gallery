@@ -1,8 +1,8 @@
 # D M7 TripoSR 서비스 적용 전 시험 기록
 
 > 기록: D 이진우 · 2026-09-29 · Studio-B.local(Apple M1 Ultra, 128GB, macOS 26.3.1, CUDA 없음) · 원본 폴더 `/Users/pioneer1/project2610`
-> 목적: P1 3D 조각(M7, FR-29) 후보 TripoSR이 **이 팀 서버에서 돌아가는지** 서비스에 붙이기 전에 확인한다. 특히 `docs/A_팀서버_자원확인.md`가 열어 둔 질문 — "TripoSR의 MPS(Apple GPU) 동작은 자료 없음, P1 착수 게이트에서 확인" — 에 답한다.
-> 참조: `models/m3/TripoSR/README.md`(HF 모델 카드) · 공식 저장소 `VAST-AI-Research/TripoSR` · `docs/A_모델_라이선스_확정.md` M7 행 · REF §2 · D10 · BR-SRV-02 · BR-EXH-06
+> 목적: P1 3D 조각(M7, FR-29) 후보 TripoSR이 **이 팀 서버에서 돌아가는지** 서비스에 붙이기 전에 확인한다. 특히 `docs/A/A_팀서버_자원확인.md`가 열어 둔 질문 — "TripoSR의 MPS(Apple GPU) 동작은 자료 없음, P1 착수 게이트에서 확인" — 에 답한다.
+> 참조: `models/m3/TripoSR/README.md`(HF 모델 카드) · 공식 저장소 `VAST-AI-Research/TripoSR` · `docs/A/A_모델_라이선스_확정.md` M7 행 · REF §2 · D10 · BR-SRV-02 · BR-EXH-06
 > 범위: **시험만** 했다. 서빙 코드(`serving/`)·매니페스트·설정은 바꾸지 않았다. 어댑터(T131)는 A 담당이다.
 
 ## 1. 결론
@@ -28,7 +28,7 @@
 | 설치 결과 고정 | `models/m3/TripoSR-requirements-freeze.txt` | — | 제외 |
 | 보조 모델 캐시 | `models/m3/TripoSR-cache/`(u2net 배경 제거 177MB · DINO 설정 12KB) | 177MB | 제외 |
 | 시험 스크립트 | `models/m3/TripoSR-test_m7.py` | — | 제외 |
-| 시점 렌더 결과 | `docs/D_M7_TripoSR_시점렌더.png` | 480KB | 이 문서와 함께 |
+| 시점 렌더 결과 | `docs/D/D_M7_TripoSR_시점렌더.png` | 480KB | 이 문서와 함께 |
 
 - 공유 서버라 기존 `serving/.venv`와 Homebrew에는 아무것도 설치하지 않았다. 보조 모델 캐시도 사용자 공용 캐시(`~/.cache`) 대신 위 폴더로 받았다(`HF_HOME`·`U2NET_HOME`).
 - 가중치가 M3 폴더(`models/m3/`) 아래에 있다. 서비스에 붙일 때는 매니페스트 경로 규칙(U14, `MODEL_ROOT/<모델>/`)에 맞춰 `models/m7/`로 옮기는 것을 권한다.
@@ -40,7 +40,7 @@
 | `model.ckpt` | 1,677,246,742B | SHA-256 `429e2c6b22a0923967459de24d67f05962b235f79cde6b032aa7ed2ffcd970ee` | LFS sha256 같은 값 | ✅ |
 | `config.yaml` | 987B | git blob `fa3e59a701f02679bd1dca02fbaf97306174d291` | blobId 같은 값 | ✅ |
 
-- 라이선스: 모델 카드 `license: mit`. `docs/A_모델_라이선스_확정.md`의 M7 행(MIT, 리비전 `5b521936…`, 1,677MB)과 같다.
+- 라이선스: 모델 카드 `license: mit`. `docs/A/A_모델_라이선스_확정.md`의 M7 행(MIT, 리비전 `5b521936…`, 1,677MB)과 같다.
 - 모델 카드 참고 사항: 학습 데이터는 Objaverse 렌더(CC-BY 부분 집합), 한 장 입력 → 3D 재구성(feed-forward). HF 다운로드에는 이름·이메일 등 입력 동의(gated)가 걸려 있다.
 - `config.yaml`은 이미지 인코더로 `facebook/dino-vitb16`을 가리킨다. 첫 적재 때 **그 설정 파일(12KB)만** HF에서 받는다(가중치는 `model.ckpt` 안에 있다). 오프라인 서비스에서는 이 설정을 미리 받아 둬야 한다.
 
@@ -158,7 +158,7 @@ TripoSR-venv/bin/python TripoSR-test_m7.py --device cpu --out <출력> --images 
 |---|---|---|
 | 입력 | 공식 예제 4장뿐. **팀원이 만든 입체 작품 사진**(평가 묶음 "입체 작품" 항목, T118)으로 품질·시간을 다시 재야 한다 | A(T118·T137) |
 | 품질 기준 | 3D 결과의 품질 미달 판정(→ 2.5D로 낮춤) 기준이 없다(`thresholds.yaml`에 `sculpture` 항목 없음) | A(U5) |
-| 라이선스 확정 | `docs/A_모델_라이선스_확정.md` §4의 M7 팀 확정 칸이 비어 있다 | 팀 |
+| 라이선스 확정 | `docs/A/A_모델_라이선스_확정.md` §4의 M7 팀 확정 칸이 비어 있다 | 팀 |
 | 어댑터·단계 | `serving/adapters/m7_triposr.py`(T131), `sculpture` 단계·낮춤(T132 serving 쪽) | A |
 | 노출 설정 경로 | 노출 설정 변경 API(T132 B 몫)와 켜는 주체 결정 | D |
 | 환경 정리 | 시험용 폴더(`TripoSR-src`·`TripoSR-venv`·`TripoSR-cache`, 약 1.4GB)는 git 밖에 있다. T131에서 정식 환경을 만들면 지워도 된다 | A·D |

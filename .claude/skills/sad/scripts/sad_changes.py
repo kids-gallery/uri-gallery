@@ -27,7 +27,7 @@ RULES = [
     (r'^api/src/(auth|sweeper|lib|storage|db)/', 'SD_01 · SD_04 · 계약'),
     (r'^api/src/(app|routes|server|config)\.ts$', 'SD_04 · 계약'),
     (r'^web/src/(app|ops)/views/|^web/src/views/', 'SD_02'),
-    (r'^web/src/(copy|components|layouts|styles)/', 'SD_02(문구·컴포넌트) · docs/C_화면문구.md'),
+    (r'^web/src/(copy|components|layouts|styles)/', 'SD_02(문구·컴포넌트) · docs/C/C_화면문구.md'),
     (r'^web/src/router/', 'SD_02 §2 화면 지도'),
     (r'^web/src/(api|stores|composables)/', 'SD_02 · 계약'),
     (r'^serving/model_api/external', 'UC12 · SD_01 P10 · SD_04 · model-api 계약'),

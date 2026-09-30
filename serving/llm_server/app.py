@@ -4,7 +4,7 @@
   POST /v1/caption   허용 입력 → 설명 초안(규칙 검사·재생성 2회·템플릿 낮춤)
   GET  /v1/ready     {ollama, activeVersion, licenseConfirmed, model{state…}, queue{…}} — Ollama를 두드리지 않는다
 
-공유 Ollama 규칙(`docs/Ollama 유저 가이드.md`)에 맞춘 적재 상태 추적:
+공유 Ollama 규칙(`docs/참고/Ollama 유저 가이드.md`)에 맞춘 적재 상태 추적:
 - 설치·다이제스트·상주 확인(/api/tags·/api/show·/api/ps)은 **기동 때 1회**만 한다(§1.7-6 폴링 금지).
 - 미리 올리기도 **기동 때 1회**만(§1.7-10). 운영 화면의 수동 "지금 불러오기"는 M6에 두지 않는다.
 - 그 뒤 "올라가 있음"은 추정이다: 마지막 성공 응답 + keep_alive 5분(§1.6). 다른 사용자가 같은 모델을 쓰면

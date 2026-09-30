@@ -23,3 +23,5 @@ serving/.venv-m3/
 serving/.venv-m7/
 models/m3/
 models/m7/
+# 추적하지 않는 백업(비밀정보 원문 포함 가능 — 커밋 금지)
+archive/

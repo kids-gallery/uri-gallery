@@ -5,7 +5,7 @@ UC9 모델 평가·승격의 서빙 쪽이다(SD_01 P8 8.4·8.5, stage-job §12)
 | 파일 | 역할 |
 |---|---|
 | `runner.py` | `run --group cpu_vision\|gpu` — pm2 없이 평가 작업만 처리하는 일회성 워커. `report <evaluation_id> [--json]` — 후보·활성 버전 나란히 보고서 |
-| `items/manifest.yaml` | 평가 묶음 목록(T118, 팀원 제작 작품만 — BR-MDL-04). 일괄 등록은 `cd api && npm run ops:eval-items -- import --manifest ../eval/items/manifest.yaml --dir <사진 폴더> --by <평가 담당 이메일>`(T164, `id`를 되적음) · 등록 현황은 `… status`. 1차 12장 목록 `docs/D_평가그림_1차_모으기.md` |
+| `items/manifest.yaml` | 평가 묶음 목록(T118, 팀원 제작 작품만 — BR-MDL-04). 일괄 등록은 `cd api && npm run ops:eval-items -- import --manifest ../eval/items/manifest.yaml --dir <사진 폴더> --by <평가 담당 이메일>`(T164, `id`를 되적음) · 등록 현황은 `… status`. 1차 12장 목록 `docs/D/D_평가그림_1차_모으기.md` |
 
 평가 작업 자체는 운영 워커(`serving/workers/stages/eval.py`)도 보호자 작업이 없을 때 처리한다. 결과는 `eval_item_result`(결과 경로·처리 시간·메모리·점수 기록만)에 남는다.
 

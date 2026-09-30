@@ -2,7 +2,7 @@
 
 > Docker 없음. 호스트 네이티브 프로세스를 pm2로 띄우고 Homebrew nginx가 HTTPS·라우팅을 맡는다. GitLab CI는 검사만 한다(배포하지 않는다).
 > 비밀번호·키 원문은 이 문서와 커밋에 적지 않는다. 모두 서버의 `.env`(git 제외)에만 둔다.
-> 팀 서버 사양·GPU·모델 경로(U2·U14)는 `docs/A_팀서버_자원확인.md` 확인 뒤 표시된 칸을 채운다.
+> 팀 서버 사양·GPU·모델 경로(U2·U14)는 `docs/A/A_팀서버_자원확인.md` 확인 뒤 표시된 칸을 채운다.
 
 ## 1. 한 번만: 서버 준비
 
@@ -45,7 +45,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<도메인>:9501/internal/ready
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://<도메인>:9501/model-api/health  # 404 application/problem+json (웹 화면 200이면 잘못)
 ```
 
-운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/A_모델적재_화면요구.md`).
+운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/A/A_모델적재_화면요구.md`).
 
 ## 4. 키와 비밀 정보
 
@@ -79,7 +79,7 @@ Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p
 | 첫 화면 `/` | **main에서 implement한 웹 빌드(`web/`)만 올린다. SD_02 클릭 프로토타입(`design/prototype`)은 절대 연결하지 않는다**(2026-09-29 최호준 지시). 공유 작업 폴더의 `web/`에는 커밋 전 작업이 섞이므로, `ops/p1/deploy-web.sh`가 main 커밋을 `git archive`로 `.data/p1-build/`에 풀어 `npm ci && npm run build`하고 결과를 `.data/p1-web/`에 바꿔 넣는다. nginx `root`는 `.data/p1-web`, SPA라 없는 경로는 `index.html`로 보낸다. 어느 커밋을 올렸는지는 `.data/p1-web/DEPLOYED_COMMIT`에 남긴다 |
 | API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/model-api`·`/model-api/*` 404 problem+json, 본문 상한(`client_max_body_size 21m`) 초과는 nginx 기본 HTML 대신 413 problem+json(`payload_too_large`, 계약 PayloadTooLarge — 2026-09-30 점검)(SPA 대체로 떨어지지 않게 — 공개 범위 팀 결정 전, SD_04 §내부망 배치), `/metrics`는 로컬만 |
 | 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
-| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A_모델재현기록.md` M3 절 |
+| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A/A_모델재현기록.md` M3 절 |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
 | 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`가 만든 본문으로 app-api에 후보를 등록하고 평가·승격한다(§1) |

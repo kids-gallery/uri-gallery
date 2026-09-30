@@ -1,6 +1,6 @@
 # 팀 서버 자원 확인 — 모델 5종 실행 위치 (A1 · T068 · U2)
 
-> 작성: A 최호준 · 2026-09-29 · 기준: `docs/팀원별_작업지시_프롬프트.md` A1, REF BR-SRV-01~04·D10, research R-02·R-03·R-22, `docs/A_모델재현기록.md`
+> 작성: A 최호준 · 2026-09-29 · 기준: `docs/공통/팀원별_작업지시_프롬프트.md` A1, REF BR-SRV-01~04·D10, research R-02·R-03·R-22, `docs/A/A_모델재현기록.md`
 > 확인 방법: 읽기 전용 명령(`sysctl`, `system_profiler SPDisplaysDataType`, `df`, `vm_stat`, `top`, `who`, Ollama `/api/ps`). 설치·삭제·재시작은 하지 않았다.
 
 ## 0. 대상 서버
@@ -21,12 +21,12 @@
 | GPU | **NVIDIA GPU 없음(CUDA 불가, `nvidia-smi` 없음).** Apple GPU 64코어, Metal 4 → PyTorch MPS 사용 가능 | M2·M5 MPS 실측(A_모델재현기록) |
 | 디스크 | 데이터 볼륨 1.8TB 중 약 338GB 여유(사용률 82%) | M3 환경 약 3GB(2026-09-29 설치분, T081) |
 | Docker | OrbStack(`/usr/local/bin/docker`, `orb`) 있음 | **쓰지 않는다**(Intent-Plan, R-02). 확인만 함 |
-| 공유 Ollama | `127.0.0.1:11434`, 다른 사용자 모델(gemma3:12b 등)이 적재된 상태 | M6은 이 공유 Ollama를 쓴다(`docs/Ollama 유저 가이드.md` 규칙) |
+| 공유 Ollama | `127.0.0.1:11434`, 다른 사용자 모델(gemma3:12b 등)이 적재된 상태 | M6은 이 공유 Ollama를 쓴다(`docs/참고/Ollama 유저 가이드.md` 규칙) |
 | 사용 중인 포트 | 8080(다른 사용자 컨테이너 UI), 8081(다른 사용자 Express), 9501(프로토타입 공유 서버) | TorchServe는 9561~9563으로 옮김(R-03 개정안, 브랜치 `a/t081-m3`) |
 
 ## 2. 모델별 실행 위치
 
-프롬프트가 정한 배치(BR-SRV-01)와 이 서버 실측을 함께 적는다. 메모리는 `docs/A_모델재현기록.md` 값이다.
+프롬프트가 정한 배치(BR-SRV-01)와 이 서버 실측을 함께 적는다. 메모리는 `docs/A/A_모델재현기록.md` 값이다.
 
 | 모델 | 서빙군(BR-SRV-01) | 이 서버의 장치 | 실측 메모리(최대 RSS) | 처리 시간(1장) |
 |---|---|---|---|---|

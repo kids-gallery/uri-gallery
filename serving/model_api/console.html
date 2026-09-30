@@ -37,7 +37,7 @@
   <p class="note">
     적재 중에는 그 모델이 필요한 작업이 큐에서 기다립니다(오류 아님). 실패하면 대기 작업은 <code>model_not_ready</code>로 10초·60초 뒤 재시도합니다.
     M6는 공유 Ollama가 5분 동안 요청이 없으면 내리므로, 그다음 첫 요청이 적재 시간을 다시 기다립니다.
-    공유 서버 규칙(docs/Ollama 유저 가이드.md)상 M6는 수동으로 올리지 않고, 상주 여부는 서버에 묻지 않고 마지막 응답 시각으로 짐작합니다.
+    공유 서버 규칙(docs/참고/Ollama 유저 가이드.md)상 M6는 수동으로 올리지 않고, 상주 여부는 서버에 묻지 않고 마지막 응답 시각으로 짐작합니다.
     새 모델 준비·적재 시간 측정: <code>python -m ops.models prepare|measure &lt;ID&gt; --write</code>
   </p>
 </main>

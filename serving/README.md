@@ -19,4 +19,4 @@ UAM_REAL_MODELS=1 MODEL_ROOT=../models .venv/bin/python -m pytest -q tests/test_
 | `python -m ops.models …` | 모델 준비·적재 시간 측정·버전 등록 |
 
 환경 변수: `DB_*`(또는 `DB_SOCKET`), `STORAGE_ROOT`, `MODEL_MANIFEST`, `UAM_RUN_DIR`, `UAM_FAKE_MODELS`(1 또는 `M3,M7` 목록), `UAM_FAKE_FAULTS`, `M1_REVISION`·`M2_REVISION`·`M5_REVISION`(매니페스트보다 우선), `M3_AD_PYTHON`·`M3_AD_ROOT`·`FFMPEG`, `TORCHSERVE_URL`, `UAM_FAKE_LOAD_S`, `GPU_ENABLED`, `OLLAMA_URL`, `OLLAMA_CHAT_MODEL`, `LLM_SERVER_URL`, `LLM_WARM_ON_START`.
-Ollama는 공유 서버다 — `docs/Ollama 유저 가이드.md`(원본 `/Users/Shared/ollama/ollama-user-guide.md`) 규칙을 따른다: `num_ctx` 8192 고정, `keep_alive` 5m, 동시 1건, `/api/ps`·`/api/tags` 폴링 금지, 미리 올리기는 기동 때 1회, 런타임에 pull·rm·stop 없음, `qwen3:4b` 대신 `qwen3:4b-instruct-2507-q4_K_M`.
+Ollama는 공유 서버다 — `docs/참고/Ollama 유저 가이드.md`(원본 `/Users/Shared/ollama/ollama-user-guide.md`) 규칙을 따른다: `num_ctx` 8192 고정, `keep_alive` 5m, 동시 1건, `/api/ps`·`/api/tags` 폴링 금지, 미리 올리기는 기동 때 1회, 런타임에 pull·rm·stop 없음, `qwen3:4b` 대신 `qwen3:4b-instruct-2507-q4_K_M`.

@@ -113,7 +113,7 @@ def cmd_prepare(args) -> int:
   3) python -m ops.models check M6            # 블롭 다이제스트 = 매니페스트
   4) python -m ops.models measure M6 --write  # 적재 시간 → load.expected_seconds
   금지: ollama rm·stop·create(접두사 없는 이름)·serve, keep_alive -1, :cloud 모델, qwen3:4b(사고 모드가 꺼지지 않음)
-  규칙: docs/Ollama 유저 가이드.md — num_ctx 8192 고정, keep_alive 5m, 동시 1건, /api/ps 폴링 금지""")
+  규칙: docs/참고/Ollama 유저 가이드.md — num_ctx 8192 고정, keep_alive 5m, 동시 1건, /api/ps 폴링 금지""")
     else:
         print(f"""{args.model} 준비
   1) pip install -e '.[models]'   (torch 등, 별도 venv 권장)

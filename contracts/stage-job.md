@@ -1,6 +1,6 @@
 # 단계 작업 계약 (Stage-Job Contract) — app-api ↔ 서빙군
 
-**소유**: B(이제민) · 워커 절 공동 작성 A(최호준) — `docs/역할분담.md` 경계 계약 1
+**소유**: B(이제민) · 워커 절 공동 작성 A(최호준) — `docs/공통/역할분담.md` 경계 계약 1
 **근거**: FR-4·5·23·25, BR-API-02, BR-PRC-01~08, BR-FBK-01~04, BR-SRV-01~03, D1·D2·D4·D11, SD_01 P0(0.1~0.12)·H2~H6·H12·H13
 **데이터**: `design/uri_gallery_ddl.sql`(SD_03 정본) `stage_job`·`judgment`·`result`·`artwork_outcome` + [data-model.md](../data-model.md) §2.2·§6(보완 S1~S4)
 **개정**: 2026-09-28 — SD_03 이름·값으로 전면 교체(이전 초안의 `segment`/`animate`/`relief`, `succeeded`/`downgraded`, `artwork_result`는 쓰지 않음)

@@ -1,7 +1,7 @@
 # D M7 TripoSR 보완 사항 2건 (Apple GPU·MPS 동작 조건)
 
 > 기록: 2026-09-29(D 시험기록을 바탕으로 정리) · Studio-B.local(Apple M1 Ultra, CUDA 없음)
-> 근거: `docs/D_M7_TripoSR_시험기록.md` §1 결론 · §5-3 MPS 호환성 · §6 #1·#2
+> 근거: `docs/D/D_M7_TripoSR_시험기록.md` §1 결론 · §5-3 MPS 호환성 · §6 #1·#2
 > 대상: T131 어댑터 `serving/adapters/m7_triposr.py`(A 담당) · worker-gpu(MPS)
 > 범위: 정리만 했다. 서빙 코드·공식 코드(`models/m3/TripoSR-src/`)는 바꾸지 않았다.
 
