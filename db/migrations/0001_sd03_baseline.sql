@@ -1357,3 +1357,49 @@ UPDATE artwork a
          (SELECT cr.result_id FROM v_current_result cr WHERE cr.artwork_id = a.artwork_id)),
        a.hung_at = COALESCE(a.hung_at, a.approved_at)
  WHERE a.status = 'approved' AND a.hung_result_id IS NULL;
+
+-- ===================================================================================================
+-- 개정 (2026-09-30, 이제민 결정 D40 — 미술관 마을, SD_02 §17-13 · UC_16): 아이 캐릭터 · 미술관 모양, 이웃(가족끼리) 관계와 초대.
+--   child: character_kind · character_color · museum_style(목록 값만, 기존 아이는 NULL = 화면 기본값)
+--   family_neighbor: 서로 이웃인 두 가족(작은 번호가 family_low — 한 쌍 1행). 이웃만 서로의 미술관을 볼 수 있다(BR-ACC-01 예외)
+--   neighbor_invite: 이웃 초대 링크(한 번 · 7일 · 가족당 대기 1건 · 해시만 저장 — family_invite와 같은 규칙)
+-- ===================================================================================================
+ALTER TABLE child ADD COLUMN IF NOT EXISTS character_kind  VARCHAR(16) NULL AFTER alias;
+ALTER TABLE child ADD COLUMN IF NOT EXISTS character_color VARCHAR(16) NULL AFTER character_kind;
+ALTER TABLE child ADD COLUMN IF NOT EXISTS museum_style    VARCHAR(24) NULL AFTER character_color;
+ALTER TABLE child DROP CONSTRAINT IF EXISTS chk_child_character;
+ALTER TABLE child ADD CONSTRAINT chk_child_character CHECK (
+  (character_kind IS NULL OR character_kind IN ('bear','rabbit','cat','dog','fox','penguin','dino','owl'))
+  AND (character_color IS NULL OR character_color IN ('sunflower','peach','sky','leaf','lavender','cloud'))
+  AND (museum_style IS NULL OR museum_style IN ('glass_pyramid','white_spiral','column_temple','clock_station','brick_chimney','golden_dome','hanok_roof','silver_wave')));
+
+CREATE TABLE IF NOT EXISTS family_neighbor (
+  family_low   BIGINT    NOT NULL,
+  family_high  BIGINT    NOT NULL,
+  created_at   DATETIME  NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  CONSTRAINT pk_family_neighbor PRIMARY KEY (family_low, family_high),
+  CONSTRAINT chk_neighbor_order CHECK (family_low < family_high),
+  CONSTRAINT fk_neighbor_low  FOREIGN KEY (family_low)  REFERENCES family (family_id) ON DELETE CASCADE,
+  CONSTRAINT fk_neighbor_high FOREIGN KEY (family_high) REFERENCES family (family_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS ix_neighbor_high ON family_neighbor (family_high);
+
+CREATE TABLE IF NOT EXISTS neighbor_invite (
+  invite_id           BIGINT    NOT NULL AUTO_INCREMENT,
+  family_id           BIGINT    NOT NULL,
+  invited_by          BIGINT    NULL,
+  token_hash          CHAR(64)  NOT NULL,
+  expires_at          DATETIME  NOT NULL,
+  accepted_at         DATETIME  NULL DEFAULT NULL,
+  accepted_family     BIGINT    NULL,
+  revoked_at          DATETIME  NULL DEFAULT NULL,
+  created_at          DATETIME  NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  pending_family_key  BIGINT    GENERATED ALWAYS AS (CASE WHEN accepted_at IS NULL AND revoked_at IS NULL THEN family_id END) STORED,
+  CONSTRAINT pk_neighbor_invite PRIMARY KEY (invite_id),
+  CONSTRAINT uq_neighbor_invite_token UNIQUE (token_hash),
+  CONSTRAINT uq_neighbor_invite_pending UNIQUE (pending_family_key),
+  CONSTRAINT chk_neighbor_invite_done CHECK (accepted_at IS NULL OR revoked_at IS NULL),
+  CONSTRAINT fk_ninv_family FOREIGN KEY (family_id) REFERENCES family (family_id) ON DELETE CASCADE,
+  CONSTRAINT fk_ninv_by FOREIGN KEY (invited_by) REFERENCES guardian_account (account_id) ON DELETE SET NULL,
+  CONSTRAINT fk_ninv_accepted FOREIGN KEY (accepted_family) REFERENCES family (family_id) ON DELETE SET NULL
+);
