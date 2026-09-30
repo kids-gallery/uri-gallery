@@ -36,7 +36,7 @@ watch(() => props.playing, (p) => {
 
 <style scoped>
 .artframe{position:relative;display:inline-flex;max-width:100%}
-.mat{background:#fff;padding:14px;display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--color-accent-magenta),0 18px 30px -16px rgba(184,41,27,.35)}
+.mat{background:#fff;padding:14px;display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--color-accent-magenta),0 18px 30px -16px rgba(110,53,80,.22)}
 .is-sm .mat{padding:10px}
 .is-lg .mat{padding:clamp(18px,3vw,36px)}
 .mat img,.mat video{display:block;height:var(--art-h,200px);width:auto;max-width:min(calc(100vw - 96px),var(--art-max-w,340px));object-fit:contain}

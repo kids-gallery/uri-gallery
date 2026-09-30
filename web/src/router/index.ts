@@ -30,8 +30,9 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { shell: 'app' },
     children: [
-      // 홈: 시안 전환은 museumTheme.ts 한 줄(D30, SD_02 §17-5) — v2 = §17-3 홈, classic-a · classic-b = 고전 미술관 시안
-      { path: '', name: 'app-home', component: () => (isClassic() ? import('@/app/views/ClassicHomeView.vue') : import('@/app/views/PaperHomeView.vue')) },
+      // 홈: 전환은 museumTheme.ts 한 줄(D31, SD_02 §17-6) — walk = 걸어 다니는 미술관, v2 = §17-3 홈
+      { path: '', name: 'app-home', component: () => (isClassic() ? import('@/app/views/WalkHomeView.vue') : import('@/app/views/PaperHomeView.vue')) },
+      { path: 'list', name: 'app-list', component: () => import('@/app/views/ClassicHomeView.vue') }, // 한눈에 보기(§17-5 목록형 — 금빛 액자 · 고른 벽 색)
       { path: 'hall', name: 'app-hall', component: () => import('@/app/views/MuseumView.vue') }, // 전시실 — 평면도 · N세관 · 작품 앞 ?art=(SD_02 §17-4)
       { path: 'works', component: () => import('@/app/views/ArtworksView.vue') }, // S4 작품 목록 → 작품 관리
       { path: 'artworks/:id', component: () => import('@/app/views/ArtworkDetailView.vue') },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 홈 /app — "이탈리아 고전 대형 미술관" 시안 A · B(D30, SD_02 §17-5 — 시안, 팀 선택 전). 어느 시안인지는 museumTheme.ts 한 줄로 정한다.
+// 한눈에 보기 /app/list — 고전 미술관 목록형(D30 → D31 선택: 금빛 액자 · 크림 벽 + 고른 벽 색, SD_02 §17-5). 홈 /app은 걸어 다니는 미술관(§17-6).
 // 아치 간판 → 로비 벽(천창 빛 · 몰딩 · 기둥 · 최근 작품 · 황동 설명판 · 대리석 바닥) → 미술관 안내도(방 칸 + 현재 위치 + 입구) → 전시실 구획(아치 입구 · 벽에 건 작품).
 // 데이터는 지금 홈과 같다: GET /v1/children · /v1/gallery · /v1/artworks. 작품이나 설명판을 누르면 작품 앞(/app/hall?art=) — 전시 해설과 아이의 한마디.
 // 색 · 장식은 classic.css(--mc-*)만. 3D 엔진 · 소리 · 외부 사진 없음. 움직임 줄이기면 빛 변화 · 떠오르기 · 부드러운 스크롤을 끈다.
@@ -13,15 +13,14 @@ import ArtFrame from '@/components/ArtFrame.vue';
 import BlockNotice from '@/components/BlockNotice.vue';
 import { ko } from '@/copy/ko';
 import { blockOf, type ArtworkSummary } from '../artwork';
-import { museumTheme, roomNumbers } from '../museumTheme';
+import { roomNumbers } from '../museumTheme';
+import { loadWall } from '../walk/prefs';
 
 type Child = components['schemas']['Child'];
 type Gallery = components['schemas']['Gallery'];
 type Item = components['schemas']['GalleryItem'];
 
-const theme = museumTheme();
-const variant = theme === 'classic-b' ? 'b' : 'a';
-const frame = variant === 'b' ? 'gold' : 'bw';
+const frame = 'gold';
 
 const route = useRoute();
 const router = useRouter();
@@ -40,8 +39,8 @@ const rooms = computed(() => {
 });
 const all = computed(() => rooms.value.flatMap((r) => r.items));
 const latest = computed(() => [...all.value].sort((a, b) => a.madeOn.localeCompare(b.madeOn)).at(-1) ?? null);
-/** B 벽색 차례: 진홍 → 짙은 녹색 → 남색 */
-const tone = (no: number) => String(((no - 1) % 3) + 1);
+/** 고른 벽 색(걸어 다니는 미술관과 같은 값, 이 기기 · 아이마다) */
+const wall = computed(() => loadWall(childId.value));
 
 function still(it: Item) { return it.kind === 'frame' ? it.originalUrl : it.kind === 'relief' ? it.auxUrl ?? it.originalUrl : it.posterUrl ?? it.originalUrl; }
 
@@ -73,7 +72,7 @@ function goRoom(no: number) {
 </script>
 
 <template>
-  <main class="mc" :data-mc="variant">
+  <main class="mc" :style="{ '--mc-wall': wall }">
     <div class="container">
       <BlockNotice v-if="block" :notice="block" @action="load" />
     </div>
@@ -83,7 +82,8 @@ function goRoom(no: number) {
       <div class="mc-sign">
         <p class="mc-eyebrow">{{ ko.museum.name }}</p>
         <h1>{{ alias ? ko.museum.hall(alias) : ko.museum.name }}</h1>
-        <p class="mc-tagline">{{ ko.museum.tagline }}</p>
+        <p class="mc-tagline">{{ ko.walk.list }}</p>
+        <RouterLink class="mc-towalk" :to="{ path: '/app', query: childId ? { child: childId } : {} }">{{ ko.walk.toWalk }} <span aria-hidden="true">→</span></RouterLink>
       </div>
       <div class="mc-entab" aria-hidden="true"></div>
       <div v-if="(children?.length ?? 0) > 1" class="field mc-pick">
@@ -95,7 +95,7 @@ function goRoom(no: number) {
     </header>
 
     <!-- 2 로비 벽: 최근 작품 -->
-    <section class="mc-wall mc-lobby" data-tone="1" :aria-label="ko.museum.latest">
+    <section class="mc-wall mc-lobby" :aria-label="ko.museum.latest">
       <span class="mc-sky" aria-hidden="true"></span><span class="mc-cornice" aria-hidden="true"></span>
       <span class="mc-pil l" aria-hidden="true"></span><span class="mc-pil r" aria-hidden="true"></span>
       <div class="mc-lobby-in">
@@ -139,7 +139,7 @@ function goRoom(no: number) {
 
       <!-- 4 전시실 구획 -->
       <section v-for="r in rooms" :id="`mc-room-${r.no}`" :key="r.ageAtMaking" class="mc-room" :aria-labelledby="`mc-rh-${r.no}`">
-        <div class="mc-wall" :data-tone="tone(r.no)">
+        <div class="mc-wall">
           <span class="mc-sky" aria-hidden="true"></span><span class="mc-cornice" aria-hidden="true"></span>
           <span class="mc-pil l" aria-hidden="true"></span><span class="mc-pil r" aria-hidden="true"></span>
           <div class="container">

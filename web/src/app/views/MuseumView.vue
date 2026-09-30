@@ -18,6 +18,7 @@ import NoticeBlock from '../components/NoticeBlock.vue';
 import { blockOf, type ArtworkSummary } from '../artwork';
 import { reducedMotion } from '@/composables/usePolling';
 import { museumTheme, roomLabel, roomNumbers } from '../museumTheme';
+import { loadWall } from '../walk/prefs';
 
 type Child = components['schemas']['Child'];
 type Gallery = components['schemas']['Gallery'];
@@ -41,7 +42,8 @@ let lastOpenedId = '';
 const alias = computed(() => children.value?.find((c) => c.id === childId.value)?.alias ?? '');
 /** 시안(D30, SD_02 §17-5): 전시실 이름과 작품 앞의 벽 · 액자만 바뀐다. v2는 지금 그대로 */
 const theme = museumTheme();
-const frameVariant = theme === 'classic-b' ? 'gold' : theme === 'classic-a' ? 'bw' : 'mat';
+const frameVariant = theme === 'walk' ? 'gold' : 'mat';
+const wall = computed(() => (theme === 'walk' ? loadWall(childId.value) : undefined));
 const roomNo = computed(() => roomNumbers(rooms.value));
 const roomName = (age: number) => roomLabel(roomNo.value.get(age) ?? 1, age, theme);
 const rooms = computed(() => g.value?.groups ?? []);
@@ -115,7 +117,7 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 </script>
 
 <template>
-  <main class="hallpage" :class="theme">
+  <main class="hallpage" :class="theme" :style="wall ? { '--walk-wall': wall } : undefined">
     <div class="container">
       <NoticeBlock v-if="joined" :title="ko.family.joined" />
       <BlockNotice v-if="block" :notice="block" @action="load" />
@@ -228,13 +230,13 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 .plan{margin:var(--s-lg) auto var(--s-xl)}
 .plan-h{font:600 13px/1.3 var(--font-sans);letter-spacing:.8px;text-align:center;margin-bottom:var(--s-sm)}
 .blueprint{position:relative;max-width:640px;margin:0 auto;padding:40px 18px 0;border:1px solid var(--color-accent-magenta);border-radius:var(--r-lg);
-  background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(228,56,40,.08) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,rgba(228,56,40,.08) 23px 24px),var(--color-canvas)}
+  background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(184,106,139,.10) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,rgba(184,106,139,.10) 23px 24px),var(--color-canvas)}
 .bp-title{position:absolute;top:14px;left:20px;font:400 12px/1 var(--font-mono);letter-spacing:.6px}
 .compass{position:absolute;top:10px;right:18px;display:grid;justify-items:center;font:600 12px/1 var(--font-mono)}
 .compass span{font-size:14px;color:var(--color-accent-magenta)}
 .plan-map{display:grid;grid-template-columns:1fr 72px 1fr;border:5px solid var(--color-accent-magenta);background:var(--color-canvas)}
 .corridor{grid-column:2;border-left:2px solid var(--color-accent-magenta);border-right:2px solid var(--color-accent-magenta);display:flex;align-items:center;justify-content:center;
-  background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(228,56,40,.1) 10px 11px)}
+  background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(184,106,139,.12) 10px 11px)}
 /* 글자는 가로 한 줄(세로 쪼개짐 수정, D30 — SD_02 §17-5) */
 .corridor span{font:400 12px/1 var(--font-mono);letter-spacing:.6px;white-space:nowrap}
 .plan-room{position:relative;border:0;border-bottom:2px solid var(--color-accent-magenta);background:var(--blk);min-height:64px;
@@ -283,7 +285,6 @@ const planRows = computed(() => Math.max(1, Math.ceil(rooms.value.length / 2)));
 .wl-acts{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
 .wl-acts .btn{font-size:16px;padding:8px 16px}
 .wl-acts .btn-secondary{border:1px solid var(--color-accent-magenta)}
-/* 고전 시안(D30, SD_02 §17-5) — 작품 앞의 벽만. A 크림 벽 · B 진홍 벽(라벨 카드는 흰 바탕 그대로) */
-.hallpage.classic-a .wall-piece{background:var(--color-block-cream);box-shadow:inset 0 10px 0 #eceae4,inset 0 11px 0 #b9b5ac}
-.hallpage.classic-b .wall-piece{background:#6e1a22;box-shadow:inset 0 10px 0 #eceae4,inset 0 11px 0 #b9b5ac}
+/* 걸어 다니는 미술관(D31, SD_02 §17-6) — 작품 앞의 벽은 고른 벽 색 + 금빛 처마 선 */
+.hallpage.walk .wall-piece{background:var(--walk-wall,var(--color-block-cream));box-shadow:inset 0 10px 0 #D9B566,inset 0 11px 0 #B08A3E}
 </style>

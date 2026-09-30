@@ -289,6 +289,18 @@ export const ko = {
     plaqueOpen: (title: string) => `${title} - 크게 보기`, // [추론]
     map: '미술관 안내도', here: '현재 위치', cell: (age: number, n: number) => `${age}살 · ${n}점`, // [추론]
   },
+  /** 걸어 다니는 미술관(D31, SD_02 §17-6 — docs/C/C_화면문구.md "걸어 다니는 미술관"). */
+  walk: {
+    enter: '입장하기', skip: '건너뛰기', upload: '작품 올리기', list: '한눈에 보기', wall: '벽 색', // [추론] 벽 색
+    forward: '앞으로', backward: '뒤로', toCorridor: '회랑으로', close: '닫기', toWalk: '걸어서 보기', // [추론]
+    atGate: '입구', atCorridor: (i: number, n: number) => `회랑 ${i}/${n}`, atJunction: '갈림길', // [추론]
+    room: (age: number) => `${age}살 전시실`, roomCount: (n: number) => `${n}점`, // [추론]
+    toLeft: (age: number) => `← ${age}살 전시실`, toRight: (age: number) => `${age}살 전시실 →`, toOnly: (age: number) => `${age}살 전시실로 →`, // [추론]
+    wallTitle: '벽 색 고르기', wallNames: { cream: '크림', pink: '분홍 구름', mint: '민트 하늘', lilac: '라일락', sky: '하늘', butter: '버터' } as Record<string, string>,
+    wallCustom: '직접 고르기', wallReset: '처음 색으로', wallAdjusted: '글자가 잘 보이도록 조금 밝게 했어요', // [추론]
+    listTitle: (alias: string) => `${alias}의 미술관 - 한눈에 보기`, // [추론]
+    scene: '미술관 장면', // [추론] 장면 영역 이름
+  },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   family: {
     title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,
