@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>루브르 회랑 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
+<style>
+/* Editorial Luxury — 크림 · 에스프레소 · 금 / 사진 속 회랑 위에 떠 있는 유리 계기판 */
+:root{
+  --cream:#FDFBF7; --ink:#2A1F1A; --plum:#6E3550; --rose:#A0496B; --gold:#C9A552; --gold-l:#E6CB86; --gold-d:#8E6B2A;
+  --glass:rgba(253,251,247,.72); --line:rgba(42,31,26,.08);
+  --serif:'Noto Serif KR',serif; --sans:'Noto Sans KR',system-ui,sans-serif; --ital:'Cormorant Garamond',serif;
+  --spring:cubic-bezier(.32,.72,0,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgba(253,251,247,.74)}}
+:root[data-theme="dark"]{--glass:rgba(253,251,247,.74)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#2B231D;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+
+/* ---- 3D: 사진을 편 상자 ---- */
+.vp{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  background:radial-gradient(ellipse at 50% 40%,#5a4a3e,#2B231D 70%)}
+.world{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.pl{position:absolute;left:0;top:0;backface-visibility:hidden;background-size:100% 100%;background-repeat:no-repeat}
+.pl.two{backface-visibility:visible}
+.entry{background:linear-gradient(#EDE6DC,#D9CFC2)}
+body:not(.in) .post{visibility:hidden}
+/* 아이 그림 액자: 금빛 두 겹 테 + 매트 */
+.art{padding:0;border:0;background:none;cursor:pointer;backface-visibility:hidden}
+.art .glow{position:absolute;left:-70%;right:-70%;top:-95%;bottom:-35%;pointer-events:none;
+  background:radial-gradient(ellipse 42% 55% at 50% 34%,rgba(255,238,200,.55),rgba(255,238,200,0) 70%)}
+.art .fr{position:absolute;inset:0;padding:7px;border-radius:1px;
+  background:linear-gradient(135deg,var(--gold-l),var(--gold) 38%,var(--gold-d) 62%,var(--gold-l));
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 22px 30px -18px rgba(20,12,8,.8)}
+.art .mat{display:block;width:100%;height:100%;padding:8px;background:#FBF8F1;box-shadow:inset 0 0 0 1px rgba(142,107,42,.45),inset 0 6px 10px -6px rgba(0,0,0,.25)}
+.art img{width:100%;height:100%;display:block;object-fit:cover}
+.art.near .fr{box-shadow:0 0 0 2px rgba(255,248,230,.95),0 0 60px 10px rgba(255,226,160,.55),0 22px 30px -18px rgba(20,12,8,.8)}
+.art:focus-visible .fr{outline:4px solid #fff;outline-offset:4px}
+.plaque{display:flex;flex-direction:column;justify-content:center;padding:3px 6px;border-radius:1px;white-space:nowrap;
+  background:linear-gradient(135deg,#E9D39A,#C9A552 55%,#A98435);color:#2B2007;font:500 6px/1.3 var(--sans);box-shadow:0 4px 6px -3px rgba(0,0,0,.5)}
+.plaque b{font:700 8px/1.2 var(--serif)}
+.banner{display:grid;place-items:center;text-align:center;color:var(--cream);background:linear-gradient(#7A3B57,#5E2C43);box-shadow:0 30px 40px -24px rgba(0,0,0,.7);
+  border-top:10px solid var(--gold);padding:18px 10px}
+.banner small{font:italic 500 26px/1 var(--ital);letter-spacing:2px;color:var(--gold-l)}
+.banner b{font:700 46px/1.2 var(--serif)}
+.banner span{font:500 20px/1 var(--sans);opacity:.85}
+
+/* ---- 화면 위: 필름 그레인 · 가장자리 어둠 ---- */
+.grain{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:.07;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.vig{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse 85% 80% at 50% 46%,rgba(20,12,8,0) 55%,rgba(20,12,8,.5))}
+.veil{position:fixed;inset:0;z-index:7;pointer-events:none;background:linear-gradient(180deg,rgba(43,35,29,.55),rgba(43,35,29,.15) 40%,rgba(43,35,29,.7));transition:opacity 1.4s var(--spring)}
+.veil.off{opacity:0}
+
+/* 두 겹 테(Doppelrand): 바깥 껍질 + 안쪽 알맹이 */
+.shell{padding:5px;border-radius:22px;background:rgba(253,251,247,.28);box-shadow:0 0 0 1px rgba(255,255,255,.35),0 18px 40px -22px rgba(20,12,8,.7);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+.core{border-radius:17px;background:var(--glass);box-shadow:inset 0 1px 1px rgba(255,255,255,.7)}
+
+/* 위 가운데: 지금 위치(떠 있는 섬) */
+.island{position:fixed;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:8;border-radius:999px}
+.island .core{border-radius:999px;display:flex;align-items:center;gap:10px;padding:8px 16px 8px 10px}
+.island i{font-style:normal;font:700 9px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--cream);background:var(--plum);border-radius:999px;padding:5px 8px}
+.island p{margin:0;font:700 15px/1 var(--serif);white-space:nowrap}
+/* 왼쪽 위: 안내도 */
+.mapbox{position:fixed;left:14px;top:max(14px,env(safe-area-inset-top));z-index:8}
+.mapbox .core{width:84px;height:132px;padding:6px;cursor:pointer;display:block;border:0}
+.mapbox svg{width:100%;height:100%;display:block}
+/* 오른쪽 위: 극세선 아이콘 */
+.tools{position:fixed;right:14px;top:max(14px,env(safe-area-inset-top));z-index:8;border-radius:28px}
+.tools .core{border-radius:23px;display:flex;flex-direction:column;padding:4px}
+.ico{width:42px;height:42px;border:0;border-radius:50%;background:none;display:grid;place-items:center;cursor:pointer;transition:transform .5s var(--spring),background .5s var(--spring)}
+.ico:hover{background:rgba(42,31,26,.06)}.ico:active{transform:scale(.94)}
+.ico svg{width:21px;height:21px;fill:none;stroke:var(--ink);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--plum);outline-offset:3px}
+
+/* 입구 타이틀 */
+.title{position:fixed;inset:0;z-index:9;display:grid;place-items:center;text-align:center;padding:24px;pointer-events:none;transition:opacity 1s var(--spring),transform 1.2s var(--spring)}
+.title.off{opacity:0;transform:translateY(-24px) scale(.98)}
+.title .in{display:grid;justify-items:center;gap:14px;pointer-events:auto}
+.eyebrow{font:700 10px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--cream);border:1px solid rgba(253,251,247,.45);border-radius:999px;padding:7px 12px;background:rgba(42,31,26,.25)}
+.title h1{margin:0;font:700 clamp(40px,10vw,88px)/1.05 var(--serif);color:var(--cream);letter-spacing:-.01em;text-shadow:0 2px 30px rgba(0,0,0,.45)}
+.title h1 em{display:block;font:italic 500 clamp(22px,4.6vw,34px)/1.2 var(--ital);color:var(--gold-l);letter-spacing:.04em;margin-bottom:6px}
+.title p{margin:0;color:rgba(253,251,247,.88);font:500 15px/1.6 var(--sans)}
+.cta{margin-top:10px;display:inline-flex;align-items:center;gap:14px;padding:8px 8px 8px 26px;border:0;border-radius:999px;cursor:pointer;
+  background:var(--cream);color:var(--ink);font:700 17px/1 var(--sans);box-shadow:0 0 0 1px rgba(255,255,255,.6),0 24px 40px -20px rgba(0,0,0,.8);transition:transform .6s var(--spring)}
+.cta:active{transform:scale(.98)}
+.cta span{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--plum);color:var(--cream);transition:transform .6s var(--spring)}
+.cta:hover span{transform:translate(3px,-1px) scale(1.05)}
+.cta svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* 아래: 명패 알림 · 다음 작품 · 조이스틱 */
+.prompt{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));z-index:8;transform:translate(-50%,24px);opacity:0;pointer-events:none;
+  transition:opacity .6s var(--spring),transform .8s var(--spring);max-width:calc(100% - 196px);border-radius:20px}
+.prompt.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.prompt .core{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:15px;cursor:pointer;border:0;text-align:left;width:100%;
+  background:linear-gradient(135deg,#EFD9A2,#CFAE5E 55%,#B08D3E)}
+.prompt b{display:block;font:700 16px/1.25 var(--serif);color:#2B2007}
+.prompt small{font:500 12px/1.3 var(--sans);color:#3B2C0B}
+.prompt kbd{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(253,251,247,.85);font:700 12px/1 var(--sans);color:var(--ink)}
+.next{position:fixed;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:8;border-radius:999px}
+.next .core{border-radius:999px;display:flex;gap:4px;padding:4px}
+.next button{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:10px;border-radius:999px;font:700 14px/1 var(--sans);transition:transform .5s var(--spring)}
+.next button:active{transform:scale(.97)}
+.next .pv{width:44px;height:44px;justify-content:center;background:none}
+.next .nx{padding:6px 6px 6px 16px;height:44px;background:var(--plum);color:var(--cream)}
+.next .nx span{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(253,251,247,.16)}
+.next svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.stick{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:8;width:108px;height:108px;border-radius:50%;touch-action:none;
+  background:radial-gradient(circle,rgba(253,251,247,.12),rgba(253,251,247,.34));box-shadow:0 0 0 1px rgba(255,255,255,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.stick i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--cream);box-shadow:0 8px 16px -8px rgba(0,0,0,.6)}
+@media (hover:hover) and (pointer:fine){.stick{display:none}}
+.keys{position:fixed;left:14px;bottom:16px;z-index:8;margin:0;pointer-events:none;font:500 11px/1.7 var(--sans);color:rgba(253,251,247,.85)}
+.keys kbd{display:inline-block;min-width:18px;padding:0 5px;border-radius:5px;border:1px solid rgba(253,251,247,.4);text-align:center;font:600 10px/16px var(--sans)}
+@media not ((hover:hover) and (pointer:fine)),(max-width:900px){.keys{display:none}}
+.credit{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:8;margin:0;font:500 10px/1.3 var(--sans);color:rgba(253,251,247,.8);text-align:right}
+.credit a{color:inherit}
+@media (max-width:600px){
+  .prompt{bottom:calc(84px + env(safe-area-inset-bottom));max-width:calc(100% - 32px);width:calc(100% - 32px)}
+  .credit{left:14px;right:auto;bottom:auto;top:calc(max(14px,env(safe-area-inset-top)) + 150px);text-align:left;max-width:120px}
+}
+
+/* 크게 보기 · 큰 안내도 */
+.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(24,16,12,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.modal[hidden]{display:none}
+.modal .shell{width:min(94vw,560px);max-height:92vh;overflow:auto;border-radius:32px;animation:rise .9s var(--spring)}
+.modal .core{border-radius:27px;padding:22px;display:grid;gap:16px;background:var(--cream)}
+@keyframes rise{from{transform:translateY(40px);opacity:0;filter:blur(8px)}}
+.modal .art{position:relative;width:100%;aspect-ratio:4/3;cursor:default}
+.modal .art .fr{position:absolute}
+.modal h3{margin:0;font:700 24px/1.25 var(--serif)}
+.modal .meta{font:500 13px/1.4 var(--sans);color:#6B5A4E}
+.modal blockquote{margin:0;padding:14px 16px;border-radius:14px;background:#F4EDE2;font:500 15px/1.6 var(--sans)}
+.modal .close{justify-self:end;display:inline-flex;align-items:center;gap:10px;padding:6px 6px 6px 18px;border:0;border-radius:999px;background:var(--ink);color:var(--cream);font:700 14px/1 var(--sans);cursor:pointer}
+.modal .close span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(253,251,247,.14)}
+.modal .close svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+.modal svg.plan{width:100%;height:auto}
+.modal p{margin:0;font:500 13px/1.6 var(--sans)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="vp" id="vp" role="region" aria-label="루브르 회랑 — 1인칭 장면"><div class="world" id="world"></div></div>
+<div class="vig" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="veil" id="veil" aria-hidden="true"></div>
+
+<div class="island shell" aria-live="polite"><div class="core"><i id="tag">Entrée</i><p id="where">그랑드 갤러리 입구</p></div></div>
+<div class="mapbox shell"><button class="core" id="mapBtn" type="button" aria-label="안내도 크게 보기"><svg id="mini" aria-hidden="true"></svg></button></div>
+<div class="tools shell"><div class="core">
+  <button class="ico" id="skip" type="button" aria-label="건너뛰기 — 가장 최근 작품 앞으로"><svg viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
+  <button class="ico" type="button" aria-label="작품 올리기(시안에서는 동작 없음)"><svg viewBox="0 0 24 24"><path d="M12 16V5M7 10l5-5 5 5M5 19h14"/></svg></button>
+  <button class="ico" type="button" aria-label="한눈에 보기(시안에서는 동작 없음)"><svg viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="6" height="6" rx="1"/><rect x="13.5" y="4.5" width="6" height="6" rx="1"/><rect x="4.5" y="13.5" width="6" height="6" rx="1"/><rect x="13.5" y="13.5" width="6" height="6" rx="1"/></svg></button>
+</div></div>
+
+<section class="title" id="title" aria-labelledby="h1">
+  <div class="in">
+    <span class="eyebrow">Musée · 우리 아이 미술관</span>
+    <h1 id="h1"><em>la Grande Galerie</em>하늘의 미술관</h1>
+    <p>루브르 회랑에 우리 아이 그림이 걸렸어요</p>
+    <button class="cta" id="enter" type="button">입장하기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span></button>
+  </div>
+</section>
+
+<div class="prompt shell" id="prompt"><button class="core" id="promptBtn" type="button" tabindex="-1"><kbd>E</kbd><span><b id="pt"></b><small id="pm"></small></span></button></div>
+<div class="next shell"><div class="core">
+  <button class="pv" id="prev" type="button" aria-label="이전 작품으로 걸어가기"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button class="nx" id="next" type="button">다음 작품 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></button>
+</div></div>
+<div class="stick" id="stick" aria-hidden="true"><i id="knob"></i></div>
+<p class="keys" aria-hidden="true"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 걷기 · 끌기 둘러보기 · <kbd>Shift</kbd> 빨리 · <kbd>E</kbd> 크게 보기 · <kbd>Space</kbd> 다음 작품</p>
+<p class="credit">사진: <a href="https://commons.wikimedia.org/wiki/File:Int%C3%A9rieur_de_la_Grande_Galerie_du_Louvre.jpg" target="_blank" rel="noopener">Touzania18</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> · 3D로 펴서 씀</p>
+
+<div class="modal" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="vt"><div class="shell"><div class="core">
+  <div class="art"><span class="fr"><span class="mat"><img id="vimg" alt=""></span></span></div>
+  <div><h3 id="vt"></h3><div class="meta" id="vmeta"></div></div>
+  <blockquote id="vsay"></blockquote>
+  <button class="close" id="vclose" type="button">닫기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+</div></div></div>
+<div class="modal" id="planM" hidden role="dialog" aria-modal="true" aria-labelledby="pmT"><div class="shell"><div class="core">
+  <h3 id="pmT">안내도 — 그랑드 갤러리</h3>
+  <svg class="plan" id="plan" role="img" aria-label="회랑 평면도와 지금 위치"></svg>
+  <p>입구에서 안쪽으로 걸을수록 <b>어릴 때 그림</b>입니다. 아치로 나뉜 구역이 나이별 전시실이고, 작품 점을 누르면 그 앞으로 걸어갑니다.</p>
+  <button class="close" id="pmClose" type="button">닫기 <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+</div></div></div>
+
+<script>
+/* =====================================================================
+   루브르 회랑 1인칭 시안 (이제민세션2 · 2026-09-30)
+   ▸ 사진 한 장(한 점 투시)을 "Tour Into the Picture"로 3D 상자 5면으로 펴고(tip.py → faces.json),
+     CSS perspective · preserve-3d 로 그 안을 1인칭으로 걷는다. 3D 엔진 없음.
+   ▸ 좌표: 미터. Z = 사진 찍은 자리에서 앞으로, X = 오른쪽 +, 눈높이 1.5m. CSS는 1m = 100px.
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const vp = $('vp'), world = $('world');
+const RM = matchMedia('(prefers-reduced-motion: reduce)');
+let META, BOX;
+
+/* ---- 합성 크레용 그림(실제 아동 그림 아님) ---- */
+function rng(seed){ let s = seed * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
+function crayon(seed, w, h, kind){
+  const r = rng(seed), c = ['#E4572E','#F3A712','#29335C','#669BBC','#A8C686','#D16BA5','#7B4B94','#2A9D8F'];
+  const pick = () => c[Math.floor(r() * c.length)];
+  const st = (col, sw = 6) => `stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"`;
+  const wob = (x, y, rr) => { let d = ''; for (let a = 0; a <= 6.4; a += .35) { const q = rr * (0.85 + r() * .3); d += `${a ? 'L' : 'M'}${(x + Math.cos(a) * q).toFixed(1)} ${(y + Math.sin(a) * q).toFixed(1)} `; } return d; };
+  let g = `<rect width="${w}" height="${h}" fill="#FFFEF9"/><path d="M0 ${h*.8} Q ${w*.3} ${h*.74} ${w*.6} ${h*.82} T ${w} ${h*.78}" ${st('#6BA368', 10)}/><path d="${wob(w*.8, h*.18, Math.min(w,h)*.1)}" ${st('#F3A712', 7)}/>`;
+  for (let i = 0; i < 8; i++){ const a = i * .785; g += `<path d="M${w*.8 + Math.cos(a)*Math.min(w,h)*.14} ${h*.18 + Math.sin(a)*Math.min(w,h)*.14} l ${Math.cos(a)*14} ${Math.sin(a)*14}" ${st('#F3A712', 5)}/>`; }
+  if (kind === 0){ const x = w*.2, y = h*.45, s = Math.min(w,h)*.32; g += `<path d="M${x} ${y} h${s} v${s} h${-s} Z" ${st(pick(), 7)}/><path d="M${x-10} ${y} L${x+s/2} ${y-s*.6} L${x+s+10} ${y}" ${st('#E4572E', 7)}/><path d="M${x+s*.4} ${y+s} v${-s*.4} h${s*.22} v${s*.4}" ${st('#29335C', 5)}/>`; }
+  else if (kind === 1){ for (let i = 0; i < 4; i++){ const x = w*(.15 + i*.2), y = h*(.55 + r()*.1); g += `<path d="M${x} ${h*.8} L${x} ${y}" ${st('#6BA368', 5)}/><path d="${wob(x, y, 16)}" ${st(pick(), 8)}/><circle cx="${x}" cy="${y}" r="5" fill="#F3A712"/>`; } }
+  else if (kind === 2){ for (let i = 0; i < 2; i++){ const x = w*(.3 + i*.28), y = h*.42, col = pick(); g += `<path d="${wob(x, y, 22)}" ${st(col, 6)}/><path d="M${x} ${y+22} v${h*.2} M${x-26} ${y+45} h52 M${x} ${y+22+h*.2} l-18 34 M${x} ${y+22+h*.2} l18 34" ${st(col, 6)}/>`; } }
+  else { ['#E4572E','#F3A712','#A8C686','#669BBC','#7B4B94'].forEach((col, i) => { g += `<path d="M${w*.1 + i*12} ${h*.75} A ${w*.4 - i*12} ${h*.45 - i*12} 0 0 1 ${w*.9 - i*12} ${h*.75}" ${st(col, 10)}/>`; }); }
+  for (let i = 0; i < 3; i++) g += `<path d="${wob(w*(.15 + r()*.5), h*(.12 + r()*.12), 14 + r()*10)}" ${st('#9CC5E8', 5)}/>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${g}</svg>`);
+}
+const TITLES = ['생일 케이크','로켓','고양이','무지개','우리 집','공룡 친구','엄마랑 아빠','꽃밭','바다 여행','해님이랑 나','눈사람','놀이터'];
+const SAYS = ['해님이 웃고 있어요','우리 집에는 창문이 커요','엄마가 제일 좋아하는 꽃','무지개 타고 놀러 갈 거야','공룡이 배고프대요','바다는 파랗고 짜요'];
+
+/* ---- 전시 배치: 입구에서 가까운 구역 = 가장 최근 나이(아치로 나뉜 구역 = 나이별 전시실) ---- */
+const SECTIONS = [{ age: 7, n: 5, z0: 27 }, { age: 6, n: 4, z0: 52 }, { age: 5, n: 3, z0: 72 }];
+const ZMIN = 24, ZMAX = 96, EYE = 1.5, HANG = 1.45, SPACING = 4.4;
+const arts = []; let tour = [];
+
+/* ---- 평면 ---- */
+function plane(cls, w, h, tf, html = '', tag = 'div'){
+  const el = document.createElement(tag); el.className = 'pl ' + cls;
+  el.style.cssText = `width:${w}px;height:${h}px;margin:${-h / 2}px 0 0 ${-w / 2}px;transform:${tf}`;
+  if (html) el.innerHTML = html; world.appendChild(el); return el;
+}
+const cm = (m) => (m * 100).toFixed(1);
+
+function build(){
+  // 사진을 편 면들
+  for (const f of META.faces){ const el = plane('photo', f.w, f.h, f.tf); el.style.backgroundImage = `url(${f.src})`;
+    // 바닥은 사진 결이 깊이 방향으로 뭉개져 있어, 사진 맨 앞의 선명한 쪽모이 결을 반복해 겹친다(색 · 빛은 사진 그대로)
+    if (f.name.startsWith('floor')) { el.style.backgroundImage = `url(tex/parquet.webp),url(${f.src})`; el.style.backgroundSize = '440px 520px,100% 100%'; el.style.backgroundRepeat = 'repeat,no-repeat'; el.style.backgroundBlendMode = 'overlay,normal'; el.style.webkitMaskImage = el.style.maskImage = `url(${f.src})`; el.style.webkitMaskSize = el.style.maskSize = '100% 100%'; } }
+  // 사진 바깥(찍은 자리 뒤) — 입구 벽: 사진 밖이라 크림 벽으로 막는다
+  const { xl, xr, yf, yc } = BOX, w = (xr - xl) * 100, h = (yf - yc) * 100;
+  plane('entry two post', w, h, `translate3d(${cm((xl + xr) / 2)}px,${cm((yc + yf) / 2)}px,${cm(-(ZMIN - 4))}px)`);
+  // 아이 그림
+  let n = 0;
+  SECTIONS.forEach((s) => {
+    const banner = plane('banner two post', 300, 150, `translate3d(${cm((xl + xr) / 2)}px,${cm(-3.1)}px,${cm(-(s.z0 - 1.2))}px)`, `<small>Salle ${s.age}</small><b>${s.age}살 전시실</b><span>${s.n}점</span>`);
+    banner.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < s.n; i++, n++){
+      const land = n % 3 !== 1, iw = land ? 400 : 300, ih = land ? 300 : 400;
+      const it = { id: n, title: TITLES[n % TITLES.length], age: s.age, madeOn: `${2015 + s.age}-${String(1 + ((n * 5) % 12)).padStart(2, '0')}-1${n % 9}`, src: crayon(n + 3, iw, ih, n % 4), say: SAYS[n % SAYS.length] };
+      const side = i % 2 === 0 ? -1 : 1, z = s.z0 + 1.8 + i * SPACING / 2 + (side > 0 ? 0 : 0);
+      hang(it, side, z, iw / ih, s.age);
+    }
+  });
+  tour = arts.slice();
+}
+function hang(it, side, z, ratio, age){
+  const long = 1.15, fw = ratio >= 1 ? long : long * ratio, fh = ratio >= 1 ? long / ratio : long;
+  const x = side < 0 ? BOX.xl + 0.04 : BOX.xr - 0.04, y = EYE - HANG;
+  const yaw = side < 0 ? 90 : -90; // 벽에서 복도 쪽을 본다
+  const el = plane('art', fw * 100, fh * 100, `translate3d(${cm(x)}px,${cm(y)}px,${cm(-z)}px) rotateY(${yaw}deg)`,
+    `<span class="glow" aria-hidden="true"></span><span class="fr"><span class="mat"><img alt="${it.title}" src="${it.src}"></span></span>`, 'button');
+  el.type = 'button'; el.setAttribute('aria-label', `${it.title}, ${age}살 — 가까이 가기`);
+  // 명패: 작품 오른쪽(관람자 기준), 액자 아래 선에 맞춤
+  const pz = z + (side < 0 ? -1 : 1) * (fw / 2 + 0.36) * (side < 0 ? -1 : 1) * -1;
+  const pl = plane('plaque', 64, 24, `translate3d(${cm(x + side * -0.01)}px,${cm(y + fh / 2 - 0.12)}px,${cm(-(z + (side < 0 ? 1 : -1) * -(fw / 2 + 0.38)))}px) rotateY(${yaw}deg)`,
+    `<b>${it.title}</b><span>${it.madeOn.replace(/-/g, '.')} · ${age}살</span>`);
+  pl.setAttribute('aria-hidden', 'true');
+  const a = { it, side, x, z, fw, fh, el };
+  el.addEventListener('click', (e) => { e.stopPropagation(); if (near === a) openViewer(a.it); else walkTo(artPose(a), a); });
+  arts.push(a);
+}
+
+/* ---- 카메라: {x, z, yaw, pitch, P(원근 거리 = 화각)} ---- */
+const cam = { x: 0, z: 0, yaw: 0, pitch: 0, P: 1000 };
+let bobT = 0, bobA = 0; // 걸음 흔들림
+function fitPhotoP(){ // 입구: 사진 찍은 화각 그대로(사진 = 화면)
+  const c = META.camera, w = innerWidth, h = innerHeight;
+  const s = Math.max(w / (2 * Math.min(c.vx, c.imgW - c.vx)), h / (2 * (c.imgH - c.vy)));
+  return c.f * s;
+}
+function walkP(){ const w = innerWidth, h = innerHeight; return w > h ? (w / 2) / Math.tan(26 * Math.PI / 180) : Math.max(h * 1.25, 900); }
+function artP(a){ const w = innerWidth, h = innerHeight; const D = 2.7; return Math.min(walkP() * 1.6, (Math.min(w * .72, h * .55) * D * 100) / (Math.max(a.fw, a.fh * (w / h > 1 ? 1 : .8)) * 100)); }
+function render(){
+  const bob = RM.matches ? 0 : Math.sin(bobT) * 2.2 * bobA, roll = RM.matches ? 0 : Math.sin(bobT / 2) * .25 * bobA;
+  vp.style.perspective = cam.P.toFixed(1) + 'px';
+  world.style.transform = `translateZ(${(cam.P - 1).toFixed(1)}px) rotateZ(${roll.toFixed(3)}deg) rotateX(${cam.pitch.toFixed(2)}deg) rotateY(${(-cam.yaw).toFixed(2)}deg) translate3d(${cm(-cam.x)}px,${bob.toFixed(2)}px,${cm(cam.z)}px)`;
+}
+
+/* ---- 걷기 가능한 곳(평면도) ---- */
+const inside = (x, z) => x > BOX.xl + 0.9 && x < BOX.xr - 0.9 && z > ZMIN - 0.01 && z < ZMAX + 0.01;
+
+/* ---- 자동 걷기(안내 · 작품 앞으로) — 스프링 느낌의 이징 ---- */
+let auto = null;
+const ease = (t) => 1 - Math.pow(1 - t, 3) * (1 - t * .15); // 무게 있는 감속
+function walkTo(target, art = null, ms){
+  const from = { ...cam }, dist = Math.hypot(target.x - cam.x, target.z - cam.z);
+  let tyaw = target.yaw; while (tyaw - from.yaw > 180) tyaw -= 360; while (tyaw - from.yaw < -180) tyaw += 360;
+  const dur = RM.matches ? 0 : (ms ?? Math.min(2600, Math.max(700, dist * 260 + Math.abs(tyaw - from.yaw) * 5)));
+  auto = { from, to: { ...target, yaw: tyaw }, t0: performance.now(), dur, art, dist };
+  if (!dur) { Object.assign(cam, auto.to); auto = null; after(art); }
+}
+function after(art){ if (art) { focusArt(art); } }
+function artPose(a){
+  const D = 2.7, fwd = 0.55; // 벽에서 2.7m, 살짝 입구 쪽에 서서 약간 안쪽을 보며
+  const x = a.side < 0 ? Math.min(BOX.xl + D, BOX.xr - 1) : Math.max(BOX.xr - D, BOX.xl + 1);
+  return { x, z: a.z - fwd, yaw: a.side < 0 ? 78 : -78, pitch: 0, P: artP(a) };
+}
+
+/* ---- 입력 ---- */
+const keys = new Set(); let drag = null; let stickV = { x: 0, y: 0 };
+addEventListener('keydown', (e) => {
+  if (!$('viewer').hidden || !$('planM').hidden){ if (e.key === 'Escape') closeModals(); return; }
+  if (!entered){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } return; }
+  const k = e.key.toLowerCase();
+  if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)) { keys.add(k); if (k.startsWith('arrow')) e.preventDefault(); auto = null; }
+  if (k === 'e' && near) openViewer(near.it);
+  if (k === ' ') { e.preventDefault(); step(1); }
+  if (k === 'm') openPlan();
+});
+addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+vp.addEventListener('pointerdown', (e) => { if (!entered) return; drag = { x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch, moved: 0 }; vp.setPointerCapture(e.pointerId); });
+vp.addEventListener('pointermove', (e) => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
+  if (drag.moved > 6){ auto = null; cam.yaw = drag.yaw + dx * .18; cam.pitch = Math.max(-16, Math.min(22, drag.pitch + dy * .12)); } });
+vp.addEventListener('pointerup', () => { drag = null; });
+// 조이스틱
+const stick = $('stick'), knob = $('knob'); let sp = null;
+stick.addEventListener('pointerdown', (e) => { sp = e.pointerId; stick.setPointerCapture(sp); moveStick(e); auto = null; });
+stick.addEventListener('pointermove', (e) => { if (e.pointerId === sp) moveStick(e); });
+stick.addEventListener('pointerup', () => { sp = null; stickV = { x: 0, y: 0 }; knob.style.transform = ''; });
+function moveStick(e){ const r = stick.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), m = Math.min(1, Math.hypot(dx, dy) / 40), a = Math.atan2(dy, dx);
+  stickV = { x: Math.cos(a) * m, y: Math.sin(a) * m }; knob.style.transform = `translate(${stickV.x * 32}px,${stickV.y * 32}px)`; }
+
+/* ---- 매 프레임 ---- */
+let last = performance.now(), near = null;
+function frame(t){
+  const dt = Math.min(.05, (t - last) / 1000); last = t;
+  let moving = 0;
+  if (auto){
+    const k = auto.dur ? Math.min(1, (t - auto.t0) / auto.dur) : 1, e = ease(k), a = auto;
+    for (const p of ['x','z','yaw','pitch','P']) cam[p] = a.from[p] + (a.to[p] - a.from[p]) * e;
+    moving = a.dist > .3 ? Math.sin(Math.PI * k) : 0;
+    if (k >= 1){ auto = null; after(a.art); }
+  } else if (entered){
+    const run = keys.has('shift') ? 2.1 : 1, sp = 1.9 * run; // m/s
+    let f = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - stickV.y;
+    let s = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0) + stickV.x;
+    const turn = (keys.has('arrowleft') ? 1 : 0) - (keys.has('arrowright') ? 1 : 0);
+    cam.yaw += turn * 70 * dt;
+    const m = Math.hypot(f, s); if (m > 1){ f /= m; s /= m; }
+    if (m > .05){
+      const y = cam.yaw * Math.PI / 180, dx = (-Math.sin(y) * f + Math.cos(y) * s) * sp * dt, dz = (Math.cos(y) * f + Math.sin(y) * s) * sp * dt;
+      if (inside(cam.x + dx, cam.z)) cam.x += dx; if (inside(cam.x, cam.z + dz)) cam.z += dz;
+      moving = Math.min(1, m) * run;
+      cam.P += (walkP() - cam.P) * Math.min(1, dt * 2.5); // 걷기 시작하면 걷는 화각으로
+    }
+  }
+  bobA += ((moving ? 1 : 0) - bobA) * Math.min(1, dt * 6); bobT += dt * 8.5 * Math.max(.4, moving);
+  render(); senseNear(); updateHud();
+  requestAnimationFrame(frame);
+}
+
+/* ---- 가까운 작품: 바라보는 방향 ±30°, 4.2m 안 ---- */
+function senseNear(){
+  let best = null, bd = 1e9; const y = cam.yaw * Math.PI / 180, fx = -Math.sin(y), fz = Math.cos(y);
+  for (const a of arts){ const dx = a.x - cam.x, dz = a.z - cam.z, d = Math.hypot(dx, dz); if (d > 4.2) continue;
+    const cos = (dx * fx + dz * fz) / d; if (cos < .86) continue; if (d < bd){ bd = d; best = a; } }
+  if (best !== near){ near?.el.classList.remove('near'); near = best; near?.el.classList.add('near');
+    const p = $('prompt'); p.classList.toggle('on', !!near);
+    if (near){ $('pt').textContent = near.it.title; $('pm').textContent = `${near.it.madeOn.replace(/-/g, '.')} · ${near.it.age}살 · 눌러서 크게 보기`; $('promptBtn').tabIndex = 0; } else $('promptBtn').tabIndex = -1; }
+}
+function focusArt(a){ near?.el.classList.remove('near'); near = null; senseNear(); }
+
+/* ---- HUD ---- */
+let lastWhere = '';
+function section(z){ return SECTIONS.slice().reverse().find((s) => z >= s.z0 - 1) ?? null; }
+function updateHud(){
+  const s = entered ? section(cam.z) : null;
+  const where = !entered ? '그랑드 갤러리 입구' : s ? `${s.age}살 전시실` : '회랑 입구';
+  const tag = !entered ? 'Entrée' : s ? `Salle ${s.age}` : 'Galerie';
+  if (where !== lastWhere){ lastWhere = where; $('where').textContent = where; $('tag').textContent = tag; }
+  drawCam();
+}
+function planSvg(big){
+  const { xl, xr } = BOX, W = xr - xl, top = ZMAX + 4, bot = ZMIN - 6, s = big ? 6 : 1;
+  let g = `<rect x="${xl}" y="${-top}" width="${W}" height="${top - bot}" rx=".6" fill="#F4EDE2" stroke="#C9A552" stroke-width=".35"/>`;
+  SECTIONS.forEach((q) => { g += `<line x1="${xl}" x2="${xr}" y1="${-(q.z0 - 1)}" y2="${-(q.z0 - 1)}" stroke="#C9A552" stroke-width=".25" stroke-dasharray=".6 .5"/>`;
+    g += `<text x="${(xl + xr) / 2}" y="${-(q.z0 + 3)}" text-anchor="middle" font-size="${big ? 2.2 : 2.6}" font-weight="700" fill="#6E3550" font-family="Noto Sans KR">${q.age}살</text>`; });
+  arts.forEach((a, i) => { g += `<circle class="${big ? 'pa' : ''}" data-i="${i}" cx="${a.x}" cy="${-a.z}" r="${big ? .7 : .9}" fill="#A0496B" ${big ? 'style="cursor:pointer"' : ''}/>`; });
+  g += `<text x="${(xl + xr) / 2}" y="${-(bot + 1.2)}" text-anchor="middle" font-size="2" fill="#2A1F1A" font-family="Noto Sans KR">입구</text><g class="cam"></g>`;
+  return { vb: `${xl - 1} ${-top - 1} ${W + 2} ${top - bot + 2}`, g };
+}
+function drawMap(){ const m = planSvg(false); $('mini').setAttribute('viewBox', m.vb); $('mini').setAttribute('preserveAspectRatio', 'xMidYMid meet'); $('mini').innerHTML = m.g; }
+function drawCam(){
+  for (const svg of [$('mini'), $('plan')]){ const g = svg.querySelector('.cam'); if (!g) continue;
+    const y = cam.yaw * Math.PI / 180, fx = -Math.sin(y), fz = Math.cos(y), a = .5, L = 9;
+    const l = [fx * Math.cos(a) - fz * Math.sin(a), fx * Math.sin(a) + fz * Math.cos(a)], r = [fx * Math.cos(-a) - fz * Math.sin(-a), fx * Math.sin(-a) + fz * Math.cos(-a)];
+    const X = cam.x, Z = -Math.max(cam.z, ZMIN - 5);
+    g.innerHTML = `<path d="M${X} ${Z} L${X + l[0] * L} ${Z - l[1] * L} L${X + r[0] * L} ${Z - r[1] * L} Z" fill="#A0496B" opacity=".25"/><circle cx="${X}" cy="${Z}" r="1.1" fill="#6E3550" stroke="#fff" stroke-width=".4"/>`; }
+}
+
+/* ---- 안내 걷기: 다음 · 이전 작품 ---- */
+let tourIdx = -1;
+function step(d){ if (!entered) return enter(); tourIdx = Math.max(0, Math.min(tour.length - 1, tourIdx + d)); const a = tour[tourIdx]; walkTo(artPose(a), a); }
+$('next').onclick = () => step(1); $('prev').onclick = () => step(-1);
+$('skip').onclick = () => { if (!entered) enter(); tourIdx = 0; walkTo(artPose(tour[0]), tour[0]); };
+
+/* ---- 입장 연출: 사진 속으로 걸어 들어간다 ---- */
+let entered = false;
+function enter(){
+  if (entered) return; entered = true; document.body.classList.add('in');
+  $('title').classList.add('off'); $('veil').classList.add('off');
+  walkTo({ x: -.3, z: ZMIN + 1.5, yaw: 0, pitch: 2, P: walkP() }, null, 3400);
+  setTimeout(() => $('next').focus({ preventScroll: true }), 400);
+}
+$('enter').onclick = enter;
+
+/* ---- 모달 ---- */
+let opener = null;
+function openViewer(it){ opener = document.activeElement; $('vimg').src = it.src; $('vimg').alt = it.title; $('vt').textContent = it.title;
+  $('vmeta').textContent = `${it.madeOn.replace(/-/g, '.')} · ${it.age}살 · 하늘`; $('vsay').textContent = `“${it.say}” — 아이의 한마디`; $('viewer').hidden = false; $('vclose').focus(); }
+function openPlan(){ opener = document.activeElement; const m = planSvg(true); const p = $('plan'); p.setAttribute('viewBox', m.vb); p.innerHTML = m.g; p.style.maxHeight = '60vh';
+  p.querySelectorAll('.pa').forEach((c) => c.addEventListener('click', () => { const a = arts[+c.dataset.i]; closeModals(); if (!entered) enter(); tourIdx = tour.indexOf(a); setTimeout(() => walkTo(artPose(a), a), entered ? 0 : 3400); }));
+  $('planM').hidden = false; $('pmClose').focus(); }
+function closeModals(){ $('viewer').hidden = true; $('planM').hidden = true; opener?.focus?.(); }
+$('vclose').onclick = closeModals; $('pmClose').onclick = closeModals; $('mapBtn').onclick = openPlan;
+$('promptBtn').onclick = () => near && openViewer(near.it);
+for (const m of [$('viewer'), $('planM')]) m.addEventListener('click', (e) => { if (e.target === m) closeModals(); });
+addEventListener('resize', () => { if (!entered) cam.P = fitPhotoP(); });
+
+/* ---- 시작 ---- */
+fetch('faces.json').then((r) => r.json()).catch(() => window.FACES).then((m) => {
+  META = m; BOX = m.box; build(); drawMap(); cam.P = fitPhotoP(); render(); requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>

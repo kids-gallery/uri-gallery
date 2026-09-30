@@ -1,0 +1,197 @@
+{
+ "photo": {
+  "title": "Intérieur de la Grande Galerie du Louvre",
+  "author": "Touzania18",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Int%C3%A9rieur_de_la_Grande_Galerie_du_Louvre.jpg",
+  "size": [
+   2887,
+   2887
+  ],
+  "note": "원본을 3D 상자 면으로 펴서 잘라 씀(변형물) — 같은 CC BY-SA 4.0으로 배포"
+ },
+ "camera": {
+  "vx": 1468.0,
+  "vy": 1896.0,
+  "f": 5780.0,
+  "imgW": 2887,
+  "imgH": 2887
+ },
+ "box": {
+  "xl": -5.4,
+  "xr": 4.4,
+  "yf": 1.5,
+  "yc": -6.3,
+  "zb": 150.0
+ },
+ "faces": [
+  {
+   "name": "floor_8",
+   "src": "tex/floor_8.webp",
+   "w": 980,
+   "h": 400,
+   "tf": "translate3d(-50px,150px,-1000px) rotateX(90deg)"
+  },
+  {
+   "name": "floor_12",
+   "src": "tex/floor_12.webp",
+   "w": 980,
+   "h": 600,
+   "tf": "translate3d(-50px,150px,-1500px) rotateX(90deg)"
+  },
+  {
+   "name": "wallR_12",
+   "src": "tex/wallR_12.webp",
+   "w": 600,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-1500px) rotateY(-90deg)"
+  },
+  {
+   "name": "floor_18",
+   "src": "tex/floor_18.webp",
+   "w": 980,
+   "h": 800,
+   "tf": "translate3d(-50px,150px,-2200px) rotateX(90deg)"
+  },
+  {
+   "name": "ceil_18",
+   "src": "tex/ceil_18.webp",
+   "w": 980,
+   "h": 800,
+   "tf": "translate3d(-50px,-630px,-2200px) rotateX(-90deg)"
+  },
+  {
+   "name": "wallL_18",
+   "src": "tex/wallL_18.webp",
+   "w": 800,
+   "h": 780,
+   "tf": "translate3d(-540px,-240px,-2200px) rotateY(90deg)"
+  },
+  {
+   "name": "wallR_18",
+   "src": "tex/wallR_18.webp",
+   "w": 800,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-2200px) rotateY(-90deg)"
+  },
+  {
+   "name": "floor_26",
+   "src": "tex/floor_26.webp",
+   "w": 980,
+   "h": 1200,
+   "tf": "translate3d(-50px,150px,-3200px) rotateX(90deg)"
+  },
+  {
+   "name": "ceil_26",
+   "src": "tex/ceil_26.webp",
+   "w": 980,
+   "h": 1200,
+   "tf": "translate3d(-50px,-630px,-3200px) rotateX(-90deg)"
+  },
+  {
+   "name": "wallL_26",
+   "src": "tex/wallL_26.webp",
+   "w": 1200,
+   "h": 780,
+   "tf": "translate3d(-540px,-240px,-3200px) rotateY(90deg)"
+  },
+  {
+   "name": "wallR_26",
+   "src": "tex/wallR_26.webp",
+   "w": 1200,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-3200px) rotateY(-90deg)"
+  },
+  {
+   "name": "floor_38",
+   "src": "tex/floor_38.webp",
+   "w": 980,
+   "h": 1800,
+   "tf": "translate3d(-50px,150px,-4700px) rotateX(90deg)"
+  },
+  {
+   "name": "ceil_38",
+   "src": "tex/ceil_38.webp",
+   "w": 980,
+   "h": 1800,
+   "tf": "translate3d(-50px,-630px,-4700px) rotateX(-90deg)"
+  },
+  {
+   "name": "wallL_38",
+   "src": "tex/wallL_38.webp",
+   "w": 1800,
+   "h": 780,
+   "tf": "translate3d(-540px,-240px,-4700px) rotateY(90deg)"
+  },
+  {
+   "name": "wallR_38",
+   "src": "tex/wallR_38.webp",
+   "w": 1800,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-4700px) rotateY(-90deg)"
+  },
+  {
+   "name": "floor_56",
+   "src": "tex/floor_56.webp",
+   "w": 980,
+   "h": 2900,
+   "tf": "translate3d(-50px,150px,-7050px) rotateX(90deg)"
+  },
+  {
+   "name": "ceil_56",
+   "src": "tex/ceil_56.webp",
+   "w": 980,
+   "h": 2900,
+   "tf": "translate3d(-50px,-630px,-7050px) rotateX(-90deg)"
+  },
+  {
+   "name": "wallL_56",
+   "src": "tex/wallL_56.webp",
+   "w": 2900,
+   "h": 780,
+   "tf": "translate3d(-540px,-240px,-7050px) rotateY(90deg)"
+  },
+  {
+   "name": "wallR_56",
+   "src": "tex/wallR_56.webp",
+   "w": 2900,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-7050px) rotateY(-90deg)"
+  },
+  {
+   "name": "floor_85",
+   "src": "tex/floor_85.webp",
+   "w": 980,
+   "h": 6500,
+   "tf": "translate3d(-50px,150px,-11750px) rotateX(90deg)"
+  },
+  {
+   "name": "ceil_85",
+   "src": "tex/ceil_85.webp",
+   "w": 980,
+   "h": 6500,
+   "tf": "translate3d(-50px,-630px,-11750px) rotateX(-90deg)"
+  },
+  {
+   "name": "wallL_85",
+   "src": "tex/wallL_85.webp",
+   "w": 6500,
+   "h": 780,
+   "tf": "translate3d(-540px,-240px,-11750px) rotateY(90deg)"
+  },
+  {
+   "name": "wallR_85",
+   "src": "tex/wallR_85.webp",
+   "w": 6500,
+   "h": 780,
+   "tf": "translate3d(440px,-240px,-11750px) rotateY(-90deg)"
+  },
+  {
+   "name": "back",
+   "src": "tex/back.webp",
+   "w": 980,
+   "h": 780,
+   "tf": "translate3d(-50px,-240px,-15000px)"
+  }
+ ]
+}
