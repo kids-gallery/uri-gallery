@@ -1,5 +1,6 @@
 // 보호자 인증 7경로 + /v1/me + 팀원 로그인·로그아웃·/v1/ops/me(T046~T050·T146, UC13·UC14, FR-31·32, G26·G27, R-24, D21).
 // 가입·재발송·찾기는 가입 여부와 관계없이 항상 202(결정 ④). 토큰 오류는 400 token_invalid 하나(결정 ③).
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import argon2 from 'argon2';
 import { Router, type Request, type Response } from 'express';
 import type { Pool } from 'mysql2/promise';
@@ -14,6 +15,8 @@ import type { Mailer, MailMessage } from '../mail/mailer.js';
 import { RateLimiter, normEmail } from './rateLimit.js';
 import { issueToken, lockValidToken, useToken } from './tokens.js';
 import { lockInvite } from '../family/invites.js';
+import { httpKakao, type KakaoClient } from './kakao.js';
+import { log } from '../../lib/logger.js';
 
 const email = z.string().trim().max(254).email();
 const password = z.string().min(8).max(200); // 규칙 예시 8자 이상 [U19]
@@ -31,18 +34,88 @@ const withConfirm = <T extends z.ZodRawShape>(shape: T) =>
   z.object({ ...shape, password, passwordConfirm: z.string() }).strict()
     .refine((v) => v.password === v.passwordConfirm, { path: ['passwordConfirm'], message: 'password_mismatch' });
 
-export function maskEmail(e: string): string {
+export function maskEmail(e: string | null): string | null {
+  if (!e) return null; // 카카오 계정·링크 초대는 이메일이 없다(D36)
   const [u, d = ''] = e.split('@');
   return `${u.slice(0, 2)}***@${d}`;
 }
 
-export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
+export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoClient = httpKakao(cfg.kakao)): Router {
   const r = Router();
   const rl = new RateLimiter(db, cfg.authHmacSecret);
   const link = (path: string, token: string) => `${cfg.appBaseUrl}${path}?token=${encodeURIComponent(token)}`;
   const cookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: cfg.secureCookies, path: '/', maxAge: IDLE_MINUTES * 60 * 1000 };
   const setGuardianCookie = (res: Response, sid: string) => res.cookie(GUARDIAN_COOKIE, sid, cookieOpts);
   const ip = (req: Request) => req.ip ?? 'unknown';
+
+  // --- 카카오 로그인(D36, research R-26, UC13 §0 · UC15 §0) ---
+  const KAKAO_COOKIE = 'uam_kakao_state';
+  const kakaoCookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: cfg.secureCookies, path: '/v1/auth/kakao', maxAge: 10 * 60 * 1000 };
+  const sign = (v: string) => createHmac('sha256', cfg.sessionSecret).update(`kakao-state:${v}`).digest('base64url');
+  const packState = (st: { s: string; i?: string }) => { const v = Buffer.from(JSON.stringify(st)).toString('base64url'); return `${v}.${sign(v)}`; };
+  const unpackState = (raw: unknown): { s: string; i?: string } | null => {
+    if (typeof raw !== 'string') return null;
+    const [v, mac] = raw.split('.');
+    if (!v || !mac) return null;
+    const a = Buffer.from(sign(v)), b = Buffer.from(mac);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    try { return JSON.parse(Buffer.from(v, 'base64url').toString('utf8')); } catch { return null; }
+  };
+
+  r.get('/v1/auth/providers', (_req, res) => {
+    res.json({ kakao: kakao.configured, emailSignup: cfg.mailEnabled });
+  });
+
+  r.get('/v1/auth/kakao/start', (req, res, next) => {
+    try {
+      if (!kakao.configured) throw new Problem('not_saved', 'kakao_not_configured');
+      const invite = typeof req.query.invite === 'string' && /^[A-Za-z0-9_-]{10,200}$/.test(req.query.invite) ? req.query.invite : undefined;
+      const s = randomBytes(32).toString('base64url');
+      res.cookie(KAKAO_COOKIE, packState({ s, ...(invite ? { i: invite } : {}) }), kakaoCookieOpts);
+      res.redirect(302, kakao.authorizeUrl(s));
+    } catch (e) { next(e); }
+  });
+
+  r.get('/v1/auth/kakao/callback', async (req, res) => {
+    const st = unpackState(req.cookies?.[KAKAO_COOKIE]);
+    res.clearCookie(KAKAO_COOKIE, { path: kakaoCookieOpts.path });
+    const done = (to: string, event: string, code?: string) => { log.info({ event, code }); res.redirect(302, to); };
+    const q = req.query as Record<string, unknown>;
+    if (typeof q.error === 'string') return done(q.error === 'access_denied' ? '/app/login?kakao=cancelled' : '/app/login?kakao=failed', 'kakao_cancelled', q.error.slice(0, 40));
+    if (!st || typeof q.state !== 'string' || q.state !== st.s || typeof q.code !== 'string') return done('/app/login?kakao=failed', 'kakao_failed', 'state');
+    let memberId: string;
+    try { memberId = await kakao.memberId(q.code); } catch (e) { return done('/app/login?kakao=failed', 'kakao_failed', (e as Error).message); }
+    try {
+      const out = await withTx(db, async (conn) => {
+        const [rows] = await conn.query(`SELECT account_id, family_id FROM guardian_account WHERE kakao_id = ? FOR UPDATE`, [memberId]);
+        const acc = (rows as { account_id: number; family_id: number | null }[])[0];
+        if (st.i) {                                        // 초대 링크로 들어옴(UC15 §0) — 새 가족 대신 그 가족의 공동 보호자
+          const inv = await lockInvite(conn, st.i);
+          if (!inv) return { to: '/app/invite?error=token_invalid', event: 'kakao_invite_invalid' };
+          if (acc && acc.family_id !== null) return { to: '/app/invite?error=already_in_family', event: 'kakao_invite_in_family', id: acc.account_id };
+          let id = acc?.account_id;
+          try {
+            if (acc) await conn.query(`UPDATE guardian_account SET family_id = ?, role = 'co' WHERE account_id = ?`, [inv.family_id, id]);
+            else id = ((await conn.query(`INSERT INTO guardian_account (family_id, role, kakao_id) VALUES (?, 'co', ?)`, [inv.family_id, memberId]))[0] as { insertId: number }).insertId;
+          } catch (e) {
+            if (isDup(e, 'uq_guardian_co_family')) return { to: '/app/invite?error=co_guardian_full', event: 'kakao_invite_full' };
+            throw e;
+          }
+          await conn.query(`UPDATE family_invite SET accepted_at = UTC_TIMESTAMP(), accepted_account = ? WHERE invite_id = ?`, [id, inv.invite_id]);
+          return { to: '/app/family?joined=1', event: 'kakao_invite_joined', id };
+        }
+        if (acc) return { to: '/app/after-login', event: 'kakao_login', id: acc.account_id };
+        const [f] = await conn.query(`INSERT INTO family () VALUES ()`);    // 첫 로그인: 가족 공간 + 만든 보호자(UC13 §0 5, E4 한 트랜잭션)
+        const [g] = await conn.query(`INSERT INTO guardian_account (family_id, role, kakao_id) VALUES (?, 'owner', ?)`, [(f as { insertId: number }).insertId, memberId]);
+        return { to: '/app/children?welcome=1', event: 'kakao_signup', id: (g as { insertId: number }).insertId };
+      });
+      if (out.id) setGuardianCookie(res, await createSession(db, 'guardian', out.id));
+      return done(out.to, out.event);
+    } catch (e) {
+      if (isDup(e, 'uq_guardian_kakao')) return done('/app/login?kakao=failed', 'kakao_failed', 'race'); // 동시 첫 로그인 — 다시 누르면 로그인된다
+      return done('/app/login?kakao=failed', 'kakao_failed', 'db');
+    }
+  });
 
   // --- 가입(G26) ---
   r.post('/v1/auth/signup', async (req, res, next) => {
@@ -211,6 +284,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
     try {
       const b = parse(withConfirm({ currentPassword: z.string().min(1).max(200) }), req.body);
       const g = req.guardian!;
+      if (!g.email) throw new Problem('conflict', 'no_password'); // 카카오 계정은 비밀번호가 없다(D36)
       const em = normEmail(g.email);
       if (await rl.exceeded('login', { email: em })) throw new Problem('rate_limited', 'login_attempts');
       const [rows] = await db.query(`SELECT password_hash FROM guardian_account WHERE account_id = ?`, [g.accountId]);
@@ -240,7 +314,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   // --- 로그인한 보호자 상태(U20, /v1/me) ---
   r.get('/v1/me', guardianAuth(db, { requireFamily: false }), (req, res) => {
     const g = req.guardian!;
-    res.json({ emailMasked: maskEmail(g.email), hasFamily: g.familyId !== null, role: g.familyId === null ? null : g.role });
+    res.json({ emailMasked: maskEmail(g.email), loginMethod: g.email ? 'email' : 'kakao', hasFamily: g.familyId !== null, role: g.familyId === null ? null : g.role });
   });
 
   // --- 팀원 로그인(INC2, G1) ---

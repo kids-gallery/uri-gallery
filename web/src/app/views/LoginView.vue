@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // S0a 보호자 로그인(T053, SD_02 §4-5 D21·D22 ③). POST /v1/auth/login → GET /v1/me.
 // 성공: ?next(같은 셸 상대 경로만) → 가족 없음이면 S1d → 그 밖에는 S4. 불일치는 한 문구(가입 여부 비노출).
-// 메일 확인 전(403 email_unverified)은 입력한 이메일로 확인 메일을 다시 받게 하고, 요청 한도(429)는 보류 블록.
-import { computed, ref } from 'vue';
+// 2026-09-30 D36(SD_02 §17-7): 크게 [카카오로 시작하기](키 없으면 "준비 중이에요" 비활성), 아래 작게 "이메일로 로그인(기존 회원)".
+// 카카오 취소·실패는 ?kakao=cancelled|failed 안내. 메일 관련 문구(확인·다시 받기·찾기)는 보이지 않는다 — 메일을 보내지 않는다.
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError, toBlock, type BlockNotice as Notice } from '@/api/client';
 import BlockNotice from '@/components/BlockNotice.vue';
@@ -10,7 +11,6 @@ import ReasonButton from '@/components/ReasonButton.vue';
 import { ko } from '@/copy/ko';
 import { safeNext } from '@/router/menu';
 import { useSession } from '@/stores/session';
-import PublicHeader from '../components/PublicHeader.vue';
 import NoticeBlock from '../components/NoticeBlock.vue';
 import { emailProblem } from '../authForm';
 
@@ -24,6 +24,13 @@ const block = ref<Notice | null>(null);
 const resent = ref(false);
 const emailEl = ref<HTMLInputElement | null>(null);
 const resetDone = route.query.reset === '1';
+const kakaoOn = ref<boolean | null>(null);
+const showEmail = ref(false);
+const kakaoNote = route.query.kakao === 'cancelled' ? ko.kakao.cancelled : route.query.kakao === 'failed' ? ko.kakao.failed : '';
+onMounted(async () => {
+  try { kakaoOn.value = (await api.get<{ kakao: boolean }>('/v1/auth/providers', { noRedirect: true })).kakao; } catch { kakaoOn.value = false; }
+});
+function startKakao() { if (kakaoOn.value) window.location.assign('/v1/auth/kakao/start'); }
 // 초대 링크(S1c)로 왔는데 계정이 없으면 초대받은 이메일로 가입(UC15 A4) — next의 token을 가입에 넘긴다
 const inviteToken = computed(() => {
   const n = typeof route.query.next === 'string' ? route.query.next : '';
@@ -45,7 +52,10 @@ async function submit() {
     const err = e instanceof ApiError ? e : new ApiError(0, null);
     if (err.status === 409 && err.reason === 'no_family') { await router.replace('/app/no-family'); return; }
     // 불일치 블록은 SD_02 S0a 와이어프레임대로 "막힘 G0"(API는 gate 없이 보낸다) — 메일 확인 G27 블록과 표기를 맞춘다
-    block.value = { ...toBlock(err), gate: err.gate ?? (err.reason === 'bad_credentials' ? 'G0' : null) };
+    const b = toBlock(err);
+    // 메일을 보내지 않으므로(D36) 확인 전 계정에 "메일 다시 받기"를 주지 않는다
+    block.value = err.reason === 'email_unverified' ? { ...b, reason: ko.kakao.unverified, actions: [] }
+      : { ...b, gate: err.gate ?? (err.reason === 'bad_credentials' ? 'G0' : null), actions: b.actions.filter((a) => a !== ko.auth.forgot && a !== ko.auth.resendVerify) };
     password.value = '';
   } finally { busy.value = false; }
 }
@@ -61,12 +71,16 @@ async function onAction(label: string) {
 </script>
 
 <template>
-  <PublicHeader link="signup" />
+  <header class="topnav"><div class="container"><RouterLink class="wordmark" to="/app/login">{{ ko.shell.appName }}</RouterLink></div></header>
   <main class="container page stack">
     <NoticeBlock v-if="resetDone" :title="ko.auth.resetDone" />
-    <NoticeBlock v-if="resent" :title="ko.auth.checkMailbox"><p>{{ ko.auth.mailboxHint }}</p></NoticeBlock>
-    <form class="card stack auth-form" novalidate @submit.prevent="submit">
+    <section class="card stack auth-form">
       <h1 class="t-headline">{{ ko.auth.loginTitle }}</h1>
+      <p v-if="kakaoNote" class="t-body kakao-note" role="status">{{ kakaoNote }}</p>
+      <ReasonButton class="kakao-btn" :label="ko.kakao.start" :disabled="!kakaoOn" :reason="kakaoOn === false ? ko.kakao.preparing : ''" @click="startKakao" />
+      <button class="btn btn-tertiary email-toggle" type="button" :aria-expanded="showEmail" aria-controls="li-form" @click="showEmail = !showEmail">{{ ko.kakao.emailLogin }}</button>
+    </section>
+    <form v-if="showEmail" id="li-form" class="card stack auth-form" novalidate @submit.prevent="submit">
       <div class="field">
         <label for="li-email">{{ ko.auth.email }}</label>
         <input id="li-email" ref="emailEl" v-model="email" class="input" type="email" autocomplete="username">
@@ -78,10 +92,7 @@ async function onAction(label: string) {
       <BlockNotice v-if="block" :notice="block" @action="onAction" />
       <div class="row-acts">
         <ReasonButton :label="ko.auth.login" :disabled="!!reason || busy" :reason="reason" type="submit" />
-        <!-- 막힘 블록이 같은 링크를 다음 행동으로 주면 두 번 보이지 않게 숨긴다 -->
-        <RouterLink v-if="!block?.actions.includes(ko.auth.forgot)" class="btn btn-tertiary" to="/app/recovery">{{ ko.auth.forgot }}</RouterLink>
       </div>
-      <RouterLink v-if="inviteToken" class="btn btn-secondary" :to="{ path: '/app/signup', query: { invite: inviteToken } }">{{ ko.family.signupInvited }}</RouterLink>
     </form>
   </main>
 </template>
@@ -89,4 +100,7 @@ async function onAction(label: string) {
 <style scoped>
 .auth-form{max-width:560px}
 .row-acts{display:flex;flex-wrap:wrap;gap:var(--s-sm);align-items:center}
+.kakao-btn{width:100%;min-height:56px;font-size:18px}
+.email-toggle{justify-self:start;font-size:14px}
+.kakao-note{margin:0}
 </style>

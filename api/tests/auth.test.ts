@@ -22,7 +22,7 @@ describe('가입·확인(UC13, G26·G27)', () => {
     const a = await signupAndVerify();
     expect(t.mailer.sent[0].kind).toBe('verify');
     const me = await a.get('/v1/me').expect(200);
-    expect(me.body).toEqual({ emailMasked: 'Pa***@Test.local', hasFamily: true, role: 'owner' });
+    expect(me.body).toEqual({ emailMasked: 'Pa***@Test.local', loginMethod: 'email', hasFamily: true, role: 'owner' });
     const [rows] = await t.db.query('SELECT COUNT(*) n FROM family');
     expect(Number((rows as { n: number }[])[0].n)).toBe(1);
   });

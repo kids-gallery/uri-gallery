@@ -34,6 +34,11 @@ export function smtpMailer(smtpUrl: string, from: string): Mailer {
   };
 }
 
+/** 발송 끔(MAIL_ENABLED=false, R-23 갱신 2 · D36): 보내지 않고 종류만 로그에 남긴다 — 수신 주소·링크는 남기지 않는다. */
+export function disabledMailer(): Mailer {
+  return { send: (m) => log.info({ event: 'mail_disabled', code: m.kind }) };
+}
+
 /** 시험용 — 보낸 메일을 모은다. */
 export function memoryMailer(): Mailer & { sent: MailMessage[] } {
   const sent: MailMessage[] = [];

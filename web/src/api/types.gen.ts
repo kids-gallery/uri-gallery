@@ -4,6 +4,141 @@
  */
 
 export interface paths {
+    "/v1/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 쓸 수 있는 로그인 수단 (2026-09-30 카카오 로그인, R-26) — 화면이 버튼 활성·비활성을 정한다 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 로그인 수단 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description 서버에 카카오 앱 키가 설정돼 있는가 */
+                            kakao: boolean;
+                            /** @description 새 이메일 가입을 화면에 보일지(메일 발송이 켜져 있을 때만 true — 팀 결정 전) */
+                            emailSignup: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/kakao/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 카카오 로그인 시작 (UC13 §0, R-26) — state 쿠키를 두고 카카오 인증 화면으로 302
+         * @description 브라우저가 이 주소로 이동한다(fetch 아님). 받는 값은 회원번호뿐 — 동의 항목을 요청하지 않는다. 초대 링크로 왔으면 `invite`에 초대 토큰을 넘긴다(콜백에서 그 가족에 합류).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    invite?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 카카오 인증 화면(https://kauth.kakao.com/oauth/authorize)으로 이동. Set-Cookie uam_kakao_state(10분, HttpOnly, SameSite=Lax) */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 카카오 앱 키 미설정 — code not_saved, reason kakao_not_configured(화면은 버튼을 비활성으로 둔다) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/kakao/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 카카오 로그인 콜백 (UC13 §0, R-26) — 항상 웹 화면으로 302
+         * @description 카카오가 돌려보내는 주소(카카오 디벨로퍼스 Redirect URI와 같아야 한다: APP_BASE_URL + /v1/auth/kakao/callback).
+         *     state 대조 → 인가 코드를 토큰으로 → 회원번호 → 계정 찾기(없으면 가족 공간 + 만든 보호자, 초대면 그 가족의 공동 보호자) → 세션 쿠키 uam_sid.
+         *     결과는 이동할 화면으로 알린다 — 처음 `/app/children?welcome=1` · 다시 옴 `/app/after-login` · 초대 합류 `/app/family?joined=1` ·
+         *     취소 `/app/login?kakao=cancelled` · 실패 `/app/login?kakao=failed` · 초대 무효 `/app/invite?error=<reason>`. 토큰·코드·회원번호는 저장·로그하지 않는다.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    code?: string;
+                    state?: string;
+                    /** @description 카카오가 보낸 오류(취소면 access_denied) */
+                    error?: string;
+                    error_description?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 웹 화면으로 이동(위 목록) */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/signup": {
         parameters: {
             query?: never;
@@ -367,6 +502,15 @@ export interface paths {
                     };
                     content?: never;
                 };
+                /** @description 카카오 계정은 비밀번호가 없다 — code conflict, reason no_password (D36) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
                 /** @description 새 비밀번호 규칙 위반·확인 불일치(invalid_fields) 또는 현재 비밀번호 틀림(reason current_password_mismatch) */
                 422: {
                     headers: {
@@ -542,7 +686,13 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            emailMasked?: string;
+                            /** @description 카카오 계정은 null(이메일을 받지 않는다, R-26) */
+                            emailMasked?: string | null;
+                            /**
+                             * @description 2026-09-30 카카오 로그인(R-26)
+                             * @enum {string}
+                             */
+                            loginMethod: "kakao" | "email";
                             hasFamily: boolean;
                             /** @enum {string|null} */
                             role?: "owner" | "co" | null;
@@ -631,7 +781,8 @@ export interface paths {
                     content: {
                         "application/json": {
                             id?: string;
-                            emailMasked?: string;
+                            /** @description 링크 초대는 null */
+                            emailMasked?: string | null;
                             /** Format: date-time */
                             expiresAt?: string;
                         }[];
@@ -641,8 +792,9 @@ export interface paths {
         };
         put?: never;
         /**
-         * 공동 보호자 초대 메일 보내기 (UC15, U1 확정, G29) — 만든 보호자만
-         * @description 보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1, 1c460b0 사용자 결정). 초대는 만든 보호자만 — 공동 보호자는 403.
+         * 공동 보호자 초대 — 기본은 초대 링크 만들기(UC15 §0, 2026-09-30), 이메일을 주면 기존 초대 메일(메일이 꺼져 있으면 발송 안 함) — 만든 보호자만
+         * @description **2026-09-30 초대 링크(UC15 §0, R-26)**: 본문을 비우면(`{}`) 이메일 없는 초대를 만들고 201로 한 번 쓰는 링크를 돌려준다 — 화면이 복사해 카카오톡으로 보낸다. 링크 원문은 이 응답에만 있고 DB에는 해시만.
+         *     보호자는 부모 두 명까지(만든 보호자 1 + 공동 보호자 1, 1c460b0 사용자 결정). 초대는 만든 보호자만 — 공동 보호자는 403.
          *     공동 보호자가 이미 있으면 409 `co_guardian_full`("보호자는 두 명까지예요"). 대기 초대는 가족당 1건 — 새로 초대하면 이전 초대는 무효 [추론].
          *     초대 유효 7일 [예시값]. 요청 한도 초과 시 메일을 보내지 않고 응답은 그대로 202 [추론]. 초대받은 이메일의 가입 여부는 드러내지 않는다.
          */
@@ -653,16 +805,35 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
+                    /** @example {} */
                     "application/json": {
-                        /** Format: email */
-                        email: string;
+                        /**
+                         * Format: email
+                         * @description 주면 기존 이메일 초대(메일 발송 설정이 켜져 있을 때만 나간다). 없으면 링크 초대
+                         */
+                        email?: string;
                     };
                 };
             };
             responses: {
-                /** @description 초대 메일 발송(가입 여부 비노출) */
+                /** @description 초대 링크를 만듦(이메일 없는 초대) */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description 한 번 쓰는 초대 링크(APP_BASE_URL/app/invite?token=…). 이 응답에서만 보인다 */
+                            link: string;
+                            /** Format: date-time */
+                            expiresAt: string;
+                        };
+                    };
+                };
+                /** @description 초대 메일 발송(가입 여부 비노출) — 이메일을 준 경우 */
                 202: {
                     headers: {
                         [name: string]: unknown;
@@ -816,7 +987,7 @@ export interface paths {
                     content?: never;
                 };
                 400: components["responses"]["TokenInvalid"];
-                /** @description 로그인한 계정의 이메일이 초대받은 이메일과 다름 — code forbidden_role, reason invite_email_mismatch (G28, UC15 E2, SD_02 S1c). 초대받은 이메일로 로그인하라는 안내용 */
+                /** @description 로그인한 계정의 이메일이 초대받은 이메일과 다름 — code forbidden_role, reason invite_email_mismatch (G28, UC15 E2, SD_02 S1c). 초대받은 이메일로 로그인하라는 안내용. 링크 초대(이메일 없음)는 대조하지 않는다(2026-09-30) */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -869,7 +1040,8 @@ export interface paths {
                             id?: string;
                             /** @enum {string} */
                             role?: "owner" | "co";
-                            emailMasked?: string;
+                            /** @description 카카오 계정은 null(D36) */
+                            emailMasked?: string | null;
                             isMe?: boolean;
                         }[];
                     };

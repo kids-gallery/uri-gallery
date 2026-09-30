@@ -28,6 +28,7 @@ test('가입 → 메일 확인 → 아이 등록 → 로그아웃 → 로그인�
 
   await page.getByRole('button', { name: ko.auth.logout }).click();
   await expect(page).toHaveURL(/\/app\/login/);
+  await page.getByRole('button', { name: ko.kakao.emailLogin }).click(); // 이메일 칸은 접혀 있다(D36)
   await page.getByLabel(ko.auth.email, { exact: true }).fill(email);
   await page.getByLabel(ko.auth.password, { exact: true }).fill(PW);
   await page.getByRole('button', { name: ko.auth.login, exact: true }).click();

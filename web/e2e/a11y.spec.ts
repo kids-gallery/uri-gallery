@@ -72,8 +72,8 @@ test('보호자 화면 한 바퀴 — 키보드로 확정, 비활성 사유 낭�
 test('움직임 줄이기 설정이면 버튼 전환 효과가 없다', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/app/login');
-  // 비활성 버튼은 이름 뒤에 사유가 붙는다(C3) — 이름이 '로그인'으로 시작하는 버튼
-  const d = await page.getByRole('button', { name: new RegExp(`^${ko.auth.login}`) }).evaluate((e) => getComputedStyle(e).transitionDuration);
+  // 로그인 화면의 첫 버튼은 [카카오로 시작하기](D36) — 비활성이면 이름 뒤에 사유가 붙는다(C3)
+  const d = await page.getByRole('button', { name: new RegExp(`^${ko.kakao.start}`) }).evaluate((e) => getComputedStyle(e).transitionDuration);
   expect(d.split(',').every((x) => parseFloat(x) === 0)).toBe(true);
 });
 

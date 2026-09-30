@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { components } from '@/api/types.gen';
 
 export type StaffRole = components['schemas']['StaffRole'];
-export interface GuardianMe { emailMasked?: string; hasFamily: boolean; role?: 'owner' | 'co' | null }
+export interface GuardianMe { emailMasked?: string | null; loginMethod?: 'kakao' | 'email'; hasFamily: boolean; role?: 'owner' | 'co' | null }
 export interface StaffMe { emailMasked: string; roles: StaffRole[] }
 
 export const useSession = defineStore('session', {

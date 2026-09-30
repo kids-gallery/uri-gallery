@@ -420,21 +420,38 @@ describe('S9 삭제(T101)', () => {
 
 describe('S1b~S1d 공동 보호자(T107)', () => {
   const owner = [{ id: '1', role: 'owner', emailMasked: 'ha***', isMe: true }];
-  it('만든 보호자·한 명: 초대 보내기 → 항상 "초대 메일을 보냈어요"', async () => {
-    serve({ '/v1/family/members': owner, '/v1/family/invites': [], 'POST /v1/family/invites': () => new Response(null, { status: 202 }) });
+  it('만든 보호자·한 명: [초대 링크 복사하기] → 본문 없이 링크를 받아 복사, "카카오톡으로 보내 주세요"(D36)', async () => {
+    const link = 'https://p1.test/app/invite?token=abcdefghijkl';
+    serve({ '/v1/family/members': owner, '/v1/family/invites': [], 'POST /v1/family/invites': () => Response.json({ id: '9', link, expiresAt: '2026-10-07T00:00:00Z' }, { status: 201 }) });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
     const w = await open(FamilyView, '/app/family');
-    await w.find('#fm-email').setValue('pa@ex.com');
-    await btn(w, ko.family.send)!.trigger('click');
+    expect(w.find('#fm-email').exists()).toBe(false);                      // 초대 이메일 칸은 없다
+    await btn(w, ko.kakao.inviteCopy)!.trigger('click');
     await flushPromises();
-    expect(JSON.parse(String(calls('POST', '/v1/family/invites')[0]![1]!.body))).toEqual({ email: 'pa@ex.com' });
-    expect(w.text()).toContain(ko.family.sent);
+    expect(JSON.parse(String(calls('POST', '/v1/family/invites')[0]![1]!.body))).toEqual({});
+    expect(writeText).toHaveBeenCalledWith(link);
+    expect(w.text()).toContain(ko.kakao.copied);
+    vi.unstubAllGlobals();
+    w.unmount();
+  });
+  it('복사가 막힌 브라우저면 링크를 보여 길게 눌러 복사하게 한다', async () => {
+    const link = 'https://p1.test/app/invite?token=zyxwvutsrqpo';
+    serve({ '/v1/family/members': owner, '/v1/family/invites': [], 'POST /v1/family/invites': () => Response.json({ id: '9', link, expiresAt: '2026-10-07T00:00:00Z' }, { status: 201 }) });
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
+    const w = await open(FamilyView, '/app/family');
+    await btn(w, ko.kakao.inviteCopy)!.trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain(ko.kakao.copyManual);
+    expect((w.find('input[readonly]').element as HTMLInputElement).value).toBe(link);
+    vi.unstubAllGlobals();
     w.unmount();
   });
   it('두 명 찼으면 초대는 "보호자는 두 명까지예요" 비활성, 해제는 확인 창 뒤', async () => {
     serve({ '/v1/family/members': [...owner, { id: '2', role: 'co', emailMasked: 'pa***', isMe: false }], '/v1/family/invites': [],
       'DELETE /v1/family/members/2': () => new Response(null, { status: 204 }) });
     const w = await open(FamilyView, '/app/family');
-    expect(btn(w, ko.family.send)!.text()).toContain(ko.family.full);
+    expect(btn(w, ko.kakao.inviteCopy)!.text()).toContain(ko.family.full);
     await btn(w, ko.family.release)!.trigger('click');
     expect(w.text()).toContain(ko.family.releaseConfirm);
     expect(calls('DELETE', '/v1/family/members/2')).toHaveLength(0);
@@ -447,7 +464,7 @@ describe('S1b~S1d 공동 보호자(T107)', () => {
     serve({ '/v1/family/members': [{ id: '1', role: 'owner', emailMasked: 'ha***', isMe: false }, { id: '2', role: 'co', emailMasked: 'pa***', isMe: true }],
       'POST /v1/family/leave': () => new Response(null, { status: 204 }) });
     const w = await open(FamilyView, '/app/family');
-    expect(btn(w, ko.family.send)).toBeUndefined();
+    expect(btn(w, ko.kakao.inviteCopy)).toBeUndefined();
     expect(btn(w, ko.family.release)).toBeUndefined();
     expect(calls('GET', '/v1/family/invites')).toHaveLength(0);
     await btn(w, ko.family.leave)!.trigger('click');

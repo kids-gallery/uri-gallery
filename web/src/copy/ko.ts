@@ -302,6 +302,27 @@ export const ko = {
     scene: '미술관 장면', // [추론] 장면 영역 이름
   },
   /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
+  // 카카오 로그인·초대 링크(D36, SD_02 §17-7 — 이제민 요청서 §3 문구)
+  kakao: {
+    start: '카카오로 시작하기',
+    preparing: '준비 중이에요',
+    emailLogin: '이메일로 로그인(기존 회원)',
+    cancelled: '로그인을 취소했어요. 다시 해 볼까요?',
+    failed: '카카오 로그인이 되지 않았어요. 잠시 뒤 다시 해 볼까요?',
+    welcome: '아이를 등록해 볼까요?',
+    welcomeHint: '아이 별칭을 하나 정하면 그림을 올릴 수 있어요',
+    unverified: '이 계정은 아직 사용할 수 없어요. 카카오로 시작하거나 운영자에게 물어봐 주세요',
+    inviteTitle: '초대하기 - 링크를 보내요',
+    inviteCopy: '초대 링크 복사하기',
+    copied: '링크를 복사했어요. 카카오톡으로 보내 주세요',
+    copyManual: '아래 링크를 길게 눌러 복사해 카카오톡으로 보내 주세요',
+    linkInvite: '초대 링크',
+    inviteHint: '링크는 한 번만 쓸 수 있고 7일 뒤에 끝나요. 새 링크를 만들면 이전 링크는 쓸 수 없어요',
+    invitedStart: '받은 초대로 들어가려면 카카오로 시작해 주세요',
+    inviteError: { token_invalid: '이 초대 링크는 이미 쓰였거나 끝났어요. 초대한 보호자에게 새 링크를 받아 주세요', already_in_family: '이미 다른 가족 공간에 있어요. 그 가족에서 나온 뒤에 초대를 받을 수 있어요', co_guardian_full: '이 가족은 보호자가 이미 두 명이에요' } as Record<string, string>,
+    joined: '가족 보호자가 되었어요',
+    account: '카카오로 로그인',
+  },
   family: {
     title: (n: number) => `우리 가족 보호자 ${n}명 - 두 명까지`,
     colMember: '보호자', colRole: '역할', colActions: '조작', role: { owner: '만든 보호자', co: '공동 보호자' } as Record<string, string>, me: '(나)',

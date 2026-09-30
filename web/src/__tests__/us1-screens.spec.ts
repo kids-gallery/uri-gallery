@@ -87,18 +87,59 @@ describe('S0 가입(T052)', () => {
   });
 });
 
-describe('S0a 로그인(T053)', () => {
+const providers = (kakao = true) => Response.json({ kakao, emailSignup: false });
+/** 이메일 로그인 칸은 "이메일로 로그인(기존 회원)"을 눌러야 펼쳐진다(D36, SD_02 §17-7) */
+async function openEmailLogin(url: string) {
+  const w = await open(LoginView, url);
+  await flushPromises();
+  await btn(w, ko.kakao.emailLogin).trigger('click');
+  return w;
+}
+
+describe('S0a 로그인 — 카카오가 기본(D36)', () => {
+  it('키가 있으면 [카카오로 시작하기] → /v1/auth/kakao/start, 메일 관련 문구·링크가 없다', async () => {
+    fetchMock.mockResolvedValueOnce(providers(true));
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
+    const w = await open(LoginView, '/app/login');
+    await flushPromises();
+    await btn(w, ko.kakao.start).trigger('click');
+    expect(assign).toHaveBeenCalledWith('/v1/auth/kakao/start');
+    for (const t of ['메일을 확인', '메일 다시 받기', '로그인 정보 찾기']) expect(w.text()).not.toContain(t);
+    expect(w.find('#li-email').exists()).toBe(false);
+    vi.unstubAllGlobals();
+    w.unmount();
+  });
+  it('키가 없으면 버튼은 "준비 중이에요"로 비활성, 이메일 로그인은 그대로', async () => {
+    fetchMock.mockResolvedValueOnce(providers(false));
+    const w = await openEmailLogin('/app/login');
+    expect(btn(w, ko.kakao.start).attributes('aria-disabled')).toBe('true');
+    expect(w.text()).toContain(ko.kakao.preparing);
+    expect(w.find('#li-email').exists()).toBe(true);
+    w.unmount();
+  });
+  it('카카오에서 취소하고 오면 "로그인을 취소했어요. 다시 해 볼까요?"', async () => {
+    fetchMock.mockResolvedValueOnce(providers(true));
+    const w = await open(LoginView, '/app/login?kakao=cancelled');
+    await flushPromises();
+    expect(w.text()).toContain(ko.kakao.cancelled);
+    expect(btn(w, ko.kakao.start).exists()).toBe(true);
+    w.unmount();
+  });
+});
+
+describe('S0a 로그인 — 이메일(기존 회원, T053)', () => {
   it('성공하면 next로, 가족이 없으면 S1d로', async () => {
-    fetchMock.mockResolvedValueOnce(noContent()).mockResolvedValueOnce(Response.json({ hasFamily: true }));
-    let w = await open(LoginView, '/app/login?next=/app/gallery');
+    fetchMock.mockResolvedValueOnce(providers()).mockResolvedValueOnce(noContent()).mockResolvedValueOnce(Response.json({ hasFamily: true }));
+    let w = await openEmailLogin('/app/login?next=/app/gallery');
     await w.find('#li-email').setValue('ha@ex.com');
     await w.find('#li-pw').setValue('12345678');
     await btn(w, ko.auth.login).trigger('click');
     await flushPromises();
     expect(router.currentRoute.value.path).toBe('/app/gallery');
     w.unmount();
-    fetchMock.mockResolvedValueOnce(noContent()).mockResolvedValueOnce(Response.json({ hasFamily: false }));
-    w = await open(LoginView, '/app/login');
+    fetchMock.mockResolvedValueOnce(providers()).mockResolvedValueOnce(noContent()).mockResolvedValueOnce(Response.json({ hasFamily: false }));
+    w = await openEmailLogin('/app/login');
     await w.find('#li-email').setValue('ha@ex.com');
     await w.find('#li-pw').setValue('12345678');
     await btn(w, ko.auth.login).trigger('click');
@@ -107,31 +148,29 @@ describe('S0a 로그인(T053)', () => {
     w.unmount();
   });
   it('불일치는 한 문구 C2(가입 여부 비노출), 비밀번호는 지운다', async () => {
-    fetchMock.mockResolvedValue(problem(401, { code: 'unauthorized', reason: 'bad_credentials' }));
-    const w = await open(LoginView, '/app/login');
+    fetchMock.mockResolvedValueOnce(providers()).mockResolvedValue(problem(401, { code: 'unauthorized', reason: 'bad_credentials' }));
+    const w = await openEmailLogin('/app/login');
     await w.find('#li-email').setValue('ha@ex.com');
     await w.find('#li-pw').setValue('wrongpass');
     await btn(w, ko.auth.login).trigger('click');
     await flushPromises();
     expect(w.find('.gblock').text()).toContain('이메일 또는 비밀번호가 맞지 않아요');
     expect(w.find('[data-gate="G0"]').exists()).toBe(true);
-    expect(w.findAll('a, button').filter((x) => x.text() === ko.auth.forgot).length).toBe(1);
+    expect(w.findAll('a, button').filter((x) => x.text() === ko.auth.forgot).length).toBe(0); // 메일을 보내지 않는다(D36)
     expect((w.find('#li-pw').element as HTMLInputElement).value).toBe('');
     expect(router.currentRoute.value.path).toBe('/app/login');
     w.unmount();
   });
-  it('메일 확인 전이면 입력한 이메일로 확인 메일을 다시 받는다', async () => {
-    fetchMock.mockResolvedValueOnce(problem(403, { code: 'email_unverified', reason: 'email_unverified' })).mockResolvedValue(noContent(202));
-    const w = await open(LoginView, '/app/login');
+  it('확인 전 이메일 계정은 메일 다시 받기 없이 안내만(D36 — 메일을 보내지 않는다)', async () => {
+    fetchMock.mockResolvedValueOnce(providers()).mockResolvedValueOnce(problem(403, { code: 'email_unverified', reason: 'email_unverified' }));
+    const w = await openEmailLogin('/app/login');
     await w.find('#li-email').setValue('ha@ex.com');
     await w.find('#li-pw').setValue('12345678');
     await btn(w, ko.auth.login).trigger('click');
     await flushPromises();
-    await btn(w, ko.auth.resendVerify).trigger('click');
-    await flushPromises();
-    expect(fetchMock.mock.calls[1]![0]).toBe('/v1/auth/email/verify/resend');
-    expect(bodyOf(1)).toEqual({ email: 'ha@ex.com' });
-    expect(w.text()).toContain(ko.auth.checkMailbox);
+    expect(w.text()).toContain(ko.kakao.unverified);
+    expect(w.findAll('button').some((b) => b.text() === ko.auth.resendVerify)).toBe(false);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('/verify/resend'))).toBe(false);
     w.unmount();
   });
 });

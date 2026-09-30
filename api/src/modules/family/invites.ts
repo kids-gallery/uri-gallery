@@ -9,10 +9,10 @@ export async function lockInvite(conn: PoolConnection, token: string) {
       WHERE token_hash = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > UTC_TIMESTAMP() FOR UPDATE`,
     [hashToken(token)],
   );
-  return (rows as { invite_id: number; family_id: number; email_norm: string }[])[0] ?? null;
+  return (rows as { invite_id: number; family_id: number; email_norm: string | null }[])[0] ?? null;
 }
 
-export async function newInvite(conn: PoolConnection, familyId: number, invitedBy: number, email: string): Promise<string> {
+export async function newInvite(conn: PoolConnection, familyId: number, invitedBy: number, email: string | null): Promise<string> {
   // 대기 초대는 가족당 1건(uq_invite_one_pending) — 새로 초대하면 이전 초대는 무효
   await conn.query(`UPDATE family_invite SET revoked_at = UTC_TIMESTAMP() WHERE family_id = ? AND accepted_at IS NULL AND revoked_at IS NULL`, [familyId]);
   const token = randomBytes(32).toString('base64url');

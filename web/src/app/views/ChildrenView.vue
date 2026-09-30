@@ -19,6 +19,7 @@ const MAX = 20;
 
 const route = useRoute();
 const verified = route.query.verified === '1';
+const welcome = route.query.welcome === '1'; // 카카오 첫 로그인(D36, SD_02 §17-7)
 const children = ref<Child[] | null>(null);
 const loadBlock = ref<Notice | null>(null);
 const alias = ref('');
@@ -74,6 +75,7 @@ function fixDup() { if (dup.value) startEdit(dup.value); }
   <main class="container page stack">
     <JourneyRail current="child" :steps="JOURNEY_FROM_CHILD" />
     <NoticeBlock v-if="verified" :title="ko.auth.verified" />
+    <NoticeBlock v-if="welcome" :title="ko.kakao.welcome"><p>{{ ko.kakao.welcomeHint }}</p></NoticeBlock>
     <BlockNotice v-if="loadBlock" :notice="loadBlock" @action="load" />
 
     <section class="stack" aria-labelledby="ch-list">

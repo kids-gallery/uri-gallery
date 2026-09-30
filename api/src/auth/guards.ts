@@ -7,7 +7,7 @@ import { GUARDIAN_COOKIE, STAFF_COOKIE, loadSession } from './session.js';
 
 export type StaffRole = 'operator' | 'evaluator' | 'integrator';
 
-export interface GuardianCtx { accountId: number; familyId: number | null; role: 'owner' | 'co'; email: string }
+export interface GuardianCtx { accountId: number; familyId: number | null; role: 'owner' | 'co'; email: string | null }
 export interface StaffCtx { memberId: number; roles: StaffRole[] }
 
 declare global {
@@ -27,7 +27,7 @@ export function guardianAuth(db: Pool, opts: { requireFamily: boolean }) {
         `SELECT account_id, family_id, role, email, password_changed_at FROM guardian_account WHERE account_id = ?`,
         [s.subjectId],
       );
-      const g = (rows as { account_id: number; family_id: number | null; role: 'owner' | 'co'; email: string; password_changed_at: Date | null }[])[0];
+      const g = (rows as { account_id: number; family_id: number | null; role: 'owner' | 'co'; email: string | null; password_changed_at: Date | null }[])[0];
       if (!g) throw new Problem('unauthorized', 'login_required', 'G0');
       if (g.password_changed_at && s.createdAt < g.password_changed_at) throw new Problem('unauthorized', 'session_revoked', 'G0');
       req.sid = sid;

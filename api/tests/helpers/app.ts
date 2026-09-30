@@ -52,6 +52,16 @@ const responseValidator = () => OpenApiValidator.middleware({
   },
 });
 
+/** 시험용 카카오(D36) — 코드가 숫자면 그 값을 회원번호로, 'fail'이면 실패. configured를 바꿔 키 미설정을 흉내 낸다. */
+export function fakeKakao() {
+  const f = {
+    configured: true,
+    authorizeUrl: (state: string) => `https://kauth.test/oauth/authorize?state=${encodeURIComponent(state)}`,
+    async memberId(code: string) { if (!/^\d+$/.test(code)) throw new Error('kakao_token'); return code; },
+  };
+  return f;
+}
+
 export function testApp(env: Record<string, string> = {}) {
   const store = fs.mkdtempSync(path.join(os.tmpdir(), 'uams-'));
   const cfg = loadConfig({
@@ -64,11 +74,12 @@ export function testApp(env: Record<string, string> = {}) {
   const mailer = memoryMailer();
   const modelApi = fakeModelApi();
   const llm = fakeLlm();
-  const express = createApp({ db, cfg, storage, before: responseValidator(), routers: buildRouters({ db, cfg, storage, mailer, modelApi: modelApi as unknown as ModelApi, llm, captionRetryDelaysMs: [0, 0] }) });
+  const kakao = fakeKakao();
+  const express = createApp({ db, cfg, storage, before: responseValidator(), routers: buildRouters({ db, cfg, storage, mailer, modelApi: modelApi as unknown as ModelApi, llm, kakao, captionRetryDelaysMs: [0, 0] }) });
   // 시험 파일마다 서버 하나를 띄워 계속 쓴다(요청마다 임시 서버를 여닫으면 드물게 연결이 끊긴다)
   const app = express.listen(0, '127.0.0.1');
   const close = async () => { await new Promise((r) => app.close(r)); await db.end(); };
-  return { app, db, cfg, storage, mailer, store, close, modelApi, llm };
+  return { app, db, cfg, storage, mailer, store, close, modelApi, llm, kakao };
 }
 
 export const tokenOf = (link?: string) => new URL(link!).searchParams.get('token')!;

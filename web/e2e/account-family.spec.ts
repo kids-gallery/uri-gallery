@@ -10,6 +10,7 @@ const pathOf = (link: string) => { const u = new URL(link); return u.pathname + 
 
 async function login(page: Page, email: string, password: string) {
   await page.goto('/app/login');
+  await page.getByRole('button', { name: ko.kakao.emailLogin }).click(); // 이메일 칸은 접혀 있다(D36)
   await page.getByLabel(ko.auth.email, { exact: true }).fill(email);
   await page.getByLabel(ko.auth.password, { exact: true }).fill(password);
   await page.getByRole('button', { name: ko.auth.login, exact: true }).click();
@@ -41,6 +42,7 @@ test('S0a 입력 칸에서 Enter로 로그인(SD_02 C3 폼 제출) — 비밀번
   const { email } = await guardianWithChild(page, `enter-${info.project.name}`);
   await page.context().clearCookies();
   await page.goto('/app/login');
+  await page.getByRole('button', { name: ko.kakao.emailLogin }).click();
   await page.getByLabel(ko.auth.email, { exact: true }).fill(email);
   await page.getByLabel(ko.auth.email, { exact: true }).press('Enter');
   await expect(page).toHaveURL(/\/app\/login/);
@@ -49,41 +51,40 @@ test('S0a 입력 칸에서 Enter로 로그인(SD_02 C3 폼 제출) — 비밀번
   await expect(page).not.toHaveURL(/\/app\/login/);
 });
 
-test('S1b 초대 → 초대 링크로 가입 → 합류해 아이를 함께 봄 → 나가기', async ({ page, browser }, info) => {
+test('S1b 초대 링크 복사 → 받은 사람이 링크에서 카카오로 시작 → 합류해 아이를 함께 봄 → 나가기(D36)', async ({ page, browser }, info) => {
   await guardianWithChild(page, `owner-${info.project.name}`, '하늘');
-  const coEmail = testEmail(`co-${info.project.name}`);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => undefined);
 
   await page.goto('/app/family');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(ko.family.title(1));
-  await page.getByLabel(ko.family.inviteEmail, { exact: true }).fill(coEmail);
-  await page.getByRole('button', { name: ko.family.send, exact: true }).click();
-  await expect(page.getByText(ko.family.sent)).toBeVisible();
+  const made = page.waitForResponse((r) => r.url().endsWith('/v1/family/invites') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: ko.kakao.inviteCopy, exact: true }).click();
+  const { link } = await (await made).json() as { link: string };
+  await expect(page.getByText(new RegExp(`${ko.kakao.copied}|${ko.kakao.copyManual}`))).toBeVisible();
   await expect(page.getByRole('heading', { name: ko.family.pending(1) })).toBeVisible();
 
-  // 초대받은 사람: 다른 브라우저 — 링크 → 로그인 화면의 초대 가입 → 가입 → 로그인 → 합류
+  // 초대받은 사람: 다른 브라우저 — 링크(로그인 전에도 열린다) → [카카오로 시작하기] → 가짜 카카오 동의 → 합류
   const co = await (await browser.newContext({ ...info.project.use })).newPage();
-  await co.goto(pathOf(await linkFor(coEmail, '/app/invite')));
-  // 처음 오는 브라우저라 입장 화면(S0w, D25)을 한 번 거친다 — 초대 링크(next)는 그대로 이어진다
-  await expect(co).toHaveURL(/\/app\/welcome\?next=/);
-  await co.getByRole('button', { name: ko.museum.enter, exact: true }).click();
-  await expect(co).toHaveURL(/\/app\/login/);
-  await co.getByRole('link', { name: ko.family.signupInvited }).click();
-  await expect(co.getByRole('heading', { level: 1 })).toHaveText(ko.auth.signupTitle); // 로그인 화면에도 같은 이름의 칸이 있다
-  // SD_02 663·701: 초대받은 이메일을 미리 채워야 하지만 지금은 빈 칸(토큰→이메일 경로 없음) — 아래 fixme 참고
-  await co.getByLabel(ko.auth.email, { exact: true }).fill(coEmail);
-  await co.getByLabel(ko.auth.password, { exact: true }).fill(PW);
-  await co.getByLabel(ko.auth.passwordConfirm, { exact: true }).fill(PW);
-  await co.getByRole('button', { name: ko.auth.signup, exact: true }).click();
-  await expect(co).toHaveURL(/\/app\/login/);
-  await login(co, coEmail, PW);
-  await expect(co).not.toHaveURL(/\/app\/login/);
+  await co.goto(pathOf(link));
+  await co.getByRole('button', { name: ko.kakao.start }).click();
+  await co.getByRole('button', { name: '동의하고 계속하기' }).click();
+  await expect(co).toHaveURL(/\/app\/family\?joined=1/);
+  await expect(co.getByText(ko.kakao.joined)).toBeVisible();
   await co.goto('/app/children');
   await expect(co.getByText('하늘')).toBeVisible();
+  // 같은 링크는 한 번만
+  const other = await (await browser.newContext({ ...info.project.use })).newPage();
+  await other.goto(pathOf(link));
+  await other.getByRole('button', { name: ko.kakao.start }).click();
+  await other.getByRole('button', { name: '동의하고 계속하기' }).click();
+  await expect(other).toHaveURL(/\/app\/invite\?error=token_invalid/);
+  await expect(other.getByText(ko.kakao.inviteError.token_invalid!)).toBeVisible();
+  await other.context().close();
 
   // 만든 보호자 화면: 두 명, 초대는 이유 달린 비활성
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(ko.family.title(2));
-  await expect(page.getByRole('button', { name: new RegExp(`^${ko.family.send}`) })).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByRole('button', { name: new RegExp(`^${ko.kakao.inviteCopy}`) })).toHaveAttribute('aria-disabled', 'true');
 
   // 공동 보호자가 나가면 로그인으로, 만든 보호자 쪽은 다시 한 명
   await co.goto('/app/family');
@@ -95,6 +96,7 @@ test('S1b 초대 → 초대 링크로 가입 → 합류해 아이를 함께 봄 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(ko.family.title(1));
   await co.context().close();
 });
+
 
 // SD_02 663·701(UC15 A4): 초대 링크로 온 가입은 초대받은 이메일을 미리 채운다. 2026-09-29 현재 SignupView는 빈 칸이고
 // 구현: GET /v1/family/invites/lookup?token=(계약 먼저, 2026-09-29 이제민1) · SignupView 미리 채움.

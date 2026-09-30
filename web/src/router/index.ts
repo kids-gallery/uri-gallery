@@ -13,6 +13,14 @@ declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
 }
 
+const LAST_HALL = 'uam.lastHall';
+/** 마지막으로 본 전시실(D36, SD_02 §17-7) — 브라우저 저장소가 막혀 있으면 전시실 첫 화면 */
+export function lastHall(): string {
+  try { const v = localStorage.getItem(LAST_HALL); if (v && v.startsWith('/app/hall')) return v; } catch { /* 저장소 없음 */ }
+  return '/app/hall';
+}
+function rememberHall(fullPath: string) { try { localStorage.setItem(LAST_HALL, fullPath); } catch { /* 저장소 없음 */ } }
+
 export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/app' },
   // 보호자 — 로그인 전
@@ -23,7 +31,8 @@ export const routes: RouteRecordRaw[] = [
   { path: '/app/recovery', component: () => import('@/app/views/RecoveryView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/reset', component: () => import('@/app/views/ResetView.vue'), meta: { shell: 'app', public: true } },
   // 보호자 — 가족 없어도 되는 화면
-  { path: '/app/invite', component: () => import('@/app/views/InviteAcceptView.vue'), meta: { shell: 'app', noFamilyOk: true } },
+  // 초대 링크는 로그인 전에도 연다 — 카카오로 시작하면 그 가족에 들어간다(D36, UC15 §0). 화면이 로그인 여부를 스스로 읽는다
+  { path: '/app/invite', component: () => import('@/app/views/InviteAcceptView.vue'), meta: { shell: 'app', public: true, noFamilyOk: true } },
   { path: '/app/no-family', component: () => import('@/app/views/NoFamilyView.vue'), meta: { shell: 'app', noFamilyOk: true } },
   {
     path: '/app',
@@ -43,6 +52,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'children', component: () => import('@/app/views/ChildrenView.vue') },
       { path: 'account', component: () => import('@/app/views/AccountView.vue') }, // S0c 비밀번호 변경(T161)
       { path: 'family', component: () => import('@/app/views/FamilyView.vue') },
+      // 카카오로 다시 온 보호자 → 마지막으로 본 전시실(D36, SD_02 §17-7). 이 브라우저에 남긴 경로, 없으면 전시실
+      { path: 'after-login', redirect: () => lastHall() },
       { path: 'draft/paper', redirect: (to) => ({ path: '/app', query: to.query }) }, // 시안 경로는 홈으로(D26 ⑥)
       { path: 'gallery', redirect: (to) => ({ path: '/app/hall', query: to.query }) }, // S8 = 전시실(SD_02 §17-4)
     ],
@@ -65,6 +76,7 @@ export const routes: RouteRecordRaw[] = [
 ];
 
 export function installGuards(router: Router) {
+  router.afterEach((to) => { if (to.path === '/app/hall') rememberHall(to.fullPath); });
   router.beforeEach(async (to) => {
     const shell = to.matched.find((r) => r.meta.shell)?.meta.shell;
     if (!shell || to.matched.some((r) => r.meta.public)) return true;

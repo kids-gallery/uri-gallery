@@ -44,7 +44,7 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
         `SELECT invite_id, email, expires_at FROM family_invite
           WHERE family_id = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > UTC_TIMESTAMP() ORDER BY invite_id`,
         [req.guardian!.familyId]);
-      res.json((rows as { invite_id: number; email: string; expires_at: Date }[])
+      res.json((rows as { invite_id: number; email: string | null; expires_at: Date }[])
         .map((i) => ({ id: String(i.invite_id), emailMasked: maskEmail(i.email), expiresAt: new Date(i.expires_at).toISOString() })));
     } catch (e) { next(e); }
   });
@@ -52,16 +52,26 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   r.post('/v1/family/invites', withFamily, async (req, res, next) => {
     const g = req.guardian!;
     try {
-      const b = z.object({ email: z.string().trim().max(254).email() }).strict().safeParse(req.body);
+      const b = z.object({ email: z.string().trim().max(254).email().optional() }).strict().safeParse(req.body ?? {});
       if (!b.success) throw new Problem('validation_failed', 'email', 'G29', zodFields(b.error));
-      const em = normEmail(b.data.email);
       if (g.role !== 'owner') throw new Problem('forbidden_role', 'invite_owner_only', 'G29');
       const [co] = await db.query(`SELECT COUNT(*) n FROM guardian_account WHERE family_id = ? AND role = 'co'`, [g.familyId]);
       if (Number((co as { n: number }[])[0].n) > 0) throw new Problem('conflict', 'co_guardian_full', 'G29');
+      if (!b.data.email) {                                   // 초대 링크 복사(UC15 §0, D36) — 이메일 없는 초대, 링크는 이 응답에서만
+        const toG29 = (e: unknown) => { const sig = parseSignal(e); if (sig) throw new Problem(sig.reason === 'co_guardian_full' ? 'conflict' : 'forbidden_role', sig.reason, 'G29'); throw e; };
+        const out = await withTx(db, async (conn) => {
+          const token = await newInvite(conn, g.familyId!, g.accountId, null);
+          const [row] = await conn.query(`SELECT invite_id, expires_at FROM family_invite WHERE family_id = ? AND accepted_at IS NULL AND revoked_at IS NULL`, [g.familyId]);
+          const i = (row as { invite_id: number; expires_at: Date }[])[0];
+          return { id: String(i.invite_id), link: `${cfg.appBaseUrl}/app/invite?token=${encodeURIComponent(token)}`, expiresAt: new Date(i.expires_at).toISOString() };
+        }).catch(toG29);
+        return void res.status(201).json(out);
+      }
+      const em = normEmail(b.data.email);
       const [member] = await db.query(`SELECT account_id FROM guardian_account WHERE family_id = ? AND email_norm = ?`, [g.familyId, em]);
       if ((member as unknown[]).length) return void res.status(202).end(); // UC15 E6: 이미 이 가족 보호자 — 만들지 않음
       if (!(await rl.take('invite', { family: String(g.familyId), email: em }))) return void res.status(202).end(); // E8
-      const token = await withTx(db, (conn) => newInvite(conn, g.familyId!, g.accountId, b.data.email)).catch((e) => {
+      const token = await withTx(db, (conn) => newInvite(conn, g.familyId!, g.accountId, b.data.email!)).catch((e) => {
         const sig = parseSignal(e);
         if (sig) throw new Problem(sig.reason === 'co_guardian_full' ? 'conflict' : 'forbidden_role', sig.reason, 'G29');
         throw e;
@@ -90,7 +100,8 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
       await withTx(db, async (conn) => {
         const inv = await lockInvite(conn, b.data.token);
         if (!inv) throw new Problem('token_invalid', 'token_invalid', 'G28');
-        if (inv.email_norm !== normEmail(g.email)) throw new Problem('forbidden_role', 'invite_email_mismatch', 'G28');
+        // 링크 초대(이메일 없음, D36)는 대조하지 않는다. 이메일 초대는 로그인한 계정의 이메일과 같아야 한다
+        if (inv.email_norm !== null && inv.email_norm !== (g.email ? normEmail(g.email) : null)) throw new Problem('forbidden_role', 'invite_email_mismatch', 'G28');
         if (g.familyId !== null) throw new Problem('conflict', 'already_in_family', 'G28');
         try {
           await conn.query(`UPDATE guardian_account SET family_id = ?, role = 'co' WHERE account_id = ?`, [inv.family_id, g.accountId]);
@@ -108,7 +119,7 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
   r.get('/v1/family/members', withFamily, async (req, res, next) => {
     try {
       const [rows] = await db.query(`SELECT account_id, role, email FROM guardian_account WHERE family_id = ? ORDER BY role DESC, account_id`, [req.guardian!.familyId]);
-      res.json((rows as { account_id: number; role: string; email: string }[]).map((m) => ({
+      res.json((rows as { account_id: number; role: string; email: string | null }[]).map((m) => ({
         id: String(m.account_id), role: m.role, emailMasked: maskEmail(m.email), isMe: Number(m.account_id) === req.guardian!.accountId })));
     } catch (e) { next(e); }
   });
