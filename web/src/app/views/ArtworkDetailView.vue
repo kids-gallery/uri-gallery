@@ -9,7 +9,7 @@ import DowngradeNote from '@/components/DowngradeNote.vue';
 import JourneyRail from '@/components/JourneyRail.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import ArtFrame from '@/components/ArtFrame.vue';
-import PhotoFixer from '../upload/PhotoFixer.vue';
+import CommentPanel from '@/components/CommentPanel.vue';
 import { usePolling } from '@/composables/usePolling';
 import { ko } from '@/copy/ko';
 import NoticeBlock from '../components/NoticeBlock.vue';
@@ -23,9 +23,7 @@ const a = ref<ArtworkDetail | null>(null);
 const block = ref<Notice | null>(null);
 const started = route.query.started === '1';
 const deleting = ref(false);
-const fixing = ref(false); // D39 사진 고치기
-const fixed = ref(false);
-async function onFixed() { fixing.value = false; fixed.value = true; await load(); }
+
 
 const rail = computed(() => (a.value ? railOf(a.value.state) : null));
 const g9 = computed(() => (a.value?.state === 'failed' ? notDeliveredBlock(a.value) : null));
@@ -62,8 +60,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
     <div v-if="a && rail" class="bench">
     <figure class="bench-art" :style="{ viewTransitionName: `art-${a.id}` }">
       <ArtFrame v-tilt size="lg" variant="gold" :src="(a as { photoUrl?: string | null }).photoUrl ?? a.originalUrl ?? null" :alt="a.story?.title || ko.list.untitled" />
-      <button v-if="a.originalUrl" class="btn btn-secondary bench-fix" type="button" @click="fixing = true; poll.stop()">✎ {{ ko.fix.open }}</button>
-      <p v-if="fixed" class="bench-done" role="status">{{ ko.fix.done }}</p>
+      <p class="bench-lock">🔒 {{ ko.up2.lockNote }}</p><!-- D46: 올린 작품은 전부 고정 · 삭제만 -->
     </figure>
     <section class="card stack bench-card">
       <JourneyRail :current="rail.current" :variant="waitingQueue ? 'waiting' : rail.variant" :gate="rail.gate" :blocked-label="rail.blockedLabel" />
@@ -79,9 +76,9 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
         <button v-if="!deleting" class="btn btn-secondary" type="button" @click="deleting = true; poll.stop()">{{ ko.del.artwork }}</button>
       </div>
       <DeleteDialog v-if="deleting" kind="artwork" :id="id" @close="deleting = false" />
+      <CommentPanel :artwork-id="id" /><!-- D46 ④ 부모 댓글 -->
     </section>
     </div>
-    <PhotoFixer v-if="fixing && a?.originalUrl" :artwork-id="id" :original-url="a.originalUrl" @close="fixing = false" @saved="onFixed" />
   </main>
 </template>
 
@@ -92,8 +89,7 @@ function stageNote(s: ArtworkDetail['stages'][number]): string {
 @media (max-width:860px){.bench{grid-template-columns:1fr;min-height:0}}
 .bench-art{margin:0;display:grid;justify-items:center;gap:12px}
 .bench-art :deep(.is-lg){--art-h:min(52vh,460px)}
-.bench-fix{min-height:44px}
-.bench-done{margin:0;font:600 15px/1.3 var(--font-sans);color:#2e6b3f;animation:room-obj var(--dur-2,480ms) var(--ease-spring,ease) both}
+.bench-lock{margin:0;font:600 13px/1.4 var(--font-sans);color:#7a4a1f;background:#fff4df;border-radius:10px;padding:6px 12px}
 .bench-card{align-self:center}
 .table-wrap{overflow-x:auto}
 table.plain{width:100%;border-collapse:collapse;font:330 16px/1.45 var(--font-sans)}

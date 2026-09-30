@@ -125,20 +125,27 @@ describe('이야기·전시(UC5·UC6) — D46 올린 작품은 고정', () => {
       .toEqual([[5, ['둘', '하나']], [6, ['셋']]]);
     expect((await f.a.get(`/v1/gallery?child=${f.childId}&q=셋`)).body.groups[0].items).toHaveLength(1);
   });
-  it('부모 댓글(D46 ④): 쓰고 읽기 · 입력 그대로 · 자기 것만 지움 · 빈칸·500자 초과 422 · 다른 가족 404', async () => {
+  it('부모 댓글(D46 ④): 걸린 뒤 7일 동안 쓰고 읽기 · 입력 그대로 · 자기 것만 지움 · 빈칸·500자 초과 422 · 7일 지나면 보기만(409 comments_closed) · 다른 가족 404', async () => {
     const f = await familyWithChild(t, 's5@test.local');
     const r = await upload(f.a, f.childId, await png()).expect(202);
-    expect((await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body).toEqual([]);
+    expect((await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body).toMatchObject({ items: [], open: true, days: 7 });
     const c = await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '  하늘이 정말 파래요  ' }).expect(201);
     expect(c.body).toMatchObject({ body: '  하늘이 정말 파래요  ', mine: true, author: 'me' });
     expect((await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '   ' })).status).toBe(422);
     expect((await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '가'.repeat(501) })).status).toBe(422);
     await t.db.query(`INSERT INTO artwork_comment (artwork_id, account_id, body) VALUES (?, NULL, '다른 보호자')`, [r.body.id]);
-    const list = (await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body as { id: string; mine: boolean }[];
+    const list = (await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200)).body.items as { id: string; mine: boolean }[];
     expect(list).toHaveLength(2);
     const other = list.find((x) => !x.mine)!;
     expect((await f.a.delete(`/v1/artworks/${r.body.id}/comments/${other.id}`)).status).toBe(403);
     await f.a.delete(`/v1/artworks/${r.body.id}/comments/${c.body.id}`).expect(204);
+    // 기한(7일)이 지나면 아무것도 못 건드린다 — 보기만
+    await t.db.query(`UPDATE artwork SET hung_at = CURRENT_TIMESTAMP - INTERVAL 8 DAY WHERE artwork_id = ?`, [r.body.id]);
+    const late = await f.a.get(`/v1/artworks/${r.body.id}/comments`).expect(200);
+    expect(late.body).toMatchObject({ open: false });
+    expect(late.body.items).toHaveLength(1);
+    expect((await f.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: '늦은 댓글' })).body).toMatchObject({ code: 'conflict', reason: 'comments_closed' });
+    expect((await f.a.delete(`/v1/artworks/${r.body.id}/comments/${other.id}`)).body.reason).toBe('comments_closed');
     const B = await familyWithChild(t, 's6@test.local');
     expect((await B.a.get(`/v1/artworks/${r.body.id}/comments`)).status).toBe(404);
     expect((await B.a.post(`/v1/artworks/${r.body.id}/comments`).send({ body: 'x' })).status).toBe(404);

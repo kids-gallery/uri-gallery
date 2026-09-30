@@ -15,6 +15,9 @@ import { croppedName, full, isFull, JPEG_QUALITY, outputSize, outputType, snap, 
 import JourneyRail from '@/components/JourneyRail.vue';
 import ReasonButton from '@/components/ReasonButton.vue';
 import CharacterAvatar from '@/app/character/CharacterAvatar.vue';
+import PhotoFixer from '@/app/upload/PhotoFixer.vue';
+import { detectPaper, warpQuad } from '@/app/upload/autocrop';
+import { exifDate } from '@/app/upload/exifDate';
 import { DEFAULT_COLOR, DEFAULT_KIND, type CharacterColor, type CharacterKind } from '@/app/character/names';
 import { ko, problemCopy } from '@/copy/ko';
 import { JOURNEY_FROM_CHILD } from '../authForm';
@@ -50,6 +53,18 @@ const cutting = ref(false);
 let bitmap: ImageBitmap | null = null;
 let generatedPreview = false;
 const cropped = computed(() => crop.value === 'ready' && !isFull(rect.value, size.value.w, size.value.h));
+// 올리기 전 자동 펴기(D35 ①②): 종이를 찾으면 그림 부분만 반듯하게 편 판을 쓴다. 틀리면 [모서리 고치기 · 돌리기](PhotoFixer)
+const flat = ref<Blob | null>(null);
+const flatUrl = ref<string | null>(null);
+const quadInit = ref<[number, number][] | null>(null);
+const fixing = ref(false);
+function setFlat(b: Blob | null) { if (flatUrl.value) URL.revokeObjectURL(flatUrl.value); flat.value = b; flatUrl.value = b ? URL.createObjectURL(b) : null; if (file.value) key.value = crypto.randomUUID(); }
+function onFixed(b: Blob, q: [number, number][]) { quadInit.value = q; setFlat(b); fixing.value = false; }
+// 작품 이야기(D46): 올린 뒤에는 고칠 수 없으니 여기서 함께 — 모두 선택
+const making = ref(false);
+const story = ref({ title: '', madeOn: '', ageAtMaking: '', childWords: '', guardianNote: '' });
+const capturedOn = ref<string | null>(null);
+const today = new Date().toISOString().slice(0, 10);
 const outSize = computed(() => outputSize(snap(rect.value, size.value.w, size.value.h)));
 watch(rect, () => { if (file.value) key.value = crypto.randomUUID(); }, { deep: true }); // 다른 영역 = 다른 사진(BR-INT-03)
 
@@ -69,6 +84,7 @@ onBeforeUnmount(() => { clearPhoto(); });
 function clearPhoto() {
   if (preview.value) URL.revokeObjectURL(preview.value);
   preview.value = null; bitmap?.close?.(); bitmap = null; generatedPreview = false; crop.value = 'none';
+  setFlat(null); quadInit.value = null; capturedOn.value = null;
 }
 
 /** 사진을 연다(EXIF 방향 보정). 못 열면 자르기 없이 그대로 올린다(D32 ⑥). HEIC처럼 <img>가 못 그리는 형식은 캔버스로 미리보기를 만든다. */
@@ -87,12 +103,22 @@ async function openPhoto(f: File, isHeic: boolean) {
       preview.value = URL.createObjectURL(blob); generatedPreview = true;
     }
     crop.value = 'ready';
+    // 촬영일(EXIF 날짜만) → 그린 날 미리 채움(D34 ③ · D46)
+    void exifDate(f).then((d) => { if (file.value === f && d) { capturedOn.value = d; if (!story.value.madeOn) story.value.madeOn = d; } });
+    // 종이 자동 찾기 → 찾으면 그림 부분만 편 판(아이 얼굴 · 배경은 서버로 가지 않는다)
+    const found = detectPaper(bm, bm.width, bm.height) as { quad: [number, number][] | null };
+    if (found.quad && file.value === f) {
+      const c = warpQuad(bm, found.quad, 2400) as HTMLCanvasElement;
+      const blob = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', 0.92));
+      if (blob && file.value === f) { quadInit.value = found.quad; setFlat(blob); }
+    }
   } catch { crop.value = 'unreadable'; }
 }
 
 /** 올릴 파일 — 사각형이 사진 전체가 아니면 그 영역만 새 이미지로 만든다. 실패하면 null. */
 async function fileToSend(): Promise<File | null> {
   const f = file.value!;
+  if (flat.value) return new File([flat.value], croppedName(f.name, 'image/jpeg'), { type: 'image/jpeg' }); // 편 판 우선
   if (!cropped.value || !bitmap) return f;
   const r = snap(rect.value, size.value.w, size.value.h); const o = outputSize(r); const type = outputType(f.type, f.name);
   const c = document.createElement('canvas'); c.width = o.w; c.height = o.h;
@@ -139,6 +165,10 @@ async function submit() {
     form.append('childId', childId.value);
     form.append('photo', photo, photo.name);
     if (retakeOf) form.append('retakeOf', retakeOf);
+    // D46: 만들기 · 작품 이야기(모두 선택) — 올린 뒤에는 고칠 수 없다
+    form.append('making', making.value ? 'true' : 'false');
+    for (const [k, v] of Object.entries(story.value)) if (String(v).trim() !== '') form.append(k, k === 'title' ? String(v).trim() : String(v));
+    if (capturedOn.value) form.append('capturedOn', capturedOn.value);
     const a = await api.post<ArtworkDetail>('/v1/artworks', { form, headers: { 'Idempotency-Key': key.value } });
     // D34: 올리면 바로 걸린다 → 전시로 가서 걸리는 장면(?hung)을 본다(옛 확정 화면으로 가지 않는다)
     await router.push({ path: '/app', query: { child: childId.value, hung: a.id } });
@@ -184,7 +214,15 @@ function onBlock(label: string) {
         <p v-if="file && !tooBig && crop === 'unreadable'" class="hint">{{ ko.upload.crop.unreadable }}</p>
       </fieldset>
 
-      <fieldset v-if="file && !tooBig && crop === 'ready' && preview" class="field">
+      <fieldset v-if="file && !tooBig && flatUrl" class="field up-flat">
+        <legend class="t-card-title">{{ ko.up2.flatTitle }}</legend>
+        <img :src="flatUrl" alt="" class="preview flat">
+        <div class="acts">
+          <button class="btn btn-secondary" type="button" @click="fixing = true">✎ {{ ko.up2.fix }}</button>
+          <button class="btn btn-tertiary" type="button" @click="setFlat(null)">{{ ko.up2.useWhole }}</button>
+        </div>
+      </fieldset>
+      <fieldset v-else-if="file && !tooBig && crop === 'ready' && preview" class="field">
         <legend class="t-card-title">{{ ko.upload.crop.title }}</legend>
         <p class="hint" id="up-crop-hint">{{ ko.upload.crop.hint }}</p>
         <CropBox v-model="rect" :src="preview" :width="size.w" :height="size.h" aria-describedby="up-crop-hint up-crop-keys" />
@@ -192,7 +230,28 @@ function onBlock(label: string) {
         <div class="acts crop-row">
           <p class="t-body-sm num" aria-live="polite">{{ cropped ? ko.upload.crop.cropped(outSize.w, outSize.h) : ko.upload.crop.whole }}</p>
           <button v-if="cropped" class="btn btn-secondary" type="button" @click="rect = full(size.w, size.h)">{{ ko.upload.crop.reset }}</button>
+          <button class="btn btn-secondary" type="button" @click="fixing = true">✎ {{ ko.up2.fix }}</button>
         </div>
+      </fieldset>
+
+      <!-- 작품 이야기(D46) — 올린 뒤에는 고칠 수 없다 -->
+      <fieldset v-if="file && !tooBig" class="field up-story">
+        <legend class="t-card-title">{{ ko.up2.storyTitle }}</legend>
+        <div class="kind" role="radiogroup" :aria-label="ko.up2.kindLegend">
+          <button type="button" role="radio" :aria-checked="!making" class="pill" :class="{ on: !making }" @click="making = false">🖍 {{ ko.up2.drawing }}</button>
+          <button type="button" role="radio" :aria-checked="making" class="pill" :class="{ on: making }" @click="making = true">🧸 {{ ko.up2.making }}</button>
+        </div>
+        <label for="up-title">{{ ko.up2.title }}</label>
+        <input id="up-title" v-model="story.title" class="input" maxlength="100" :placeholder="ko.up2.titlePh">
+        <div class="two">
+          <div><label for="up-made">{{ ko.up2.madeOn }}</label><input id="up-made" v-model="story.madeOn" class="input" type="date" :max="today"></div>
+          <div><label for="up-age">{{ ko.up2.age }}</label><input id="up-age" v-model="story.ageAtMaking" class="input" type="number" min="0" max="18" inputmode="numeric" :placeholder="ko.up2.agePh"></div>
+        </div>
+        <label for="up-words">{{ ko.up2.words }}</label>
+        <textarea id="up-words" v-model="story.childWords" class="input" rows="2" maxlength="2000"></textarea>
+        <label for="up-note">{{ ko.up2.note }}</label>
+        <textarea id="up-note" v-model="story.guardianNote" class="input" rows="2" maxlength="1000"></textarea>
+        <p class="lock" role="note">🔒 {{ ko.up2.lockNote }}</p>
       </fieldset>
 
       <BlockNotice v-if="block" :notice="block" @action="onBlock" />
@@ -206,12 +265,20 @@ function onBlock(label: string) {
         <p class="t-body-sm">{{ ko.upload.after2 }}</p>
       </section>
     </form>
+    <PhotoFixer v-if="fixing && preview" :src="preview" :initial="quadInit" @close="fixing = false" @done="onFixed" />
     <div class="up-buddy" :class="{ carry: !!file, go: busy }" aria-hidden="true"><CharacterAvatar :kind="buddy.kind" :color="buddy.color" :size="104" /><span v-if="file" class="up-sheet"></span></div>
   </main>
 </template>
 
 <style scoped>
 .up-form{max-width:640px}
+.preview.flat{max-height:48vh;width:auto;max-width:100%;background:#fffeef;padding:10px;box-shadow:0 0 0 6px #e9d39a,0 18px 26px -18px rgba(0,0,0,.45)}
+.up-story{display:grid;gap:8px}
+.up-story .kind{display:flex;gap:8px;flex-wrap:wrap}
+.up-story .pill{min-height:44px;padding:10px 16px;border-radius:999px;border:2px solid #d9b566;background:#fffdf8;font:700 15px/1 var(--font-sans);cursor:pointer;color:var(--color-ink)}
+.up-story .pill.on{background:#fbecc4;border-color:#b08a3e;box-shadow:inset 0 0 0 2px #fff}
+.up-story .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.up-story .lock{margin:4px 0 0;font:600 14px/1.45 var(--font-sans);color:#7a4a1f;background:#fff4df;border-radius:10px;padding:8px 12px}
 /* 아틀리에의 아이 캐릭터 — 사진을 고르면 종이를 들고 이젤 옆으로 통통 걸어 오고, 올리면 벽에 걸러 나간다(D38 · 로블록스 느낌 살짝) */
 .up-buddy{position:fixed;left:4vw;bottom:5vh;z-index:2;pointer-events:none;transition:transform var(--dur-3,800ms) var(--ease-spring,ease)}
 .up-buddy :deep(svg){animation:buddy-bob 1.6s ease-in-out infinite}

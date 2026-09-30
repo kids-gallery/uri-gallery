@@ -1,12 +1,13 @@
 <script setup lang="ts">
-// 사진 고치기(D39, SD_02 §17-12): 이젤 위 편집판 — 네 모서리 끌기(처음 값 = 자동 찾기 추정, D35) · 90° 돌리기 · 원래대로 · 저장.
-// 늘 원본에서 다시 편다(여러 번 고쳐도 흐려지지 않게). 저장하면 브라우저가 편 판(JPEG 0.92, 긴 변 최대 2400px)을 만들어 PUT /v1/artworks/{id}/photo.
+// 모서리 고치기 편집판(D35 ①② 올리기 전 · D46): 네 모서리 끌기(처음 값 = 자동 찾기 추정) · 90° 돌리기 · 원래대로 · 이대로 쓰기.
+// 올리기 전에만 쓴다 — 브라우저가 편 판(JPEG 0.92, 긴 변 최대 2400px)을 만들어 돌려준다(emit done). 잘린 부분은 서버로 가지 않는다.
+// (D39 올린 뒤 사진 고치기는 D46으로 폐기)
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { ko } from '@/copy/ko';
 import { detectPaper, warpQuad } from './autocrop';
 
-const props = defineProps<{ artworkId: string; originalUrl: string }>();
-const emit = defineEmits<{ close: []; saved: [] }>();
+const props = defineProps<{ src: string; initial?: [number, number][] | null }>();
+const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number] }>();
 type P = [number, number];
 const img = ref<HTMLImageElement | null>(null);
 const W = ref(0); const H = ref(0);
@@ -19,13 +20,13 @@ const box = ref<HTMLElement | null>(null);
 const dialog = ref<HTMLElement | null>(null);
 
 onMounted(async () => {
-  const r = await fetch(props.originalUrl, { credentials: 'include' });
+  const r = await fetch(props.src);
   const bm = await createImageBitmap(await r.blob());
   const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d')!.drawImage(bm, 0, 0);
   const im = new Image(); im.src = c.toDataURL('image/jpeg', 0.95); await im.decode(); img.value = im;
   W.value = im.naturalWidth; H.value = im.naturalHeight;
-  const d = detectPaper(im, W.value, H.value);
-  const g = (d.quad ?? d.guess) as P[] | null;
+  const d = props.initial ? { quad: props.initial } : detectPaper(im, W.value, H.value);
+  const g = ((d as { quad?: P[] | null; guess?: P[] | null }).quad ?? (d as { guess?: P[] | null }).guess ?? null) as P[] | null;
   quad.value = g ?? [[0, 0], [W.value, 0], [W.value, H.value], [0, H.value]];
   await nextTick(); draw(); dialog.value?.querySelector<HTMLElement>('button')?.focus();
 });
@@ -63,10 +64,7 @@ async function save() {
     c.width = t ? flat.height : flat.width; c.height = t ? flat.width : flat.height;
     const g = c.getContext('2d')!; g.translate(c.width / 2, c.height / 2); g.rotate((rot.value * Math.PI) / 180); g.drawImage(flat, -flat.width / 2, -flat.height / 2);
     const blob = await new Promise<Blob>((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error('blob'))), 'image/jpeg', 0.92));
-    const fd = new FormData(); fd.append('photo', blob, 'fixed.jpg');
-    const r = await fetch(`/v1/artworks/${props.artworkId}/photo`, { method: 'PUT', body: fd, credentials: 'same-origin' });
-    if (!r.ok) throw new Error(String(r.status));
-    emit('saved');
+    emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value);
   } catch { msg.value = ko.fix.fail; }
   busy.value = false;
 }

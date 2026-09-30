@@ -216,31 +216,17 @@ describe('S5 결과 확인(T094)', () => {
 
 describe('S6 이야기(T095)', () => {
   const approved = { ...base, state: 'approved', story: { updatedAt: '2026-09-29T01:00:00.000Z', title: null, madeOn: null, ageAtMaking: null, childWords: null } };
-  it('미래 날짜는 사유 달린 비활성, 한마디는 적은 그대로·baseUpdatedAt을 실어 저장, 전시 되면 안내', async () => {
-    serve({ '/v1/artworks/7': approved, 'PUT /v1/artworks/7/story': () => json({ ...approved, state: 'exhibited', story: { ...approved.story, title: '강아지' } }) });
+  it('올린 작품은 고정(D46) — 이야기는 보기만, 저장 버튼 없음, 댓글은 7일 동안', async () => {
+    const hung = { ...approved, state: 'exhibited', story: { ...approved.story, title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '멍멍' } };
+    serve({ '/v1/artworks/7': hung, '/v1/artworks/7/comments': { items: [], open: false, openUntil: '2026-09-01T00:00:00.000Z', days: 7 } });
     const w = await open(StoryView, '/app/artworks/7/story');
-    await w.find('#st-date').setValue('2999-01-01');
-    expect(btn(w, ko.story.save)!.text()).toContain(ko.story.fixDate);
-    await w.find('#st-date').setValue('2026-09-01');
-    await w.find('#st-title').setValue('강아지');
-    await w.find('#st-age').setValue('6');
-    await w.find('#st-words').setValue('  멍멍이가 웃어 ');
-    await btn(w, ko.story.save)!.trigger('click');
     await flushPromises();
-    const body = JSON.parse(String(calls('PUT', '/v1/artworks/7/story')[0]![1]!.body));
-    expect(body).toMatchObject({ title: '강아지', madeOn: '2026-09-01', ageAtMaking: 6, childWords: '  멍멍이가 웃어 ', baseUpdatedAt: '2026-09-29T01:00:00.000Z' });
-    expect(w.text()).toContain(ko.story.exhibited);
-    w.unmount();
-  });
-  it('다른 보호자가 먼저 고쳤으면(409 story_conflict) 최신을 불러오고 내 입력을 옆에 남긴다', async () => {
-    serve({ '/v1/artworks/7': approved, 'PUT /v1/artworks/7/story': () => problem(409, { code: 'conflict', reason: 'story_conflict', gate: 'G11' }) });
-    const w = await open(StoryView, '/app/artworks/7/story');
-    await w.find('#st-title').setValue('내 제목');
-    await btn(w, ko.story.save)!.trigger('click');
-    await flushPromises();
-    expect(w.find('[data-gate="G11"]').exists()).toBe(true);
-    expect(w.text()).toContain(ko.story.mine);
-    expect(w.text()).toContain('내 제목');
+    expect(w.text()).toContain('강아지');
+    expect(w.text()).toContain('멍멍');
+    expect(w.text()).toContain(ko.up2.lockNote);
+    expect(w.find('form').exists()).toBe(false);
+    expect(w.text()).toContain(ko.comment.closed);
+    expect(calls('PUT', '/v1/artworks/7/story')).toHaveLength(0);
     w.unmount();
   });
 });
