@@ -26,10 +26,10 @@ describe('기준 마이그레이션', () => {
     expect(fs.readFileSync(path.join(MIGRATIONS_DIR, '0001_sd03_baseline.sql'), 'utf8'))
       .toBe(fs.readFileSync(path.join(repo, 'design/uri_gallery_ddl.sql'), 'utf8'));
   });
-  it('① 실행 결과: 테이블 36 · 뷰 16 · 트리거 16', async () => {
+  it('① 실행 결과: 테이블 36 · 뷰 16 · 트리거 17(D34 trg_artwork_hung_bu)', async () => {
     expect(await count(`SELECT COUNT(*) n FROM information_schema.tables WHERE table_schema='uam_test' AND table_type='BASE TABLE' AND table_name <> 'schema_migration'`)).toBe(36);
     expect(await count(`SELECT COUNT(*) n FROM information_schema.views WHERE table_schema='uam_test'`)).toBe(16);
-    expect(await count(`SELECT COUNT(*) n FROM information_schema.triggers WHERE trigger_schema='uam_test'`)).toBe(16);
+    expect(await count(`SELECT COUNT(*) n FROM information_schema.triggers WHERE trigger_schema='uam_test'`)).toBe(17);
   });
   it('② 재실행(멱등): 전문을 다시 실행해도 오류 없음', async () => {
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, '0001_sd03_baseline.sql'), 'utf8');

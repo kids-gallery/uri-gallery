@@ -24,7 +24,7 @@ describe('결과 확인 결정(UC4)', () => {
     const d = await f.a.get(`/v1/artworks/${f.id}`).expect(200);
     expect(d.body.choices).toEqual(['like', 'use_lower', 'frame', 'retake']);
     const r = await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
-    expect(r.body).toMatchObject({ alreadyDecided: false, artwork: { state: 'approved', decision: 'like' } });
+    expect(r.body).toMatchObject({ alreadyDecided: false, artwork: { state: 'exhibited', decision: 'like', hungResultKind: 'animated' } }); // D34 바꿔 걸기
     const again = await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'frame' }).expect(200);
     expect(again.body.alreadyDecided).toBe(true);
     expect(await q(`SELECT first_decision, in_approval_base FROM artwork_outcome`)).toEqual([{ first_decision: 'like', in_approval_base: 1 }]);
@@ -38,7 +38,7 @@ describe('결과 확인 결정(UC4)', () => {
   it('낮춘 결과로 걸기 → depth_relief(use_lower)·처리 중·보호자 전환, 2회차에는 use_lower 없음(UC4 A1)', async () => {
     const f = await reviewed('d4@test.local', 'animated');
     const r = await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'use_lower' }).expect(200);
-    expect(r.body.artwork.state).toBe('processing');
+    expect(r.body.artwork).toMatchObject({ state: 'processing', exhibited: true }); // D34: 다시 만드는 동안에도 원본 액자로 전시
     expect(await q(`SELECT stage_kind, origin FROM stage_job WHERE origin = 'use_lower'`)).toEqual([{ stage_kind: 'depth_relief', origin: 'use_lower' }]);
     expect((await q<{ result_cause: string }>(`SELECT result_cause FROM artwork_outcome`))[0].result_cause).toBe('guardian_switch');
     await simulateResult(t.db, f.id, 'relief', { origin: 'use_lower' });
@@ -57,7 +57,7 @@ describe('결과 확인 결정(UC4)', () => {
     await t.db.query(`INSERT INTO artwork_outcome (artwork_id, confirmed_path, result_cause) VALUES (?, 'animated', 'not_delivered')`, [r.body.id]);
     await t.db.query(`UPDATE artwork SET status = 'failed' WHERE artwork_id = ?`, [r.body.id]);
     const d = await f.a.get(`/v1/artworks/${r.body.id}`).expect(200);
-    expect(d.body).toMatchObject({ state: 'failed', choices: ['frame', 'retake'], notDelivered: { frameAvailable: true } });
+    expect(d.body).toMatchObject({ state: 'failed', exhibited: true, choices: ['frame', 'retake'], notDelivered: { frameAvailable: true } });
     const bad = await f.a.post(`/v1/artworks/${r.body.id}/decision`).send({ decision: 'like' });
     expect(bad.body).toMatchObject({ code: 'conflict', gate: 'G9' });
     await f.a.post(`/v1/artworks/${r.body.id}/decision`).send({ decision: 'frame' }).expect(200);
@@ -80,12 +80,13 @@ describe('이야기·전시(UC5·UC6)', () => {
     expect((await f.a.put(`/v1/artworks/${f.id}/story`).send({ ageAtMaking: 19 })).status).toBe(422);
     await f.a.put(`/v1/artworks/${f.id}/story`).send({ childWords: STORY.childWords }).expect(200);
     const d = await f.a.put(`/v1/artworks/${f.id}/story`).send({ title: STORY.title }).expect(200);
-    expect(d.body.story).toMatchObject({ title: '우리 가족', childWords: '  엄마랑 바다 갔어  ', madeOn: null });
+    expect(d.body.story).toMatchObject({ title: '우리 가족', titleAuto: false, childWords: '  엄마랑 바다 갔어  ' }); // D34: 그린 날은 올리기 때 자동으로
+    expect(d.body.story.madeOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
-  it('승인 + 필수 이야기 = 전시 중, 전시에는 낮춤 표시 없음, 승인 전은 전시에 없음(BR-EXH-01·07)', async () => {
+  it('올리면 원본 액자로 전시, 좋아요 뒤 결과로 바꿔 걸림, 낮춤 표시 없음, 걸린 작품 제목은 못 지움(BR-EXH-01·07 · D34)', async () => {
     const f = await reviewed('s2@test.local', 'relief', { cause: 'model_downgrade' });
     await f.a.put(`/v1/artworks/${f.id}/story`).send(STORY).expect(200);
-    expect((await f.a.get(`/v1/gallery?child=${f.childId}`)).body.groups).toEqual([]);
+    expect((await f.a.get(`/v1/gallery?child=${f.childId}`)).body.groups[0].items).toMatchObject([{ kind: 'frame', title: '우리 가족' }]);
     const r = await f.a.post(`/v1/artworks/${f.id}/decision`).send({ decision: 'like' }).expect(200);
     expect(r.body.artwork.state).toBe('exhibited');
     const g = await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200);

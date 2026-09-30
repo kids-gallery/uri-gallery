@@ -60,7 +60,8 @@ export async function simulateResult(db: Pool, artworkId: string | number, kind:
     const [o] = await db.query(`INSERT INTO stored_object (owner_kind, family_id, artwork_id, object_kind, object_key) VALUES ('family', ?, ?, ?, ?)`, [fam.family_id, id, objKind, `family/r${id}/${objKind}/${randomUUID()}`]);
     objId = (o as { insertId: number }).insertId;
   }
-  await db.query(`INSERT INTO result (artwork_id, job_id, result_kind, object_id) VALUES (?, ?, ?, ?)`, [id, (j as { insertId: number }).insertId, kind, objId]);
+  // 워커(chain.py)와 같이 INSERT IGNORE — D34로 원본 액자 결과는 올리기 때 이미 있다
+  await db.query(`INSERT IGNORE INTO result (artwork_id, job_id, result_kind, object_id) VALUES (?, ?, ?, ?)`, [id, (j as { insertId: number }).insertId, kind, objId]);
   await db.query(`INSERT INTO artwork_outcome (artwork_id, result_kind, result_cause) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE result_kind = VALUES(result_kind), result_cause = COALESCE(VALUES(result_cause), result_cause)`,
     [id, kind, opts.cause ?? null]);
   await db.query(`UPDATE artwork SET status = 'awaiting_review' WHERE artwork_id = ?`, [id]);

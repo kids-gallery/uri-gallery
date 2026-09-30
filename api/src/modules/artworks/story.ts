@@ -37,6 +37,7 @@ export async function saveStory(conn: PoolConnection, familyId: number, artworkI
   }
   const cols: [string, unknown][] = [];
   if (s.title !== undefined) cols.push(['title', s.title === null ? null : s.title.trim()]);
+  if (typeof s.title === 'string') cols.push(['title_auto', false]); // D34: 보호자가 제목을 붙이면 자동 제목이 아니다
   if (s.madeOn !== undefined) cols.push(['made_on', s.madeOn]);
   if (s.ageAtMaking !== undefined) cols.push(['age_at_creation', s.ageAtMaking]);
   if (s.childWords !== undefined) cols.push(['utterance', s.childWords]); // BR-STY-03 원문 그대로

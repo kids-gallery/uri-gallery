@@ -10,7 +10,7 @@ type Q = Pool | PoolConnection;
 const STAGE_STATUS: Record<string, string> = {
   queued: 'waiting', retry_wait: 'retrying', running: 'running', done: 'done', done_downgraded: 'done', failed: 'failed', cancelled: 'cancelled',
 };
-const CONFIRM_STATES = new Set(['received', 'judging', 'awaiting_confirm']);
+const CONFIRM_STATES = new Set(['received', 'judging', 'awaiting_confirm', 'approved']); // D34: 걸린 뒤 권유(다시 만들기)
 const RESULT_STAGES = new Set(['animate_render', 'depth_relief', 'sculpture', 'frame_compose']);
 
 export interface ViewHooks {
@@ -23,8 +23,8 @@ const one = async <T>(db: Q, sql: string, p: unknown[]) => ((await db.query(sql,
 const all = async <T>(db: Q, sql: string, p: unknown[]) => (await db.query(sql, p))[0] as T[];
 
 export async function artworkDetail(db: Q, cfg: Config, familyId: number, artworkId: number, hooks: ViewHooks = {}) {
-  const a = await one<{ artwork_id: number; child_id: number; status: string; display_status: string }>(db,
-    `SELECT artwork_id, child_id, status, display_status FROM v_artwork_display WHERE artwork_id = ? AND family_id = ?`, [artworkId, familyId]);
+  const a = await one<{ artwork_id: number; child_id: number; status: string; display_status: string; exhibitable: number }>(db,
+    `SELECT artwork_id, child_id, status, display_status, exhibitable FROM v_artwork_display WHERE artwork_id = ? AND family_id = ?`, [artworkId, familyId]);
   if (!a || a.status === 'deleting') return null;
   const url = (objectId: number | null | undefined) => (objectId ? `/v1/files/${signFileToken(cfg.sessionSecret, Number(objectId), familyId)}` : null);
 
@@ -36,8 +36,10 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     `SELECT stage_kind, status, attempt_count, downgrade_cause FROM v_job_progress WHERE artwork_id = ? ORDER BY job_id`, [artworkId]);
   const cr = await one<{ result_kind: string; object_id: number | null }>(db, `SELECT result_kind, object_id FROM v_current_result WHERE artwork_id = ?`, [artworkId]);
   const dec = await one<{ decision_code: string }>(db, `SELECT decision_code FROM decision WHERE artwork_id = ? ORDER BY review_round DESC LIMIT 1`, [artworkId]);
-  const st = await one<{ title: string | null; made_on: Date | null; age_at_creation: number | null; utterance: string | null; guardian_note: string | null; updated_at: Date }>(db,
-    `SELECT title, made_on, age_at_creation, utterance, guardian_note, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
+  const st = await one<{ title: string | null; title_auto: number; made_on: Date | null; age_at_creation: number | null; utterance: string | null; guardian_note: string | null; updated_at: Date }>(db,
+    `SELECT title, title_auto, made_on, age_at_creation, utterance, guardian_note, updated_at FROM story WHERE artwork_id = ?`, [artworkId]);
+  const hung = await one<{ result_kind: string }>(db,
+    `SELECT r.result_kind FROM artwork a JOIN result r ON r.result_id = a.hung_result_id WHERE a.artwork_id = ?`, [artworkId]);
 
   const loads = hooks.modelLoads && jobs.some((x) => x.status === 'queued') ? await hooks.modelLoads().catch(() => null) : null;
   let choices: string[] = [];
@@ -71,6 +73,7 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     id: String(a.artwork_id),
     childId: String(a.child_id),
     state: a.display_status,
+    exhibited: Boolean(a.exhibitable), // D34: 전시에 걸려 있음(다시 만드는 중에도 true)
     queued: a.status === 'judging' && jobs.some((x) => x.stage_kind === 'judge' && x.status === 'queued'),
     originalUrl: url(orig?.object_id),
     cutoutUrl: url(j?.cutout_object_id),
@@ -88,8 +91,10 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
     downgrade: result ? downgrade : null,
     notDelivered: a.status === 'failed' ? { frameAvailable: Boolean(orig) } : undefined,
     decision: dec?.decision_code ?? null,
+    hungResultKind: hung?.result_kind ?? null, // D34: 지금 전시에 걸린 결과(처리 상태와 따로)
     story: {
       title: st?.title ?? null,
+      titleAuto: Boolean(st?.title_auto), // D34: 자동 제목(제목 없는 그림 N)
       madeOn: st?.made_on ? new Date(st.made_on).toISOString().slice(0, 10) : null,
       ageAtMaking: st?.age_at_creation ?? null,
       childWords: st?.utterance ?? null,
@@ -103,8 +108,8 @@ export async function artworkDetail(db: Q, cfg: Config, familyId: number, artwor
 }
 
 export async function artworkList(db: Q, cfg: Config, familyId: number, childId?: number) {
-  const rows = await all<{ artwork_id: number; child_id: number; display_status: string; title: string | null; received_at: Date; obj: number | null }>(db,
-    `SELECT d.artwork_id, d.child_id, d.display_status, s.title, a.received_at,
+  const rows = await all<{ artwork_id: number; child_id: number; display_status: string; exhibitable: number; title: string | null; received_at: Date; obj: number | null }>(db,
+    `SELECT d.artwork_id, d.child_id, d.display_status, d.exhibitable, s.title, a.received_at,
             COALESCE(j.cutout_object_id, ao.object_id) obj
        FROM v_artwork_display d JOIN artwork a ON a.artwork_id = d.artwork_id
        LEFT JOIN story s ON s.artwork_id = d.artwork_id
@@ -119,7 +124,7 @@ export async function artworkList(db: Q, cfg: Config, familyId: number, childId?
   const stageOf = new Map<number, string>();
   for (const c of cur) if (!stageOf.has(Number(c.artwork_id))) stageOf.set(Number(c.artwork_id), c.stage_kind); // 가장 먼저 등록된 진행 중 작업
   return rows.map((r) => ({
-    id: String(r.artwork_id), childId: String(r.child_id), state: r.display_status,
+    id: String(r.artwork_id), childId: String(r.child_id), state: r.display_status, exhibited: Boolean(r.exhibitable),
     currentStage: stageOf.get(Number(r.artwork_id)) ?? null, title: r.title,
     thumbnailUrl: r.obj ? `/v1/files/${signFileToken(cfg.sessionSecret, Number(r.obj), familyId)}` : null,
     updatedAt: new Date(r.received_at).toISOString(),

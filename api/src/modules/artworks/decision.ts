@@ -5,6 +5,7 @@ import type { Config } from '../../config.js';
 import type { StoragePort } from '../../storage/LocalFsDriver.js';
 import { Problem, isDup } from '../../lib/problem.js';
 import { activeVersions } from './models.js';
+import { hangOriginalFrame } from './hang.js';
 import { requestArtworkDeletion } from '../deletion/request.js';
 
 type Q = Pool | PoolConnection;
@@ -73,6 +74,12 @@ export async function decide(db: Pool, cfg: Config, storage: StoragePort, conn: 
 
   if (code === 'like' || code === 'frame') {
     await conn.query(`UPDATE artwork SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE artwork_id = ?`, [artworkId]);
+    // D34: 좋아요 = 걸린 결과를 이 결과로 바꿔 건다. 액자로 두기 = 원본 액자(이미 걸려 있으면 그대로)
+    if (code === 'like') {
+      await conn.query(
+        `UPDATE artwork a JOIN v_current_result cr ON cr.artwork_id = a.artwork_id
+            SET a.hung_result_id = cr.result_id, a.hung_at = COALESCE(a.hung_at, CURRENT_TIMESTAMP) WHERE a.artwork_id = ?`, [artworkId]);
+    } else await hangOriginalFrame(conn, artworkId);
   } else if (code === 'use_lower') {
     const v = (await activeVersions(conn)).get('M5');
     await conn.query(

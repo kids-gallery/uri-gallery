@@ -1,4 +1,5 @@
 // 작품 접수·상세·목록·확정(T061~T063·T078, UC2·UC3, FR-2·3·21, G5·G6·G8·G17, BR-INT-01~05, BR-SUG-03·05, stage-job §2).
+// D34: 올리면 원본 액자로 바로 건다(hung_result_id) · 이야기 자동 채우기 · 걸린 뒤 다시 만들기(docs/B/B_D34_설계반영안_2026-09-30.md).
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
@@ -15,6 +16,7 @@ import { JUDGE_MODELS, KIND_MODEL, PRIMARY_MODEL, activeVersions, confirmChoices
 import { artworkDetail, artworkList, type ViewHooks } from './view.js';
 import { decide, decisionOptions, type DecisionCode } from './decision.js';
 import { saveStory } from './story.js';
+import { hangOriginalFrame } from './hang.js';
 
 const LOCKED = `UTC_TIMESTAMP() + INTERVAL 5 YEAR`; // 판정 전 확정·split 전 judge 잠금(stage-job §2). TIMESTAMP는 2038년까지라 100년은 넘친다
 
@@ -50,6 +52,11 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
       if (existing) return void res.status(202).json(await detail(familyId, existing.artwork_id)); // BR-INT-03
 
       const childId = Number(req.body?.childId);
+      // D34 ③: 브라우저가 EXIF 촬영일에서 날짜만 보낸다(선택). 형식이 틀리면 422, 미래면 올린 날로(DB가 오늘로 자른다)
+      const capRaw = req.body?.capturedOn;
+      const cap = capRaw === undefined || capRaw === '' ? null : z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((v) => !Number.isNaN(Date.parse(v))).safeParse(capRaw);
+      if (cap && !cap.success) throw new Problem('validation_failed', 'captured_on', 'G5', [{ name: 'capturedOn', reason: 'format' }]);
+      const capturedOn = cap && cap.success ? cap.data : null;
       const [c] = await db.query(`SELECT child_id FROM child WHERE child_id = ? AND family_id = ?`, [childId, familyId]);
       if (!(c as unknown[]).length) throw new Problem('not_found');
       let type;
@@ -64,7 +71,7 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
       }
       let artworkId: number;
       try {
-        artworkId = await withTx(db, async (conn) => intakeTx(conn, familyId, childId, reqNo.data, key));
+        artworkId = await withTx(db, async (conn) => intakeTx(conn, familyId, childId, reqNo.data, key, capturedOn));
       } catch (e) {
         await storage.delete(key).catch(() => undefined); // 흔적 남기지 않음(FR-2)
         if (isDup(e, 'uq_artwork_request')) {
@@ -107,7 +114,8 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
           if (prev === kind) return; // 같은 값 재요청 — 첫 값 유지(200)
           throw new Problem('conflict', 'already_processing', 'G8');
         }
-        if (!['received', 'judging', 'awaiting_confirm'].includes(a.status)) throw new Problem('conflict', 'already_processing', 'G8');
+        // D34: 걸린 뒤(approved)에도 권유를 받아 다시 만들 수 있다(처음 확정 한 번만 — 위 prev 검사)
+        if (!['received', 'judging', 'awaiting_confirm', 'approved'].includes(a.status)) throw new Problem('conflict', 'already_processing', 'G8');
         const { choices, unavailable } = await confirmChoices(conn);
         if (!choices.includes(kind)) {
           if (kind === 'sculpture' && !unavailable.some((u) => u.choice === 'sculpture')) throw new Problem('validation_failed', 'sculpture_not_exposed', 'G17');
@@ -160,8 +168,9 @@ export function artworksRouter(db: Pool, cfg: Config, storage: StoragePort, hook
   return r;
 }
 
-/** 접수 트랜잭션(data-model §4): artwork + stored_object(original) + artwork_original + split·judge(또는 제안 없음). */
-async function intakeTx(conn: PoolConnection, familyId: number, childId: number, reqNo: string, key: string): Promise<number> {
+/** 접수 트랜잭션(data-model §4): artwork + stored_object(original) + artwork_original + split·judge(또는 제안 없음).
+ *  D34: 같은 트랜잭션에서 원본 액자 결과를 만들어 건다(작업 없음) + 이야기 자동 채우기. 판정은 권유용으로 그대로 돈다. */
+async function intakeTx(conn: PoolConnection, familyId: number, childId: number, reqNo: string, key: string, capturedOn: string | null): Promise<number> {
   const active = await activeVersions(conn);
   const canJudge = JUDGE_MODELS.every((m) => active.has(m));
   const [a] = await conn.query(
@@ -174,6 +183,8 @@ async function intakeTx(conn: PoolConnection, familyId: number, childId: number,
     [familyId, artworkId, key],
   );
   await conn.query(`INSERT INTO artwork_original (artwork_id, object_id) VALUES (?, ?)`, [artworkId, (so as { insertId: number }).insertId]);
+  await hangOriginalFrame(conn, artworkId);
+  await autoStory(conn, artworkId, childId, capturedOn);
   if (canJudge) {
     await conn.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id) VALUES (?, 'split', 'intake', 'cpu_vision', ?)`,
       [artworkId, active.get(PRIMARY_MODEL.split)]);
@@ -184,6 +195,22 @@ async function intakeTx(conn: PoolConnection, familyId: number, childId: number,
     await conn.query(`INSERT INTO judgment (artwork_id, suggestion_state) VALUES (?, 'exhausted')`, [artworkId]);
   }
   return artworkId;
+}
+
+/** D34 ③: 이야기 자동 채우기 — 제목 "제목 없는 그림 N"(title_auto) · 그린 날 = 촬영일 또는 오늘(DB 날짜로 자름) · 나이 = 그 아이의 가장 최근 기록 */
+async function autoStory(conn: PoolConnection, artworkId: number, childId: number, capturedOn: string | null): Promise<void> {
+  const [ag] = await conn.query(
+    `SELECT s.age_at_creation age FROM story s JOIN artwork a ON a.artwork_id = s.artwork_id
+      WHERE a.child_id = ? AND a.artwork_id <> ? AND a.status <> 'deleting' AND s.age_at_creation IS NOT NULL
+      ORDER BY s.made_on DESC, s.updated_at DESC LIMIT 1`, [childId, artworkId]);
+  const age = (ag as { age: number }[])[0]?.age ?? null;
+  const [nr] = await conn.query(
+    `SELECT COUNT(*) n FROM story s JOIN artwork a ON a.artwork_id = s.artwork_id WHERE a.child_id = ? AND s.title_auto`, [childId]);
+  const n = Number((nr as { n: number }[])[0].n) + 1;
+  await conn.query(
+    `INSERT INTO story (artwork_id, title, title_auto, made_on, age_at_creation, updated_at)
+     VALUES (?, ?, TRUE, LEAST(COALESCE(?, CURRENT_DATE), CURRENT_DATE), ?, CURRENT_TIMESTAMP)`,
+    [artworkId, `제목 없는 그림 ${n}`, capturedOn, age]);
 }
 
 /** 확정 트랜잭션(data-model §4, stage-job §2·§6). */
@@ -206,7 +233,13 @@ async function confirmTx(conn: PoolConnection, cfg: Config, artworkId: number, k
   else if (kind === 'relief' && !judgePending && j?.split_ok !== 1) stage = 'frame_compose'; // 분리 실패·마스크 없음(stage-job §6)
   else stage = kind === 'animated' ? 'animate_render' : kind === 'relief' ? 'depth_relief' : 'sculpture';
 
-  const model = stage === 'frame_compose' ? null : KIND_MODEL[kind];
+  if (stage === 'frame_compose') {
+    // D34: 원본 액자는 이미 걸려 있다 — 작업 없이 걸린 상태로 둔다(분리 실패한 입체 부조 확정도 같다)
+    await hangOriginalFrame(conn, artworkId);
+    await conn.query(`UPDATE artwork SET status = 'approved', confirmed_at = CURRENT_TIMESTAMP, approved_at = COALESCE(approved_at, CURRENT_TIMESTAMP) WHERE artwork_id = ?`, [artworkId]);
+    return;
+  }
+  const model = KIND_MODEL[kind];
   const group = stage === 'depth_relief' ? (cfg.gpuEnabled ? 'gpu' : 'cpu_vision') : stage === 'sculpture' ? 'gpu' : 'cpu_vision';
   const lock = stage !== 'frame_compose' && judgePending;
   await conn.query(

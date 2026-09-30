@@ -42,7 +42,8 @@ describe('초안 생성(BR-CAP-01~03, G14·G16)', () => {
     t.llm.replies = [OK()];
     const r = await f.a.post(`/v1/artworks/${f.id}/captions`).send({ keywords: [' 파란색 '], selectedTags: ['바다'] }).expect(201);
     expect(r.body).toMatchObject({ source: 'llm', aiAuthored: true, edited: false, state: 'pending_approval', generationCount: 1 });
-    expect(Object.keys(t.llm.calls[0]).sort()).toEqual(['ageAtMaking', 'keywords', 'requestId', 'tags', 'words']);
+    // D34: 그린 날은 올리기 때 자동으로 채워져 함께 간다(허용 필드 — CaptionRequest '발언·나이·제작일은 서버가 채운다')
+    expect(Object.keys(t.llm.calls[0]).sort()).toEqual(['ageAtMaking', 'keywords', 'madeOn', 'requestId', 'tags', 'words']);
     expect(t.llm.calls[0]).toMatchObject({ keywords: ['파란색'], tags: ['바다'], words: '엄마랑 바다 갔어', ageAtMaking: 5 });
     expect(JSON.stringify(t.llm.calls[0])).not.toContain('비밀제목');
     expect(JSON.stringify(t.llm.calls[0])).not.toContain('감상평비밀');

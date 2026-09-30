@@ -20,15 +20,15 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
       if (typeof req.query.q === 'string' && req.query.q.trim()) { where.push('g.title LIKE ?'); p.push(`%${req.query.q.trim().replace(/[%_]/g, '\\$&')}%`); }
       if (typeof req.query.madeOn === 'string') { where.push('g.made_on = ?'); p.push(req.query.madeOn); }
       const [rows] = await db.query(
-        `SELECT g.artwork_id, g.age_group, g.made_on, g.title, g.utterance, g.guardian_note, g.display_kind, g.result_object_id,
+        `SELECT g.artwork_id, g.age_group, g.made_on, g.title, g.title_auto, g.utterance, g.guardian_note, g.display_kind, g.result_object_id,
                 g.caption_body, g.ai_badge, j.cutout_object_id, ao.object_id original_id
            FROM v_gallery g
            LEFT JOIN judgment j ON j.artwork_id = g.artwork_id
            LEFT JOIN artwork_original ao ON ao.artwork_id = g.artwork_id
           WHERE ${where.join(' AND ')}
-          ORDER BY g.age_group, g.made_on, g.artwork_id`, p);
+          ORDER BY g.age_group IS NULL, g.age_group, g.made_on, g.artwork_id`, p); // D34: 나이 미정(NULL)은 맨 뒤
       const url = (id: number | null) => (id ? `/v1/files/${signFileToken(cfg.sessionSecret, Number(id), familyId)}` : null);
-      const groups = new Map<number, unknown[]>();
+      const groups = new Map<number | null, unknown[]>();
       for (const g of rows as Record<string, unknown>[]) {
         const kind = g.display_kind as string;
         const item = {
@@ -37,13 +37,14 @@ export function galleryRouter(db: Pool, cfg: Config): Router {
           auxUrl: kind === 'relief' ? url(g.cutout_object_id as number | null) : null,
           posterUrl: null,
           originalUrl: url(g.original_id as number | null),
-          title: g.title, madeOn: new Date(g.made_on as Date).toISOString().slice(0, 10), ageAtMaking: Number(g.age_group),
+          title: g.title, titleAuto: Boolean(g.title_auto), madeOn: new Date(g.made_on as Date).toISOString().slice(0, 10),
+          ageAtMaking: g.age_group === null ? null : Number(g.age_group),
           childWords: g.utterance ?? null,
           guardianNote: g.guardian_note ?? null, // D25 — 한마디와 따로
           aiCaption: cfg.captionEnabled && g.caption_body ? { body: g.caption_body, aiAuthored: Boolean(g.ai_badge) } : null,
           backsideEstimated: kind === 'sculpture',
         };
-        const age = Number(g.age_group);
+        const age = g.age_group === null ? null : Number(g.age_group); // D34: 나이 미정
         if (!groups.has(age)) groups.set(age, []);
         groups.get(age)!.push(item);
       }

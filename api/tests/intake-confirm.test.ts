@@ -15,11 +15,14 @@ const q = async <T>(sql: string, p: unknown[] = []) => (await t.db.query(sql, p)
 const filesIn = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).map(String).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : [];
 
 describe('접수(G5·G6)', () => {
-  it('202 판정 중, 원본 0440, split 등록·judge 잠금, 같은 요청 번호는 1건(BR-INT-03)', async () => {
+  it('202 바로 전시(D34 원본 액자·자동 제목), 판정은 권유용으로 돈다, 원본 0440, split 등록·judge 잠금, 같은 요청 번호는 1건(BR-INT-03)', async () => {
     const { a, childId } = await familyWithChild(t, 'i1@test.local');
     const key = '11111111-1111-4111-8111-111111111111';
     const r = await upload(a, childId, await png(), key).expect(202);
-    expect(r.body.state).toBe('judging');
+    expect(r.body).toMatchObject({ state: 'exhibited', exhibited: true, hungResultKind: 'frame' }); // D34
+    expect(r.body.story).toMatchObject({ title: '제목 없는 그림 1', titleAuto: true, ageAtMaking: null });
+    expect(r.body.story.madeOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect((await q<{ status: string }>('SELECT status FROM artwork'))[0].status).toBe('judging'); // 처리 상태는 판정 중(권유)
     expect(r.body.originalUrl).toMatch(/^\/v1\/files\//);
     const again = await upload(a, childId, await png(), key).expect(202);
     expect(again.body.id).toBe(r.body.id);
@@ -63,11 +66,12 @@ describe('접수(G5·G6)', () => {
     expect((await B.a.get(`/v1/artworks/${r.body.id}`)).status).toBe(404);
     expect((await B.a.get(r.body.originalUrl)).status).toBe(404);
   });
-  it('판정 모델이 비활성이면 제안 없이 확정 대기(clarify, G7)', async () => {
+  it('판정 모델이 비활성이면 제안 없이 확정 대기 — 그래도 원본 액자로 전시(clarify, G7 · D34)', async () => {
     await seedModels(t.db, ['M5']);
     const { a, childId } = await familyWithChild(t, 'i6@test.local');
     const r = await upload(a, childId, await png()).expect(202);
-    expect(r.body).toMatchObject({ state: 'awaiting_confirm', suggestion: 'none' });
+    expect(r.body).toMatchObject({ state: 'exhibited', exhibited: true, suggestion: 'none' });
+    expect((await q<{ status: string }>('SELECT status FROM artwork'))[0].status).toBe('awaiting_confirm');
     expect((await q('SELECT * FROM stage_job')).length).toBe(0);
     expect(r.body.unavailableChoices).toContainEqual({ choice: 'animated', reason: 'model_disabled' });
   });
@@ -82,17 +86,16 @@ describe('확정(G8·G17, stage-job §2·§6)', () => {
     await t.db.query(`UPDATE artwork SET status = 'awaiting_confirm' WHERE artwork_id = ?`, [r.body.id]);
     return { ...f, id: r.body.id as string };
   };
-  it('제안과 다르게 확정 허용, 수정 여부 기록, 액자는 모델 없는 frame_compose, 점수는 응답에 없음', async () => {
+  it('제안과 다르게 확정 허용, 수정 여부 기록, 액자는 이미 걸려 있어 작업 없음(D34), 점수는 응답에 없음', async () => {
     const f = await judged('c1@test.local', 'animated', 1);
     const d = await f.a.get(`/v1/artworks/${f.id}`).expect(200);
     expect(d.body.suggestion).toBe('animated');
     expect(JSON.stringify(d.body)).not.toMatch(/score|0\.946/);
     const r = await f.a.post(`/v1/artworks/${f.id}/confirm`).send({ kind: 'frame' }).expect(200);
-    expect(r.body).toMatchObject({ state: 'processing', confirmedKind: 'frame' });
+    expect(r.body).toMatchObject({ state: 'exhibited', exhibited: true, confirmedKind: 'frame', hungResultKind: 'frame' });
     const [o] = await q<{ suggestion_at_confirm: string; is_modified: number }>(`SELECT suggestion_at_confirm, is_modified FROM artwork_outcome`);
     expect(o).toMatchObject({ suggestion_at_confirm: 'animated', is_modified: 1 });
-    const [j] = await q<{ stage_kind: string; model_version_id: number | null }>(`SELECT stage_kind, model_version_id FROM stage_job WHERE origin = 'confirm'`);
-    expect(j).toEqual({ stage_kind: 'frame_compose', model_version_id: null });
+    expect(await q(`SELECT * FROM stage_job WHERE origin = 'confirm'`)).toEqual([]); // D34: frame_compose 작업 없음
   });
   it('같은 값 재확정은 200(첫 값 유지), 다른 값은 409 already_processing(G8)', async () => {
     const f = await judged('c2@test.local', 'relief', 1);
@@ -101,12 +104,13 @@ describe('확정(G8·G17, stage-job §2·§6)', () => {
     expect((await f.a.post(`/v1/artworks/${f.id}/confirm`).send({ kind: 'frame' })).body.reason).toBe('already_processing');
     expect((await q(`SELECT * FROM stage_job WHERE origin = 'confirm'`)).length).toBe(1);
   });
-  it('relief 확정인데 분리 실패면 depth_relief 대신 frame_compose(stage-job §6)', async () => {
+  it('relief 확정인데 분리 실패면 depth_relief 대신 원본 액자 — 이미 걸려 있어 작업 없음(stage-job §6 · D34)', async () => {
     const f = await judged('c3@test.local', 'frame', 0);
-    await f.a.post(`/v1/artworks/${f.id}/confirm`).send({ kind: 'relief' }).expect(200);
-    expect((await q<{ stage_kind: string }>(`SELECT stage_kind FROM stage_job WHERE origin = 'confirm'`))[0].stage_kind).toBe('frame_compose');
+    const r = await f.a.post(`/v1/artworks/${f.id}/confirm`).send({ kind: 'relief' }).expect(200);
+    expect(r.body).toMatchObject({ state: 'exhibited', hungResultKind: 'frame' });
+    expect(await q(`SELECT * FROM stage_job WHERE origin = 'confirm'`)).toEqual([]);
   });
-  it('판정 중 확정: 결과 작업은 잠그고, 액자는 바로(stage-job §2), 제안값은 before(D14)', async () => {
+  it('판정 중 확정: 결과 작업은 잠그고, 액자는 작업 없이 그대로 전시(stage-job §2 · D34), 제안값은 before(D14)', async () => {
     const f = await familyWithChild(t, 'c4@test.local');
     const r1 = await upload(f.a, f.childId, await png()).expect(202);
     await f.a.post(`/v1/artworks/${r1.body.id}/confirm`).send({ kind: 'animated' }).expect(200);
@@ -115,8 +119,7 @@ describe('확정(G8·G17, stage-job §2·§6)', () => {
     expect((await q<{ suggestion_at_confirm: string }>(`SELECT suggestion_at_confirm FROM artwork_outcome`))[0].suggestion_at_confirm).toBe('before');
     const r2 = await upload(f.a, f.childId, await png()).expect(202);
     await f.a.post(`/v1/artworks/${r2.body.id}/confirm`).send({ kind: 'frame' }).expect(200);
-    const [lk2] = await q<{ locked: number }>(`SELECT available_at > UTC_TIMESTAMP() + INTERVAL 1 DAY locked FROM stage_job WHERE origin = 'confirm' AND artwork_id = ?`, [r2.body.id]);
-    expect(Number(lk2.locked)).toBe(0);
+    expect(await q(`SELECT * FROM stage_job WHERE origin = 'confirm' AND artwork_id = ?`, [r2.body.id])).toEqual([]);
   });
   it('비활성 모델 선택지는 409 model_disabled, 노출 꺼진 3D는 422(G17)', async () => {
     const f = await judged('c5@test.local', 'animated', 1);
