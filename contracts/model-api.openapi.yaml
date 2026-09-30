@@ -17,6 +17,9 @@ info:
       `external_job.result_temp_ref`에 그 키를 적는다. 결과 수령(`/result`) 때 model-api가 본문을 돌려준 뒤 `ext/{ext_job_id}/`를 지우고 `delivered_at`을 적으며 `result_temp_ref`를 비운다(chk_ej_delivered).
       만료(결과 보관 1시간)는 sweeper가 같은 방식으로 지운다.
     - DB·저장소 오류는 503(`chk_ecl_status`에 500이 없다).
+    - 오류 안내·요청 번호(2026-09-30, API 서비스 점검표 W5·E4·E7·L1 — app-api와 같은 규칙): 모든 오류 본문에 `detail`(한국어 한 문장 — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지)과
+      `requestId`를 싣고, 입력 오류(422)는 `fields[].message`로 칸마다 올바른 값을 알린다. 4xx는 부르는 쪽이 요청을 고치고, 503·504는 서버 쪽이라 요청을 고치지 않고 다시 시도한다.
+      모든 응답 헤더에 `X-Request-ID`(요청 값이 1~128자 영문·숫자·`.`·`_`·`-`면 그대로, 아니면 UUID).
     - 한도 [예시값 U12]: 키당 분당 30건 · 하루 1,000건 · 동시 진행 2건 · 요청당 이미지 1장 · 20MB · 결과 보관 1시간.
     - 가족 데이터 경로(`/v1/artworks…`, `/v1/gallery`)는 이 서버에 없고, app-api는 API 키를 받지 않는다(BR-API-06).
     - `caption`은 P0.5 — P0에서는 404. 3D(`sculpture`)는 항상 404(D9).
@@ -285,6 +288,16 @@ components:
         code:
           type: string
           enum: [unauthorized, forbidden_scope, not_found, payload_too_large, invalid_input, rate_limited, model_not_ready, timeout, conflict]
+        detail: { type: string, description: 사람이 읽는 안내 한 문장(RFC 9457 detail) — 무엇이 틀렸고 부르는 쪽이 무엇을 하면 되는지 }
+        fields:
+          type: array
+          items:
+            type: object
+            required: [name, reason]
+            properties:
+              name: { type: string, description: 틀린 칸 이름(multipart 칸 image 등) }
+              reason: { type: string, description: 'required · unrecognized · format · too_large …' }
+              message: { type: string, description: 이 칸에 넣어야 할 올바른 값 안내 }
         requestId: { type: string }
     ModelLoadStatus:
       type: object

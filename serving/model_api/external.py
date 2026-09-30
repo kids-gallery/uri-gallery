@@ -69,6 +69,8 @@ def _run(endpoint: str, request: Request, handler, *, creates_job: bool = False,
                 record(cur, key.key_id if key else None, endpoint, status, gate, reason)
         except Exception:
             pass
+        if status >= 400 and isinstance(body, dict):
+            body["requestId"] = request.state.request_id
         media = "application/json" if status < 400 else "application/problem+json"
         return JSONResponse(body, status_code=status, headers=headers, media_type=media)
     finally:
@@ -229,13 +231,15 @@ async def call_function(function: str, request: Request):
         parts = list(msg.iter_parts()) if msg.is_multipart() else []
         names = [p.get_param("name", header="content-disposition") for p in parts]
         if names != ["image"]:                           # 이미지 1장, 다른 필드 없음(additionalProperties false)
-            raise ApiError(422, "invalid_input", "image_only", "G24")
+            fs = ([] if "image" in names else [{"name": "image", "reason": "required"}]) + \
+                 [{"name": n or "(이름 없음)", "reason": "unrecognized"} for n in dict.fromkeys(names) if n != "image"]
+            raise ApiError(422, "invalid_input", "image_only", "G24", fields=fs)
         img = parts[0].get_payload(decode=True) or b""
         if len(img) > lim["max_bytes"]:
-            raise ApiError(413, "payload_too_large", "too_large", "G24")
+            raise ApiError(413, "payload_too_large", "too_large", "G24", fields=[{"name": "image", "reason": "too_large"}])
         ext = _sniff(img)
         if not ext:
-            raise ApiError(422, "invalid_input", "format", "G24")
+            raise ApiError(422, "invalid_input", "format", "G24", fields=[{"name": "image", "reason": "format"}])
         with tx(conn) as cur:
             vers = {m: _active(cur, m) for m in NEEDS.get(function, (FUNC_MODEL[function],))}
             if not all(vers.values()):                   # 활성 버전·라이선스 확인 없음 — 작업을 만들지 않는다(G25)

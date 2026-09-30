@@ -28,6 +28,7 @@ class ApiError(Exception):
     reason: str | None = None
     gate: str | None = None
     headers: dict = field(default_factory=dict)
+    fields: list | None = None
 
     def body(self) -> dict:
         b = {"type": f"about:blank#{self.code}", "title": self.code, "status": self.status, "code": self.code}
@@ -35,7 +36,40 @@ class ApiError(Exception):
             b["reason"] = self.reason
         if self.gate:
             b["gate"] = self.gate
+        fs = [{**f, "message": f.get("message") or FIELD_MESSAGE.get(f["reason"], "올바른 값을 넣어 주세요.")} for f in (self.fields or [])]
+        if self.status == 422 and fs:
+            listed = " / ".join(f"{f['name']}: {f['message']}" for f in fs)
+            b["detail"] = f"입력 값이 올바르지 않습니다 — {listed} 고쳐서 다시 보내 주세요."
+        else:
+            b["detail"] = REASON_DETAIL.get(self.reason or "", DETAIL.get(self.code, "요청을 처리하지 못했습니다."))
+        if fs:
+            b["fields"] = fs
         return b
+
+
+# 오류 안내(계약 머리말 "오류 안내·요청 번호", 2026-09-30 점검표 W5·E4·E7) — API를 부르는 사람을 위한 문장
+DETAIL = {
+    "unauthorized": "API 키가 없거나 올바르지 않습니다. 발급받은 키를 X-API-Key 헤더에 넣어 다시 요청해 주세요.",
+    "forbidden_scope": "이 키로는 이 기능을 쓸 수 없습니다. 허용된 키 종류를 확인해 주세요.",
+    "not_found": "요청한 대상을 찾을 수 없습니다. 경로·작업 번호를 확인해 주세요(다른 키의 작업도 찾을 수 없음으로 답합니다).",
+    "payload_too_large": "이미지가 너무 큽니다. 20MB 이하로 줄여 다시 보내 주세요.",
+    "invalid_input": "입력 값이 올바르지 않습니다. 계약 문서(/v1/models/openapi.json)의 규칙에 맞게 고쳐 다시 보내 주세요.",
+    "rate_limited": "요청 한도를 넘었습니다. Retry-After 뒤에 다시 요청해 주세요.",
+    "model_not_ready": "모델이 지금 준비되지 않았습니다. 요청을 고칠 필요는 없고, 잠시 뒤 다시 시도해 주세요.",
+    "timeout": "처리 시간이 상한을 넘었습니다. 요청을 고칠 필요는 없고, 잠시 뒤 다시 시도해 주세요.",
+    "conflict": "지금 상태에서는 처리할 수 없습니다. reason을 확인해 주세요.",
+}
+REASON_DETAIL = {
+    "multipart_required": "요청은 multipart/form-data여야 합니다. 이미지 한 장을 image 칸에 담아 보내 주세요.",
+    "caption_fields": "설명 입력이 올바르지 않습니다. keywords(1~5개, 각 20자 이하)·tags(5개 이하)·words(500자 이하)·ageAtMaking(0~18)만 보내 주세요(이미지·이름 칸은 받지 않습니다).",
+    "key_missing": "API 키가 없습니다. 발급받은 키를 X-API-Key 헤더에 넣어 다시 요청해 주세요.",
+}
+FIELD_MESSAGE = {
+    "required": "필수 칸입니다. 이미지 파일 한 장을 image 칸에 넣어 주세요.",
+    "unrecognized": "계약에 없는 칸입니다. 이 칸을 빼고 보내 주세요(이미지는 image 칸 하나만).",
+    "format": "JPEG·PNG·HEIC 이미지여야 합니다.",
+    "too_large": "20MB 이하여야 합니다.",
+}
 
 
 def limits() -> dict:
