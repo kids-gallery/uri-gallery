@@ -3,13 +3,24 @@
 워커(`worker-cpu`·`worker-gpu`)·어댑터(M1~M7)·model-api 내부 경로·llm-server. 앱 API는 모델을 import하지 않는다(BR-MDL-02).
 
 ```bash
-/opt/homebrew/bin/python3.11 -m venv .venv
-.venv/bin/pip install --require-hashes -r requirements.lock      # 가짜 모델만: 이것으로 충분
-.venv/bin/pip install --require-hashes -r requirements-models.lock   # 실제 M1·M2·M5(torch 등)
+/opt/homebrew/bin/python3.11 -m venv .venv                         # 리눅스: python3.11 -m venv .venv
+.venv/bin/pip install --require-hashes -r requirements.lock      # 가짜 모델만(UAM_FAKE_MODELS=1): 이것으로 충분
+.venv/bin/pip install --require-hashes -r requirements-models.lock   # 실제 M1·M2·M5(torch 등). 맥·리눅스 arm64
+# 리눅스 x86_64는 대신: .venv/bin/pip install --require-hashes -r requirements-models-linux-x86_64.lock
 .venv/bin/python -m pytest -q                                      # 임시 MariaDB를 스스로 띄운다
 UAM_LIVE_OLLAMA=1 .venv/bin/python -m pytest -q -k live            # 공유 Ollama 실호출 1회
 UAM_REAL_MODELS=1 MODEL_ROOT=../models .venv/bin/python -m pytest -q tests/test_real_m*.py   # 실제 가중치
 ```
+
+
+모델 묶음 잠금은 플랫폼마다 다르다. 버전은 모두 같고, x86_64 리눅스만 PyTorch·torchvision을 CPU 전용(`+cpu`)으로 받는다. x86_64 리눅스에서 맥 잠금을 쓰면 PyTorch가 요구하는 CUDA 패키지가 잠금에 없어 설치가 멈추고, 그 패키지를 받으면 환경이 수 GB 커진다.
+
+| 플랫폼 | 모델 묶음 잠금 | 다시 만드는 명령 |
+|---|---|---|
+| 맥(Apple Silicon), 리눅스 arm64 | `requirements-models.lock` | 파일 첫머리 주석 |
+| 리눅스 x86_64 | `requirements-models-linux-x86_64.lock` | 파일 첫머리 주석(`-c requirements-models.lock`으로 같은 버전에 묶는다) |
+
+리눅스에서 시험을 돌릴 때: `sudo apt install mariadb-server`로 MariaDB를 깐다. 시험 설정이 `mariadbd`(`/usr/sbin`)와 `mariadb-install-db`·`mariadb`(`/usr/bin`)를 PATH에서 찾는다(`MARIADB_BIN`을 주면 그 폴더를 쓴다). 임시 MariaDB는 root로는 뜨지 않으니 일반 사용자로 돌린다. numpy·scipy가 필요한 시험은 모델 묶음이 없으면 건너뛴다.
 
 | 진입점 | 포트 |
 |---|---|
