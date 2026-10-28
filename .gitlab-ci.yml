@@ -33,4 +33,5 @@ serving:
     # caption 패키지(T127) — DB·모델 없이 도는 규칙 검사 시험. 저장소 루트에서 돌려야 `import caption`이 된다
     - (cd .. && serving/.venv/bin/python -m pytest -q caption/tests)
     # 임시 MariaDB가 필요하다 — 러너에 mariadbd가 있을 때만. 실제 가중치 시험(test_real_m1·m5)은 제외
-    - if command -v mariadbd >/dev/null; then MARIADB_BIN=$(dirname $(command -v mariadbd)) .venv/bin/python -m pytest -q --ignore=tests/test_real_m1.py --ignore=tests/test_real_m5.py; else echo "skip serving db tests (no mariadbd)"; fi
+    # 실행 파일은 conftest가 PATH와 /usr/sbin에서 찾는다(Debian은 mariadbd와 mariadb-install-db의 폴더가 달라 MARIADB_BIN 한 폴더로는 못 찾는다)
+    - if command -v mariadbd >/dev/null; then .venv/bin/python -m pytest -q --ignore=tests/test_real_m1.py --ignore=tests/test_real_m5.py; else echo "skip serving db tests (no mariadbd)"; fi

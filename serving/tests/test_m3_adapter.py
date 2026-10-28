@@ -1,6 +1,7 @@
 """M3 어댑터 연결부 — 가짜 TorchServe와 가짜 렌더 실행기로(T072·T083). 실제 환경 시험은 test_real_m3.py."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import threading
@@ -118,6 +119,11 @@ def _gif(path, frames):
     return path
 
 
+# 렌더 뒤 모양 검사는 numpy·scipy(모델 묶음)를 쓴다. 가짜 모델용 기본 잠금만 깐 환경(CI 포함)에서는 건너뛴다
+needs_models_extra = pytest.mark.skipif(not all(importlib.util.find_spec(m) for m in ("numpy", "scipy")), reason="모델 묶음(numpy·scipy)이 없다")
+
+
+@needs_models_extra
 def test_shape_check_torn_and_distorted(tmp_path):
     """렌더 뒤 모양 검사(D55): 그대로면 통과, 조각이 갈라지면 render_torn, 면적이 크게 흔들리면 render_distorted."""
     from adapters.m3_render import shape_check
@@ -134,6 +140,7 @@ def test_shape_check_torn_and_distorted(tmp_path):
     assert shape_check(_gif(tmp_path / "blank.gif", blank), t) == "render_torn"
 
 
+@needs_models_extra
 def test_render_distorted_downgrades(tmp_path, torchserve, monkeypatch):
     """모양 검사에 걸리면 MP4를 만들지 않고 quality_below — 낮춤 체인(animated_to_relief)으로 간다."""
     ad = tmp_path / "ad"; (ad / "examples").mkdir(parents=True)

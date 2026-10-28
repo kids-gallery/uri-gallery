@@ -1,7 +1,11 @@
-"""M1 구멍 채우기(D56) — 모델 없이. 채운 안쪽은 1, 가장자리 부드러운 값은 그대로, 비율은 채운 마스크 기준."""
-import numpy as np
+"""M1 구멍 채우기(D56) — 모델 없이. 채운 안쪽은 1, 가장자리 부드러운 값은 그대로, 비율은 채운 마스크 기준.
+numpy·scipy는 모델 묶음(requirements-models*.lock)에만 있다. 가짜 모델용 기본 잠금만 깐 환경(CI 포함)에서는 건너뛴다."""
+import pytest
 
-from adapters.m1_birefnet import fill_holes
+np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
+
+from adapters.m1_birefnet import fill_holes  # noqa: E402  (위 두 줄이 없으면 건너뛴 뒤라 여기 오지 않는다)
 
 
 def test_ring_is_filled_and_soft_edge_kept():

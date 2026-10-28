@@ -16,11 +16,17 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 DDL = REPO / "design" / "uri_gallery_ddl.sql"
-MARIADB_BIN = Path(os.environ.get("MARIADB_BIN", "/opt/homebrew/bin"))
+def _mariadb(name: str) -> str:
+    """MariaDB 실행 파일 위치. MARIADB_BIN을 주면 그 폴더를 쓴다. 아니면 PATH와 흔한 위치에서 찾는다
+    (Ubuntu·Debian은 mariadbd가 /usr/sbin, 나머지가 /usr/bin에 있어 폴더 하나로는 못 찾는다. 맥은 Homebrew)."""
+    if os.environ.get("MARIADB_BIN"):
+        return str(Path(os.environ["MARIADB_BIN"]) / name)
+    where = os.pathsep.join([os.environ.get("PATH", ""), "/usr/sbin", "/usr/bin", "/opt/homebrew/bin"])
+    return shutil.which(name, path=where) or str(Path("/opt/homebrew/bin") / name)
 
 
 def _client(sock: str, db: str | None, sql_file: Path) -> None:
-    args = [str(MARIADB_BIN / "mariadb"), f"--socket={sock}", "-uroot"]
+    args = [_mariadb("mariadb"), f"--socket={sock}", "-uroot"]
     if db:
         args.append(db)
     with open(sql_file, "rb") as f:
@@ -34,9 +40,9 @@ def mariadb():
     tmp = Path(tempfile.mkdtemp(prefix="uamt", dir="/tmp"))
     sock = str(tmp / "s.sock")
     data = tmp / "data"
-    subprocess.run([str(MARIADB_BIN / "mariadb-install-db"), f"--datadir={data}", "--auth-root-authentication-method=normal",
+    subprocess.run([_mariadb("mariadb-install-db"), f"--datadir={data}", "--auth-root-authentication-method=normal",
                     "--skip-test-db", f"--user={os.environ.get('USER', 'root')}"], check=True, capture_output=True)
-    proc = subprocess.Popen([str(MARIADB_BIN / "mariadbd"), "--no-defaults", f"--datadir={data}", f"--socket={sock}",
+    proc = subprocess.Popen([_mariadb("mariadbd"), "--no-defaults", f"--datadir={data}", f"--socket={sock}",
                              "--skip-networking", "--character-set-server=utf8mb4",
                              "--collation-server=utf8mb4_general_ci", "--lower-case-table-names=2",
                              f"--pid-file={tmp / 'd.pid'}", f"--log-error={tmp / 'err.log'}"],
