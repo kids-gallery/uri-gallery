@@ -70,7 +70,7 @@
 .gblock .head{font:540 18px/1.35 var(--font-sans)}
 .gblock .head .gate{font:400 12px/1 var(--font-mono);letter-spacing:.6px;margin-left:8px}
 .gblock dl{display:grid;grid-template-columns:auto 1fr;gap:4px var(--s-sm);margin:0}
-.gblock dt{font-weight:540} .gblock dd{margin:0}
+.gblock dt{font-weight:540} .gblock dd{margin:0} .gblock .reason{margin:0}
 .gblock .acts{display:flex;gap:var(--s-sm);flex-wrap:wrap;margin-top:6px}
 .gblock.is-block{border:2px solid var(--color-ink);background:var(--color-canvas)}
 .gblock.is-hold{border:2px dashed var(--color-ink);background:var(--color-block-cream)}

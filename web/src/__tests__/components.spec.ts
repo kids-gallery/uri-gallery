@@ -14,20 +14,31 @@ import type { BlockNotice as Notice } from '../api/client';
 const notice = (o: Partial<Notice> = {}): Notice => ({ variant: 'block', gate: 'G11', summary: '저장하지 못했어요', reason: '그린 날은 오늘 이후일 수 없어요', releaser: '보호자 - 지금 이 화면', self: true, actions: ['그린 날 고치기'], fields: [], ...o });
 
 describe('C2 BlockNotice', () => {
-  it('제목·사유·해제 주체·다음 행동을 보이고 제목에 포커스', async () => {
+  it('보호자 화면: 요약·사유 한 문장·다음 행동만, 처리 용어(막힘·사유·해제 주체) 없이 제목에 포커스(SD_02 17-20-1)', async () => {
     const w = mount(BlockNotice, { props: { notice: notice() }, attachTo: document.body });
     await new Promise((r) => setTimeout(r));
     // 보호자 화면은 G번호를 글자로 보이지 않고 data-gate에만(D34 ④, SD_02 §17-8)
-    expect(w.find('.head').text()).toContain('막힘');
-    expect(w.find('.head').text()).not.toContain('G11');
+    expect(w.find('.head').text()).toBe('저장하지 못했어요');
     expect(w.attributes('data-gate')).toBe('G11');
-    expect(w.find('dl').text()).toContain('그린 날은 오늘 이후일 수 없어요');
-    expect(w.find('dl').text()).toContain('보호자 - 지금 이 화면');
+    expect(w.attributes('data-releaser')).toBe('보호자 - 지금 이 화면');
+    expect(w.find('.reason').text()).toBe('그린 날은 오늘 이후일 수 없어요');
+    for (const term of ['막힘', '사유', '해제 주체', '보호자 - 지금 이 화면', 'G11']) expect(w.text()).not.toContain(term);
     expect(document.activeElement).toBe(w.find('.head').element);
     await w.find('button').trigger('click');
     expect(w.emitted('action')).toEqual([['그린 날 고치기']]);
     expect(w.attributes('role')).toBe('alert');
     w.unmount();
+  });
+  it('운영 화면(/ops)은 이름표·해제 주체·G번호를 그대로 보인다', () => {
+    const w = mount(BlockNotice, { props: { notice: notice() }, global: { mocks: { $route: { path: '/ops/models' } } } });
+    expect(w.find('.head').text()).toContain('막힘');
+    expect(w.find('.head').text()).toContain('G11');
+    expect(w.find('dl').text()).toContain('해제 주체');
+    expect(w.find('dl').text()).toContain('보호자 - 지금 이 화면');
+  });
+  it('사유가 요약과 같으면 한 번만 보인다', () => {
+    const w = mount(BlockNotice, { props: { notice: notice({ reason: '저장하지 못했어요' }) } });
+    expect(w.find('.reason').exists()).toBe(false);
   });
   it('보류는 점선 변형·status, 종결은 요약 없이', () => {
     expect(mount(BlockNotice, { props: { notice: notice({ variant: 'hold', gate: 'G19' }) } }).classes()).toContain('is-hold');
@@ -42,8 +53,10 @@ describe('C3 ReasonButton', () => {
     const w = mount(ReasonButton, { props: { label: '저장', disabled: true, reason: '그린 날을 고쳐 주세요' } });
     expect(w.attributes('aria-disabled')).toBe('true');
     expect(w.attributes('disabled')).toBeUndefined();
-    expect(w.text()).toContain('(비활성) - 그린 날을 고쳐 주세요');
-    expect(w.attributes('title')).toBe('(비활성) - 그린 날을 고쳐 주세요');
+    expect(w.find('.lbl').text()).toBe('저장');
+    expect(w.find('.why').text()).toBe('그린 날을 고쳐 주세요');
+    expect(w.attributes('title')).toBe('그린 날을 고쳐 주세요');
+    expect(w.text()).not.toContain('비활성');
     await w.trigger('click');
     expect(w.emitted('blocked')).toHaveLength(1);
     expect(w.emitted('click')).toBeUndefined();

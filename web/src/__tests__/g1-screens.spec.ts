@@ -151,7 +151,7 @@ describe('S3 확정(T067)', () => {
     expect(btn(w, ko.kind.animated!)!.text()).toContain(ko.review.unavailable.model_disabled);
     expect(w.findAll('.chip-opt[aria-pressed="true"]')).toHaveLength(0);
     // UX2 같은 크기: 비활성 칸도 같은 칩 모양, 순서는 움직임 → 2.5D → 액자 고정
-    expect(w.findAll('.opts .chip-opt').map((b) => b.text().split('(')[0]!.trim())).toEqual([ko.kind.animated, ko.kind.relief, ko.kind.frame]);
+    expect(w.findAll('.opts .chip-opt').map((b) => (b.find('.lbl').exists() ? b.find('.lbl').text() : b.text()))).toEqual([ko.kind.animated, ko.kind.relief, ko.kind.frame]);
     expect(btn(w, ko.confirm.submit)!.text()).toContain(ko.confirm.pickOne);
     w.unmount();
   });

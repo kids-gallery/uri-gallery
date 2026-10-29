@@ -37,7 +37,9 @@ type Phase = 'checking' | 'title' | 'starting' | 'ready' | 'nostorage';
 type Panel = null | 'upload' | 'archive' | 'avatar' | 'theme' | 'settings' | 'social' | 'play' | 'help' | 'view' | 'overview' | 'privacy' | 'storage' | 'usage';
 
 // 빌드할 때 값이 정해지는 조건만 쓴다 — 일반 배포 빌드에서는 이 불러오기 코드가 통째로 빠진다(AT-UC01-02)
-const TestEntry = import.meta.env.DEV || import.meta.env.MODE === 'localtest' ? defineAsyncComponent(() => import('./WorldTestEntry.vue')) : null;
+// 테스트 계정 입구는 설정 값으로만 켠다(SD_02 17-20-1): 개발 서버는 web/.env.development, 시험 빌드는 --mode localtest
+const TEST_ENTRY = import.meta.env.VITE_TEST_ENTRY === '1' || import.meta.env.MODE === 'localtest';
+const TestEntry = TEST_ENTRY ? defineAsyncComponent(() => import('./WorldTestEntry.vue')) : null;
 const WorldPlay=defineAsyncComponent(()=>import('./WorldPlay.vue'));
 const TestFamilies=import.meta.env.DEV||import.meta.env.MODE==='localtest'?defineAsyncComponent(()=>import('./WorldFamilies.vue')):null;
 // 친구 초대·마을·방문은 같은 기기의 시험 가족끼리만 된다(§2-22 9): 테스트 입구와 같은 빌드 조건으로 배포본에서 뺀다

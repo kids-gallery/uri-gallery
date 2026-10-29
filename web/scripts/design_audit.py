@@ -1,8 +1,9 @@
 """디자인 진단(SD_02 17-20, 단계 1) — 모든 화면을 390·1280px로 캡처하고 화면 × 항목 점검표를 만든다.
 
   ~/.local/share/ai-mcp/python-env/bin/python web/scripts/design_audit.py [출력 폴더]
-  환경: BASE(기본 http://localhost:9601, compose 입구), BASE_WORLD(3D 세계를 띄운 주소, 기본 BASE),
-        MAIL(기본 http://localhost:8025), 실행 전에 docker compose up -d
+  환경: BASE(기본 http://127.0.0.1:9501, 개발 서버), BASE_WORLD(3D 세계를 띄운 주소, 기본 BASE),
+        MAIL(기본 http://127.0.0.1:8125, E2E 스택 Mailpit), OPS_EMAIL·OPS_PASSWORD(기본 E2E 스택 팀원).
+  먼저 E2E 스택(web/e2e/stack)과 개발 서버(APP_API_URL=http://127.0.0.1:9621 npm run dev)를 띄운다.
 
 자동으로 세는 것은 "의심"이다. 표의 판정은 캡처를 사람이 보고 확정한다(진단 문서에 적는다).
 같은 스크립트를 디자인 적용 뒤 다시 돌려 '문제 없음'을 확인한다(단계 4 ⑤).
@@ -12,7 +13,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -20,10 +20,10 @@ from pathlib import Path
 from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "ops" / "docker"))
-import smoke  # noqa: E402  가입·업로드 도우미를 그대로 쓴다
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import audit_api as smoke  # noqa: E402  가입·업로드 도우미
 
-BASE = os.environ.get("BASE", "http://localhost:9601")
+BASE = os.environ.get("BASE", "http://127.0.0.1:9501")
 BASE_WORLD = os.environ.get("BASE_WORLD", BASE)
 smoke.BASE = BASE
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else ROOT / ".data" / "design-audit" / time.strftime("%Y%m%d-%H%M"))
@@ -139,16 +139,19 @@ def setup_accounts() -> dict:
     data = {}
     smoke.jar.clear(); data["data_email"] = smoke.signup()
     _, child = smoke.call("POST", "/v1/children", {"alias": "하늘"}); data["child"] = child["id"]
-    sample = ROOT / "ops" / "docker" / "sample-drawing.png"
+    sample = Path(__file__).resolve().parent / "audit-sample.png"
     a = smoke.upload(child["id"], sample); smoke.wait_stages(a["id"], 600)
-    smoke.call("POST", f"/v1/artworks/{a['id']}/confirm", {"kind": "relief"}); smoke.wait_stages(a["id"], 900)
-    smoke.call("POST", f"/v1/artworks/{a['id']}/decision", {"decision": "like"}); data["artwork"] = a["id"]
+    _, a = smoke.call("GET", f"/v1/artworks/{a['id']}")
+    kind = "relief" if "relief" in (a.get("choices") or []) else "frame"  # 모델이 없는 환경은 원본 액자만 고를 수 있다
+    smoke.call("POST", f"/v1/artworks/{a['id']}/confirm", {"kind": kind}); a, _ = smoke.wait_stages(a["id"], 900)
+    if a.get("state") == "awaiting_review":
+        smoke.call("POST", f"/v1/artworks/{a['id']}/decision", {"decision": "like"})
+    data["artwork"] = a["id"]
     b = smoke.upload(child["id"], sample); smoke.wait_stages(b["id"], 600); data["pending"] = b["id"]  # 확정 전
     data["data_cookies"] = [c.__dict__ for c in smoke.jar]
     smoke.jar.clear(); data["empty_email"] = smoke.signup(); data["empty_cookies"] = [c.__dict__ for c in smoke.jar]
-    ops_email, ops_pw = "audit-ops@example.com", "audit-ops-password-1"
-    subprocess.run(["docker", "compose", "exec", "-T", "app-api", "node", "dist/scripts/ops/staff.js", "add", "--email", ops_email,
-                    "--role", "operator,evaluator,integrator"], input=ops_pw + "\n", text=True, cwd=ROOT, capture_output=True)
+    # 운영 계정은 E2E 스택이 운영 CLI로 만든 팀원(web/e2e/stack/ports.ts STAFF)
+    ops_email, ops_pw = os.environ.get("OPS_EMAIL", "staff@e2e.test"), os.environ.get("OPS_PASSWORD", "e2e-Staff-2026")
     data["ops"] = (ops_email, ops_pw)
     return data
 

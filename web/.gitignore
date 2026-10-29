@@ -4,3 +4,5 @@ test-results/
 dist-world/
 # 휴대폰 측정용 빌드(3D미술관_재설계 §2-22 13). 배포본이 아니다
 dist-measure/
+# 개발 서버 설정은 비밀값이 없어 올린다(SD_02 17-20-1)
+!.env.development
