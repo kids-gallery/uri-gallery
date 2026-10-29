@@ -9,13 +9,12 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  models: read
 concurrency:
   group: review-bot-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
   review:
-    if: github.event.pull_request.user.type != 'Bot'
+    if: github.event.pull_request.user.type != 'Bot' && github.event.pull_request.merged != true
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -28,4 +27,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_AI_ENDPOINT: ${{ vars.REVIEW_AI_ENDPOINT }}
+          REVIEW_AI_MODEL: ${{ vars.REVIEW_AI_MODEL }}
+          REVIEW_AI_KEY: ${{ secrets.REVIEW_AI_KEY }}
         run: python3 .github/review-bot/review.py

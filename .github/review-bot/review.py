@@ -3,7 +3,8 @@
 
 - PR의 코드는 실행하지 않는다. 바뀐 내용은 GitHub API로만 읽는다.
 - 판정 내용은 rules.json에 있다. 이 파일은 그 표를 적용하고 결과를 PR에 남기기만 한다.
-- 막음이 있으면 변경 요청 리뷰 + `리뷰봇-막음` 라벨 + 초안으로 되돌리기 + 종료 코드 1(검사 실패).
+- 막음이 있으면 변경 요청 리뷰 + `리뷰봇-막음` 라벨 + PR 닫기 + 종료 코드 1(검사 실패).
+  (워크플로 토큰은 PR을 초안으로 바꿀 수 없어서 닫는다. 2026-10-29 실행에서 "Resource not accessible by integration" 확인)
 - 봇은 승인하지 않는다. 통과는 "사람 리뷰 차례"라는 뜻이다.
 표준 라이브러리만 쓴다(Actions 기본 Python에서 바로 돈다).
 """
@@ -254,15 +255,13 @@ class GH:
                 return out
             page += 1
 
-    def graphql(self, query: str, **variables) -> Any:
-        res = self.call("POST", f"{self.api}/graphql", {"query": query, "variables": variables})
-        if res and res.get("errors"):  # GraphQL은 실패해도 200으로 답한다
-            raise RuntimeError("GraphQL: " + "; ".join(e.get("message", "") for e in res["errors"]))
-        return res
 
-
-def ai_review(token: str, ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
+def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
+    """OpenAI 호환 대화 API로 비판 검토. 주소·모델·키가 모두 있어야 켜진다(저장소 변수·비밀)."""
     ai = rules["ai"]
+    endpoint, model, key = (os.environ.get(k, "").strip() for k in ("REVIEW_AI_ENDPOINT", "REVIEW_AI_MODEL", "REVIEW_AI_KEY"))
+    if not (endpoint and model and key):
+        return False, "AI 검토가 꺼져 있다(저장소에 AI 주소·모델·키가 설정되지 않음). 규칙 검사로만 판정했다.", []
     diff = ""
     for f in ctx["files"]:
         diff += f"\n--- {f['filename']} ({f.get('status')})\n{f.get('patch') or '(내용 없음: 바이너리이거나 너무 큼)'}\n"
@@ -280,10 +279,10 @@ def ai_review(token: str, ctx: dict, rules: dict) -> tuple[bool, str, list[dict]
     )
     user = (f"PR 제목: {ctx['title']}\n작성자: {ctx['author']}\n가지: {ctx['branch']}\n\nPR 본문:\n{ctx['body']}\n\n"
             "커밋:\n" + "\n".join(ctx["commits"]) + f"\n\n바뀐 내용{'(앞부분만)' if cut else ''}:\n{diff}")
-    body = {"model": ai["model"], "temperature": 0.2, "response_format": {"type": "json_object"},
+    body = {"model": model, "temperature": 0.2,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-    req = urllib.request.Request(ai["endpoint"], data=json.dumps(body).encode(), method="POST")
-    req.add_header("Authorization", f"Bearer {token}")
+    req = urllib.request.Request(endpoint, data=json.dumps(body).encode(), method="POST")
+    req.add_header("Authorization", f"Bearer {key}")
     req.add_header("Content-Type", "application/json")
     raw = b""
     try:
@@ -303,7 +302,7 @@ def ai_review(token: str, ctx: dict, rules: dict) -> tuple[bool, str, list[dict]
 # ---------- 결과 쓰기 ----------
 
 def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: str, ai_issues: list[dict],
-           sha: str, rules: dict, drafted: bool = True) -> str:
+           sha: str, rules: dict, closed: bool = True) -> str:
     msg = rules["messages"]
     blocks = [f for f in findings if f["level"] == "block"]
     warns = [f for f in findings if f["level"] == "warn"]
@@ -312,8 +311,8 @@ def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: s
     lines = [MARK, f"## 리뷰봇 판정: {'막음 ' + str(n) + '건' if verdict_block else '통과'}", "",
              f"검사한 커밋 `{sha[:7]}` · AI 검토 {'함' if ai_ok else '못 함'}", ""]
     if verdict_block:
-        lines += ["고치기 전에는 병합할 수 없다. " + ("PR을 초안으로 되돌렸다." if drafted else "PR을 초안으로 되돌리지 못했다. 이 검사가 실패로 남아 있는 동안 병합하지 않는다.")
-                  + " 고쳐서 커밋을 올리거나 본문을 고치면 다시 검사한다.", ""]
+        lines += ["고치기 전에는 병합할 수 없다. " + ("PR을 닫았다." if closed else "PR을 닫지 못했다. 이 검사가 실패로 남아 있는 동안 병합하지 않는다.")
+                  + " 본문을 고치면 바로 다시 검사해, 통과하면 다시 연다. 코드를 고쳤으면 커밋을 올린 뒤 'Reopen pull request'를 누른다.", ""]
     else:
         lines += ["규칙 검사를 통과했다. 이제 사람 리뷰 차례다. 봇은 승인하지 않는다.", ""]
 
@@ -367,20 +366,20 @@ def main() -> int:
            "codeowners": codeowners, "override_by_other": override_by_other}
 
     findings = apply_override(evaluate(ctx, rules), ctx, rules)
-    ai_ok, ai_summary, ai_issues = ai_review(token, ctx, rules)
+    ai_ok, ai_summary, ai_issues = ai_review(ctx, rules)
     if override_by_other and "ai" in rules["overridable"] and rules["override_reason"] in ctx["body"]:
         for i in ai_issues:
             if i["severity"] == "막음":
                 i["severity"], i["problem"] = "고침 권함", i["problem"] + " (예외 승인)"
     block = any(f["level"] == "block" for f in findings) or any(i["severity"] == "막음" for i in ai_issues)
-    drafted = pr["draft"]
-    if block and not drafted:
+    closed = pr["state"] == "closed"
+    if block and not closed:
         try:
-            gh.graphql("mutation($id:ID!){convertPullRequestToDraft(input:{pullRequestId:$id}){clientMutationId}}", id=pr["node_id"])
-            drafted = True
-        except (RuntimeError, urllib.error.HTTPError) as e:
-            print(f"[초안 되돌리기 실패] {e}", file=sys.stderr)
-    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules, drafted)
+            gh.call("PATCH", f"{R}/pulls/{num}", {"state": "closed"})
+            closed = True
+        except urllib.error.HTTPError as e:
+            print(f"[PR 닫기 실패] HTTP {e.code}: {e.read()[:300]!r}", file=sys.stderr)
+    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules, closed)
 
     # 댓글 하나를 계속 고쳐 쓴다
     mine = [c for c in gh.all(f"{R}/issues/{num}/comments") if c["user"]["login"] == BOT and c["body"].startswith(MARK)]
@@ -406,8 +405,8 @@ def main() -> int:
         gh.call("PUT", f"{R}/pulls/{num}/reviews/{r['id']}/dismissals", {"message": "다시 검사해 통과했다", "event": "DISMISS"})
     if block_label in labels:
         gh.call("DELETE", f"{R}/issues/{num}/labels/{urllib.request.quote(block_label)}")
-        if pr["draft"]:
-            gh.graphql("mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){clientMutationId}}", id=pr["node_id"])
+        if pr["state"] == "closed" and not pr.get("merged"):  # 봇이 닫았던 PR을 다시 연다
+            gh.call("PATCH", f"{R}/pulls/{num}", {"state": "open"})
     print(text)
     return 0
 

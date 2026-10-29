@@ -158,9 +158,16 @@ class AI(unittest.TestCase):
         text = '```json\n{"summary": "s", "issues": []}\n```'
         self.assertEqual(review.parse_ai(text, [], RULES), ("s", []))
 
-    def test_render_tells_when_draft_failed(self):
-        text = review.render(True, [], True, "s", [], "abcdef1", RULES, drafted=False)
-        self.assertIn("되돌리지 못했다", text)
+    def test_render_tells_when_close_failed(self):
+        text = review.render(True, [], True, "s", [], "abcdef1", RULES, closed=False)
+        self.assertIn("닫지 못했다", text)
+
+    def test_ai_off_without_settings(self):
+        for k in ("REVIEW_AI_ENDPOINT", "REVIEW_AI_MODEL", "REVIEW_AI_KEY"):
+            os.environ.pop(k, None)
+        ok, summary, issues = review.ai_review(good(), RULES)
+        self.assertEqual((ok, issues), (False, []))
+        self.assertIn("꺼져 있다", summary)
 
     def test_bad_json_raises(self):
         with self.assertRaises(ValueError):
@@ -168,7 +175,7 @@ class AI(unittest.TestCase):
 
     def test_render_marks_block(self):
         f = review.evaluate(dict(good(), branch="x"), RULES)
-        text = review.render(True, f, False, "AI 검토를 하지 못했다(HTTP 403).", [], "abcdef123", RULES)
+        text = review.render(True, f, False, "AI 검토가 꺼져 있다.", [], "abcdef123", RULES)
         self.assertTrue(text.startswith(review.MARK))
         self.assertIn("막음 1건", text)
         self.assertIn("AI 검토 못 함", text)

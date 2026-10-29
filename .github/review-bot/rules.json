@@ -145,11 +145,10 @@
     ".github/*"
   ],
   "ai": {
-    "endpoint": "https://models.github.ai/inference/chat/completions",
-    "model": "openai/gpt-4.1-mini",
     "max_diff_chars": 40000,
     "max_issues": 8,
-    "context": "이 저장소는 '우리 아이 미술관'(Vue 화면 · Express app-api · FastAPI model-api · Python 작업자 · MariaDB)을 5일 안에 Docker Compose로 다시 짓는 팀 작업이다. 목표는 하나다: `docker compose up -d` 한 명령으로 서비스가 뜨고 이메일 가입(Mailpit) → 사진 올리기 → 분리(M1) → 판정 제안(M2) → 확정 → 부조(M5) 또는 액자 → 전시까지 한 바퀴가 되며, 같은 방법으로 배포 서버에도 뜬다. compose 서비스는 web(nginx, 바깥 9501)·app-api·sweeper·db(MariaDB)·mailpit(8025)·model-api·worker-cpu 7개다. 하지 않는 것: CI 옮기기와 이미지 자동 빌드, 레지스트리 올리기, 태그별 되돌리기, 모니터링, 장애 리허설, 백업 스크립트, 보안 점검표, GPU, 3D 단독 판, M3·M6·M7 실제 실행, 카카오 로그인, 서비스 기능 변경. 지켜야 할 원칙: 설계서를 먼저 고친다. 잠금 파일을 먼저 복사해 설치하고 소스는 나중에 넣는다. 비밀 값은 .env로만 넘기고 이미지·저장소에 넣지 않는다. 기반 이미지 판 번호를 고정한다. 127.0.0.1 고정 주소는 설정 값으로 바꾸고 서비스 이름으로 부른다. db가 준비된 뒤 api가 뜨게 한다. 모델 가중치는 저장소에 넣지 않는다. PR 하나는 이슈 하나만 다룬다."
+    "context": "이 저장소는 '우리 아이 미술관'(Vue 화면 · Express app-api · FastAPI model-api · Python 작업자 · MariaDB)을 5일 안에 Docker Compose로 다시 짓는 팀 작업이다. 목표는 하나다: `docker compose up -d` 한 명령으로 서비스가 뜨고 이메일 가입(Mailpit) → 사진 올리기 → 분리(M1) → 판정 제안(M2) → 확정 → 부조(M5) 또는 액자 → 전시까지 한 바퀴가 되며, 같은 방법으로 배포 서버에도 뜬다. compose 서비스는 web(nginx, 바깥 9501)·app-api·sweeper·db(MariaDB)·mailpit(8025)·model-api·worker-cpu 7개다. 하지 않는 것: CI 옮기기와 이미지 자동 빌드, 레지스트리 올리기, 태그별 되돌리기, 모니터링, 장애 리허설, 백업 스크립트, 보안 점검표, GPU, 3D 단독 판, M3·M6·M7 실제 실행, 카카오 로그인, 서비스 기능 변경. 지켜야 할 원칙: 설계서를 먼저 고친다. 잠금 파일을 먼저 복사해 설치하고 소스는 나중에 넣는다. 비밀 값은 .env로만 넘기고 이미지·저장소에 넣지 않는다. 기반 이미지 판 번호를 고정한다. 127.0.0.1 고정 주소는 설정 값으로 바꾸고 서비스 이름으로 부른다. db가 준비된 뒤 api가 뜨게 한다. 모델 가중치는 저장소에 넣지 않는다. PR 하나는 이슈 하나만 다룬다.",
+    "_설명": "주소·모델·키는 저장소 설정에 둔다: 변수 REVIEW_AI_ENDPOINT(OpenAI 호환 /chat/completions 주소)·REVIEW_AI_MODEL, 비밀 REVIEW_AI_KEY. 셋 중 하나라도 없으면 AI 검토는 꺼지고 규칙 검사로만 판정한다."
   },
   "messages": {
     "issue_link": [
