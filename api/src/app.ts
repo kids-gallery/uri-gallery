@@ -21,7 +21,7 @@ export interface AppDeps {
 export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDeps) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', cfg.trustProxy); // 기본 loopback, 컨테이너는 uniquelocal(SD_04 10-3)
+  app.set('trust proxy', 'loopback');
   app.use((req, res, next) => {
     // 요청 번호(계약 머리말, 점검표 L1): 형식이 맞는 X-Request-ID는 그대로, 아니면 새로 — 응답 헤더·오류 본문·로그 줄이 같은 값
     const given = req.get('x-request-id');

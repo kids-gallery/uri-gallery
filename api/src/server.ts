@@ -11,4 +11,4 @@ if (!cfg.sessionSecret || !cfg.authHmacSecret) throw new Error('SESSION_SECRET·
 const db = createPool(cfg.db);
 const storage = new LocalFsDriver(cfg.storageRoot);
 const app = createApp({ db, cfg, storage, routers: buildRouters({ db, cfg, storage, mailer: cfg.mailEnabled ? smtpMailer(cfg.mailSmtpUrl, cfg.mailFrom) : disabledMailer() }) });
-app.listen(cfg.port, cfg.appHost, () => log.info({ event: 'listening', status: cfg.port }));
+app.listen(cfg.port, '127.0.0.1', () => log.info({ event: 'listening', status: cfg.port }));
