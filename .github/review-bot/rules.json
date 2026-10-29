@@ -36,7 +36,7 @@
   "evidence_pattern": "`[^`]+`|\\d",
   "design_ref_pattern": "\\d",
   "design_none_pattern": "해당 없음",
-  "branch_pattern": "^(feat|fix|docs|refactor|test|chore)/\\d+-[a-z0-9][a-z0-9._-]*$",
+  "branch_pattern": "^(feat|feature|fix|docs|refactor|test|chore)/\\d+-[a-z0-9][a-z0-9._-]*$",
   "commit_pattern": "^(feat|fix|docs|refactor|test|chore)(\\([^)]+\\))?: .+ \\(#\\d+\\)$",
   "commit_skip_pattern": "^(Merge |Revert \")",
   "secret_patterns": [

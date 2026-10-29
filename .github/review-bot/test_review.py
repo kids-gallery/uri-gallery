@@ -60,6 +60,8 @@ class Rules(unittest.TestCase):
     def test_branch_and_commit(self):
         c = good(); c["branch"] = "scratch"; c["commits"] = ["scratch-b commit sss", "Merge branch 'main' into x"]
         self.assertTrue({"branch", "commit"} <= rules_hit(c))
+        c = good(); c["branch"] = "feature/12-api-image"  # 핸드북 실습 때 쓴 이름
+        self.assertNotIn("branch", rules_hit(c))
         c = good(); c["commits"] = ["feat: api 이미지 추가"]  # 이슈 번호 없음
         self.assertIn("commit", rules_hit(c))
 
