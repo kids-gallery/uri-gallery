@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.sha }}   # pull_request_target에서는 기준 가지(main)의 최신 커밋이다
           sparse-checkout: .github/review-bot
           persist-credentials: false
       - name: 판정
