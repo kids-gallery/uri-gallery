@@ -1,3 +1,6 @@
 dist/
 playwright-report/
 test-results/
+dist-world/
+# 휴대폰 측정용 빌드(3D미술관_재설계 §2-22 13). 배포본이 아니다
+dist-measure/

@@ -14,10 +14,16 @@ const proxy: Record<string, { target: string; changeOrigin: boolean }> = {
   ...Object.fromEntries(['/v1', '/live', '/ready', '/openapi.json', '/_files'].map((p) => [p, { target: api, changeOrigin: false }])),
 };
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [vue()],
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  resolve: {
+    alias: [
+      // 단독 배포본은 미술관 전용 라우터를 쓴다. 팀 화면·로그인·팀 문구가 배포본에 들어가지 않는다(3D미술관_재설계 §2-22 9)
+      ...(mode === 'world' ? [{ find: /^@\/router$/, replacement: fileURLToPath(new URL('./src/router/world.ts', import.meta.url)) }] : []),
+      { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+    ],
+  },
   server: { host: '127.0.0.1', port, strictPort: true, proxy },
   preview: { host: '127.0.0.1', port, strictPort: true, proxy },
   test: { environment: 'jsdom', include: ['src/**/*.spec.ts'] },
-});
+}));

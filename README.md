@@ -24,7 +24,7 @@
 
 ## 1부. 배경지식: 이미 만들어진 서비스
 
-지난 모델 서빙 팀 작업(2026-09-30 판)이 무엇이고 어떻게 작동하는지부터 이해합니다. 컨테이너 작업은 이 구조를 바꾸지 않고 실행·배포 방식만 바꿉니다.
+이번 서비스는 두 덩어리로 이루어집니다. **모델 서빙**(app-api · 작업 큐 · 워커 · 모델 · DB)은 지난 모델 서빙 팀 작업(2026-09-30 판)을 그대로 쓰고, **화면**은 브라우저 3D 미술관(`web/src/app/world/`)으로 바꿉니다. 1부는 이 두 덩어리가 지금 어떻게 되어 있고 어떻게 작동하는지 설명합니다. 이번 작업의 개발 몫은 3D 화면이 모델 서빙 API를 쓰게 잇는 것이고(2부), 나머지는 전체를 컨테이너로 감싸는 것입니다.
 
 ### 무엇을 하나
 
@@ -86,6 +86,8 @@ flowchart LR
 | 14 | 화면 | 미술관에 걸린 결과. 이웃도 볼 수 있다 | | `/app/museum/:childId`, `v_gallery` |
 | 15 | sweeper | 죽은 작업 되살리기, 지우기 요청 처리, 만료 정리 | | `api/src/sweeper/` |
 
+표의 화면 주소(`/app/artworks/...` 등)는 지난 판 평면 화면입니다. 이번에는 같은 API를 3D 미술관이 부릅니다.
+
 작품 상태는 DB가 허용하는 8개뿐입니다: `received` `judging` `awaiting_confirm` `processing` `awaiting_review` `approved` `failed` `deleting`.
 
 </details>
@@ -118,16 +120,23 @@ flowchart LR
 
 작업을 시작하기 전에 이 절을 먼저 읽습니다. 지금 코드는 팀 서버(맥) 한 대에서 pm2로 띄우도록 맞춰져 있습니다. 컨테이너로 옮길 때 각 부분에서 무엇을 봐야 하는지도 함께 적었습니다.
 
-#### 1. 화면 `web/` (Vue 3.5 · Vite 8 · TypeScript)
-- **무엇:** 보호자 화면(`/app/...`)과 운영 화면(`/ops/...`)이 들어 있는 한 개의 Vue 앱입니다.
-- **어떻게 뜨나:** 개발 중에는 `npm run dev`(Vite 개발 서버)로 띄웁니다. 운영에서는 `npm run build`로 만든 정적 파일(`web/dist/`)을 nginx가 그대로 내줍니다. 화면 전용 서버 프로세스는 없습니다.
-- **어떻게 작동하나:**
-  - 주소마다 화면을 붙입니다(`src/router/index.ts`).
-  - 로그인 상태는 서버 세션 쿠키로 유지합니다. 화면은 `/v1/me`로 "지금 누구인가"를 물어 Pinia(`src/stores/session.ts`)에 둡니다.
-  - API 요청·응답 타입은 `contracts/openapi.yaml`에서 자동 생성합니다(`npm run gen:api`). 그래서 서버 응답 모양이 바뀌면 화면 빌드가 먼저 깨집니다.
-  - 미술관 장면(`src/app/museum3d/`)은 3D 엔진 없이 CSS `perspective`로 벽과 작품을 세웁니다.
-  - 사진은 올리기 전에 브라우저에서 방향을 맞추고, 자르고, 줄입니다(`src/app/upload/`).
-- **옮길 때:** 빌드 단계(node)와 실행 단계(nginx)를 나눕니다. 실행 이미지에는 `dist/`만 들어갑니다.
+#### 1. 화면: 3D 미술관 `web/src/app/world/` (Vue 3.5 · three.js 0.170)
+- **무엇:** 브라우저에서 도는 3D 미술관입니다. 광장 → 미술관 로비 → 회랑 → 나이별 전시실을 캐릭터로 걸어 다니고, 아이 그림이 두께 있는 입체 작품으로 걸립니다. 작품을 누르면 주제별 애니메이션(행동 7종·소리 11종)이 나옵니다.
+- **어떻게 뜨나:**
+  - 개발: `cd web && npm ci && npm run dev` → `http://127.0.0.1:9501/app/world`. 개발 서버가 `/v1/*`를 app-api(9521)로 넘깁니다(`web/vite.config.ts`).
+  - 배포본: `npm run build:world` → `web/dist-world/`. 미술관 전용 라우터만 들어가고, 한 번 받으면 오프라인에서도 열리는 서비스 워커(`web/public/sw.js`)가 들어 있습니다. 화면 전용 서버 프로세스는 없고 nginx가 이 파일을 내줍니다.
+- **어떻게 작동하나(지금):**
+  - `engine.ts`가 렌더러·카메라·캐릭터 이동·작품 배치를 묶고, Vue 화면(`WorldView.vue` 등)은 데이터를 넘기고 콜백을 받습니다.
+  - 공간은 `museum.ts`(로비·회랑·전시실, 작품 자리), `spatialLayout.ts`, `cathedral.ts`, `outdoor.ts`가 만듭니다.
+  - 사진을 올리면 `store.ts`의 `processImage`가 원본·화면용 사본을 만들고, `cutout.ts`의 `removeBackground()`가 **브라우저 규칙**으로 배경을 지웁니다. 조명 펴기 → 종이색 찾기 → 가장자리부터 칠하기 → 잡티 지우기 순서이고, 실패하면 사각형 판으로 대체합니다. 그다음 `buildRelief()`가 윤곽을 따서 두께 있는 입체를 만듭니다.
+  - 작품·방·설정·캐릭터는 **브라우저 IndexedDB**(`store.ts`)에 저장합니다. 백업 zip(`backup.ts`)으로 내보낼 수 있습니다.
+  - **서버를 전혀 부르지 않습니다.** 로그인도 없고, 기기 안의 가족 프로필로 씁니다.
+- **이번에 바꿀 것:**
+  - 작품 부분(가입·아이·올리기·상태·확정·결정·목록)이 app-api를 쓰게 잇습니다. 서버 모델이 만든 M1 컷아웃(`cutoutUrl`)으로 입체를 다시 만듭니다. 교체 자리는 미리 나눠 두었습니다(`cutout.ts` 2행).
+  - 개인정보 안내(`WorldPrivacy.vue` 20행, "사진을 이 기기 밖으로 보내지 않아요")를 바꿉니다.
+  - 자세한 대응표는 [2부 이번 개발 몫](#이번-개발-몫-3d-화면--api-연결)에 있습니다.
+- **같은 폴더의 다른 화면:** `web/`에는 지난 판의 평면 화면(`/app/...`, `/ops/...`)도 들어 있습니다. 운영 화면(`/ops`)은 참고만 하고, 평면 보호자 화면은 쓰지 않습니다.
+- **옮길 때:** 빌드 단계(node, `npm run build:world`)와 실행 단계(nginx)를 나눕니다. 실행 이미지에는 `dist-world/`만 들어갑니다.
 
 #### 2. 입구 nginx `ops/p1/nginx.conf`
 - **무엇:** 바깥에서 들어오는 문은 이것 하나입니다(9501).
@@ -296,7 +305,7 @@ flowchart LR
 
 ### 이번 목표(5일)
 
-> `docker compose up -d` 한 명령으로 서비스가 뜨고, 가입부터 전시까지 한 바퀴가 된다. 같은 방법으로 배포 서버에서도 뜬다.
+> `docker compose up -d` 한 명령으로 서비스가 뜨고, **3D 미술관**에서 가입 → 사진 올리기 → 서버 모델이 분리·판정·결과 → 보호자 확정 → 입체 작품 전시까지 한 바퀴가 된다.
 
 핵심 흐름만 만듭니다. 모니터링·GPU·레지스트리·장애 리허설처럼 한 바퀴에 필요 없는 일은 하지 않습니다([마스터플랜 10절](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md)).
 
@@ -306,10 +315,11 @@ flowchart LR
 
 | 항목 | 상태 |
 |---|---|
-| 서비스 코드 | 있음. 지난 모델 서빙 팀 작업(2026-09-30 판)이다. 팀 서버(맥)에서 pm2로 프로세스 8개를 띄워 돌렸다 |
+| 모델 서빙 | 있음. 지난 모델 서빙 팀 작업(2026-09-30 판)이다. 팀 서버(맥)에서 pm2로 프로세스 8개를 띄워 돌렸다 |
+| 3D 화면 | 있음. 기기 안에서만 돈다. 서버 연결 코드는 0줄이다 |
 | 리눅스에서 돌기 | 확인함. 리눅스 컨테이너(arm64·x86_64)에서 서빙·api 시험이 통과하고 웹이 빌드된다. x86_64용 CPU 전용 모델 잠금을 더했다 |
 | Dockerfile · compose | **0개. 이번 5일 동안 팀이 직접 만든다** |
-| 배포 서버 | 1일차에 정한다(이슈 #7) |
+| 배포 | 이번 5일 밖. 나중에 따로 연결한다(3D 화면은 Vercel 같은 정적 호스팅, 서버는 컨테이너를 돌리는 곳) |
 
 ### 컨테이너 구성
 
@@ -331,7 +341,7 @@ flowchart LR
 
 | 지금(pm2·맥) | compose 서비스 | 바뀌는 점 |
 |---|---|---|
-| nginx + 정적 파일 | `web` | 빌드 단계 node → 실행 단계 nginx |
+| nginx + 정적 파일 | `web` | 빌드 단계 node(`npm run build:world`) → 실행 단계 nginx. 3D 미술관을 내준다 |
 | app-api, sweeper | `app-api` `sweeper`(같은 이미지) | 127.0.0.1 고정 주소를 설정 값으로, 서비스 이름으로 부르기 |
 | MariaDB | `db` + 볼륨 | 스키마 넣는 방법 정하기 |
 | model-api, worker-cpu | `model-api` `worker-cpu`(같은 이미지) | CPU 종류별 잠금 파일을 빌드 인자로 고르기 |
@@ -347,20 +357,37 @@ flowchart LR
 
 | 사람 | 역할 | 맡는 폴더 |
 |---|---|---|
-| 이제민 [@wpalswpa](https://github.com/wpalswpa) | 모델 서빙 · compose로 묶기 · 배포 | `serving/`, `compose.yaml` |
-| 최호준 [@zozu001](https://github.com/zozu001) | 입구 · 화면 · 처음부터 띄워 보기 | `web/`, 입구 nginx, `.gitattributes` |
-| 신지현 [@tlswlgus960-prog](https://github.com/tlswlgus960-prog) | 팀장 · 앱 · 데이터 · 병합 | `api/`, `db/`, `contracts/` |
+| 이제민 [@wpalswpa](https://github.com/wpalswpa) | 모델 서빙 · compose로 묶기 | `serving/`, `compose.yaml` |
+| 최호준 [@zozu001](https://github.com/zozu001) | 입구 · 3D 화면(로그인·확정·결정 창) · 처음부터 띄워 보기 | `web/`, 입구 nginx, `.gitattributes` |
+| 신지현 [@tlswlgus960-prog](https://github.com/tlswlgus960-prog) | 팀장 · 앱 · 데이터 · 3D 화면 서버 연결 층 · 병합 | `api/`, `db/`, `web/src/app/world/`의 연결 층 |
+
+### 이번 개발 몫: 3D 화면 ↔ API 연결
+
+`store.ts`(기기 저장) 옆에 서버를 쓰는 층을 하나 두고, 작품 관련 부분만 서버로 바꿉니다(마스터플랜 3-3).
+
+| 3D 화면 지금(기기) | 바꿀 것(app-api) |
+|---|---|
+| 가족·아이를 기기 안 계정으로 만든다(`Account`) | 이메일 가입·로그인(`/v1/auth/signup`·`/v1/auth/login`, 확인 메일은 Mailpit), 아이 등록·선택(`/v1/children`) |
+| 사진을 기기에서 처리한다(`processImage` → 브라우저 배경 지우기) | `POST /v1/artworks`로 올린다. 서버 규칙대로 원본 액자가 바로 걸린다 |
+| 입체를 바로 만든다 | `GET /v1/artworks/{id}`로 상태를 본다. 컷아웃(`cutoutUrl`)이 오면 그 그림으로 입체를 다시 만든다(`buildRelief`는 그대로) |
+| (없음) | 권유 확정 `POST /v1/artworks/{id}/confirm`, 결과 결정 `POST /v1/artworks/{id}/decision`: 3D 화면 안의 작은 창 두 개 |
+| 작품 목록(`listArtworks`) | `GET /v1/gallery`·`GET /v1/artworks`, 파일은 `/v1/files/{token}` |
+| 방 배치·설정·캐릭터·놀이·백업 | 그대로 기기에(이번 범위 밖) |
+
+- 서버에 닿지 않으면 화면에 알리고 다시 시도하게 합니다. 기기 판으로 몰래 바꾸지 않습니다.
+- 응답 타입은 OpenAPI에서 생성한 타입(`npm run gen:api` → `web/src/api/types.gen.ts`)을 씁니다.
+- 서비스 워커가 `/v1/`을 캐시하지 않는지 확인합니다.
 
 ### 1일차 이슈
 
 | # | 이슈 | 담당 |
 |---|---|---|
 | 6 | 각자 환경 확인(Docker, 저장소 받기, push) | 셋 다 |
-| 7 | 배포 서버 정하기 | 신지현 |
+| 7 | 배포 서버 정하기(나중으로 미룸) | 신지현 |
 | 8 | 설계 PR(compose 구성 확정) | 이제민 |
 | 9 | M1·M2·M5를 리눅스 컨테이너 CPU로 재기 | 이제민 |
-| 10 | `.gitattributes`, Windows에서 web 빌드 | 최호준 |
-| 11 | MariaDB 컨테이너에 스키마 넣기, 설정 값 목록 | 신지현 |
+| 10 | `.gitattributes`, WSL에서 `npm run build:world` | 최호준 |
+| 11 | MariaDB 컨테이너에 스키마 넣기, 설정 값 목록, 3D 화면 ↔ API 대응표 확정 | 신지현 |
 
 2일차부터는 3부 날짜별 가이드를 보고 각자 이슈를 만들어 진행합니다.
 
@@ -429,11 +456,10 @@ flowchart LR
 | 누가 | 할 일 | 이슈 |
 |---|---|---|
 | 셋 다 | Docker·저장소·push가 되는지 확인하고 결과를 댓글로 남긴다 | #6 |
-| 신지현 | 배포 서버 정하기 | #7 |
 | 이제민(셋이 같이 답) | 설계 PR: 아래 질문 6개에 답하고 compose 구성을 확정한다 | #8 |
 | 이제민 | M1·M2·M5를 리눅스 컨테이너 CPU로 한 장씩 돌려 시간·메모리 재기 | #9 |
-| 최호준 | `.gitattributes`(LF 고정), WSL에서 web 빌드 | #10 |
-| 신지현 | MariaDB 컨테이너에 스키마 넣어 보기, 설정 값 목록 | #11 |
+| 최호준 | `.gitattributes`(LF 고정), WSL에서 `npm run build:world`, 3D 화면을 개발 서버로 띄워 써 보기 | #10 |
+| 신지현 | MariaDB 컨테이너에 스키마 넣어 보기, 설정 값 목록, 3D 화면 ↔ API 대응표 확정 | #11 |
 
 ```bash
 docker run hello-world          # Docker가 도는지
@@ -461,8 +487,8 @@ docker run -it --rm -v "$PWD":/src python:3.11-slim bash
 | 누가 | 이미지 | 먼저 고칠 코드(설계서 먼저) |
 |---|---|---|
 | 이제민 | serving(가짜 모델, `requirements.lock`) → model-api·worker-cpu가 함께 씀 | model-api 바인딩 주소를 설정 값으로(`serving/model_api/main.py` 8행) |
-| 최호준 | web: 빌드 단계 `node:22` → 실행 단계 nginx | 없음 |
-| 신지현 | api: app-api·sweeper가 함께 씀 | app-api 바인딩 주소(`api/src/server.ts` 14행), 프록시 신뢰 범위(`api/src/app.ts` 24행) |
+| 최호준 | web: 빌드 단계 `node:22`(`npm run build:world`) → 실행 단계 nginx. 그리고 3D 화면 로그인 창 | 없음 |
+| 신지현 | api: app-api·sweeper가 함께 씀. 그리고 3D 화면 서버 연결 층(올리기·상태·목록) | app-api 바인딩 주소(`api/src/server.ts` 14행), 프록시 신뢰 범위(`api/src/app.ts` 24행) |
 
 **Dockerfile을 쓸 때 지킬 것**(리뷰봇도 일부를 검사합니다)
 - 기반 이미지는 판 번호를 적습니다(`node:22-slim`처럼 쓰고, `latest`나 판 번호 없이 쓰지 않습니다).
@@ -483,7 +509,7 @@ time docker build -t uam-api ./api
 
 #### 3일차: compose로 묶기
 
-이제민이 저장소 맨 위 `compose.yaml`에 7개 서비스를 묶고, 둘은 자기 서비스 부분을 채웁니다.
+이제민이 저장소 맨 위 `compose.yaml`에 7개 서비스를 묶고, 둘은 자기 서비스 부분을 채웁니다. 같은 날 최호준은 3D 화면의 확정·결정 창을, 신지현은 서버 컷아웃으로 입체를 다시 만드는 부분을 붙입니다.
 
 | 넣을 것 | 내용 |
 |---|---|
@@ -504,16 +530,15 @@ docker compose logs -f app-api   # 막히면 서비스별 로그
 docker compose down              # 볼륨은 남는다. 다시 up 해서 작품이 남는지 본다
 ```
 
-**끝 확인:** 저녁에 셋이 같은 `compose.yaml`을 받아 각자 PC에서 띄우고, 가짜 모델로 가입 → 사진 → 결과 → 전시 한 바퀴가 됩니다.
+**끝 확인:** 저녁에 셋이 같은 `compose.yaml`을 받아 각자 PC에서 띄우고, 가짜 모델로 3D 미술관에서 가입 → 사진 → 확정 → 입체 전시 한 바퀴가 됩니다.
 
-#### 4일차: 실제 모델과 배포 서버
+#### 4일차: 실제 모델과 다듬기
 
 | 누가 | 할 일 |
 |---|---|
 | 이제민 | 실제 모델 3개. `models/manifest.yaml`의 `source`·`revision` 그대로 가중치를 받아 `MODEL_ROOT` 볼륨(읽기 전용)에 둔다. `UAM_FAKE_MODELS=M3,M7`. 모델 묶음 이미지는 CPU 종류에 맞는 잠금 파일로. Docker Desktop 메모리를 넉넉히(M1 추론 중 8.5GB) |
-| 이제민 | 배포 서버에서 `git clone` → `.env` → `docker compose up -d --build` → 다른 PC에서 접속 |
 | 최호준 | 깨끗한 PC에서 README만 보고 처음부터 띄워 보기. 막힌 곳을 README "시작하기"에 고친다 |
-| 신지현 | 배포 서버 `.env`, `docker compose down` 뒤 `up`에도 가족 작품이 남는지 확인 |
+| 신지현 | 개인정보 문구, 서버에 닿지 않을 때 화면, `docker compose down` 뒤 `up`에도 가족 작품이 남는지 확인 |
 | 함께 | 저녁에 기능 동결, 시연이 실패할 때를 대비한 예비 영상 |
 
 ```bash
@@ -521,7 +546,7 @@ docker stats                     # 모델 컨테이너 메모리
 docker compose exec worker-cpu ls /models    # 가중치가 보이는지(경로는 설계 PR에서 정한 값)
 ```
 
-**끝 확인:** 맥에서 실제 모델로 한 바퀴, 배포 서버에서 한 바퀴가 됩니다. 남길 수치 세 가지(이미지 크기, 기동부터 준비까지 시간, 모델별 한 장 처리 시간·메모리)가 표에 있습니다.
+**끝 확인:** 맥에서 실제 모델로 3D 미술관 한 바퀴가 됩니다. 남길 수치 세 가지(이미지 크기, 기동부터 준비까지 시간, 모델별 한 장 처리 시간·메모리)가 표에 있습니다.
 
 #### 5일차: 발표
 
@@ -537,7 +562,6 @@ docker compose exec worker-cpu ls /models    # 가중치가 보이는지(경로�
 - 설계 PR이 구현 PR보다 먼저 병합돼 있다.
 - 깨끗한 PC에서 `docker compose up -d` 뒤 가짜 모델로 한 바퀴가 된다.
 - 맥에서 실제 모델 3개로 한 바퀴가 된다.
-- 배포 서버에서 한 바퀴가 된다.
 - `docker compose down` 뒤 다시 `up` 해도 가족 작품이 남는다.
 - 저장소에 `.env`·비밀 값·모델 가중치가 0건이다.
 - 발표를 마쳤고, 수치와 각자 작업 기록이 있다.
@@ -554,6 +578,8 @@ docker compose exec worker-cpu ls /models    # 가중치가 보이는지(경로�
 | api가 뜨자마자 죽는다 | `SESSION_SECRET`·`AUTH_HMAC_SECRET` 없음, 또는 DB가 준비되기 전에 뜸(`depends_on` 조건) |
 | 모델 설치가 맥과 Windows에서 다르게 된다 | CPU 종류별 잠금 파일(`serving/README.md`) |
 | 워커가 메모리 부족으로 죽는다 | M1 추론 중 8.5GB. 가짜 모델로 돌리거나 Docker 메모리를 늘린다 |
+| 로그인했는데 다시 로그인 화면이 뜬다 | 로컬 `http://`에서는 `SECURE_COOKIES=false`가 필요할 수 있음(`.env.example` 13행) |
+| 3D 화면이 서버 대신 예전처럼 기기에서만 처리한다 | 연결 층이 아직 `store.ts`의 기기 처리를 부름(2부 대응표) |
 | 작업이 계속 "처리 중"이다 | sweeper가 떠 있는지, 워커 로그(`docker compose logs worker-cpu`) |
 
 ### 문서 지도

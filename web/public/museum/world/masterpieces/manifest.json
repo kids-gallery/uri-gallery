@@ -1,0 +1,75 @@
+{
+ "note": "로비 명화. Met Open Access API에서 isPublicDomain=true인 것만 받았다.",
+ "items": [
+  {
+   "file": "met_436535.jpg",
+   "title": "Wheat Field with Cypresses",
+   "artist": "Vincent van Gogh",
+   "date": "1889",
+   "source": "https://www.metmuseum.org/art/collection/search/436535",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-42549-001.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_45434.jpg",
+   "title": "Under the Wave off Kanagawa (Kanagawa oki nami ura), also known as The Great Wave, from the series Thirty-six Views of Mount Fuji (Fugaku sanjūrokkei)",
+   "artist": "Katsushika Hokusai",
+   "date": "ca. 1830–32",
+   "source": "https://www.metmuseum.org/art/collection/search/45434",
+   "image": "https://images.metmuseum.org/CRDImages/as/web-large/DP130155.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_437881.jpg",
+   "title": "Young Woman with a Water Pitcher",
+   "artist": "Johannes Vermeer",
+   "date": "ca. 1662",
+   "source": "https://www.metmuseum.org/art/collection/search/437881",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DP353257.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_435809.jpg",
+   "title": "The Harvesters",
+   "artist": "Pieter Bruegel the Elder",
+   "date": "1565",
+   "source": "https://www.metmuseum.org/art/collection/search/435809",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DP119115.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_436532.jpg",
+   "title": "Self-Portrait with a Straw Hat (obverse: The Potato Peeler)",
+   "artist": "Vincent van Gogh",
+   "date": "1887",
+   "source": "https://www.metmuseum.org/art/collection/search/436532",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DT1502_cropped2.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_437654.jpg",
+   "title": "Circus Sideshow (Parade de cirque)",
+   "artist": "Georges Seurat",
+   "date": "1887–88",
+   "source": "https://www.metmuseum.org/art/collection/search/437654",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DP375450_cropped.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  },
+  {
+   "file": "met_438817.jpg",
+   "title": "The Dance Class",
+   "artist": "Edgar Degas",
+   "date": "1874",
+   "source": "https://www.metmuseum.org/art/collection/search/438817",
+   "image": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-20101-001.jpg",
+   "license": "CC0 (Met Open Access, isPublicDomain=true)",
+   "checked": "2026-10-20"
+  }
+ ]
+}

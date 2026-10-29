@@ -1,0 +1,15 @@
+{
+  "note": "실제 사진 시험 세트의 촬영 조건(3D미술관_재설계 2-22의 12번). label-photos.mjs와 photo-set-eval.mjs가 이 표를 읽는다. 사진 폴더 안의 하위 폴더 이름이 id다. paper는 종이 네 모서리를 누를 수 있는 조건인지, min은 조건마다 모을 장수, minTotal은 모두 모을 장수다.",
+  "minTotal": 30,
+  "conditions": [
+    { "id": "white-paper", "label": "흰 종이 그림", "shoot": "흰 종이에 그린 그림을 책상에 놓고 위에서 찍어요.", "min": 3, "paper": true },
+    { "id": "color-paper", "label": "색 도화지", "shoot": "색 도화지에 그린 그림을 책상에 놓고 위에서 찍어요.", "min": 3, "paper": true },
+    { "id": "lined-notebook", "label": "줄 공책", "shoot": "줄이 있는 공책에 그린 그림을 공책을 펼친 채 위에서 찍어요.", "min": 3, "paper": true },
+    { "id": "origami", "label": "색종이 접기", "shoot": "색종이로 접은 작품을 붙인 종이째(붙이지 않았으면 그대로) 책상에 놓고 위에서 찍어요.", "min": 3, "paper": true },
+    { "id": "clay-box", "label": "찰흙·상자 만들기", "shoot": "찰흙이나 상자로 만든 작품을 책상에 놓고 앞에서 찍어요.", "min": 3, "paper": false },
+    { "id": "child-holding", "label": "아이가 들고 찍음", "shoot": "아이가 그림을 두 손으로 들고 있을 때 앞에서 찍어요.", "min": 3, "paper": true },
+    { "id": "tilted", "label": "비스듬히 찍음", "shoot": "책상에 놓은 그림을 바로 위가 아니라 옆에서 비스듬히 찍어요.", "min": 3, "paper": true },
+    { "id": "dark", "label": "어두운 곳", "shoot": "저녁 거실처럼 어두운 곳에서 플래시 없이 찍어요.", "min": 3, "paper": true },
+    { "id": "patterned-desk", "label": "무늬 있는 책상", "shoot": "나뭇결이나 무늬가 있는 책상에 그림을 놓고 위에서 찍어요.", "min": 3, "paper": true }
+  ]
+}

@@ -9,6 +9,7 @@ import { useSession } from '@/stores/session';
 import { OPS_ROLES, safeNext } from './menu';
 import { isFirstVisit, needsEntrance } from '@/app/entrance';
 import { isClassic, museumTheme } from '@/app/museumTheme';
+import { worldOnlyRoutes } from './world';
 
 declare module 'vue-router' {
   interface RouteMeta { shell?: 'app' | 'ops'; public?: boolean; noFamilyOk?: boolean; roles?: readonly string[] }
@@ -27,6 +28,7 @@ export const routes: RouteRecordRaw[] = [
   // 보호자 — 로그인 전
   { path: '/app/welcome', component: () => import('@/app/views/WelcomeView.vue'), meta: { shell: 'app', public: true } }, // S0w 입장(제안 SD_02 §17-2)
   { path: '/app/sample', component: () => import('@/app/views/SampleMuseumView.vue'), meta: { shell: 'app', public: true } }, // 견본 미술관 — 로그인 없이, 서버 호출 없음(D48 ①, SD_02 §17-17)
+  { path: '/app/world', component: () => import('@/app/world/WorldView.vue'), meta: { shell: 'app', public: true } }, // 개인 확장 3D 미술관 로컬 판(design/개인확장/3D미술관_재설계.md) — 서버 호출 없음
   { path: '/app/login', component: () => import('@/app/views/LoginView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/signup', component: () => import('@/app/views/SignupView.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/verify', component: () => import('@/app/views/VerifyView.vue'), meta: { shell: 'app', public: true } },
@@ -128,8 +130,12 @@ export function installGuards(router: Router) {
   });
 }
 
+/** 미술관만 단독으로 내는 배포본의 경로 표(3D미술관_재설계 §2-19 기준 4). 정의는 router/world.ts 한 곳이고, 빌드는 그 파일을 쓴다(§2-22 9) */
+export { worldOnlyRoutes };
+
 export function makeRouter() {
-  const router = createRouter({ history: createWebHistory(), routes });
+  const worldOnly = import.meta.env.MODE === 'world';
+  const router = createRouter({ history: createWebHistory(), routes: worldOnly ? worldOnlyRoutes : routes });
   installGuards(router);
   installTransitions(router); // D38 걷는 화면 전환
   return router;
