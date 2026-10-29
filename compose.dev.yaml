@@ -1,0 +1,23 @@
+# 개발 묶음(SD_04 10-2). 실제 엔진 대신 개발용 가짜 엔진(engine-dev)을 붙이고, 시험 환경 시드를 한 번 돌린다.
+# 가짜 엔진은 사람을 찾지 않는다고만 답한다 — 움직이는 그림 결과를 만들지 않는다. 시연·검증은 compose.prod.yaml로.
+services:
+  engine-dev:
+    image: uri-gallery-engine-dev:local
+    build: { context: ., dockerfile: engine-dev/Dockerfile }
+    networks: [back]
+    restart: unless-stopped
+
+  seed:
+    image: uri-gallery-serving:local
+    env_file: .env
+    environment: { DB_HOST: db, MODEL_ROOT: /models }
+    command: ["python", "-m", "ops.docker_seed"]
+    networks: [back]
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    restart: "no"
+
+  worker:
+    environment: { TORCHSERVE_URL: "http://engine-dev:9561" }
+    depends_on:
+      engine-dev: { condition: service_healthy }
+      seed: { condition: service_completed_successfully }

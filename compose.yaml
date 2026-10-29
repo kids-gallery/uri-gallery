@@ -1,0 +1,138 @@
+# 우리 아이 미술관 — 공통 묶음(SD_04 10-1·10-2). 혼자 쓰지 않고 개발(compose.dev.yaml) 또는 배포(compose.prod.yaml)와 겹쳐 쓴다.
+#   개발: .env에 COMPOSE_FILE=compose.yaml:compose.dev.yaml 을 두고 `docker compose up -d`
+name: uri-gallery
+
+x-api: &api
+  image: uri-gallery-api:local
+  pull_policy: never   # 이미지는 app-api 한 곳에서만 빌드한다(동시 빌드 잠금 방지)
+  env_file: .env
+  environment: &api-env
+    APP_HOST: 0.0.0.0
+    TRUST_PROXY: uniquelocal
+    DB_HOST: db
+    STORAGE_ROOT: /srv/uam/store
+    MODEL_API_INTERNAL_URL: http://model-api:9541
+    MAIL_SMTP_URL: smtp://mailpit:1025
+  networks: [back]
+  restart: unless-stopped
+
+x-serving: &serving
+  image: uri-gallery-serving:local
+  pull_policy: never   # 이미지는 model-api 한 곳에서만 빌드한다
+  env_file: .env
+  environment: &serving-env
+    MODEL_API_HOST: 0.0.0.0
+    DB_HOST: db
+    STORAGE_ROOT: /srv/uam/store
+    UAM_RUN_DIR: /srv/uam/run
+    MODEL_ROOT: /models
+    GPU_ENABLED: "false"
+    CAPTION_ENABLED: "false"
+    UAM_FAKE_MODELS: ""
+    HF_HUB_OFFLINE: "1"
+  volumes:
+    - store:/srv/uam/store
+    - run:/srv/uam/run
+    - ./models:/models:ro
+  networks: [back]
+  restart: unless-stopped
+
+services:
+  db:
+    image: mariadb:12.0
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--log-bin-trust-function-creators=1"]
+    volumes: [db-data:/var/lib/mysql]
+    networks: [back]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  migrate:
+    <<: *api
+    command: ["node", "dist/scripts/migrate.js"]
+    depends_on: { db: { condition: service_healthy } }
+    restart: "no"
+
+  app-api:
+    <<: *api
+    build: { context: ., dockerfile: api/Dockerfile }
+    pull_policy: build
+    volumes: [store:/srv/uam/store]
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  sweeper:
+    <<: *api
+    command: ["node", "dist/src/sweeper/main.js"]
+    volumes: [store:/srv/uam/store]
+    healthcheck: { disable: true }
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  model-api:
+    <<: *serving
+    build: { context: ., dockerfile: serving/Dockerfile }
+    pull_policy: build
+    command: ["python", "-m", "model_api.main"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9541/internal/ready',timeout=3).status<500 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *serving
+    command: ["python", "-m", "workers.main", "--group", "cpu_vision"]
+    stop_grace_period: 15s
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    image: uri-gallery-web:local
+    build: { context: ., dockerfile: web/Dockerfile }
+    ports: ["${WEB_BIND:-127.0.0.1}:${WEB_PORT:-9501}:80"]
+    networks: [edge, back]
+    depends_on: [app-api]
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    ports: ["127.0.0.1:8025:8025"]
+    networks: [edge, back]
+    restart: unless-stopped
+
+  # 가중치를 한 번 받는 도구(SD_04 10-4). 인터넷이 필요해 edge 망에 붙고, ./models를 쓰기로 붙인다.
+  #   docker compose --profile tools run --rm fetch-models
+  fetch-models:
+    <<: *serving
+    profiles: [tools]
+    command: ["python", "-m", "ops.fetch_models"]
+    environment:
+      MODEL_ROOT: /models
+    volumes: ["./models:/models"]
+    networks: [edge]
+    restart: "no"
+
+networks:
+  edge: {}
+  back: { internal: true }
+
+volumes:
+  db-data: {}
+  store: {}
+  run: {}

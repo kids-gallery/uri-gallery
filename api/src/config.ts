@@ -22,6 +22,10 @@ export interface Config {
   contractsDir: string;
   apiGuideTestKey: string | null;
   secureCookies: boolean;
+  /** 듣는 주소(SD_04 10-3). 기본 127.0.0.1(팀 서버 루프백), 컨테이너는 0.0.0.0 */
+  appHost: string;
+  /** express trust proxy 값(SD_04 10-3). 기본 loopback, 컨테이너는 uniquelocal */
+  trustProxy: string;
   /** 메일 발송(R-23 갱신 2, D36): 끄면 발송 대신 로그에 종류만. 기본 켬(기존 이메일 흐름·E2E), p1은 .env에서 끈다 */
   mailEnabled: boolean;
   /** 카카오 로그인(R-26, D36). restApiKey·clientSecret이 둘 다 있어야 켜진다. 값은 로그에 남기지 않는다 */
@@ -54,6 +58,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     apiGuideTestKey: env.API_GUIDE_TEST_KEY || null, // key_kind='test' 원문(ops:key issue --kind test), 로그 금지
     manifestPath: env.MODEL_MANIFEST ?? path.resolve('../models/manifest.yaml'), // A 소유(serving/common/config.py와 같은 변수)
     secureCookies: bool(env.SECURE_COOKIES, true),
+    appHost: env.APP_HOST || '127.0.0.1',
+    trustProxy: env.TRUST_PROXY || 'loopback',
     mailEnabled: bool(env.MAIL_ENABLED, true),
     kakao: {
       restApiKey: env.KAKAO_REST_API_KEY ?? '',

@@ -162,7 +162,7 @@ flowchart LR
   2. DB 연결 풀 만들기
   3. 파일 저장소 준비(`STORAGE_ROOT`)
   4. 라우터 조립
-  5. **`127.0.0.1`의 `APP_PORT`(9521)에서만 듣기**. 이 주소는 코드에 고정돼 있습니다.
+  5. **`APP_HOST`(기본 127.0.0.1)의 `APP_PORT`(9521)에서 듣기**. 컨테이너에서는 `APP_HOST=0.0.0.0`(2026-10-29에 설정 값으로 바꿈, SD_04 10-3).
 - **어떻게 작동하나:**
   - **DB:** SQL을 직접 씁니다(mysql2, ORM 없음).
   - **사진 올리기:** 작품 행·원본 기록·원본 액자 걸기·판정 작업 등록을 **한 트랜잭션**으로 커밋합니다(`modules/artworks/routes.ts`의 `intakeTx`). 모델은 부르지 않습니다.
@@ -171,7 +171,7 @@ flowchart LR
   - **파일:** `STORAGE_ROOT` 아래 `family/{작품}/{종류}/{uuid}`로 저장하고, 원본은 덮어쓰지 않습니다.
   - **메일:** `MAIL_SMTP_URL`(Mailpit)으로 보냅니다. `MAIL_ENABLED`를 끄면 이메일 가입도 꺼집니다.
 - **옮길 때:**
-  - 고정 주소 `127.0.0.1`을 설정 값으로 바꿉니다(`api/src/server.ts` 14행).
+  - 고정 주소는 설정 값으로 바꿨습니다(`APP_HOST`·`TRUST_PROXY`, 2026-10-29). 컨테이너 값은 compose.yaml이 넣습니다.
   - 입구가 다른 컨테이너가 되면 프록시 신뢰 범위(`api/src/app.ts` 24행)도 바꿔야 합니다. 그대로 두면 요청 한도가 모든 사용자에게 한 IP로 걸립니다.
   - `STORAGE_ROOT`는 볼륨으로 붙입니다.
 
@@ -651,7 +651,7 @@ sweeper가 죽은 워커의 작업을 되돌릴 때도 시도 횟수를 셉니�
 | 모델 서빙 | 있음. 지난 모델 서빙 팀 작업(2026-09-30 판)이다. 팀 서버(맥)에서 pm2로 프로세스 8개를 띄워 돌렸다 |
 | 3D 화면 | 있음. 기기 안에서만 돈다. 서버 연결 코드는 0줄이다 |
 | 리눅스에서 돌기 | 확인함. 리눅스 컨테이너(arm64·x86_64)에서 서빙·api 시험이 통과하고 웹이 빌드된다. x86_64용 CPU 전용 모델 잠금을 더했다 |
-| Dockerfile · compose | **0개. 이번 5일 동안 팀이 직접 만든다** |
+| Dockerfile · compose | **기반 세팅 있음(2026-10-29).** `docker compose up -d` 한 번으로 뜨고 시험 ①~⑤ 통과(개발용 가짜 엔진). 실제 엔진 이미지는 미검증. 구성은 `SD_04` 10절, 쓰는 법은 [도커로 띄우고 운영하기](docs/공통/도커_실행과_운영.md) |
 | 배포 | 이번 5일 밖. 나중에 따로 연결한다(3D 화면은 Vercel 같은 정적 호스팅, 서버는 컨테이너를 돌리는 곳) |
 
 ### 컨테이너 구성
@@ -736,16 +736,18 @@ CI 옮기기와 이미지 자동 빌드, 레지스트리, 태그별 되돌리기
 
 ### 시작하기
 
+자세한 준비(WSL2·맥 메모리 설정), 확인 방법, 백업, 자주 나는 오류는 [도커로 띄우고 운영하기](docs/공통/도커_실행과_운영.md)에 있습니다.
+
 ```bash
 # Windows는 WSL 안에서 받는다(.gitattributes가 생기기 전에는 셸 스크립트 줄바꿈이 깨진다)
-git clone https://github.com/kids-gallery/uri-gallery.git
-cd uri-gallery
-cp .env.example .env        # 값은 팀 채널에서 받는다. 저장소에 올리지 않는다
+git clone https://github.com/kids-gallery/uri-gallery.git && cd uri-gallery
+cp .env.example .env          # 빈 비밀 값 4개를 openssl rand -hex 32로 채운다. 저장소에 올리지 않는다
+docker compose --profile tools run --rm fetch-models   # 모델 가중치 받기(한 번, 약 1.1GB, 해시 대조)
+docker compose up -d          # 개발 묶음(가짜 엔진). 화면 http://localhost:9501, 메일 http://localhost:8025
+python3 ops/docker/smoke.py flow   # 가입부터 승인까지 한 바퀴(약 30초)
 ```
 
-`docker compose up -d`로 띄우는 방법은 3일차에 compose가 생기면 여기에 적습니다(최호준). 그 전까지는 각 폴더의 시험을 돌릴 수 있습니다.
-
-| 폴더 | 시험 |
+| 폴더 | 컨테이너 없이 돌리는 시험 |
 |---|---|
 | `api/` | `npm ci && npm test` |
 | `web/` | `npm ci && npm run build` |
@@ -819,9 +821,9 @@ docker run -it --rm -v "$PWD":/src python:3.11-slim bash
 
 | 누가 | 이미지 | 먼저 고칠 코드(설계서 먼저) |
 |---|---|---|
-| 이제민 | serving(가짜 모델, `requirements.lock`) → model-api·worker-cpu가 함께 씀 | model-api 바인딩 주소를 설정 값으로(`serving/model_api/main.py` 8행) |
+| 이제민 | serving(가짜 모델, `requirements.lock`) → model-api·worker-cpu가 함께 씀 | model-api 바인딩 주소를 설정 값으로(`MODEL_API_HOST`, 2026-10-29 반영됨). 이미지는 기반 세팅이 있으니 읽고 설명할 수 있게 다듬는다 |
 | 최호준 | web: 빌드 단계 `node:22`(`npm run build:world`) → 실행 단계 nginx. 그리고 3D 화면 로그인 창 | 없음 |
-| 신지현 | api: app-api·sweeper가 함께 씀. 그리고 3D 화면 서버 연결 층(올리기·상태·목록) | app-api 바인딩 주소(`api/src/server.ts` 14행), 프록시 신뢰 범위(`api/src/app.ts` 24행) |
+| 신지현 | api: app-api·sweeper가 함께 씀. 그리고 3D 화면 서버 연결 층(올리기·상태·목록) | app-api 바인딩 주소·프록시 신뢰 범위(`APP_HOST`·`TRUST_PROXY`, 2026-10-29 반영됨). 이미지는 기반 세팅을 읽고 다듬는다 |
 
 **Dockerfile을 쓸 때 지킬 것**(리뷰봇도 일부를 검사합니다)
 - 기반 이미지는 판 번호를 적습니다(`node:22-slim`처럼 쓰고, `latest`나 판 번호 없이 쓰지 않습니다).
@@ -906,7 +908,7 @@ docker compose exec worker-cpu ls /models    # 가중치가 보이는지(경로�
 | 증상 | 먼저 볼 곳 |
 |---|---|
 | 셸 스크립트가 `^M`·`bad interpreter`로 깨진다 | Windows 폴더에 받아 줄바꿈이 CRLF가 됨. WSL 안에서 다시 받거나 `.gitattributes`(#10) |
-| 다른 컨테이너에서 app-api·model-api에 연결이 안 된다 | 바인딩 주소가 아직 `127.0.0.1`로 고정돼 있음(2일차 코드 수정) |
+| 다른 컨테이너에서 app-api·model-api에 연결이 안 된다 | `APP_HOST`·`MODEL_API_HOST`가 `0.0.0.0`인지(compose.yaml이 넣는다) |
 | 가입 화면에 이메일 가입이 없다 | `MAIL_ENABLED`가 꺼져 있음. Mailpit을 띄우고 켠다 |
 | api가 뜨자마자 죽는다 | `SESSION_SECRET`·`AUTH_HMAC_SECRET` 없음, 또는 DB가 준비되기 전에 뜸(`depends_on` 조건) |
 | 모델 설치가 맥과 Windows에서 다르게 된다 | CPU 종류별 잠금 파일(`serving/README.md`) |

@@ -1,0 +1,17 @@
+# 배포 묶음(SD_04 10-2). 실제 움직임 엔진을 붙인다. 엔진 이미지는 레지스트리에서 받는다(위치는 팀 결정, SD_04 10-8).
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+# 시험 시드는 넣지 않는다 — 모델 버전은 평가 → 승격(G22)으로 활성화한다.
+services:
+  engine:
+    image: ${ENGINE_IMAGE:-uri-gallery-engine:local}
+    build: { context: ., dockerfile: engine/Dockerfile }
+    platform: linux/amd64
+    networks: [back]
+    mem_limit: ${ENGINE_MEM_LIMIT:-6g}
+    restart: unless-stopped
+
+  worker:
+    environment: { TORCHSERVE_URL: "http://engine:9561" }
+    mem_limit: ${WORKER_MEM_LIMIT:-12g}
+    depends_on:
+      engine: { condition: service_healthy }

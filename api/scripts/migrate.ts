@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
 import { loadConfig } from '../src/config.js';
 
-export const MIGRATIONS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../db/migrations');
+// 컨테이너에서는 빌드 결과(dist/scripts) 기준 상대 경로가 한 단계 달라 MIGRATIONS_DIR로 넘긴다(SD_04 10-1)
+export const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../db/migrations');
 
 /** 따옴표 밖의 줄 끝 `-- …` 주석을 떼어 낸다(`…;   -- 설명` 같은 줄의 문장 끝을 알아보기 위해). */
 export function stripLineComment(line: string): string {
