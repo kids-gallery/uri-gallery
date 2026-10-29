@@ -4,927 +4,236 @@
 
 **아이 그림 사진 한 장을, 가족 미술관에 걸리는 작품으로.**
 
-모델 서빙 서비스를 Docker Compose로 다시 짓고 배포하는 3인 팀 작업
-
-![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)
 ![Vue 3](https://img.shields.io/badge/Vue_3.5-4FC08D?logo=vuedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express_4-000000?logo=express&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![MariaDB](https://img.shields.io/badge/MariaDB_12-003545?logo=mariadb&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch_CPU-EE4C2C?logo=pytorch&logoColor=white)
-![nginx](https://img.shields.io/badge/nginx-009639?logo=nginx&logoColor=white)
+![MariaDB](https://img.shields.io/badge/MariaDB-003545?logo=mariadb&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
+![three.js](https://img.shields.io/badge/three.js-000000?logo=threedotjs&logoColor=white)
 
-[배경지식](#1부-배경지식-이미-만들어진-서비스) · [코드 설명](#코드-설명) · [지금 할 일](#2부-지금-해야-할-일) · [수행 가이드라인](#3부-수행-가이드라인) · [날짜별 가이드](#날짜별-수행-가이드) · [막히면](#막히면)
+[지금 상태](#2-지금-상태) · [빠른 실행](#3-빠른-실행) · [코드 설명](#4-코드-설명) · [배경지식](#5-배경지식) · [앞으로 할 일](#6-앞으로-할-일) · [역할 분배](#7-역할-분배-가이드라인) · [문서 지도](#8-문서-지도)
 
 </div>
 
-**이 README는 세 부분입니다.** ① [배경지식](#1부-배경지식-이미-만들어진-서비스): 이미 만들어진 서비스가 어떻게 되어 있고 어떻게 작동하는가 → ② [지금 할 일](#2부-지금-해야-할-일): 이번 5일의 목표·상태·역할·이슈 → ③ [수행 가이드라인](#3부-수행-가이드라인): 날짜별로 무엇을, 어떤 명령으로, 무엇이 되면 끝인가
+## 1. 무엇을 하나
 
-> **코드를 처음 읽는다면 1부의 [코드 설명](#코드-설명)을 함께 보세요.** 사진 한 장이 올리기 → 분리 → 판정 → 확정 → 결과 → 결정까지 어떤 함수를 거치는지, 상태와 작업 큐, 실패 처리, 3D 화면을 서버에 잇는 지점을 파일·줄 번호와 함께 설명합니다.
+쌓여 가는 아이의 작품을 디지털 미술관에 **기록하고, 전시하고, 큐레이션**한다. 보호자가 그림 사진을 올리면 공개 모델들이 배경을 지우고, 사람 그림인지 살피고, 입체나 움직이는 그림으로 바꿔 나이별 전시실에 건다.
 
----
+지키는 원칙은 하나다. **접수된 그림은 결과 없이 끝나지 않는다.** 올리는 순간 원본 액자로 먼저 걸고, 모델이나 엔진이 실패하면 그 원본 액자가 결과로 남는다. 점수로 자동 결정하지 않고, 모델은 제안만 하며 보호자가 고른다.
 
-## 1부. 배경지식: 이미 만들어진 서비스
+**팀 목표.** 도커 컨테이너로 감싼 모델 서비스가 설계한 대로 핵심 기능을 안정적으로 수행한다. 지금은 컨테이너 없이 한 대에서 흐름이 한 바퀴 도는 단계이고, 컨테이너 구성은 팀 작업이다([6절](#6-앞으로-할-일)).
 
-이번 서비스는 두 덩어리로 이루어집니다. **모델 서빙**(app-api · 작업 큐 · 워커 · 모델 · DB)은 지난 모델 서빙 팀 작업(2026-09-30 판)을 그대로 쓰고, **화면**은 브라우저 3D 미술관(`web/src/app/world/`)으로 바꿉니다. 1부는 이 두 덩어리가 지금 어떻게 되어 있고 어떻게 작동하는지 설명합니다. 이번 작업의 개발 몫은 3D 화면이 모델 서빙 API를 쓰게 잇는 것이고(2부), 나머지는 전체를 컨테이너로 감싸는 것입니다. 부분별 개요 뒤에 함수 단위로 따라가는 [코드 설명](#코드-설명)이 있습니다.
+## 2. 지금 상태
 
-### 무엇을 하나
+2026-10-29, 맥(arm64) 한 대에서 확인했다. 방법은 표의 오른쪽 칸에 적었다.
 
-보호자가 아이 그림을 휴대폰으로 찍어 올립니다. 서버가 그림을 종이에서 떼어 내고, 무슨 그림인지 보고, 결과물을 권합니다. 보호자가 고르고 승인하면 가족 미술관에 걸리고, 이웃 가족을 초대해 서로의 미술관을 볼 수 있습니다.
+**되는 것**
 
-| 결과물 | 언제 | 만드는 모델 |
+| 항목 | 확인 방법 | 결과 |
 |---|---|---|
-| 움직이는 그림 | 사람 그림이고 관절이 맞을 때 | M3 Animated Drawings(이번 5일은 가짜 어댑터) |
-| 2.5D 입체 부조 | 그림을 종이에서 떼어 낼 수 있을 때 | M1 BiRefNet(분리) + M5 Depth Anything V2(깊이) |
-| 원본 액자 | 떼어 내기 어렵거나 보호자가 고를 때 | 모델 없음 |
+| 올리기 → 처리 → 결과 → 전시실 | 실제 그림 2장(Animated Drawings 예제 `garlic.png`, 팀 견본 집 그림)을 API로 올리고 확정·확인 | 분리·판정 12~16초, 입체 확정 뒤 2~4초, 움직임 확정 뒤 18.1초. 확인하면 "전시 중"이 되고 전시실 목록(`GET /v1/gallery`)에 그린 날 순으로 나온다 |
+| 엔진이 멈췄을 때 원본 액자 | 움직이는 그림 엔진을 멈추고 같은 그림을 올림 | 판정이 3회 시도 뒤 87초에 실패, 작품은 원본 액자로 남음 |
+| 모델 4종 켜기(M1·M2·M3·M5) | 개발 도구 `scripts/dev_activate_models.py` | 네 모델 평가가 이 기기에서 돎 |
+| 웹 단위 시험·타입 검사 | `cd web && npx vitest run`, `npx vue-tsc --noEmit` | 408/408 통과, 타입 오류 0 |
+| 웹 배포 빌드 | `cd web && npm run build` | 성공 |
+| 화면 시각 체계 | 토큰 파일과 공통 컴포넌트 7개, 단위 시험이 대비 4.5:1을 다시 계산 | 완료. 화면에는 아직 적용하지 않음 |
 
-**약속은 하나입니다. 어떤 사진을 올려도 결과가 돌아옵니다.** 사진을 올리는 순간 원본 액자를 먼저 겁니다. 모델이 실패하면 한 단계씩 낮춘 결과를 돌려주고(움직임 → 부조 → 액자), 낮췄다는 사실을 숨기지 않습니다.
+**안 되는 것**
 
-모델은 새로 학습하지 않았습니다. 아이 그림 데이터가 없고, 아이 사진을 학습에 쓰는 것 자체가 개인정보 문제이기 때문입니다. 대신 공개 사전학습 모델을 골라 이어 붙였습니다. 고른 기준은 상업 이용 라이선스, 크기와 메모리, 우리 장비에서 실행되는지입니다.
+| 항목 | 지금 | 어디서 다루나 |
+|---|---|---|
+| E2E 시험 | 62개 중 33개 실패. 같은 33개가 2026-10-29 정리 전에도 실패했다 | [E2E 알려진 실패](docs/공통/E2E_알려진실패_20261029.md), 6절 |
+| M3이 없는 기기의 처리 | 움직이는 그림 엔진이 없으면 분리·판정 작업이 생기지 않아 원본 액자로만 걸린다 | 6절 팀 안건 |
+| 3D 세계와 서버 연결 | `/app/world`는 그 기기 브라우저에만 저장한다. 서버 API를 부르지 않는다 | 6절 흐름 완성 |
+| 컨테이너·배포 | 없다 | 6절 |
 
-### 지키는 원칙
+**미검증**
 
-| 원칙 | 내용 |
+| 항목 | 이유 |
 |---|---|
-| 승인 전 비전시 | 보호자가 승인하지 않은 결과는 어디에도 전시하지 않는다 |
-| 원본 불변 | 원본 사진을 덮어쓰지 않는다 |
-| 결과는 늘 돌아온다 | 품질이 모자라면 한 단계 낮춘 결과를 돌려주고, 낮춘 사실을 숨기지 않는다 |
-| 원인 분리 | 보호자 선택·모델 낮춤·보호자 전환·인프라 실패·결과 미도달을 섞지 않는다 |
-| 제안은 제안까지 | 판정은 제안만 하고 보호자가 확정한다. 점수를 보이지 않는다 |
-| 최소 수집 | 아이는 별칭만 받는다. 아이 사진은 외부 API로 보내지 않는다 |
+| 움직이는 그림 엔진이 x86 서버에서 도는지, 추론 중 메모리 최대치 | x86 기기가 없었다 |
+| 같은 아이 작품 여러 장이 여러 나이 전시실을 채우는 모습 | 나이를 넣은 아이로 시험하지 않았다(두 장은 "나이 미정"에 걸림) |
+| 판정 품질 | 팀 평가 묶음 사진이 이 기기에 없어, 평가는 연결 확인용 그림으로만 돌렸다 |
 
-### 한 바퀴
+## 3. 빠른 실행
 
-```mermaid
-flowchart LR
-  A[이메일 가입<br/>확인 메일은 Mailpit] --> B[가족·아이<br/>만들기] --> C[사진<br/>올리기]
-  C --> D[M1<br/>그림 분리] --> E[M2<br/>판정 제안] --> F{보호자<br/>확정}
-  F -->|부조| G[M5<br/>2.5D 부조]
-  F -->|액자| H[원본 액자]
-  F -->|움직이는 그림| I[M3<br/>가짜 어댑터]
-  G --> J[가족 미술관<br/>전시]
-  H --> J
-  I --> J
+도커 없이 한 대에서 띄우는 방법이다. 설치 단계 전체와 설정 값은 [팀작업 시작 안내](docs/공통/팀작업_시작안내.md) 2~4절에 있고, 여기에는 매번 하는 것만 둔다.
+
+```bash
+# 저장소 루트. 준비(한 번): MariaDB·Mailpit 설치, .env 작성, npm ci, api 빌드·db:migrate, serving/.venv
+set -a; . ./.env; set +a
+npx pm2@6.0.14 start ops/server/ecosystem.config.cjs --only app-api,model-api,worker-cpu,sweeper
+npx pm2@6.0.14 start ~/.local/bin/mailpit --name mailpit --interpreter none -- --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --database .data/mailpit.db
+cd web && APP_API_URL=http://127.0.0.1:9521 npx vite --port 9613
 ```
 
-<details>
-<summary><b>단계별로 어디서 무엇이 일어나나(15단계)</b></summary>
+- 화면 `http://127.0.0.1:9613/app/`, 3D 세계 `/app/world`, 받은 메일 `http://127.0.0.1:8025`
+- 모델 켜기(개발 DB 전용, 한 줄): `serving/.venv/bin/python scripts/dev_activate_models.py`
+- 움직이는 그림 엔진(M3) 설치: [팀작업 시작 안내 3절](docs/공통/팀작업_시작안내.md#3-움직이는-그림-엔진m3-설치맥-도커-없이), 원 기록은 [A_모델재현기록 M3절](docs/A/A_모델재현기록.md)
 
-| # | 어디서 | 무엇이 | 작품 상태 | 코드 |
-|---|---|---|---|---|
-| 1 | 휴대폰 | 사진 고르기 → 방향·자르기 → 줄여서 전송 | | `web/src/app/upload/` |
-| 2 | nginx | 21MB 넘으면 바로 413, 아니면 app-api로 | | `ops/p1/nginx.conf` |
-| 3 | app-api | 세션 확인 → 파일 받기 → 이미지 검사(HEIC 포함) | | `api/src/modules/artworks/routes.ts` |
-| 4 | app-api | 원본 저장(덮어쓰기 불가) | | `api/src/storage/LocalFsDriver.ts` |
-| 5 | app-api | **한 트랜잭션**: 작품 행, 원본 기록, 원본 액자 걸기, 이야기 자동 채우기, 판정 작업 등록 | `judging` | `intakeTx` |
-| 6 | 화면 | 미술관에 원본 액자가 이미 보인다. 상세 화면에는 진행 표시 | | `v_job_progress` |
-| 7 | worker-cpu | 분리 작업 점유 → M1 마스크·컷아웃 → 판정 작업 열기 | | `serving/workers/stages/split.py` |
-| 8 | worker-cpu | M2 종류 → M3 관절 → M4 기하 규칙 → 권유 기록 | `awaiting_confirm` | `serving/workers/stages/judge.py` |
-| 9 | 화면 | 권유를 보여 주고 보호자가 고른다 | | `/app/artworks/:id/confirm` |
-| 10 | app-api | 고른 종류로 작업 등록 | `processing` | `api/src/modules/artworks/` |
-| 11 | 워커 | 움직임 렌더 또는 부조 또는 액자. 실패하면 한 단계 낮춤 | | `serving/workers/stages/results.py`, `chain.py` |
-| 12 | 화면 | 결과를 보고 정한다 | `awaiting_review` | `/app/artworks/:id/review` |
-| 13 | app-api | 좋아요 / 한 단계 낮추기 / 액자로 두기 / 다시 찍기 | `approved` | `api/src/modules/artworks/decision.ts` |
-| 14 | 화면 | 미술관에 걸린 결과. 이웃도 볼 수 있다 | | `/app/museum/:childId`, `v_gallery` |
-| 15 | sweeper | 죽은 작업 되살리기, 지우기 요청 처리, 만료 정리 | | `api/src/sweeper/` |
+**자주 막히는 곳**
 
-표의 화면 주소(`/app/artworks/...` 등)는 지난 판 평면 화면입니다. 이번에는 같은 API를 3D 미술관이 부릅니다.
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| 가입 확인 메일이 안 옴 | 다른 Mailpit(예: 남은 컨테이너)이 8025를 잡아 새 Mailpit이 못 뜸 | `lsof -iTCP:8025 -sTCP:LISTEN`으로 확인하고 먼저 뜬 것을 멈춘다 |
+| `db:migrate`가 트리거에서 실패 | MariaDB가 함수·트리거 생성을 막음 | DB에서 `SET GLOBAL log_bin_trust_function_creators=1`(재시작하면 다시) |
+| 올려도 처리 작업이 0건 | 활성 모델 버전이 없거나 M3이 꺼짐 | 모델 켜기 한 줄을 돌리고, M3을 설치해 TorchServe를 띄운다 |
+| 모델을 켰는데 워커가 안 올림 | 워커는 기동 때만 미리 올린다 | 개발 도구가 "지금 불러오기"까지 부른다. 손으로 켰다면 `npx pm2@6.0.14 restart worker-cpu` |
+| mmcv-full 빌드 실패(`-Winvalid-specialization`) | 새 Xcode clang이 torch 1.13 헤더를 오류로 막음 | `CFLAGS`·`CXXFLAGS`에 `-Wno-invalid-specialization`(설치 안내 3절) |
+| 9501 포트가 이미 쓰임 | 다른 개발 서버 | `--port`로 다른 포트를 준다 |
+| E2E 뒤 `docs/B/카카오로그인_캡처/`가 바뀜 | 시험이 캡처를 다시 쓴다 | 바꿀 뜻이 없으면 커밋 전에 되돌린다 |
 
-작품 상태는 DB가 허용하는 8개뿐입니다: `received` `judging` `awaiting_confirm` `processing` `awaiting_review` `approved` `failed` `deleting`.
+## 4. 코드 설명
 
-</details>
+### 폴더 구조
 
-### 서비스 구조
-
-지금(팀 서버) 구성입니다. 컨테이너로 옮길 구성은 [아래](#컨테이너-구성)에 있습니다.
-
-```mermaid
-flowchart LR
-  user([휴대폰 브라우저]) -- 9501 --> nginx[nginx<br/>입구 + Vue 정적 파일]
-  nginx -- "/v1/*" --> api[app-api<br/>Express]
-  nginx -- "/v1/models/*" --> mapi[model-api<br/>FastAPI]
-  api --> db[(MariaDB)]
-  mapi --> db
-  db <-- "stage_job 작업 표" --> wcpu[worker-cpu<br/>M1 · M2 · M3 관절]
-  db <-- "stage_job 작업 표" --> wgpu[worker-gpu<br/>M5 · M7]
-  wcpu --> ts[TorchServe<br/>M3]
-  api -- SMTP --> mail[Mailpit]
-  api -. 설명 초안 .-> llm[llm-server → Ollama<br/>M6]
-  sweeper[sweeper<br/>10초마다 정리] --> db
+```text
+api/        보호자·운영 API(Express 4, TypeScript). 접수·확정·전시실·가입·운영 화면 API, 작업 정리기(sweeper)
+serving/    모델 서빙(Python). 워커(작업 처리), 모델 어댑터, model-api(FastAPI), 운영 도구, 잠금 파일
+web/        화면(Vue 3.5 + Vite). 보호자 2D 화면, 3D 세계(three.js), 운영 화면, 단위 시험, E2E
+db/         마이그레이션(정본 스키마 0001)과 DB 시험
+contracts/  API 계약(openapi.yaml), 모델 API 계약, 작업 계약(stage-job.md), 설명 생성 계약
+models/     모델 매니페스트(manifest.yaml: 출처·판·해시·라이선스 확인). 가중치는 저장소에 없다
+caption/    작품 설명 문장 규칙(P0.5, 지금 꺼짐)
+eval/       평가 묶음 목록(사진은 팀 공유 위치)과 평가 실행기
+ops/        배포 구성(pm2·nginx·TorchServe 설정), 점검표, 팀 서버 기록
+scripts/    개발 도구(모델 켜기, 에셋 생성)
+design/     설계서 SD_01~04, 유스케이스 UC_00~13, 스타일 가이드, 시안·진단
+docs/       작업 기록. A 모델 재현, B 통합 시험, C 화면 문구, D 모델 시험, 공통(팀 안내·결정)
+제출/        팀 제출물(계획서·발표 자료)
 ```
 
-**구조를 이해하는 세 가지**
-1. **API 서버는 모델을 직접 부르지 않습니다.** 움직이는 그림 생성이 사람 그림 17~43초, 큰 사진 62~431초 걸렸습니다(팀 서버 측정, 2026-09-30, 표본 적음). 요청 연결을 그동안 붙잡지 않도록, 추론은 Python 워커가 따로 합니다.
-2. **API와 워커는 DB 표 하나(`stage_job`)로 이어집니다.** 사진을 받는 트랜잭션 안에서 작품 기록과 작업 등록을 한 번에 커밋합니다. 그래서 "작품은 생겼는데 작업이 없는" 상태가 생기지 않습니다. 워커는 `SELECT … FOR UPDATE SKIP LOCKED`로 다른 워커가 잡은 행을 건너뛰고 하나를 점유합니다. 점유는 60초이고 20초마다 연장합니다. 워커가 죽으면 sweeper가 그 작업을 다시 대기로 돌립니다.
-3. **입구 하나만 밖에 엽니다.** nginx 9501만 열고, 나머지는 모두 127.0.0.1에서만 듣습니다.
+### 핵심 흐름을 따라가는 코드 지도
 
-### 이미 만들어진 것: 부분별로 어떻게 되어 있고 어떻게 작동하나
+그림 한 장이 지나가는 순서다. 작업(`stage_job`)은 DB 표 하나가 큐 역할을 한다.
 
-작업을 시작하기 전에 이 절을 먼저 읽습니다. 지금 코드는 팀 서버(맥) 한 대에서 pm2로 띄우도록 맞춰져 있습니다. 컨테이너로 옮길 때 각 부분에서 무엇을 봐야 하는지도 함께 적었습니다.
-
-#### 1. 화면: 3D 미술관 `web/src/app/world/` (Vue 3.5 · three.js 0.170)
-- **무엇:** 브라우저에서 도는 3D 미술관입니다. 광장 → 미술관 로비 → 회랑 → 나이별 전시실을 캐릭터로 걸어 다니고, 아이 그림이 두께 있는 입체 작품으로 걸립니다. 작품을 누르면 주제별 애니메이션(행동 7종·소리 11종)이 나옵니다.
-- **어떻게 뜨나:**
-  - 개발: `cd web && npm ci && npm run dev` → `http://127.0.0.1:9501/app/world`. 개발 서버가 `/v1/*`를 app-api(9521)로 넘깁니다(`web/vite.config.ts`).
-  - 배포본: `npm run build:world` → `web/dist-world/`. 미술관 전용 라우터만 들어가고, 한 번 받으면 오프라인에서도 열리는 서비스 워커(`web/public/sw.js`)가 들어 있습니다. 화면 전용 서버 프로세스는 없고 nginx가 이 파일을 내줍니다.
-- **어떻게 작동하나(지금):**
-  - `engine.ts`가 렌더러·카메라·캐릭터 이동·작품 배치를 묶고, Vue 화면(`WorldView.vue` 등)은 데이터를 넘기고 콜백을 받습니다.
-  - 공간은 `museum.ts`(로비·회랑·전시실, 작품 자리), `spatialLayout.ts`, `cathedral.ts`, `outdoor.ts`가 만듭니다.
-  - 사진을 올리면 `store.ts`의 `processImage`가 원본·화면용 사본을 만들고, `cutout.ts`의 `removeBackground()`가 **브라우저 규칙**으로 배경을 지웁니다. 조명 펴기 → 종이색 찾기 → 가장자리부터 칠하기 → 잡티 지우기 순서이고, 실패하면 사각형 판으로 대체합니다. 그다음 `buildRelief()`가 윤곽을 따서 두께 있는 입체를 만듭니다.
-  - 작품·방·설정·캐릭터는 **브라우저 IndexedDB**(`store.ts`)에 저장합니다. 백업 zip(`backup.ts`)으로 내보낼 수 있습니다.
-  - **서버를 전혀 부르지 않습니다.** 로그인도 없고, 기기 안의 가족 프로필로 씁니다.
-- **이번에 바꿀 것:**
-  - 작품 부분(가입·아이·올리기·상태·확정·결정·목록)이 app-api를 쓰게 잇습니다. 서버 모델이 만든 M1 컷아웃(`cutoutUrl`)으로 입체를 다시 만듭니다. 교체 자리는 미리 나눠 두었습니다(`cutout.ts` 2행).
-  - 개인정보 안내(`WorldPrivacy.vue` 20행, "사진을 이 기기 밖으로 보내지 않아요")를 바꿉니다.
-  - 자세한 대응표는 [2부 이번 개발 몫](#이번-개발-몫-3d-화면--api-연결)에 있습니다.
-- **같은 폴더의 다른 화면:** `web/`에는 지난 판의 평면 화면(`/app/...`, `/ops/...`)도 들어 있습니다. 운영 화면(`/ops`)은 참고만 하고, 평면 보호자 화면은 쓰지 않습니다.
-- **옮길 때:** 빌드 단계(node, `npm run build:world`)와 실행 단계(nginx)를 나눕니다. 실행 이미지에는 `dist-world/`만 들어갑니다.
-
-#### 2. 입구 nginx `ops/p1/nginx.conf`
-- **무엇:** 바깥에서 들어오는 문은 이것 하나입니다(9501).
-- **어떻게 작동하나:** 주소에 따라 보냅니다.
-
-  | 주소 | 가는 곳 |
-  |---|---|
-  | `/` | 화면 정적 파일. 없는 경로는 `index.html`로 보내 화면 라우터가 처리한다 |
-  | `/v1/*` `/live` `/ready` | app-api(127.0.0.1:9521) |
-  | `/v1/models/*` | model-api(127.0.0.1:9541), 외부 API |
-  | `/internal/*` `/model-api/*` | 404로 막음 |
-
-  - 21MB 넘는 업로드는 nginx가 바로 413으로 거절합니다.
-  - 접속 기록은 남기지 않습니다(개인정보).
-- **옮길 때:** `127.0.0.1:9521` 같은 주소를 compose 서비스 이름(`app-api:9521`)으로 바꿉니다. 정적 파일 경로(`root`)도 이미지 안 경로로 바꿉니다.
-
-#### 3. 앱 서버 `api/` (Node 22 · Express 4 · TypeScript)
-- **무엇:** 가입·로그인·가족·아이·작품·결정·이웃·파일·운영의 모든 API(경로 69개)입니다.
-- **어떻게 뜨나:** `npm run build`로 `dist/`를 만들고 `node dist/src/server.js`로 띄웁니다. 기동 순서는 이렇습니다(`src/server.ts`).
-  1. 환경 변수 읽기. `SESSION_SECRET`·`AUTH_HMAC_SECRET`이 없으면 바로 멈춥니다.
-  2. DB 연결 풀 만들기
-  3. 파일 저장소 준비(`STORAGE_ROOT`)
-  4. 라우터 조립
-  5. **`127.0.0.1`의 `APP_PORT`(9521)에서만 듣기**. 이 주소는 코드에 고정돼 있습니다.
-- **어떻게 작동하나:**
-  - **DB:** SQL을 직접 씁니다(mysql2, ORM 없음).
-  - **사진 올리기:** 작품 행·원본 기록·원본 액자 걸기·판정 작업 등록을 **한 트랜잭션**으로 커밋합니다(`modules/artworks/routes.ts`의 `intakeTx`). 모델은 부르지 않습니다.
-  - **로그인:** 쿠키에는 무작위 세션 ID를, DB(`app_session`)에는 그 해시만 둡니다. 비밀번호는 argon2id로 저장합니다.
-  - **오류:** 모두 `application/problem+json` 형식으로 돌려주고, 화면은 그 안의 `code`로 문구를 고릅니다.
-  - **파일:** `STORAGE_ROOT` 아래 `family/{작품}/{종류}/{uuid}`로 저장하고, 원본은 덮어쓰지 않습니다.
-  - **메일:** `MAIL_SMTP_URL`(Mailpit)으로 보냅니다. `MAIL_ENABLED`를 끄면 이메일 가입도 꺼집니다.
-- **옮길 때:**
-  - 고정 주소 `127.0.0.1`을 설정 값으로 바꿉니다(`api/src/server.ts` 14행).
-  - 입구가 다른 컨테이너가 되면 프록시 신뢰 범위(`api/src/app.ts` 24행)도 바꿔야 합니다. 그대로 두면 요청 한도가 모든 사용자에게 한 IP로 걸립니다.
-  - `STORAGE_ROOT`는 볼륨으로 붙입니다.
-
-#### 4. 정리 프로세스 `api/src/sweeper/`
-- **무엇:** app-api와 같은 코드에서 따로 뜨는 두 번째 Node 프로세스입니다(`node dist/src/sweeper/main.js`).
-- **어떻게 작동하나:** 10초마다 차례로 아래를 합니다. 이게 없으면 워커가 죽었을 때 작업이 영원히 "처리 중"으로 남습니다.
-  1. 점유 시간이 지난 작업(워커가 죽은 것)을 다시 대기로 돌립니다.
-  2. 지우기 요청된 작품의 파일과 행을 실제로 지웁니다.
-  3. 만료된 세션·토큰·임시 파일을 정리합니다.
-- **옮길 때:** app-api 이미지를 그대로 쓰고 실행 명령만 바꿉니다. 작품 파일 볼륨을 같이 붙입니다.
-
-#### 5. DB `db/`, `design/uri_gallery_ddl.sql` (MariaDB 12)
-- **무엇:** 표 39개와 뷰 16개입니다. 작품·작업·판정·결과·모델 버전·평가·외부 키·이웃이 모두 여기 있습니다.
-- **어떻게 만들어지나:** `api`의 `npm run db:migrate`가 `db/migrations/0001_sd03_baseline.sql`을 순서대로 넣고 `schema_migration`에 체크섬을 기록합니다. 같은 파일은 다시 실행해도 안전합니다.
-- **어떻게 작동하나:** 규칙의 상당 부분을 DB가 지킵니다.
-  - CHECK 제약: 작품 상태 8개만 허용, 승인됐으면 승인 시각 필수, 라이선스 미확인 모델은 활성 불가 등
-  - 뷰: 미술관에 보일 작품(`v_gallery`), 지금 유효한 결과(`v_current_result`), 지표(`v_metrics_*`)를 화면과 지표가 같은 규칙으로 읽습니다.
-- **옮길 때:** MariaDB 공식 이미지를 쓰고 자료는 볼륨에 둡니다. 스키마를 언제 넣을지(초기화 스크립트 또는 `db:migrate` 한 번)를 정합니다(이슈 #11). 접속 정보는 `DB_HOST`·`DB_PORT`·`DB_USER`·`DB_PASSWORD`·`DB_NAME`입니다.
-
-#### 6. 작업 큐 `stage_job` 표 + 워커 `serving/workers/` (Python 3.11)
-- **무엇:** 무거운 모델 일을 하는 Python 프로세스입니다. 무리(group)별로 하나씩 뜹니다: `python -m workers.main --group cpu_vision`(M1·M2·M3 관절), `--group gpu`(M5·M7).
-- **어떻게 작동하나:** `runner.py`가 아래를 반복합니다.
-  1. `stage_job`에서 자기 무리의 대기 작업 하나를 `FOR UPDATE SKIP LOCKED`로 잡습니다. 다른 워커가 잡은 행은 건너뜁니다.
-  2. 점유는 60초이고, 20초마다 연장하며 취소 여부를 확인합니다.
-  3. 단계별 코드(`stages/split.py`·`judge.py`·`results.py`)가 어댑터(`serving/adapters/`)를 불러 모델을 돌립니다.
-  4. 결과를 분류합니다. 정상이면 다음 단계를 엽니다. 품질 미달이면 한 단계 낮춥니다(`chain.py`). 인프라 오류면 최대 3번까지 다시 시도합니다.
-  5. 결과 파일을 `STORAGE_ROOT`에 쓰고 커밋합니다.
-  - 워커는 모델 적재 상태를 `UAM_RUN_DIR/model_state/{워커}.json`에 씁니다. model-api가 이 파일을 읽어 "모델 준비됨"을 알립니다.
-  - `UAM_FAKE_MODELS=1`이면 모든 모델이 가짜 어댑터(`adapters/fake.py`)로 바뀌어, 모델 없이도 같은 흐름이 돕니다. `M3,M7`처럼 적으면 그 모델만 가짜가 됩니다.
-- **옮길 때:**
-  - `worker-cpu`만 띄웁니다. `GPU_ENABLED=false`로 두면 M5도 CPU 워커가 맡습니다.
-  - 작품 파일 볼륨과 상태 폴더(`UAM_RUN_DIR`) 볼륨을 model-api와 함께 붙입니다.
-  - 가중치는 읽기 전용 볼륨으로 붙입니다.
-  - 잠금 파일은 CPU 종류에 맞춰 고릅니다(`serving/README.md`).
-
-#### 7. 모델 API `serving/model_api/` (FastAPI · uvicorn)
-- **무엇:** 모델 상태를 알려 주고 외부 이용자에게 모델 기능을 여는 Python 웹 서버입니다(`python -m model_api.main`, 9541).
-- **어떻게 작동하나:**
-  - **내부:** `/internal/ready`·`/internal/models`로 상태 폴더를 읽어 모델별 준비 상태를 답합니다. 운영 화면은 app-api(`MODEL_API_INTERNAL_URL`)를 거쳐 이 값을 봅니다.
-  - **외부:** `/v1/models/*`는 `X-API-Key`를 확인하고 요청을 `external_job`과 `stage_job`으로 넣습니다. 그러면 같은 워커가 처리합니다.
-  - 모델을 직접 들고 있지 않습니다. 모델은 워커 안에 있습니다.
-- **옮길 때:** `127.0.0.1` 고정 주소를 설정 값으로 바꿉니다(`serving/model_api/main.py` 8행). 워커와 같은 이미지를 쓰고 실행 명령만 바꿉니다.
-
-#### 8. 이번에 띄우지 않는 것
-| 무엇 | 지금 | 이번 5일 |
+| 단계 | 무슨 일 | 담당 파일 |
 |---|---|---|
-| worker-gpu | 맥 Apple GPU(MPS)로 M5·M7 | 띄우지 않음. 컨테이너는 Apple GPU를 못 쓴다 |
-| TorchServe(M3 움직임) | conda·Java·OSMesa, 맥 전용 환경 목록 | 띄우지 않음. `UAM_FAKE_MODELS=M3,M7` |
-| llm-server + Ollama(M6 설명) | `CAPTION_ENABLED=false`로 꺼져 있음 | 띄우지 않음 |
-| 카카오 로그인 | 키가 있어야 켜짐 | 쓰지 않음. 이메일 가입 + Mailpit |
+| 1 올리기 | 보호자가 사진을 고르고 올린다 | `web/src/app/views/UploadView.vue` → `web/src/api/client.ts` |
+| 2 접수 | 사진 저장, 원본 액자로 먼저 걸기, 분리(`split`)·판정(`judge`) 작업 만들기. M1·M2·M3이 모두 활성일 때만 작업을 만든다 | `api/src/modules/artworks/routes.ts`(`POST /v1/artworks`, `intakeTx`), `api/src/modules/artworks/models.ts`(`JUDGE_MODELS`) |
+| 3 작업 가져가기 | 워커가 `FOR UPDATE SKIP LOCKED`로 한 건을 잡고 60초 점유, 20초마다 연장 | `serving/workers/main.py`, `serving/workers/runner.py`(`claim`, `process`) |
+| 4 분리(M1) | 배경을 지워 그림만 잘라 낸다 | `serving/workers/stages/split.py`, `serving/adapters/m1_birefnet.py` |
+| 5 판정(M2·M3·M4) | 종류를 보고(M2), 관절을 찾고(M3), 규칙(M4)으로 움직임·입체·액자 중 하나를 제안 | `serving/workers/stages/judge.py`, `serving/adapters/m2_openclip.py`, `serving/adapters/m3_joints.py`, `serving/config/m4_rules.yaml` |
+| 6 확정 | 보호자가 고른다. 고른 결과에 맞는 작업을 만든다 | `web/src/app/views/ConfirmView.vue`, `api/src/modules/artworks/routes.ts`(`confirmTx`) |
+| 7 결과 | 움직임(M3 렌더), 입체(M5 깊이), 원본 액자 | `serving/workers/stages/results.py`, `serving/adapters/m3_render.py`·`m3_ad_run.py`, `serving/adapters/m5_depth.py` |
+| 8 실패와 대체 | 인프라 실패는 3회(10초·60초 뒤) 시도, 끝내 실패하면 낮춘 결과나 원본 액자. 점유가 끊긴 작업은 정리기가 닫는다 | `serving/workers/chain.py`, `serving/workers/outcome.py`, `serving/config/limits.yaml`, `api/src/sweeper/` |
+| 9 확인 | 보호자가 결과를 보고 확인한다 | `web/src/app/views/ReviewView.vue`, `api/src/modules/artworks/routes.ts`(`POST /v1/artworks/:id/decision`) |
+| 10 전시실 | 나이 묶음별, 그린 날 순으로 보인다 | `api/src/modules/gallery/routes.ts`(`GET /v1/gallery`, 뷰 `v_gallery`), `web/src/app/views/MuseumView.vue` |
 
-#### 9. 환경 변수(`.env.example`)
-지금은 pm2 설정(`ops/p1/ecosystem.config.cjs`)이 `.env`를 읽어 모든 프로세스에 넣습니다. 앱이 스스로 `.env`를 읽지 않습니다. compose에서는 `env_file`이 이 일을 합니다.
+- 단계 이름과 모델의 짝은 `serving/adapters/registry.py`(`STAGE_MODELS`) 한 곳에 있다.
+- 단계별 시간 상한은 `serving/config/limits.yaml`에 있다(분리 60초, 판정 120초, 움직임 600초, 입체 CPU 600초).
+- 워커와 app-api는 HTTP로 서로 부르지 않는다. DB 표로만 주고받는다(`contracts/stage-job.md`).
 
-| 묶음 | 변수 |
+### 데이터
+
+정본은 [SD_03 데이터베이스 설계서](design/SD_03_데이터베이스설계서_우리아이미술관.md)와 DDL `design/uri_gallery_ddl.sql`(= `db/migrations/0001_sd03_baseline.sql`)이다. 흐름에 쓰는 핵심 표는 다음과 같다.
+
+| 표 | 무엇 |
 |---|---|
-| DB | `DB_HOST` `DB_PORT` `DB_USER` `DB_PASSWORD` `DB_NAME` |
-| 앱 | `APP_PORT` `SESSION_SECRET` `AUTH_HMAC_SECRET` `SECURE_COOKIES` `STORAGE_ROOT` `APP_BASE_URL` `FILES_ACCEL` |
-| 메일 | `MAIL_ENABLED` `MAIL_SMTP_URL` `MAIL_FROM` |
-| 모델 | `MODEL_API_INTERNAL_URL` `GPU_ENABLED` `UAM_FAKE_MODELS` `MODEL_MANIFEST` `TORCHSERVE_URL` |
-| 설명 | `CAPTION_ENABLED` `LLM_SERVER_URL` `OLLAMA_URL` `OLLAMA_CHAT_MODEL` |
+| `family`, `child` | 가족 공간과 아이(별칭만) |
+| `artwork`, `stored_object`, `artwork_original` | 작품 한 점, 저장한 파일, 원본 사진 |
+| `stage_job` | 처리 작업 큐(단계·서빙군·시도 횟수·오류 종류) |
+| `judgment`, `result`, `decision`, `artwork_outcome` | 판정 제안, 결과물, 보호자 확인, 최종 결과 기록 |
+| `model_version`, `evaluation`, `eval_item`, `release_event` | 모델 판, 평가, 평가 항목, 승격 기록 |
+| `v_gallery`(뷰) | 전시실에 보일 작품 |
 
-주소 값(`127.0.0.1:…`)은 컨테이너에서는 서비스 이름으로 바꿉니다. 비밀 값은 저장소에 올리지 않습니다.
+- 작품 상태(`artwork.status`): `received` → `judging` → `awaiting_confirm` → `processing` → `awaiting_review` → `approved`. 그 밖에 `failed`, `deleting`. 보호자 화면의 상태 이름(`exhibited` 등)은 API가 바꿔 보낸다(`contracts/openapi.yaml`).
+- 작업 상태(`stage_job.status`): `queued`, `running`, `done`, `done_downgraded`, `retry_wait`, `failed`, `cancelled`. 전이 규칙은 `contracts/stage-job.md`.
 
-<details>
-<summary><b>모델과 팀 서버 실측</b></summary>
+### 디자인 규칙
 
-| ID | 모델 | 하는 일 | 실행 방식 | 팀 서버 실측(Apple M1 Ultra, 2026-09-28~29) |
-|---|---|---|---|---|
-| M1 | BiRefNet | 그림을 종이에서 분리 | 워커 안 PyTorch | CPU 9~10초/장, 메모리 8.5GB |
-| M2 | OpenCLIP ViT-B-32(제로샷) | 무슨 그림인지 제안 | 워커 안 PyTorch | 0.03초/장 |
-| M3 | Meta Animated Drawings | 관절 찾기, 움직임 렌더 | TorchServe(Java·conda·OSMesa) | 관절 7.2~9.1초, 렌더 59~108초 |
-| M4 | 규칙 | 팔다리 길이·대칭·몸통 비율 | 순수 Python | |
-| M5 | Depth Anything V2 Small | 깊이 → 부조 | 워커 안 PyTorch | 0.16초/장 |
-| M6 | Qwen3-4B-Instruct(4bit) | 설명 초안 | Ollama | 0.3~0.5초/건 |
-| M7 | TripoSR | 3D 조각(나중 범위) | 워커 안 | |
+- 톤: 3D 세계 안의 아이에게는 게임처럼(걷기·폴짝, 작품 반응, 크레용 인형, 효과음), 공간·재질은 사실적 미술관 그대로. 보호자 화면과 3D 위 안내 패널은 미술관 톤(넓은 여백, 글자 위계, 작품 중심, 쉬운 말). 기준은 [SD_02 17-20](design/SD_02_UIUX설계서_우리아이미술관.md).
+- 토큰 파일은 `web/src/styles/w-tokens.css` 하나다. 밝은 판(보호자 2D)과 어두운 판(`.w-dark`, 3D 위 패널).
+- 공통 컴포넌트 7개: `web/src/components/w/`의 `WButton`·`WCard`·`WInput`·`WTopBar`·`WEmpty`·`WLoading`·`WError`. 클래스는 `w-` 접두(`web/src/styles/w-components.css`).
+- 토큰 밖의 색·크기·그림자를 쓰지 않는다. `web/src/__tests__/w-design.spec.ts`가 확인한다.
+- 화면 문구 정본은 `docs/C/C_화면문구.md`다. 보호자 화면에는 처리 용어(막힘·사유·해제 주체)를 쓰지 않는다.
 
-- 모델 목록과 출처·버전·SHA-256은 `models/manifest.yaml`에 있습니다. 가중치는 저장소에 없고, M1·M2·M5는 Hugging Face 공개 저장소에서 받습니다(합계 약 1.1GB).
-- **권유 규칙**(`serving/rules/m4_geometry.py`): 분리 실패 → 액자 / 사람 그림 + 관절 기하 통과 → 움직임 / 분리 성공 → 부조 / 그 밖 → 액자. 판정은 보호자가 확정하는 "제안"입니다. 모델을 처음 재현했을 때 집 그림이 사람 점수 0.946(사람 그림은 0.997)으로 잡혔기 때문입니다.
-- **잠금 파일**(`serving/`): `requirements.lock`(가짜 모델만), `requirements-models.lock`(맥·arm64 리눅스), `requirements-models-linux-x86_64.lock`(x86_64 리눅스 CPU 전용).
+## 5. 배경지식
 
-</details>
+**모델 서빙의 동기와 비동기.** 결과가 몇 초 안에 나오면 요청을 받은 자리에서 바로 답한다(동기). 수십 초에서 몇 분 걸리면 요청을 작업으로 적어 두고 곧바로 "접수했어요"라고 답한 뒤, 따로 도는 워커가 처리한다(비동기). 이 서비스는 올리기를 202(접수)로 답하고 DB 표 `stage_job`을 큐로 쓴다. 작업마다 시간 상한이 있고, 인프라 실패는 정해진 간격으로 다시 시도하며, 끝내 실패하면 더 단순한 결과로 낮추거나 원본 액자로 대체한다. 참고: [MariaDB SELECT … SKIP LOCKED](https://mariadb.com/kb/en/select/), [FastAPI](https://fastapi.tiangolo.com/).
 
-<details>
-<summary><b>운영 기능(모델을 운영하는 화면)</b></summary>
+**이 프로젝트의 모델들.** 출처와 판은 `models/manifest.yaml`이 정본이다.
 
-| 기능 | 화면 | 하는 일 |
-|---|---|---|
-| 상태와 지표 | `/ops/status` | 모델별 준비 상태, 처리 시간, 낮춤률, 원인 분류, 결과 미도달 |
-| 모델 평가·승격·롤백 | `/ops/models` | 평가 묶음을 후보 버전으로 돌리고, 기준을 넘으면 활성으로 올리고, 문제가 생기면 되돌린다. 라이선스 확인과 매니페스트가 없으면 활성이 될 수 없다(DB 제약) |
-| API 활용 메뉴 | `/ops/api-guide` | 외부 모델 기능(분리·종류·관절·부조·설명)의 키 발급, 가이드, 시험 호출 |
-
-</details>
-
-### 처리 규칙
-
-이 서비스의 핵심입니다. 실패를 두 종류로 나눕니다.
-
-| 구분 | 무엇 | 처리 |
-|---|---|---|
-| 품질 미달 | 모델이 결과를 냈지만 기준 미달 | 재시도 없이 한 단계 낮춤: 움직임 → 부조 → 액자 |
-| 인프라 장애 | 시간 초과·엔진 다운·저장소·DB·모델 준비 안 됨 | 같은 단계를 첫 시도 포함 최대 3번. 다 쓰면 "결과 미도달" |
-
-- **원본 먼저 전시.** 올리는 순간 원본 액자를 걸고, AI 결과는 보호자가 확인해야 바꿔 겁니다. 결과까지 기다리게 하는 안(빈 화면)과 결과를 자동으로 바꿔 거는 안(원치 않는 결과가 걸림)은 버렸습니다.
-- **기반 장애는 낮추지 않습니다.** 모델 탓이 아닌데 결과를 낮추면 "모델이 못한 것"과 "서버가 죽은 것"이 지표에서 섞입니다.
-- **원인 5분류.** 보호자 선택·모델 낮춤·보호자 전환·인프라 실패·결과 미도달을 따로 셉니다. 결과를 받지 못한 작품은 "첫 결과 승인율"의 분모에서 뺍니다.
-- **확인한 것.** 임시 MariaDB와 가짜 모델로 인프라 장애 5종 × 결과 단계 2개, 10건을 넣었습니다. 모두 3번 시도 뒤 결과 미도달로 처리됐고, 낮춤으로 잘못 센 것은 0건이었습니다(2026-09-28, `docs/B/B_통합시험.md`).
-
-**개인정보.** 아이는 별칭만 받습니다. 아이 사진은 외부 API로 보내지 않습니다. 파일 키는 의미 없는 UUID이고 원본은 덮어쓰지 않습니다. 로그는 허용된 필드만 남깁니다. 세션은 DB에 세션 ID의 해시만 저장합니다.
-
-### 코드 설명
-
-위의 "이미 만들어진 것"이 부분별 개요라면, 여기서는 `main` 코드가 실제로 어떻게 돌아가는지 함수 단위로 따라갑니다. 작업 큐 규칙의 정본은 [contracts/stage-job.md](contracts/stage-job.md)이고, 여기서는 그 규칙이 코드 어디에 있고 왜 그렇게 짰는지를 다룹니다. 줄 번호는 커밋 `e1a9dca` 기준입니다.
-
-읽는 순서: 1(전체 그림) → 2(작품 한 점의 일생)를 먼저 펼쳐 읽고, 나머지는 9의 표에서 자기 몫에 맞는 것만 읽어도 됩니다.
-
-#### 1. 전체 그림: 프로세스는 서로 부르지 않고 DB로 이어진다
-
-| 프로세스 | 언어 | 진입점 | 하는 일 |
+| 모델 | 출처 | 하는 일 | 지금 |
 |---|---|---|---|
-| app-api | Node 22 · Express | `api/src/server.ts` | 화면이 부르는 모든 API. 모델은 부르지 않는다 |
-| sweeper | Node(app-api와 같은 코드) | `api/src/sweeper/main.ts` | 10초마다 멈춘 작업 되살리기·삭제·정리 |
-| worker | Python 3.11 | `serving/workers/main.py` | `stage_job` 표에서 작업을 하나씩 잡아 모델을 돌린다 |
-| model-api | Python · FastAPI | `serving/model_api/main.py` | 모델 준비 상태 알림, 외부용 모델 API |
-| MariaDB | | `db/migrations/` | 위 넷이 만나는 곳 |
+| M1 | [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) | 배경을 지워 그림만 잘라 낸다 | 켬 |
+| M2 | [OpenCLIP](https://github.com/mlfoundations/open_clip) ViT-B-32 | 그림의 종류(사람·사물 등)를 본다 | 켬 |
+| M3 | [Animated Drawings](https://github.com/facebookresearch/AnimatedDrawings) | 그린 사람의 관절을 찾고 움직이는 그림을 만든다 | 켬(맥 네이티브) |
+| M4 | 규칙 파일 `serving/config/m4_rules.yaml` | M2·M3 결과로 제안을 정한다 | 코드 |
+| M5 | [Depth Anything V2 Small](https://github.com/DepthAnything/Depth-Anything-V2) | 깊이를 추정해 입체 부조를 만든다 | 켬 |
+| M6 | Qwen3 4B(Ollama) | 작품 설명 문장 | 꺼짐(라이선스 확인 전) |
+| M7 | TripoSR | 점토·종이 입체 | 꺼짐(라이선스 확인 전) |
 
-app-api와 worker 사이에는 HTTP 호출이 없습니다. app-api는 `stage_job` 표에 행을 넣고 끝내며, worker는 그 표를 읽어 일하고 결과를 다시 DB에 씁니다. 화면은 app-api에 상태를 다시 물어서(폴링) 결과를 봅니다.
+**Animated Drawings와 x86 문제.** M3은 2025-09 보관 처리된 저장소다. 이 저장소는 커밋 `b859684`에 고정해 쓴다. 관절 검출은 TorchServe가 띄우는 두 모델(`.mar`)이 하고, 움직임 렌더는 워커가 AD 전용 파이썬 환경을 하위 프로세스로 부른다. 환경이 오래된 판(Python 3.8, torch 1.13, mmcv-full 1.7.0)이라 기기마다 설치가 쉽게 깨진다. 지금 잠금 파일(`serving/conda-m3.lock`)은 맥(arm64) 전용이다. x86 리눅스 서버에서 같은 환경이 도는지는 미검증이고, 배포 전에 확인할 1순위다. 참고: [TorchServe](https://pytorch.org/serve/).
 
-```mermaid
-sequenceDiagram
-  participant W as 화면
-  participant A as app-api
-  participant D as MariaDB
-  participant K as worker
-  W->>A: POST /v1/artworks (사진)
-  A->>D: 한 트랜잭션: 작품·원본·원본 액자·split 작업·judge 작업(잠금)
-  A-->>W: 202 + 작품 상세
-  K->>D: split 작업 점유 (FOR UPDATE SKIP LOCKED)
-  K->>K: M1 분리
-  K->>D: 마스크·컷아웃 기록, judge 잠금 풀기
-  K->>D: judge 작업 점유 → M2·M3·M4 → 권유 기록
-  W->>A: GET /v1/artworks/{id} (반복)
-  A-->>W: 상태 awaiting_confirm, 권유, cutoutUrl
-  W->>A: POST /confirm (relief)
-  A->>D: depth_relief 작업 등록
-  K->>D: 점유 → M5 → 결과 기록(awaiting_review)
-  W->>A: POST /decision (like)
-  A->>D: approved, 이 결과를 건다
-```
+**three.js 기본.** 화면 하나는 장면(Scene, 물체를 담는 공간), 카메라(Camera, 어디서 보나), 렌더러(Renderer, 매 프레임 그리기)로 이뤄진다. 조작은 입력(키보드·터치)을 받아 캐릭터와 카메라 위치를 매 프레임 바꾸는 것이다. 3D 세계 코드는 `web/src/app/world/`에 있다. 참고: [three.js 매뉴얼](https://threejs.org/manual/).
 
-**왜 DB 표를 작업 큐로 쓰나.** 사진 접수(작품 행)와 작업 등록을 같은 트랜잭션으로 커밋하기 위해서입니다. Redis나 RabbitMQ 같은 별도 큐를 쓰면 "DB에는 작품이 생겼는데 큐에 넣기는 실패"하는 이중 쓰기 문제가 생기고, 이를 막는 장치(아웃박스 표 등)가 따로 필요합니다. 처리량이 작은 이 서비스에서는 DB 하나가 더 단순합니다. 대신 워커가 2초마다 DB를 조회하는 비용(`limits.yaml`의 `poll.idle_s`)을 받아들였습니다.
+**Vue 구조.** 화면 하나는 `.vue` 파일 하나(템플릿·스크립트·스타일)다. 주소와 화면의 짝은 `web/src/router/index.ts`, 공통 상태는 `web/src/stores/`(Pinia), API 호출은 `web/src/api/client.ts`, 화면 문구는 `web/src/copy/ko.ts`에 모았다. 참고: [Vue 가이드](https://vuejs.org/guide/introduction.html).
 
-<details>
-<summary><b>2. 작품 한 점의 일생</b></summary>
+**도커가 필요한 이유.** 지금은 MariaDB·Mailpit·Python 환경 두 개(모델용, AD용)·Node를 기기마다 손으로 깐다. 특히 AD 환경은 컴파일러 판에 따라 빌드가 깨진다(3절 표). 컨테이너는 이 설치를 이미지로 굳혀, 어느 기기에서나 같은 환경을 한 명령으로 띄우게 한다. 팀 작업은 서비스별 이미지, 개발·배포 묶음, 망 분리, 엔진 이미지를 x86 서버에서 돌리는 것이다(6절). 참고: [Docker 시작하기](https://docs.docker.com/get-started/), [Compose](https://docs.docker.com/compose/).
 
-##### 2-1. 올리기: `POST /v1/artworks`
+## 6. 앞으로 할 일
 
-[api/src/modules/artworks/routes.ts:35](api/src/modules/artworks/routes.ts#L35)
+우선순위 순이다. 자세한 끝나는 조건은 [팀작업 시작 안내 7절](docs/공통/팀작업_시작안내.md#7-팀-작업-목록)에 있다.
 
-1. `guardianAuth`가 쿠키 세션을 확인하고 `req.guardian`(계정·가족)을 채웁니다(6-2절).
-2. `multer`가 파일을 **메모리로** 받습니다. 20MB를 넘으면 413입니다(nginx가 21MB에서 한 번 더 막습니다).
-3. `Idempotency-Key` 머리말(UUID)이 없으면 거절합니다. 같은 키로 이미 만든 작품이 있으면 새로 만들지 않고 그 작품을 돌려줍니다. 휴대폰에서 전송이 끊겨 다시 보내도 작품이 두 개 생기지 않습니다.
-4. `validateUpload`가 파일 내용을 보고 진짜 이미지인지(HEIC 포함) 확인합니다. 확장자는 믿지 않습니다.
-5. `storage.putNew`가 원본을 `STORAGE_ROOT/family/{uuid}/original/{uuid}.{확장자}`에 씁니다. `putNew`는 이미 있는 파일을 덮어쓰지 않습니다.
-6. `withTx(… intakeTx …)`로 DB에 한 번에 기록합니다. 실패하면 5에서 쓴 파일을 지웁니다.
+| # | 작업 | 왜 필요한가 | 선행 조건 | 완료 기준 |
+|:--:|---|---|---|---|
+| 1 | 화면별 디자인 적용(입구·인증 / 보호자 / 운영) | 화면마다 색·간격·버튼이 제각각이다(진단 원인 2·3) | 없음(토큰·컴포넌트 있음) | `design/디자인진단_20261029.md` 점검표를 다시 돌려 적용한 화면 모두 "문제 없음", 전후 캡처 |
+| 2 | 핵심 흐름 완성(확정 → 결과 → 전시실 정렬, 실패 시 원본 액자, 3D 세계 서버 연결) | 3D 세계가 아직 서버를 쓰지 않고, 나이별 전시실은 두 장으로만 확인했다 | 안건 1·2 결정 | 실제 그림으로 정상·엔진 실패 두 경우, 같은 아이 작품 여러 장이 나이별로 쌓임 |
+| 3 | E2E 33건 갱신(올리면 곧바로 걸리는 흐름 D46) | 시험이 지금 흐름을 따라가지 못해 새 실패를 가려내기 어렵다 | 없음 | 알려진 실패 목록이 비고 새 실패 없음 |
+| 4 | 게임 요소 이전·발전(크레용 인형·이동·감정 표현 바퀴, 설계 2-24·2-25) | 아이가 3D 세계를 게임으로 알아보게 한다 | 없음 | 요소별 본질 검사 표, 실제 창 캡처. 조작 참고는 [온라인 산사](https://sansa-online-temple.vercel.app) 분석 |
+| 5 | 도커 컨테이너 구성(팀 공동) | 설치를 이미지로 굳혀 재현한다 | 안건 4·6 | 깨끗한 기기에서 한 명령으로 뜨고 흐름이 한 바퀴 돎 |
+| 6 | 배포, 움직이는 그림 엔진 x86 검증 | 배포 서버가 x86이면 M3이 도는지부터 확인해야 한다 | 안건 3·4·5 | 정한 서버에서 흐름 한 바퀴, 추론 중 메모리 최대치 기록 |
 
-**`intakeTx`가 한 트랜잭션에서 하는 일** ([routes.ts:174](api/src/modules/artworks/routes.ts#L174))
+**팀 결정 안건**(자세히는 [팀작업 시작 안내 8절](docs/공통/팀작업_시작안내.md#8-팀-안건))
 
-| 순서 | 표 | 내용 |
+| # | 안건 |
+|:--:|---|
+| 1 | 모델이 일부만 켜졌을 때 가능한 처리를 진행할지(지금은 M3 하나가 없으면 분리도 멈춘다) |
+| 2 | 엔진이 멈춘 동안 "움직임" 선택지를 보일지 |
+| 3 | 움직이는 그림 엔진이 x86 서버에서 도는지 |
+| 4 | 엔진 이미지 저장소(레지스트리) |
+| 5 | 배포 서버 |
+| 6 | 망 분리(입구가 DB·워커·엔진에 닿지 못하게) |
+
+## 7. 역할 분배 가이드라인
+
+나누는 단위는 6절의 작업 묶음이다. 폴더 범위가 겹치지 않게 나눴다.
+
+| 단위 | 맡는 범위 | 담당 |
 |---|---|---|
-| 1 | `artwork` | 상태 `judging`(판정 모델이 꺼져 있으면 `awaiting_confirm`) |
-| 2 | `stored_object`, `artwork_original` | 원본 파일 기록 |
-| 3 | `result`, `artwork.hung_result_id` | `hangOriginalFrame`: 원본 액자 결과를 만들어 **바로 건다** |
-| 4 | `story` | `autoStory`: 제목 "제목 없는 그림 N", 그린 날, 나이 자동 채우기 |
-| 5 | `stage_job` | `split` 작업(바로 실행 가능) + `judge` 작업(`available_at` = 5년 뒤 = 잠금) |
+| 화면 적용 | `web/src/app/views/`, `web/src/layouts/`, `web/src/ops/`, `web/src/styles/`(`w-*` 제외) | 담당: ____ |
+| 흐름 완성 | `api/src/modules/artworks/`·`gallery/`, `serving/workers/`, `web/src/app/world/`의 서버 연결 층 | 담당: ____ |
+| E2E | `web/e2e/`, `docs/공통/E2E_알려진실패_20261029.md` | 담당: ____ |
+| 게임 요소 | `web/src/app/world/`(서버 연결 층 제외) | 담당: ____ |
+| 도커 | `Dockerfile`들, `compose*.yaml`, `.dockerignore`, `ops/docker/` | 담당: ____ |
+| 배포 | `ops/server/`, 배포 서버 설정, 엔진 x86 검증 기록 | 담당: ____ |
 
-judge를 잠가 두는 이유: judge는 split이 만든 마스크를 써야 합니다. 두 작업을 한꺼번에 등록하되 judge의 실행 가능 시각을 먼 미래로 두고, split이 끝나면 그 시각을 지금으로 당깁니다(`serving/workers/records.py`의 `open_judge`). 작업 사이의 순서를 별도 상태값 없이 `available_at` 하나로 표현한 것입니다.
+**겹치는 영역은 바꾸기 전에 팀 채널에 알린다.** 공통 컴포넌트(`web/src/components/w/`, `web/src/styles/w-tokens.css`), DB 마이그레이션(`db/migrations/`), API 계약(`contracts/`).
 
-원본 액자를 먼저 거는 이유: 모델 결과를 기다리는 동안 미술관이 비어 있지 않게 하려는 것입니다. 걸린 결과(`hung_result_id`)와 처리 상태(`status`)를 따로 두어, 처리 중이어도 전시는 됩니다.
+**공통 규칙**
 
-##### 2-2. 분리: worker의 `split` 단계
+- 설계서 먼저: 설계서(`design/`)를 고친 뒤 구현하고, 구현이 설계와 달라지면 설계서를 다시 맞춘다. PR 본문 "설계서" 칸에 고친 절을 적는다.
+- 가지 이름은 `종류/이슈번호-설명`(종류: `feat`·`fix`·`docs`·`refactor`·`test`·`chore`), 커밋 제목은 `종류: 내용 (#이슈번호)`. 리뷰봇(`.github/review-bot/rules.json`)이 확인한다.
+- PR은 작게. 바뀐 줄이 300줄을 넘으면 리뷰봇이 경고하고 600줄을 넘으면 막는다(잠금 파일 제외).
+- 리뷰 1명 이상 뒤에 병합한다. `main`에 직접 올리지 않는다.
+- 토큰 밖 색·그림자를 쓰지 않는다.
+- E2E 알려진 실패 목록 밖의 새 실패를 만들지 않는다.
+- 가짜 성공 금지. 모델이나 엔진이 실패하면 실패로 기록하고 원본 액자로 대체한다.
+- 비밀값을 커밋하지 않는다. `.env`·`.env.*`(`.env.example` 제외)·가중치 파일(`.mar`·`.safetensors` 등)은 리뷰봇이 막는다.
 
-[serving/workers/runner.py:149](serving/workers/runner.py#L149) `claim()` → `process()` → `commit()`
+## 8. 문서 지도
 
-```sql
-SELECT * FROM stage_job
- WHERE serving_group = %s AND status IN ('queued','retry_wait')
-   AND available_at <= UTC_TIMESTAMP() AND stage_kind IN (...)
- ORDER BY priority, queued_at LIMIT 1 FOR UPDATE SKIP LOCKED
-```
-
-- `FOR UPDATE`로 그 행을 잠그고, `SKIP LOCKED`로 다른 워커가 잠근 행은 기다리지 않고 건너뜁니다. 워커를 여러 개 띄워도 같은 작업을 두 번 잡지 않습니다.
-- 잡으면 `status='running'`, `claim_expires_at = 지금+60초`로 바꿉니다. 실행 중에는 별도 스레드(`_heartbeat`, 226행)가 20초마다 만료 시각을 늘리고, 그 사이 작품이 지워졌는지(취소)도 봅니다.
-- `stage_kind IN (...)`에는 **지금 모델이 메모리에 올라간 단계만** 넣습니다(`claimable_stages`, 138행). 모델을 불러오는 중이면 작업을 잡지 않고 큐에 둡니다. 적재 시간이 작업 시간 상한에 섞이지 않게 하려는 것입니다.
-- 모델 실행은 어댑터(`serving/adapters/m1_birefnet.py`)가 합니다. 결과는 `AdapterResult(outcome, outputs, …)` 하나로 돌아옵니다(7절).
-- `commit()`은 결과를 쓰기 직전에 작품이 `deleting`인지 다시 보고, `outcome.apply()`로 기록합니다.
-
-split이 성공하면 `stages/split.py`의 `on_ok`가 마스크·컷아웃 파일을 저장하고 `judgment.split_ok = 1`을 쓴 뒤 judge 잠금을 풉니다. 분리가 품질 미달이어도, 인프라 실패로 3번을 다 써도 judge는 엽니다(마스크 없이 판정은 계속).
-
-##### 2-3. 판정: `judge` 단계
-
-`serving/workers/stages/judge.py`
-
-1. M2(OpenCLIP)가 무슨 그림인지(`kind_candidate`)와 태그를 냅니다.
-2. M3가 관절 좌표 파일을 냅니다.
-3. M4 규칙(`serving/rules/m4_geometry.py`)이 팔다리 길이·대칭을 보고 `geometry_pass`를 냅니다.
-4. `suggest()`가 권유를 정합니다.
-
-```python
-if split_ok is False: return "frame"          # 분리 실패 → 액자
-if kind_candidate == "person" and geometry_pass: return "animated"
-if split_ok: return "relief"                  # 분리 성공 → 부조
-return "frame"
-```
-
-5. `judgment`에 권유를 `presented`로 쓰고 작품을 `awaiting_confirm`으로 바꿉니다.
-
-권유는 보호자가 확정하는 **제안**일 뿐입니다. 모델 점수(`person_score`)는 기록만 하고 규칙에도 화면에도 쓰지 않습니다. 처음 재현했을 때 집 그림이 사람 점수 0.946으로 나와, 점수로 자동 결정하면 틀린 결과가 걸리기 때문입니다.
-
-##### 2-4. 확정: `POST /v1/artworks/{id}/confirm`
-
-[routes.ts:102](api/src/modules/artworks/routes.ts#L102), 실제 처리는 `confirmTx`([routes.ts:238](api/src/modules/artworks/routes.ts#L238))
-
-| 고른 것 | 조건 | 결과 |
-|---|---|---|
-| `frame` | | 작업 없음. 원본 액자를 걸고 바로 `approved` |
-| `relief` | 분리 실패가 확정됨 | 위와 같음(액자로) |
-| `relief` | 그 밖 | `depth_relief` 작업 등록, 상태 `processing` |
-| `animated` | | `animate_render` 작업 등록 |
-
-- 판정이 끝나기 전에 확정해도 됩니다. 이때 결과 작업은 judge처럼 잠가 두고, 판정이 끝나면 `open_confirmed`(worker) 또는 `openConfirmJobs`(sweeper)가 엽니다.
-- 같은 값으로 두 번 확정하면 첫 값을 유지하고 200을, 다른 값이면 409를 돌려줍니다. 화면에서 두 번 눌러도 작업이 두 개 생기지 않습니다.
-- 작품 행을 `SELECT … FOR UPDATE`로 잠그고 시작하므로, 확정과 삭제가 동시에 와도 하나만 이깁니다.
-
-##### 2-5. 결과 만들기: `depth_relief` · `animate_render` · `frame_compose`
-
-`serving/workers/stages/results.py` → `chain.record_result`([chain.py:64](serving/workers/chain.py#L64))
-
-- 결과 파일을 저장하고 `result`에 `INSERT IGNORE`로 넣습니다. 결과 종류마다 처음 만든 것 하나만 남습니다(고유 키 `uq_rs_first`). 재시도가 결과를 덮어쓰지 않습니다.
-- `artwork_outcome.result_cause`에 결과가 어떻게 나왔는지 적습니다: 모델이 낮춤(`model_downgrade`), 보호자가 낮춤(`guardian_switch`), 보호자가 처음부터 고름(`guardian_choice`).
-- 작품을 `awaiting_review`로 바꿉니다. 아직 걸지는 않습니다.
-
-품질 미달이면 `chain.next_after_quality_below`([chain.py:35](serving/workers/chain.py#L35))가 한 단계 낮은 작업을 새로 등록합니다(5절).
-
-##### 2-6. 결정: `POST /v1/artworks/{id}/decision`
-
-[api/src/modules/artworks/decision.ts](api/src/modules/artworks/decision.ts)
-
-| 결정 | 하는 일 |
+| 질문 | 볼 문서 |
 |---|---|
-| `like` | `approved`, 이 결과를 건다(`hung_result_id` 교체) |
-| `frame` | `approved`, 원본 액자를 건다 |
-| `use_lower` | 움직이는 그림 대신 부조로: `depth_relief` 작업(origin `use_lower`) 등록 |
-| `retake` | 작품 삭제를 요청하고, 같은 아이로 다시 찍게 한다 |
-
-고를 수 있는 선택지는 `decisionOptions`([decision.ts:29](api/src/modules/artworks/decision.ts#L29)) **한 곳**에서 정합니다. 화면은 상세 응답의 선택지를 그대로 버튼으로 그리고, 서버는 결정을 받을 때 같은 함수로 다시 검사합니다. 화면과 서버가 서로 다른 규칙을 갖지 않게 하려는 것입니다.
-
-##### 2-7. 화면이 보는 것: `GET /v1/artworks/{id}`
-
-`api/src/modules/artworks/view.ts`의 `artworkDetail`이 여러 표와 뷰(`v_artwork_display`, `v_job_progress`, `v_current_result`)를 모아 응답 하나로 만듭니다. 3D 화면 연결에 쓸 필드는 이렇습니다.
-
-| 필드 | 뜻 |
-|---|---|
-| `state` | 화면용 상태(뷰 `v_artwork_display`가 정한다) |
-| `cutoutUrl` | M1 컷아웃 파일 주소. 분리 전이거나 실패면 없다 |
-| `hungResultKind` | 지금 전시에 걸린 결과 종류 |
-| 확정 선택지·결정 선택지 | 그 상태에서 누를 수 있는 버튼 |
-| 단계별 진행 | 단계, 상태, 시도 횟수, 낮춤 여부, 모델 적재 중인지 |
-
-</details>
-
-<details>
-<summary><b>3. 상태 두 가지</b></summary>
-
-작품 상태(`artwork.status`)와 작업 상태(`stage_job.status`)는 따로 움직입니다. 허용 값은 DB의 CHECK 제약(`design/uri_gallery_ddl.sql` 323행, 408행)이 막습니다.
-
-**작품 상태 8개**
-
-```mermaid
-stateDiagram-v2
-  [*] --> judging: 올리기
-  judging --> awaiting_confirm: 판정 끝(worker)
-  judging --> processing: 판정 전 확정
-  awaiting_confirm --> processing: 확정(결과 작업)
-  awaiting_confirm --> approved: 확정(액자)
-  processing --> awaiting_review: 결과 나옴(worker)
-  processing --> failed: 3번 다 실패
-  awaiting_review --> approved: like · frame
-  awaiting_review --> processing: use_lower
-  failed --> approved: frame
-  approved --> processing: 걸린 뒤 다시 만들기
-```
-
-`received`는 허용 값이지만 올리기(`intakeTx`)는 바로 `judging`으로 만듭니다. `deleting`은 어느 상태에서든 지우기 요청으로 갑니다(그림에서 뺐습니다).
-
-**작업 상태 7개:** `queued` → `running` → `done` / `done_downgraded`(품질 미달로 낮춤) / `retry_wait`(인프라 실패, 다시 대기) / `failed`(3번 다 씀) / `cancelled`(작품 삭제).
-
-**누가 상태를 바꾸나**
-
-| 바꾸는 곳 | 작품 상태 | 작업 상태 |
-|---|---|---|
-| app-api(`artworks/routes.ts`, `decision.ts`) | 올리기·확정·결정 | 작업 등록(`queued`) |
-| worker(`outcome.py`, `stages/*.py`) | 판정 끝·결과 나옴·실패 | 점유·완료·재시도·실패 |
-| sweeper(`takeover.ts`) | 워커가 죽은 작품 정리 | 점유 만료 → 다시 대기 |
-
-</details>
-
-<details>
-<summary><b>4. 작업 큐가 버티는 방법</b></summary>
-
-| 상황 | 처리 | 코드 |
-|---|---|---|
-| 워커 두 개가 같은 작업을 노림 | `SKIP LOCKED`로 하나만 잡음 | `runner.py:149` |
-| 워커가 일하다 죽음 | heartbeat가 끊겨 60초 뒤 점유 만료 → sweeper가 `retry_wait`로 되돌림 | `api/src/sweeper/takeover.ts:26` |
-| 일시 장애(시간 초과·DB·저장소 등) | 10초, 60초 뒤 다시. 첫 시도 포함 3번 | `outcome.py:67`, `serving/config/limits.yaml` |
-| 3번 다 실패 | 작업 `failed`, 작품 `failed`, 원인 "결과 미도달" | `outcome.py`, 각 단계의 `on_exhausted` |
-| 처리 중 작품 삭제 | heartbeat와 결과 쓰기 직전에 확인 → `cancelled` | `runner.py:226`, `292` |
-| 모델이 꺼져 있음(활성 버전·라이선스 없음) | 어댑터를 부르지 않고 `model_not_ready` 인프라 실패 | `runner.py` `claim()` |
-
-sweeper가 죽은 워커의 작업을 되돌릴 때도 시도 횟수를 셉니다. 그래서 같은 사진이 워커를 계속 죽이는 경우에도 3번에서 멈춥니다.
-
-</details>
-
-<details>
-<summary><b>5. 실패 두 종류를 섞지 않는다</b></summary>
-
-[serving/workers/outcome.py](serving/workers/outcome.py)의 `apply()`가 어댑터 결과 하나를 작업 상태 하나로 바꿉니다.
-
-| 어댑터 결과 | 작업 상태 | 다음 |
-|---|---|---|
-| `ok` | `done` | 다음 단계 |
-| `quality_below` | `done_downgraded` | **재시도 없이** 한 단계 낮은 작업 등록 |
-| `engine_down` `timeout` `storage` `db` `model_not_ready` | `retry_wait` → 3번째면 `failed` | 같은 단계 재시도 |
-
-낮춤 순서(`chain.py`): 움직이는 그림 → 부조 → 액자. 마스크가 없으면 부조를 건너뛰고 액자로 갑니다. 다음 모델이 꺼져 있어도 액자로 갑니다(액자는 모델이 없어 늘 됩니다).
-
-인프라 실패를 낮춤으로 처리하지 않는 이유: 서버가 죽었는데 결과를 낮추면 지표에서 "모델이 못한 것"과 "서버가 멈춘 것"이 섞입니다. 그러면 모델을 바꿔야 할지 서버를 고쳐야 할지 판단할 수 없습니다. 그래서 `downgrade_cause`(낮춘 이유)와 `error_class`(인프라 원인)를 다른 열에 둡니다.
-
-</details>
-
-<details>
-<summary><b>6. 앱 서버의 공통 틀</b></summary>
-
-##### 6-1. 요청 하나가 지나는 길
-
-[api/src/app.ts](api/src/app.ts)의 미들웨어 순서입니다.
-
-1. 요청 번호(`X-Request-ID`)를 붙이고, 끝날 때 로그 한 줄(경로·상태·걸린 시간)을 남깁니다. 로그에는 허용된 필드만 씁니다.
-2. 쿠키 읽기, JSON 본문 읽기(64KB 상한)
-3. `paramGuard`: 경로·쿼리 값이 계약(`contracts/openapi.yaml`)에 맞는지
-4. 파일 라우터, 모듈 라우터(`api/src/routes.ts`의 `buildRouters`)
-5. 오류 처리: 무엇이 던져지든 `Problem` 하나로 바꿔 `application/problem+json`으로 돌려줍니다.
-
-**오류는 `throw new Problem(코드, 이유, 게이트)`로 던집니다**(`api/src/lib/problem.ts`). 라우터는 응답 형식을 신경 쓰지 않고, 화면은 `reason`과 `gate`를 보고 문구를 고릅니다(`web/src/copy/ko.ts`). `G5`·`G8` 같은 게이트 번호는 설계서의 검사 지점 번호이고, 막힌 기록은 `recordGate`가 DB에 남겨 운영 지표로 셉니다.
-
-##### 6-2. 로그인과 가족
-
-`api/src/auth/session.ts`, `guards.ts`
-
-- 로그인하면 32바이트 난수를 만들어 쿠키(`uam_sid`)에 넣고, DB(`app_session`)에는 그 SHA-256만 저장합니다. DB가 새어도 세션을 가로챌 수 없습니다.
-- 30분 동안 요청이 없으면 만료되고, 요청할 때마다 늘어납니다.
-- **가족 ID를 세션에 넣지 않습니다.** `guardianAuth`가 요청마다 `guardian_account`에서 다시 읽습니다. 가족에서 나가거나 해제되면 다음 요청부터 바로 반영됩니다. 대신 요청마다 쿼리가 하나 더 듭니다.
-- 비밀번호를 바꾸면 그 전에 만든 세션은 모두 무효입니다.
-
-##### 6-3. DB 다루기
-
-- ORM 없이 SQL을 직접 씁니다(`mysql2`). 규칙이 SQL 조건과 DB 제약에 많이 있어서, 쿼리를 그대로 보는 편이 읽기 쉽습니다.
-- 여러 표를 함께 바꿀 때는 `withTx(db, async (conn) => …)`(`api/src/db/pool.ts`)를 씁니다. 안에서 던지면 롤백됩니다.
-- 화면과 지표가 같은 규칙으로 읽도록 뷰를 씁니다: 미술관에 보일 작품 `v_gallery`, 지금 유효한 결과 `v_current_result`, 진행 `v_job_progress`.
-
-</details>
-
-<details>
-<summary><b>7. 워커의 공통 틀: 어댑터</b></summary>
-
-[serving/adapters/base.py](serving/adapters/base.py), [registry.py](serving/adapters/registry.py)
-
-- 워커는 모델을 직접 부르지 않고 어댑터만 부릅니다. 어댑터는 `load()`(가중치 올리기)와 실행 하나를 갖고, 결과를 `AdapterResult` 하나로 돌려줍니다.
-- 어댑터는 예외를 밖으로 던지지 않고 `outcome`으로 알립니다. 예상하지 못한 예외는 워커가 `engine_down`으로 분류합니다.
-- 단계와 모델의 짝은 `STAGE_MODELS` 표 하나에 있습니다: `split`→M1, `judge`→M2·M3, `depth_relief`→M5, `animate_render`→M3, `frame_compose`→모델 없음.
-- `UAM_FAKE_MODELS=1`이면 `build_adapter`가 모든 모델을 `FakeAdapter`로 바꿉니다. `M3,M7`처럼 쓰면 그 모델만 가짜입니다. 가중치 없이도 같은 흐름 전체를 시험할 수 있고, 이번 작업에서 M3·M7은 이 방식으로 둡니다.
-- 실제 어댑터는 `importlib`로 필요할 때만 불러옵니다. 가짜 모델만 쓰면 torch가 없어도 워커가 뜹니다(`requirements.lock`).
-- 워커는 기동할 때 모델을 미리 올리고, 상태(`not_loaded`·`loading`·`ready`·`failed`·`disabled`)를 `UAM_RUN_DIR/model_state/`에 파일로 씁니다. model-api는 이 파일을 읽어 준비 상태를 답합니다. 두 프로세스가 같은 폴더를 봐야 하므로 컨테이너에서는 볼륨을 같이 붙여야 합니다.
-
-</details>
-
-<details>
-<summary><b>8. 3D 화면</b></summary>
-
-`web/src/app/world/`. 지금은 서버를 전혀 부르지 않고 기기 안에서 다 합니다.
-
-| 파일 | 하는 일 |
-|---|---|
-| `WorldView.vue` | 화면 전체. 데이터를 읽어 엔진에 넘기고, 엔진이 알리는 일(선택·근접·장소)에 따라 창을 연다 |
-| `engine.ts` `MuseumEngine` | three.js 렌더러·카메라·캐릭터 이동·작품 배치를 묶은 객체. Vue를 모른다 |
-| `museum.ts` | 로비·회랑·나이별 전시실과 작품 자리. `buildRelief`로 입체 작품을 세운다 |
-| `store.ts` | IndexedDB 저장: 가족(`Account`), 작품(`Artwork`), 방, 설정 |
-| `cutout.ts` | 브라우저 배경 지우기(`removeBackground`)와 입체 만들기(`buildRelief`) |
-| `WorldUpload.vue` | 사진 올리기 창 |
-| `router/world.ts` | `npm run build:world` 배포본의 라우터. 미술관 하나만 넣는다 |
-
-**Vue와 엔진을 나눈 이유:** three.js 객체를 Vue의 반응형 상태에 넣으면 매 프레임 변경 추적 비용이 큽니다. 그래서 `WorldView.vue`는 엔진을 `shallowRef`로만 들고, 엔진은 `EngineEvents` 콜백(`onSelect`, `onNear` 등)으로만 화면에 알립니다. 엔진에 데이터를 넣는 입구는 `engine.setWorld(아이, 작품 목록, 방)` 하나입니다.
-
-**지금 사진이 입체가 되는 길**
-
-1. `WorldUpload.vue` → `store.processImage(f, false)`로 화면용 사본만 만들고 `saveArtworkAndRoom`으로 저장합니다(`cutoutState: 'pending'`).
-2. 뒤이어 `store.makeCutout(id)`가 브라우저에서 배경을 지워 `cutout`(투명 PNG)을 채웁니다.
-3. 엔진은 작품에 `cutout`이 있으면 `maskFromCutout`으로 투명도에서 윤곽을 읽고([engine.ts:294](web/src/app/world/engine.ts#L294)), `museum.ts`가 `buildRelief`로 두께 있는 입체를 만듭니다.
-
-**서버 연결 때 알아 둘 점**
-
-- 엔진은 `Artwork.cutout`이 **어디서 왔는지 모릅니다.** 서버 응답의 `cutoutUrl`에서 받은 PNG를 그 자리에 넣으면, 엔진과 `buildRelief`는 고치지 않아도 서버 M1 결과로 입체가 됩니다. 바꿀 곳은 2번(브라우저 배경 지우기)을 서버 업로드와 상태 폴링으로 바꾸는 부분입니다.
-- 기존 평면 화면용 API 클라이언트 `web/src/api/client.ts`가 있습니다. 같은 출처로만 부르고(쿠키 세션, CORS 없음), 오류를 `ApiError`로 바꿔 줍니다. 응답 타입은 `npm run gen:api`로 만든 `types.gen.ts`를 씁니다.
-- 개발 서버는 `/v1`을 app-api로 넘깁니다(`web/vite.config.ts`의 `proxy`). 배포본에서는 nginx가 같은 일을 합니다.
-- 대응표 전체는 [2부](#이번-개발-몫-3d-화면--api-연결)에 있습니다.
-
-</details>
-
-#### 9. 몫별로 먼저 읽을 곳
-
-| 몫 | 먼저 읽을 절 | 먼저 열 파일 |
-|---|---|---|
-| 모델 서빙·compose(이제민) | 1, 4, 5, 7 | `serving/workers/runner.py`, `serving/adapters/registry.py`, `serving/config/limits.yaml` |
-| 입구·3D 화면 창(최호준) | 1, 2-4, 2-6, 8 | `web/src/app/world/WorldView.vue`, `web/vite.config.ts`, `ops/p1/nginx.conf` |
-| 앱·데이터·연결 층(신지현) | 2 전체, 3, 6, 8 | `api/src/modules/artworks/routes.ts`, `view.ts`, `web/src/app/world/store.ts` |
-
-<details>
-<summary><b>10. 코드로 직접 확인하기</b></summary>
-
-| 무엇 | 명령 | 비고 |
-|---|---|---|
-| 앱 서버 시험 | `cd api && npm test` | vitest |
-| 워커·model-api 시험 | `cd serving && .venv/bin/python -m pytest -q` | 임시 MariaDB를 스스로 띄운다. 가중치 없는 시험은 건너뛴다 |
-| 화면 시험 | `cd web && npm test` | vitest(jsdom) |
-| 작업 흐름을 DB에서 보기 | `SELECT job_id, stage_kind, status, attempt_count, available_at, downgrade_cause, error_class FROM stage_job WHERE artwork_id = ? ORDER BY job_id;` | 올리기 직후 judge의 `available_at`이 먼 미래인 것을 볼 수 있다 |
-| 가짜 모델로 한 바퀴 | 워커를 `UAM_FAKE_MODELS=1`로 띄우고 사진 올리기 | 가중치 없이 2절 흐름 전체 |
-
-규칙을 바꾸고 싶으면 코드보다 [contracts/stage-job.md](contracts/stage-job.md)와 설계서(`design/`)를 먼저 고칩니다. 코드 설명은 그 규칙이 코드 어디에 있는지 찾는 안내입니다.
-
-</details>
-
-### 저장소 지도
-
-| 폴더 | 무엇 |
-|---|---|
-| `web/` | 화면(Vue). 보호자 `/app`, 운영 `/ops` |
-| `api/` | 앱 서버(Express). 모듈별 경로, sweeper, 시험 |
-| `serving/` | 모델 서버(FastAPI), 워커, 어댑터, 규칙, 설명 서버, 시험 |
-| `contracts/` | OpenAPI와 단계 작업·LLM 계약 |
-| `design/` | 설계서(SD_01~04), 유스케이스 16개, DDL, 마스터플랜 |
-| `models/` | 모델 목록(`manifest.yaml`). 가중치는 넣지 않는다 |
-| `ops/` | 기본 서버 구성(`server/`), 실제 팀 서버 구성(`p1/`), 점검 스크립트 |
-| `docs/` | 공통 문서(팀 가이드·역할), 담당별 기록, 참고 |
-| `.specify/` | 명세(spec), 계획(plan), 작업 목록(tasks) |
-| `.github/` | PR 양식, CODEOWNERS, 리뷰봇 |
-
-### 아직 하지 않은 것
-
-모델 정확도 평가(평가 묶음이 그림 9장이라 끝나지 않음), 서버 응답 시간 p95, 실제 가족의 사용은 아직 하지 않았습니다. Docker 배포는 이번 5일 동안 합니다.
-
----
-
-## 2부. 지금 해야 할 일
-
-### 이번 목표(5일)
-
-> `docker compose up -d` 한 명령으로 서비스가 뜨고, **3D 미술관**에서 가입 → 사진 올리기 → 서버 모델이 분리·판정·결과 → 보호자 확정 → 입체 작품 전시까지 한 바퀴가 된다.
-
-핵심 흐름만 만듭니다. 모니터링·GPU·레지스트리·장애 리허설처럼 한 바퀴에 필요 없는 일은 하지 않습니다([마스터플랜 10절](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md)).
-
-### 지금 상태
-
-2026-10-29 기준입니다.
-
-| 항목 | 상태 |
-|---|---|
-| 모델 서빙 | 있음. 지난 모델 서빙 팀 작업(2026-09-30 판)이다. 팀 서버(맥)에서 pm2로 프로세스 8개를 띄워 돌렸다 |
-| 3D 화면 | 있음. 기기 안에서만 돈다. 서버 연결 코드는 0줄이다 |
-| 리눅스에서 돌기 | 확인함. 리눅스 컨테이너(arm64·x86_64)에서 서빙·api 시험이 통과하고 웹이 빌드된다. x86_64용 CPU 전용 모델 잠금을 더했다 |
-| Dockerfile · compose | **0개. 이번 5일 동안 팀이 직접 만든다** |
-| 배포 | 이번 5일 밖. 나중에 따로 연결한다(3D 화면은 Vercel 같은 정적 호스팅, 서버는 컨테이너를 돌리는 곳) |
-
-### 컨테이너 구성
-
-설계 PR(이슈 #8)에서 확정할 초안입니다(마스터플랜 3-2).
-
-```mermaid
-flowchart LR
-  user([휴대폰 브라우저]) -- 9501 --> web
-  mail([메일 확인]) -- 8025 --> mailpit
-  subgraph compose [docker compose 안쪽 네트워크]
-    web[web<br/>nginx + Vue 빌드] -- "/v1/*" --> api[app-api<br/>Express]
-    api --> db[(db<br/>MariaDB)]
-    api -- SMTP --> mailpit[mailpit]
-    sweeper[sweeper<br/>정리 작업] --> db
-    worker[worker-cpu<br/>M1 · M2 · M5] --> db
-    modelapi[model-api<br/>FastAPI] --> db
-  end
-```
-
-| 지금(pm2·맥) | compose 서비스 | 바뀌는 점 |
-|---|---|---|
-| nginx + 정적 파일 | `web` | 빌드 단계 node(`npm run build:world`) → 실행 단계 nginx. 3D 미술관을 내준다 |
-| app-api, sweeper | `app-api` `sweeper`(같은 이미지) | 127.0.0.1 고정 주소를 설정 값으로, 서비스 이름으로 부르기 |
-| MariaDB | `db` + 볼륨 | 스키마 넣는 방법 정하기 |
-| model-api, worker-cpu | `model-api` `worker-cpu`(같은 이미지) | CPU 종류별 잠금 파일을 빌드 인자로 고르기 |
-| Mailpit | `mailpit` | 그대로. 메일을 끄면 이메일 가입도 꺼지므로 남긴다 |
-| worker-gpu, TorchServe, 설명 서버 | 띄우지 않음 | M3·M7은 가짜 어댑터, 모든 모델은 CPU |
-| `.env` → pm2 | `env_file` | 비밀 값은 저장소 밖 |
-
-- 바깥 포트는 9501과 8025 둘입니다.
-- 볼륨은 4개입니다: DB 자료, 작품 파일, 작업자 상태 폴더, 모델 가중치(읽기 전용).
-- 맥(arm64) 컨테이너는 Apple GPU를 쓸 수 없고, 팀원 둘은 Windows(x86_64)입니다. 그래서 CPU로 도는 구성을 기준으로 합니다.
-
-### 팀
-
-| 사람 | 역할 | 맡는 폴더 |
-|---|---|---|
-| 이제민 [@wpalswpa](https://github.com/wpalswpa) | 모델 서빙 · compose로 묶기 | `serving/`, `compose.yaml` |
-| 최호준 [@zozu001](https://github.com/zozu001) | 입구 · 3D 화면(로그인·확정·결정 창) · 처음부터 띄워 보기 | `web/`, 입구 nginx, `.gitattributes` |
-| 신지현 [@tlswlgus960-prog](https://github.com/tlswlgus960-prog) | 팀장 · 앱 · 데이터 · 3D 화면 서버 연결 층 · 병합 | `api/`, `db/`, `web/src/app/world/`의 연결 층 |
-
-### 이번 개발 몫: 3D 화면 ↔ API 연결
-
-`store.ts`(기기 저장) 옆에 서버를 쓰는 층을 하나 두고, 작품 관련 부분만 서버로 바꿉니다(마스터플랜 3-3).
-
-| 3D 화면 지금(기기) | 바꿀 것(app-api) |
-|---|---|
-| 가족·아이를 기기 안 계정으로 만든다(`Account`) | 이메일 가입·로그인(`/v1/auth/signup`·`/v1/auth/login`, 확인 메일은 Mailpit), 아이 등록·선택(`/v1/children`) |
-| 사진을 기기에서 처리한다(`processImage` → 브라우저 배경 지우기) | `POST /v1/artworks`로 올린다. 서버 규칙대로 원본 액자가 바로 걸린다 |
-| 입체를 바로 만든다 | `GET /v1/artworks/{id}`로 상태를 본다. 컷아웃(`cutoutUrl`)이 오면 그 그림으로 입체를 다시 만든다(`buildRelief`는 그대로) |
-| (없음) | 권유 확정 `POST /v1/artworks/{id}/confirm`, 결과 결정 `POST /v1/artworks/{id}/decision`: 3D 화면 안의 작은 창 두 개 |
-| 작품 목록(`listArtworks`) | `GET /v1/gallery`·`GET /v1/artworks`, 파일은 `/v1/files/{token}` |
-| 방 배치·설정·캐릭터·놀이·백업 | 그대로 기기에(이번 범위 밖) |
-
-- 서버에 닿지 않으면 화면에 알리고 다시 시도하게 합니다. 기기 판으로 몰래 바꾸지 않습니다.
-- 응답 타입은 OpenAPI에서 생성한 타입(`npm run gen:api` → `web/src/api/types.gen.ts`)을 씁니다.
-- 서비스 워커가 `/v1/`을 캐시하지 않는지 확인합니다.
-
-### 1일차 이슈
-
-| # | 이슈 | 담당 |
-|---|---|---|
-| 6 | 각자 환경 확인(Docker, 저장소 받기, push) | 셋 다 |
-| 7 | 배포 서버 정하기(나중으로 미룸) | 신지현 |
-| 8 | 설계 PR(compose 구성 확정) | 이제민 |
-| 9 | M1·M2·M5를 리눅스 컨테이너 CPU로 재기 | 이제민 |
-| 10 | `.gitattributes`, WSL에서 `npm run build:world` | 최호준 |
-| 11 | MariaDB 컨테이너에 스키마 넣기, 설정 값 목록, 3D 화면 ↔ API 대응표 확정 | 신지현 |
-
-2일차부터는 3부 날짜별 가이드를 보고 각자 이슈를 만들어 진행합니다.
-
-### 하지 않을 것
-
-CI 옮기기와 이미지 자동 빌드, 레지스트리, 태그별 되돌리기, 모니터링, 장애 리허설, 백업 스크립트, 보안 점검표, GPU, 움직이는 그림(M3)·3D 조각(M7)·설명(M6)의 실제 실행, 카카오 로그인, 서비스 기능 바꾸기. 시간이 남아도 다시 넣지 않고 발표 준비에 씁니다.
-
----
-
-## 3부. 수행 가이드라인
-
-아래 순서대로 따라가면 끝나는 조건에 닿도록 짰습니다.
-
-### 시작하기
-
-```bash
-# Windows는 WSL 안에서 받는다(.gitattributes가 생기기 전에는 셸 스크립트 줄바꿈이 깨진다)
-git clone https://github.com/kids-gallery/uri-gallery.git
-cd uri-gallery
-cp .env.example .env        # 값은 팀 채널에서 받는다. 저장소에 올리지 않는다
-```
-
-`docker compose up -d`로 띄우는 방법은 3일차에 compose가 생기면 여기에 적습니다(최호준). 그 전까지는 각 폴더의 시험을 돌릴 수 있습니다.
-
-| 폴더 | 시험 |
-|---|---|
-| `api/` | `npm ci && npm test` |
-| `web/` | `npm ci && npm run build` |
-| `serving/` | `pip install -r requirements.lock && pytest` (가짜 모델, 임시 MariaDB를 스스로 띄움) |
-| 리뷰봇 | `python3 .github/review-bot/test_review.py` |
-
-### 일하는 법
-
-```mermaid
-flowchart LR
-  I[이슈] --> B[가지<br/>feat/12-api-image] --> P[PR] --> R{리뷰봇}
-  R -->|막음| D[PR 닫힘<br/>고친 뒤 다시 열기] --> R
-  R -->|통과| H[사람 리뷰<br/>승인 1회] --> M[팀장 병합]
-```
-
-1. **이슈 먼저.** 이슈 하나 = 가지 하나 = PR 하나.
-2. **가지 이름**은 `종류/이슈번호-설명`, **커밋**은 `종류: 설명 (#이슈번호)`입니다. 종류는 feat · fix · docs · refactor · test · chore이고, 가지에는 `feature`도 됩니다.
-3. **PR 양식을 채웁니다.** 특히 "확인한 것"에는 실제로 돌린 명령과 결과(숫자)를 적습니다.
-4. **리뷰봇이 먼저 봅니다.** 핸드북 규칙과 계획서 범위를 13가지로 검사하고, Claude가 바뀐 내용을 비판적으로 읽습니다. 막히면 PR이 닫히고, 무엇을 어떻게 고칠지 댓글로 남깁니다. 본문만 고치면 바로 다시 검사해서 통과하면 다시 열립니다. 코드를 고쳤으면 커밋을 올린 뒤 다시 엽니다. **봇은 승인하지 않습니다.** 통과하면 사람 리뷰 차례입니다([마스터플랜 4-1](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md)).
-5. **사람 리뷰**에서 "왜 이렇게 했는가"를 배운 원칙으로 설명합니다. 설명하지 못하면 병합하지 않습니다.
-6. **설계서 먼저.** 코드를 바꾸면 설계서를 먼저 고치거나, PR 본문 "설계서" 칸에 근거 절을 적습니다.
-7. `.env`, 비밀 값, 모델 가중치는 저장소에 넣지 않습니다.
-
-<details>
-<summary><b>리뷰봇 규칙 13가지</b></summary>
-
-이슈 연결 · PR 양식 · 확인 근거(명령이나 숫자) · 가지 이름 · 커밋 메시지 · 비밀 값 · 금지 파일(`.env`, 키, 가중치, 5MB 넘는 파일) · 설계서 먼저 · 범위 밖(모니터링·GPU·레지스트리 등) · 크기(600줄) · Dockerfile 기본(판 번호 고정, `.dockerignore`) · 리뷰봇 자체 수정 · 남의 폴더(경고만).
-
-규칙 값은 `.github/review-bot/rules.json`에 있습니다. 범위·크기·리뷰봇 수정 규칙과 AI의 막음 지적은, 작성자가 아닌 사람이 `리뷰봇-예외` 라벨을 붙이고 본문에 `예외 이유:`를 적으면 경고로 바뀝니다. 비밀 값·금지 파일·이슈 연결·양식 규칙은 예외가 없습니다.
-
-</details>
-
-협업 규칙의 정본은 팀 핸드북 [kids-gallery/team-handbook](https://github.com/kids-gallery/team-handbook)입니다.
-
-### 날짜별 수행 가이드
-
-날마다 같은 순서로 일합니다. 아침 10분 동안 그날 쓰는 교안 주제를 같이 다시 보고([팀 가이드](docs/공통/컨테이너배포_팀가이드.md) 3절), 각자 이슈 → 가지 → PR로 작업한 뒤, 저녁에 "그날 끝 확인"을 함께 봅니다.
-
-#### 1일차: 바탕 확인과 설계 PR
-
-| 누가 | 할 일 | 이슈 |
-|---|---|---|
-| 셋 다 | Docker·저장소·push가 되는지 확인하고 결과를 댓글로 남긴다 | #6 |
-| 이제민(셋이 같이 답) | 설계 PR: 아래 질문 6개에 답하고 compose 구성을 확정한다 | #8 |
-| 이제민 | M1·M2·M5를 리눅스 컨테이너 CPU로 한 장씩 돌려 시간·메모리 재기 | #9 |
-| 최호준 | `.gitattributes`(LF 고정), WSL에서 `npm run build:world`, 3D 화면을 개발 서버로 띄워 써 보기 | #10 |
-| 신지현 | MariaDB 컨테이너에 스키마 넣어 보기, 설정 값 목록, 3D 화면 ↔ API 대응표 확정 | #11 |
-
-```bash
-docker run hello-world          # Docker가 도는지
-docker version                  # Server 판 확인
-uname -m                        # x86_64 또는 arm64
-free -h                         # 메모리
-# 지금 서비스를 손으로 깔아 보며 무엇이 필요한지 적는다(이미지 설계의 출발점)
-docker run -it --rm -v "$PWD":/src python:3.11-slim bash
-```
-
-**설계 PR이 답할 질문**(마스터플랜 3-4)
-1. 서비스를 몇 개로 나누는가. 같은 코드를 쓰는 둘(app-api·sweeper, model-api·worker-cpu)은 이미지 하나를 나눠 쓰는가.
-2. 기반 이미지와 판 번호는 무엇인가. 무엇을 `.dockerignore`에 넣는가.
-3. CPU 종류(맥 arm64, Windows x86_64)에 따라 잠금 파일을 어떻게 고르는가.
-4. 볼륨 4개를 누가 어떻게 붙이는가. 모델 가중치는 어디서 받아 어디에 두는가.
-5. 고정 주소(127.0.0.1)를 어떻게 설정 값으로 바꾸고 서비스 이름으로 부르는가. `.env`로 넘길 값은 무엇인가.
-6. 서비스마다 "준비됨"을 무엇으로 판단하는가. DB 스키마는 언제 넣는가.
-
-**끝 확인:** 이슈 #6에 셋의 결과가 있고, 설계 PR이 올라와 있습니다.
-
-#### 2일차: 서비스별 이미지
-
-오전에 설계 PR을 리뷰·병합한 뒤 각자 자기 이미지를 만듭니다.
-
-| 누가 | 이미지 | 먼저 고칠 코드(설계서 먼저) |
-|---|---|---|
-| 이제민 | serving(가짜 모델, `requirements.lock`) → model-api·worker-cpu가 함께 씀 | model-api 바인딩 주소를 설정 값으로(`serving/model_api/main.py` 8행) |
-| 최호준 | web: 빌드 단계 `node:22`(`npm run build:world`) → 실행 단계 nginx. 그리고 3D 화면 로그인 창 | 없음 |
-| 신지현 | api: app-api·sweeper가 함께 씀. 그리고 3D 화면 서버 연결 층(올리기·상태·목록) | app-api 바인딩 주소(`api/src/server.ts` 14행), 프록시 신뢰 범위(`api/src/app.ts` 24행) |
-
-**Dockerfile을 쓸 때 지킬 것**(리뷰봇도 일부를 검사합니다)
-- 기반 이미지는 판 번호를 적습니다(`node:22-slim`처럼 쓰고, `latest`나 판 번호 없이 쓰지 않습니다).
-- 의존성 파일(`package*.json`, `requirements*.lock`)을 먼저 복사해 설치하고, 소스는 그 뒤에 복사합니다. 그래야 소스만 바꿨을 때 설치 층을 다시 쓰지 않습니다.
-- Dockerfile과 같은 폴더(또는 저장소 맨 위)에 `.dockerignore`를 두고 `node_modules`, `.env`, 모델 가중치, 시험 결과물을 뺍니다.
-- 비밀 값은 이미지에 넣지 않습니다. 실행할 때 `--env-file`로 넘깁니다.
-
-```bash
-docker build -t uam-api ./api
-docker image ls                                  # 크기를 PR '확인한 것'에 적는다
-docker run --rm --env-file .env -p 9521:9521 uam-api
-curl -i http://localhost:9521/live               # 바인딩 주소를 바꾼 뒤에야 바깥에서 닿는다
-# 소스 한 줄만 바꾸고 다시 빌드해, 설치 층이 재사용되는지(시간이 줄었는지) 본다
-time docker build -t uam-api ./api
-```
-
-**끝 확인:** 각자 이미지가 빌드되고 혼자 뜹니다. PR에 이미지 크기와 빌드 시간이 있습니다.
-
-#### 3일차: compose로 묶기
-
-이제민이 저장소 맨 위 `compose.yaml`에 7개 서비스를 묶고, 둘은 자기 서비스 부분을 채웁니다. 같은 날 최호준은 3D 화면의 확정·결정 창을, 신지현은 서버 컷아웃으로 입체를 다시 만드는 부분을 붙입니다.
-
-| 넣을 것 | 내용 |
-|---|---|
-| 서비스 | `web` `app-api` `sweeper` `db` `mailpit` `model-api` `worker-cpu` |
-| 바깥 포트 | `web` 9501, `mailpit` 8025만 연다. 나머지는 서비스 이름으로 부른다 |
-| 볼륨 | DB 자료, 작품 파일(app-api·sweeper·model-api·worker-cpu), 작업자 상태 폴더(model-api·worker-cpu), 모델 가중치(읽기 전용) |
-| 설정 | `env_file: .env`. 주소 값은 서비스 이름으로(`DB_HOST=db`, `MAIL_SMTP_URL=smtp://mailpit:1025`, `MODEL_API_INTERNAL_URL=http://model-api:9541`) |
-| 기동 순서 | `db`에 healthcheck, app-api·model-api·worker-cpu는 `depends_on: db: condition: service_healthy` |
-| 재시작 | 모든 서비스 `restart: unless-stopped` |
-| 가짜 모델 | `UAM_FAKE_MODELS=1`, `GPU_ENABLED=false`, `CAPTION_ENABLED=false` |
-
-```bash
-docker compose config            # 문법과 합쳐진 설정 확인
-docker compose up -d --build
-docker compose ps                # 모두 running·healthy인지
-docker compose logs -f app-api   # 막히면 서비스별 로그
-# 브라우저: http://localhost:9501 에서 가입 → 메일은 http://localhost:8025 에서 확인 링크를 누른다
-docker compose down              # 볼륨은 남는다. 다시 up 해서 작품이 남는지 본다
-```
-
-**끝 확인:** 저녁에 셋이 같은 `compose.yaml`을 받아 각자 PC에서 띄우고, 가짜 모델로 3D 미술관에서 가입 → 사진 → 확정 → 입체 전시 한 바퀴가 됩니다.
-
-#### 4일차: 실제 모델과 다듬기
-
-| 누가 | 할 일 |
-|---|---|
-| 이제민 | 실제 모델 3개. `models/manifest.yaml`의 `source`·`revision` 그대로 가중치를 받아 `MODEL_ROOT` 볼륨(읽기 전용)에 둔다. `UAM_FAKE_MODELS=M3,M7`. 모델 묶음 이미지는 CPU 종류에 맞는 잠금 파일로. Docker Desktop 메모리를 넉넉히(M1 추론 중 8.5GB) |
-| 최호준 | 깨끗한 PC에서 README만 보고 처음부터 띄워 보기. 막힌 곳을 README "시작하기"에 고친다 |
-| 신지현 | 개인정보 문구, 서버에 닿지 않을 때 화면, `docker compose down` 뒤 `up`에도 가족 작품이 남는지 확인 |
-| 함께 | 저녁에 기능 동결, 시연이 실패할 때를 대비한 예비 영상 |
-
-```bash
-docker stats                     # 모델 컨테이너 메모리
-docker compose exec worker-cpu ls /models    # 가중치가 보이는지(경로는 설계 PR에서 정한 값)
-```
-
-**끝 확인:** 맥에서 실제 모델로 3D 미술관 한 바퀴가 됩니다. 남길 수치 세 가지(이미지 크기, 기동부터 준비까지 시간, 모델별 한 장 처리 시간·메모리)가 표에 있습니다.
-
-#### 5일차: 발표
-
-오전에 리허설을 2번 합니다. 발표 순서는 이렇습니다(10분, 마스터플랜 6절).
-1. 문제: 지금은 한 서버에 손으로 맞춘 프로세스 8개
-2. 설계: 서비스 7개, 바깥 포트 2개, 볼륨 4개, 뺀 것과 이유
-3. 구현: 각자 만든 이미지와 고친 코드, 잰 수치
-4. 시연: `docker compose up -d` → 가입 → 사진 → 결과 → 전시
-5. 한계와 다음
-
-### 끝나는 조건(마스터플랜 8절)
-
-- 설계 PR이 구현 PR보다 먼저 병합돼 있다.
-- 깨끗한 PC에서 `docker compose up -d` 뒤 가짜 모델로 한 바퀴가 된다.
-- 맥에서 실제 모델 3개로 한 바퀴가 된다.
-- `docker compose down` 뒤 다시 `up` 해도 가족 작품이 남는다.
-- 저장소에 `.env`·비밀 값·모델 가중치가 0건이다.
-- 발표를 마쳤고, 수치와 각자 작업 기록이 있다.
-
-### 막히면
-
-30분 안에 팀 채널에 묻습니다. 물을 때는 명령, 결과(오류 문구), 이미 해 본 것을 함께 붙입니다. 자주 걸릴 곳은 이렇습니다.
-
-| 증상 | 먼저 볼 곳 |
-|---|---|
-| 셸 스크립트가 `^M`·`bad interpreter`로 깨진다 | Windows 폴더에 받아 줄바꿈이 CRLF가 됨. WSL 안에서 다시 받거나 `.gitattributes`(#10) |
-| 다른 컨테이너에서 app-api·model-api에 연결이 안 된다 | 바인딩 주소가 아직 `127.0.0.1`로 고정돼 있음(2일차 코드 수정) |
-| 가입 화면에 이메일 가입이 없다 | `MAIL_ENABLED`가 꺼져 있음. Mailpit을 띄우고 켠다 |
-| api가 뜨자마자 죽는다 | `SESSION_SECRET`·`AUTH_HMAC_SECRET` 없음, 또는 DB가 준비되기 전에 뜸(`depends_on` 조건) |
-| 모델 설치가 맥과 Windows에서 다르게 된다 | CPU 종류별 잠금 파일(`serving/README.md`) |
-| 워커가 메모리 부족으로 죽는다 | M1 추론 중 8.5GB. 가짜 모델로 돌리거나 Docker 메모리를 늘린다 |
-| 로그인했는데 다시 로그인 화면이 뜬다 | 로컬 `http://`에서는 `SECURE_COOKIES=false`가 필요할 수 있음(`.env.example` 13행) |
-| 3D 화면이 서버 대신 예전처럼 기기에서만 처리한다 | 연결 층이 아직 `store.ts`의 기기 처리를 부름(2부 대응표) |
-| 작업이 계속 "처리 중"이다 | sweeper가 떠 있는지, 워커 로그(`docker compose logs worker-cpu`) |
-
-### 문서 지도
-
-처음이면 위에서부터 읽습니다.
-
-| 순서 | 문서 | 무엇이 있나 |
-|---|---|---|
-| 1 | [마스터플랜](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md) | 5일 목표 · compose 구성 · 역할 · 날짜별 할 일 · 리뷰봇 · 하지 않을 것 |
-| 2 | [팀 가이드](docs/공통/컨테이너배포_팀가이드.md) | Linux · Git · Docker 교안의 어디를 이 작업에 쓰는가 |
-| 3 | [아키텍처 설계서 SD_04](design/SD_04_아키텍처설계서_우리아이미술관.md) | 서비스 구조와 배치 |
-| 4 | [DB 설계서 SD_03](design/SD_03_데이터베이스설계서_우리아이미술관.md) | 표 · 뷰 · 상태 |
-| 5 | [작업 큐 계약](contracts/stage-job.md) | app-api와 작업자가 주고받는 규칙 |
-| 6 | [서빙 안내](serving/README.md) | 모델 설치 · CPU 종류별 잠금 파일 |
-| 참고 | [유스케이스](design/UC_ALL_우리아이미술관_통합명세.md) · [프로세스 SD_01](design/SD_01_프로세스설계서_우리아이미술관.md) · [화면 SD_02](design/SD_02_UIUX설계서_우리아이미술관.md) · [배포 절차](ops/server/DEPLOY.md) | 기능 정의와 운영 |
+| 지금 무엇이 되고, 어떻게 띄우고, 무엇을 나눠 맡나 | [팀작업 시작 안내](docs/공통/팀작업_시작안내.md) |
+| 어떤 E2E가 원래부터 실패하나 | [E2E 알려진 실패](docs/공통/E2E_알려진실패_20261029.md) |
+| 사용자 흐름과 처리 절차 | [SD_01 프로세스 설계서](design/SD_01_프로세스설계서_우리아이미술관.md), 유스케이스 `design/UC_00~13` |
+| 화면·톤·디자인 시스템 | [SD_02 UI/UX 설계서](design/SD_02_UIUX설계서_우리아이미술관.md) 17-20 |
+| 표와 상태 | [SD_03 데이터베이스 설계서](design/SD_03_데이터베이스설계서_우리아이미술관.md) |
+| 구성·모델 켜기·장애 처리 | [SD_04 아키텍처 설계서](design/SD_04_아키텍처설계서_우리아이미술관.md) 9-4 |
+| API와 작업 규칙 | [`contracts/openapi.yaml`](contracts/openapi.yaml), [`contracts/stage-job.md`](contracts/stage-job.md) |
+| 모델 재현과 M3 설치 원 기록 | [A_모델재현기록](docs/A/A_모델재현기록.md) |
+| 처음 모델을 켠 예외 기록 | [D_모델_임시활성](docs/D/D_모델_임시활성_2026-09-29.md) |
+| 화면 문구 | [C_화면문구](docs/C/C_화면문구.md) |
+| 서빙 환경 설치 | [`serving/README.md`](serving/README.md) |
