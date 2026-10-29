@@ -1,4 +1,4 @@
-"""개발 환경에서 M1·M2·M5를 켠다(SD_04 9-4). 첫 활성 한 줄(D27 예외)만 개발 DB에 직접 쓰고, 나머지는 정식 절차다.
+"""개발 환경에서 M1·M2·M5(TorchServe가 응답하면 M3도)를 켠다(SD_04 9-4). 첫 활성 한 줄(D27 예외)만 개발 DB에 직접 쓰고, 나머지는 정식 절차다.
 
   serving/.venv/bin/python scripts/dev_activate_models.py [--eval-dir <팀 평가 묶음 사진 폴더>]
 
@@ -25,8 +25,9 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = ["M1", "M2", "M5"]
 NEEDS_M3 = {"M2"}  # 판정 평가 사슬에 M3 관절이 있다
+
+
 STAFF_EMAIL = os.environ.get("DEV_EVALUATOR_EMAIL", "dev-evaluator@example.com")
 STAFF_PW = os.environ.get("DEV_EVALUATOR_PASSWORD", "dev-evaluator-password-1")
 DEV_NOTE = "[개발 환경 연결 확인, 품질 판단 아님]"
@@ -43,6 +44,18 @@ def load_env() -> dict:
 
 ENV = load_env()
 API = f"http://127.0.0.1:{ENV.get('APP_PORT', '9521')}"
+
+
+def torchserve_up() -> bool:
+    try:
+        with urllib.request.urlopen(ENV.get("TORCHSERVE_URL", "http://127.0.0.1:9561").rstrip("/") + "/ping", timeout=5) as r:
+            return "Healthy" in r.read().decode()
+    except OSError:
+        return False
+
+
+M3_UP = torchserve_up()
+MODELS = ["M1", "M3", "M2", "M5"] if M3_UP else ["M1", "M2", "M5"]  # M3은 이 기기에서 TorchServe가 응답할 때만(SD_04 9-4)
 jar = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
@@ -142,7 +155,7 @@ def main() -> int:
             time.sleep(25)  # 워커가 활성 버전을 20초마다 다시 읽는다 — 그 전에 부르면 꺼진 모델로 보고 요청을 지운다
         report[m] = {"version": ver.get("version"), "active": True}
         call("POST", f"/v1/ops/models/{m}/warmup", {})  # 워커는 기동 때만 미리 올린다 — 나중에 켠 모델은 "지금 불러오기"로 올린다
-        if m in NEEDS_M3:
+        if m in NEEDS_M3 and not M3_UP:
             report[m]["eval_skipped"] = "평가 실행기가 M3(관절)도 적재돼 있어야 맡는다(workers/stages/eval.py CHAIN). M3은 x86 엔진 검증 뒤"
             continue
         run_id = ver.get("latestEvalRunId")

@@ -1,0 +1,41 @@
+/* 시각 체계 "C 명패" 토큰(SD_02 17-20-2). 새 화면 코드는 여기 있는 값만 쓴다. 값을 바꿀 때는 SD_02 표를 먼저 고친다.
+   밝은 판 = 보호자 2D 화면, .w-dark = 3D 위 안내 패널(장면 위에 불투명으로 깐다).
+   글자·바탕 조합은 모두 4.5:1 이상 — src/__tests__/w-design.spec.ts가 이 파일 값으로 다시 계산한다. */
+:root{
+  --w-bg:#EFECE6;
+  --w-panel:#FFFFFF;
+  --w-ink:#22211E;
+  --w-ink-2:#6A675F;
+  --w-line:#D9D5CC;
+  --w-accent:#2E5A47;
+  --w-on-accent:#FFFFFF;
+  --w-off:#E6E3DC;
+  --w-off-ink:#5F5C55;
+  --w-alert:#9B3A26;
+
+  --w-font-title:"Gowun Batang","Noto Serif KR",serif;
+  --w-font-ui:"IBM Plex Sans KR","Pretendard Variable",Pretendard,"Apple SD Gothic Neo",system-ui,sans-serif;
+
+  --w-t-title:28px; --w-t-h2:20px; --w-t-plate:17px; --w-t-body:16px; --w-t-small:14px; --w-t-tiny:13px;
+  --w-lh-tight:1.25; --w-lh-body:1.6;
+
+  --w-s1:4px; --w-s2:8px; --w-s3:12px; --w-s4:16px; --w-s5:24px; --w-s6:32px; --w-s7:48px;
+  --w-r:4px;
+  --w-stripe:6px;
+  --w-hair:1px;
+  --w-focus:2px;
+  --w-content:1040px;
+  --w-dur:160ms;
+}
+.w-dark{
+  --w-panel:#181715;
+  --w-ink:#F2EEE6;
+  --w-ink-2:#B3AEA3;
+  --w-line:#3D3B36;
+  --w-accent:#8CC3A6;
+  --w-on-accent:#14201A;
+  --w-off:#2A2925;
+  --w-off-ink:#ABA699;
+  --w-alert:#F0A08A;
+}
+@media (prefers-reduced-motion: reduce){ :root{ --w-dur:0ms; } }

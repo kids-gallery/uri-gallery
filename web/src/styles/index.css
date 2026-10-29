@@ -1,9 +1,16 @@
 /* 스타일 진입점(T011). 글꼴은 자체 호스팅 가변 글꼴(D22 ⑧) — 외부 CDN 없음. */
 @import '@fontsource-variable/inter';
 @import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+@import '@fontsource/gowun-batang/400.css';
+@import '@fontsource/gowun-batang/700.css';
+@import '@fontsource/ibm-plex-sans-kr/400.css';
+@import '@fontsource/ibm-plex-sans-kr/500.css';
+@import '@fontsource/ibm-plex-sans-kr/600.css';
 @import './tokens.css';
+@import './w-tokens.css'; /* C 명패(SD_02 17-20-2) — 화면 적용(단계 4)에서 tokens.css를 대신한다 */
 @import './base.css';
 @import './components.css';
+@import './w-components.css';
 @import './shell.css';
 @import './paper.css';
 @import './motion.css';

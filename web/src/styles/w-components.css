@@ -1,0 +1,49 @@
+/* 공통 컴포넌트 7종(SD_02 17-20-2): 버튼·카드·입력·상단바·빈 상태·로딩·오류. 값은 w-tokens.css의 변수만 쓴다(색·크기 숫자를 여기 쓰지 않는다). */
+
+/* 버튼 — 막히면 이름 아래 둘째 줄에 이유(C3, 17-20-1) */
+.w-btn{display:inline-grid;justify-items:center;gap:var(--w-s1);min-height:calc(var(--w-s7) - var(--w-s1));padding:var(--w-s3) var(--w-s5);border:var(--w-hair) solid transparent;border-radius:var(--w-r);font:600 var(--w-t-body)/var(--w-lh-tight) var(--w-font-ui);cursor:pointer;transition:background-color var(--w-dur),border-color var(--w-dur);text-align:center}
+.w-btn__label{white-space:nowrap;word-break:keep-all}
+.w-btn__why{font:400 var(--w-t-tiny)/var(--w-lh-tight) var(--w-font-ui)}
+.w-btn--primary{background:var(--w-accent);color:var(--w-on-accent)}
+.w-btn--secondary{background:transparent;color:var(--w-ink);border-color:var(--w-line)}
+.w-btn--secondary:hover{border-color:var(--w-ink-2)}
+.w-btn[aria-disabled="true"]{background:var(--w-off);color:var(--w-ink);border-color:transparent;cursor:not-allowed}
+.w-btn[aria-disabled="true"] .w-btn__why{color:var(--w-off-ink)}
+.w-btn--block{display:grid;width:100%}
+:where(.w-btn,.w-input,.w-topbar a,.w-card a):focus-visible{outline:var(--w-focus) solid var(--w-accent);outline-offset:var(--w-focus)}
+
+/* 카드 — 명패 모양: 흰 판, 선 하나, 왼쪽 띠 */
+.w-card{background:var(--w-panel);color:var(--w-ink);border:var(--w-hair) solid var(--w-line);border-left:var(--w-stripe) solid var(--w-accent);border-radius:var(--w-r);padding:var(--w-s4) var(--w-s5);display:grid;gap:var(--w-s2)}
+.w-card__title{margin:0;font:700 var(--w-t-plate)/var(--w-lh-tight) var(--w-font-title)}
+.w-card__meta{margin:0;font:400 var(--w-t-small)/var(--w-lh-body) var(--w-font-ui);color:var(--w-ink-2);font-variant-numeric:tabular-nums}
+.w-card--alert{border-left-color:var(--w-alert)}
+
+/* 입력 — 이름표·입력·도움말·오류 한 묶음 */
+.w-field{display:grid;gap:var(--w-s2)}
+.w-field__label{font:500 var(--w-t-small)/var(--w-lh-tight) var(--w-font-ui);color:var(--w-ink)}
+.w-input{width:100%;min-height:calc(var(--w-s7) - var(--w-s1));padding:var(--w-s3) var(--w-s4);background:var(--w-panel);color:var(--w-ink);border:var(--w-hair) solid var(--w-line);border-radius:var(--w-r);font:400 var(--w-t-body)/var(--w-lh-tight) var(--w-font-ui)}
+.w-input::placeholder{color:var(--w-ink-2)}
+.w-field__hint{margin:0;font:400 var(--w-t-tiny)/var(--w-lh-body) var(--w-font-ui);color:var(--w-ink-2)}
+.w-field__error{margin:0;font:500 var(--w-t-tiny)/var(--w-lh-body) var(--w-font-ui);color:var(--w-alert)}
+.w-field--error .w-input{border-color:var(--w-alert)}
+
+/* 상단바 — 안쪽 폭은 본문 폭과 같다 */
+.w-topbar{background:var(--w-panel);border-bottom:var(--w-hair) solid var(--w-line);padding-block:var(--w-s3)}
+.w-topbar__in{max-width:var(--w-content);margin:0 auto;padding-inline:var(--w-s4);display:flex;align-items:center;justify-content:space-between;gap:var(--w-s4);flex-wrap:wrap}
+.w-topbar__title{font:700 var(--w-t-plate)/var(--w-lh-tight) var(--w-font-title);color:var(--w-ink);text-decoration:none}
+.w-topbar__nav{display:flex;gap:var(--w-s2);flex-wrap:wrap}
+
+/* 본문 폭 — 1280px에서 가운데 */
+.w-page{max-width:var(--w-content);margin:0 auto;padding-inline:var(--w-s4);padding-block:var(--w-s6) var(--w-s7);display:grid;gap:var(--w-s5)}
+.w-page__title{margin:0;font:700 var(--w-t-title)/var(--w-lh-tight) var(--w-font-title);color:var(--w-ink);text-wrap:balance}
+
+/* 빈 상태·로딩·오류 — 같은 틀(가운데 한 묶음, 제목·설명·행동) */
+.w-state{display:grid;justify-items:start;gap:var(--w-s3);padding:var(--w-s6) var(--w-s5);background:var(--w-panel);color:var(--w-ink);border:var(--w-hair) solid var(--w-line);border-radius:var(--w-r)}
+.w-state__title{margin:0;font:700 var(--w-t-h2)/var(--w-lh-tight) var(--w-font-title)}
+.w-state__body{margin:0;font:400 var(--w-t-body)/var(--w-lh-body) var(--w-font-ui);color:var(--w-ink-2);max-width:60ch}
+.w-state--alert{border-left:var(--w-stripe) solid var(--w-alert)}
+.w-state--alert .w-state__title{color:var(--w-alert)}
+.w-loading__bar{width:100%;height:var(--w-s1);background:var(--w-off);border-radius:var(--w-r);overflow:hidden}
+.w-loading__bar::after{content:"";display:block;height:100%;width:30%;background:var(--w-accent);animation:w-slide calc(var(--w-dur) * 8) ease-in-out infinite alternate}
+@keyframes w-slide{from{transform:translateX(0)}to{transform:translateX(233%)}}
+@media (prefers-reduced-motion: reduce){ .w-loading__bar::after{animation:none;width:100%} }
