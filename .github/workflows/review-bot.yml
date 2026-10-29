@@ -1,0 +1,31 @@
+# 리뷰봇(계획서 4-1): PR을 규칙 검사와 AI 비판 검토로 판정한다. 봇은 승인하지 않는다.
+# pull_request_target: 검사 코드는 main의 것을 쓴다(PR이 검사 코드를 고쳐 스스로 통과하지 못하게).
+# PR의 코드는 받지도 실행하지도 않는다. 바뀐 내용은 API로만 읽는다.
+name: review-bot
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review, labeled, unlabeled]
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  models: read
+concurrency:
+  group: review-bot-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review:
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: .github/review-bot
+          persist-credentials: false
+      - name: 판정
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 .github/review-bot/review.py

@@ -1,0 +1,220 @@
+{
+  "_설명": "리뷰봇 판정 규칙(계획서 4-1 표). 규칙을 바꿀 때는 계획서 표와 이 파일을 같이 고친다. 코드는 이 값을 적용하기만 한다.",
+  "labels": {
+    "block": "리뷰봇-막음",
+    "override": "리뷰봇-예외"
+  },
+  "override_reason": "예외 이유:",
+  "overridable": [
+    "scope_out",
+    "size",
+    "bot_self",
+    "ai"
+  ],
+  "sections": {
+    "issue": "관련 이슈",
+    "design": "설계서",
+    "changes": "변경 사항",
+    "evidence": "확인한 것",
+    "required": [
+      "관련 이슈",
+      "변경 사항",
+      "확인한 것"
+    ]
+  },
+  "placeholder_lines": [
+    "^\\s*$",
+    "^\\s*-\\s*$",
+    "^\\s*-?\\s*\\(.*\\)\\s*$",
+    "^\\s*Closes\\s+#\\s*(번호)?\\s*$",
+    "^\\s*-?\\s*실행한 명령과 결과.*$",
+    "^\\s*-?\\s*화면이 바뀌었으면 캡처\\s*$",
+    "^\\s*설계서:\\s*계획서 3-2 / SD_04 ○절.*$",
+    "^\\s*<!--.*-->\\s*$"
+  ],
+  "issue_link": "(?i)\\b(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?)\\s+#\\d+",
+  "evidence_pattern": "`[^`]+`|\\d",
+  "design_ref_pattern": "\\d",
+  "design_none_pattern": "해당 없음",
+  "branch_pattern": "^(feat|fix|docs|refactor|test|chore)/\\d+-[a-z0-9][a-z0-9._-]*$",
+  "commit_pattern": "^(feat|fix|docs|refactor|test|chore)(\\([^)]+\\))?: .+ \\(#\\d+\\)$",
+  "commit_skip_pattern": "^(Merge |Revert \")",
+  "secret_patterns": [
+    "-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    "\\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}",
+    "\\bgithub_pat_[A-Za-z0-9_]{30,}",
+    "\\bAKIA[0-9A-Z]{16}\\b",
+    "\\bsk-[A-Za-z0-9_-]{20,}",
+    "\\bxox[abposr]-[A-Za-z0-9-]{10,}",
+    "\\bAIza[0-9A-Za-z_-]{35}\\b",
+    "^\\s*[A-Z0-9_]*(PASSWORD|SECRET|API_KEY|TOKEN|CLIENT_SECRET)[A-Z0-9_]*\\s*[:=]\\s*[^\\s$<{#\"']{8,}",
+    "(?i)(password|passwd|secret)\\s*[:=]\\s*[\"'][^\"'$<{]{8,}[\"']"
+  ],
+  "forbidden_globs": [
+    ".env",
+    "*/.env",
+    ".env.*",
+    "*/.env.*",
+    "*.pem",
+    "*.key",
+    "*id_rsa*",
+    "*id_ed25519*",
+    "*.pt",
+    "*.pth",
+    "*.safetensors",
+    "*.onnx",
+    "*.ckpt",
+    "*.mar",
+    "*.bin",
+    "*.gguf",
+    "*.h5"
+  ],
+  "forbidden_except": [
+    ".env.example",
+    "*/.env.example"
+  ],
+  "max_file_bytes": 5242880,
+  "code_globs": [
+    "api/src/*",
+    "api/scripts/*",
+    "serving/*.py",
+    "web/src/*",
+    "*Dockerfile*",
+    "compose*.yml",
+    "compose*.yaml",
+    "docker-compose*.yml",
+    "docker-compose*.yaml",
+    "*.sh",
+    "ops/*",
+    "db/*"
+  ],
+  "design_globs": [
+    "design/*",
+    "docs/*",
+    "ops/server/DEPLOY.md",
+    "serving/README.md"
+  ],
+  "scope_out": {
+    "paths": [
+      "*prometheus*",
+      "*grafana*",
+      "k8s/*",
+      "*/k8s/*",
+      "helm/*",
+      "*kustomization*"
+    ],
+    "content_globs": [
+      "*Dockerfile*",
+      "compose*.yml",
+      "compose*.yaml",
+      "docker-compose*.yml",
+      "docker-compose*.yaml",
+      "*.sh",
+      ".github/workflows/*"
+    ],
+    "content": [
+      "(?i)prometheus",
+      "(?i)grafana",
+      "(?i)--gpus",
+      "(?i)nvidia",
+      "(?i)\\bkubectl\\b",
+      "(?i)docker push",
+      "ghcr\\.io",
+      "(?i)torchserve",
+      "(?i)ollama"
+    ]
+  },
+  "size": {
+    "warn": 300,
+    "block": 600,
+    "ignore_globs": [
+      "*.lock",
+      "*-lock.json",
+      "*lock.yaml",
+      "*.lock.*",
+      "*.svg"
+    ]
+  },
+  "dockerfile_globs": [
+    "*Dockerfile*"
+  ],
+  "dockerignore_names": [
+    ".dockerignore"
+  ],
+  "bot_globs": [
+    ".github/*"
+  ],
+  "ai": {
+    "endpoint": "https://models.github.ai/inference/chat/completions",
+    "model": "openai/gpt-4.1-mini",
+    "max_diff_chars": 40000,
+    "max_issues": 8,
+    "context": "이 저장소는 '우리 아이 미술관'(Vue 화면 · Express app-api · FastAPI model-api · Python 작업자 · MariaDB)을 5일 안에 Docker Compose로 다시 짓는 팀 작업이다. 목표는 하나다: `docker compose up -d` 한 명령으로 서비스가 뜨고 이메일 가입(Mailpit) → 사진 올리기 → 분리(M1) → 판정 제안(M2) → 확정 → 부조(M5) 또는 액자 → 전시까지 한 바퀴가 되며, 같은 방법으로 배포 서버에도 뜬다. compose 서비스는 web(nginx, 바깥 9501)·app-api·sweeper·db(MariaDB)·mailpit(8025)·model-api·worker-cpu 7개다. 하지 않는 것: CI 옮기기와 이미지 자동 빌드, 레지스트리 올리기, 태그별 되돌리기, 모니터링, 장애 리허설, 백업 스크립트, 보안 점검표, GPU, 3D 단독 판, M3·M6·M7 실제 실행, 카카오 로그인, 서비스 기능 변경. 지켜야 할 원칙: 설계서를 먼저 고친다. 잠금 파일을 먼저 복사해 설치하고 소스는 나중에 넣는다. 비밀 값은 .env로만 넘기고 이미지·저장소에 넣지 않는다. 기반 이미지 판 번호를 고정한다. 127.0.0.1 고정 주소는 설정 값으로 바꾸고 서비스 이름으로 부른다. db가 준비된 뒤 api가 뜨게 한다. 모델 가중치는 저장소에 넣지 않는다. PR 하나는 이슈 하나만 다룬다."
+  },
+  "messages": {
+    "issue_link": [
+      "이슈 연결이 없다",
+      "본문 '관련 이슈'에 `Closes #번호`를 적는다. 이슈가 없으면 먼저 만든다(핸드북 규칙 1)"
+    ],
+    "template": [
+      "PR 양식 칸이 비어 있다",
+      "'관련 이슈·변경 사항·확인한 것' 칸을 채운다(계획서 부록 B)"
+    ],
+    "evidence": [
+      "'확인한 것'에 실행한 명령이나 숫자가 없다",
+      "실제로 돌린 명령을 `명령` 형태로 적고 결과(종료 코드, 크기, 시간 등)를 적는다"
+    ],
+    "branch": [
+      "가지 이름이 규칙과 다르다",
+      "`종류/이슈번호-설명`으로 만든다. 예: `git switch -c feat/12-api-image`"
+    ],
+    "commit": [
+      "커밋 메시지가 규칙과 다르다",
+      "`종류: 설명 (#이슈번호)`로 고친다. 이미 올렸으면 `git commit --amend` 또는 `git rebase -i` 뒤 `git push --force-with-lease`"
+    ],
+    "secret": [
+      "비밀 값으로 보이는 문자열이 있다",
+      "값을 지우고 `.env`(저장소에 넣지 않음)로 옮긴다. 이미 올렸다면 그 값은 새어 나간 것으로 보고 바로 바꾼다"
+    ],
+    "forbidden": [
+      "넣으면 안 되는 파일이 있다",
+      "`git rm --cached 파일` 뒤 `.gitignore`에 더한다. 모델 가중치는 `models/README.md` 방식으로 받는다"
+    ],
+    "big_file": [
+      "5MB가 넘는 파일이 있다",
+      "저장소에서 빼고 받는 방법을 문서로 남긴다"
+    ],
+    "design_first": [
+      "코드를 바꿨는데 설계서 근거가 없다",
+      "설계서(design/·docs/)를 같이 고치거나, 본문 '설계서' 칸에 근거 절을 적는다. 예: `설계서: 계획서 3-2`"
+    ],
+    "scope_out": [
+      "계획서 10절에서 뺀 일이 들어 있다",
+      "이번 5일 범위가 아니다. 빼거나, 꼭 필요하면 팀과 합의한 뒤 다른 사람이 `리뷰봇-예외` 라벨을 붙이고 본문에 `예외 이유:`를 적는다"
+    ],
+    "size": [
+      "PR이 너무 크다",
+      "이슈 하나 = PR 하나로 나눈다"
+    ],
+    "docker_tag": [
+      "기반 이미지 판 번호가 고정돼 있지 않다",
+      "`FROM python:3.11-slim`처럼 판 번호를 적는다(`latest`와 판 번호 없음 금지)"
+    ],
+    "dockerignore": [
+      "Dockerfile 옆에 .dockerignore가 없다",
+      "같은 폴더나 저장소 맨 위에 `.dockerignore`를 두고 `node_modules`, `.env`, 모델 가중치를 뺀다"
+    ],
+    "bot_self": [
+      "리뷰봇 자체(.github/)를 고친다",
+      "팀이 이슈로 합의한 뒤 다른 사람이 `리뷰봇-예외` 라벨을 붙이고 본문에 `예외 이유:`를 적는다"
+    ],
+    "owner": [
+      "역할 밖 폴더를 고쳤다",
+      "그 폴더 주인에게 리뷰를 받는다(CODEOWNERS가 자동으로 요청한다)"
+    ],
+    "ai": [
+      "AI 비판 검토의 막음 지적",
+      "지적을 고치거나, 틀린 지적이면 리뷰 댓글로 근거를 남기고 사람 리뷰어와 정리한다"
+    ]
+  }
+}
