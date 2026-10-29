@@ -200,6 +200,13 @@ class AI(unittest.TestCase):
         self.assertEqual(seen["body"]["model"], RULES["ai"]["model"])
         self.assertNotIn("temperature", seen["body"])
 
+    def test_key_with_non_ascii_is_reported(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"REVIEW_AI_KEY": "sk-ant-api03-키값"}):
+            ok, summary, _ = review.ai_review(good(), RULES)
+        self.assertFalse(ok)
+        self.assertIn("다시 등록", summary)
+
     def test_bad_json_raises(self):
         with self.assertRaises(ValueError):
             review.parse_ai("이건 JSON이 아니다", [], RULES)

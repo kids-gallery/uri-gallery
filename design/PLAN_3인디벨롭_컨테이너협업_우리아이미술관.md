@@ -100,7 +100,7 @@ Docker 파일은 만들지 않았다. 팀원 환경(리눅스, x86_64·arm64)에
 
 **이루려는 것.** 핸드북 규칙과 이 계획서의 범위를 지키지 않은 PR을 사람 리뷰 전에 걸러낸다. 걸러진 PR에는 무엇이 왜 문제이고 어떻게 고치는지를 남긴다. 사람 리뷰를 대신하지 않는다. 승인은 사람이 하고, 병합은 팀장이 한다.
 
-**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 24개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
+**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 25개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
 
 **동작.**
 - PR을 열 때, 새 커밋을 올릴 때, 본문·라벨을 바꿀 때, 닫힌 PR을 다시 열 때 돈다(`.github/workflows/review-bot.yml`).

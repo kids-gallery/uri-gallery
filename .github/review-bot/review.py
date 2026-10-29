@@ -282,6 +282,11 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
     model = os.environ.get("REVIEW_AI_MODEL", "").strip() or ai["model"]
     if not key:
         return False, "AI 검토가 꺼져 있다(저장소 비밀 REVIEW_AI_KEY가 없음). 규칙 검사로만 판정했다.", []
+    if not key.isascii() or any(ch.isspace() for ch in key):
+        # 키 값은 남기지 않고 모양만 남긴다
+        print(f"[AI 키 모양] 길이 {len(key)}, 영문·숫자 아닌 글자 {sum(not c.isascii() for c in key)}개, "
+              f"공백 {sum(c.isspace() for c in key)}개, sk-ant-api로 시작 {key.startswith('sk-ant-api')}", file=sys.stderr)
+        return False, "AI 검토를 하지 못했다(저장소 비밀 REVIEW_AI_KEY에 키가 아닌 글자가 섞여 있다. 키만 다시 등록한다). 규칙 검사로만 판정했다.", []
     diff = ""
     for f in ctx["files"]:
         diff += f"\n--- {f['filename']} ({f.get('status')})\n{f.get('patch') or '(내용 없음: 바이너리이거나 너무 큼)'}\n"
