@@ -401,12 +401,14 @@ def main() -> int:
             gh.call("POST", f"{R}/issues/{num}/labels", {"labels": [block_label]})
         print(text)
         return 1
-    for r in old:
-        gh.call("PUT", f"{R}/pulls/{num}/reviews/{r['id']}/dismissals", {"message": "다시 검사해 통과했다", "event": "DISMISS"})
     if block_label in labels:
         gh.call("DELETE", f"{R}/issues/{num}/labels/{urllib.request.quote(block_label)}")
         if pr["state"] == "closed" and not pr.get("merged"):  # 봇이 닫았던 PR을 다시 연다
             gh.call("PATCH", f"{R}/pulls/{num}", {"state": "open"})
+    # 해제는 다시 연 뒤에 한다(닫힌 PR에서는 해제가 반영되지 않았다, 2026-10-29 시험 PR #3)
+    for r in old:
+        res = gh.call("PUT", f"{R}/pulls/{num}/reviews/{r['id']}/dismissals", {"message": "다시 검사해 통과했다", "event": "DISMISS"})
+        print(f"[변경 요청 해제] 리뷰 {r['id']}: {res.get('state') if res else '응답 없음'}", file=sys.stderr)
     print(text)
     return 0
 
