@@ -100,7 +100,7 @@ Docker 파일은 만들지 않았다. 팀원 환경(리눅스, x86_64·arm64)에
 
 **이루려는 것.** 핸드북 규칙과 이 계획서의 범위를 지키지 않은 PR을 사람 리뷰 전에 걸러낸다. 걸러진 PR에는 무엇이 왜 문제이고 어떻게 고치는지를 남긴다. 사람 리뷰를 대신하지 않는다. 승인은 사람이 하고, 병합은 팀장이 한다.
 
-**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 19개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
+**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 21개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
 
 **동작.**
 - PR을 열 때, 새 커밋을 올릴 때, 본문·라벨을 바꿀 때, 초안을 풀 때 돈다(`.github/workflows/review-bot.yml`).
@@ -109,7 +109,7 @@ Docker 파일은 만들지 않았다. 팀원 환경(리눅스, x86_64·arm64)에
   1. **규칙 검사**: 아래 표의 규칙을 `.github/review-bot/rules.json`에서 읽어 적용한다. 규칙을 바꿀 때는 이 표와 그 파일을 같이 고친다.
   2. **AI 비판 검토**: GitHub Models(`openai/gpt-4.1-mini`, 워크플로 토큰으로 호출, 별도 키 없음)가 바뀐 내용을 이 계획서의 핵심 범위(3절)와 Docker·Git 원칙에 비춰 비판적으로 읽는다. 지적마다 파일·문제·고칠 방법·심각도(막음·고침 권함·참고)를 적는다. "막음" 지적은 그 파일이 PR에 실제로 있을 때만 판정에 넣는다. 호출이 실패하면 "AI 검토를 하지 못했다"고 적고 규칙 검사로만 판정한다. 통과로 꾸미지 않는다.
 - **결과**:
-  - 막음이 하나라도 있으면 변경 요청 리뷰를 남기고, 라벨 `리뷰봇-막음`을 붙이고, PR을 초안(draft)으로 되돌리고, 검사를 실패로 둔다. 초안 PR은 병합 버튼이 눌리지 않는다.
+  - 막음이 하나라도 있으면 변경 요청 리뷰를 남기고, 라벨 `리뷰봇-막음`을 붙이고, PR을 초안(draft)으로 되돌리고, 검사를 실패로 둔다. 초안 PR은 병합 버튼이 눌리지 않는다. 초안 되돌리기에 실패하면 댓글에 그렇게 적고 검사는 실패로 둔다.
   - 막음이 없으면 검사를 통과로 둔다. 봇이 되돌렸던 초안이면 다시 리뷰 가능으로 바꾼다. 결과는 PR 댓글 하나에 계속 고쳐 쓴다.
 - **봇은 승인(Approve)하지 않는다.** 이 작업의 목적이 리뷰에서 설명하며 배우는 것이고(가이드 1절), 봇은 설계 의도까지 판단하지 못한다. 그래서 봇 통과는 "사람 리뷰 차례"라는 뜻이다.
 - **예외**: 범위·크기·리뷰봇 자체 수정 규칙과 AI의 막음 지적은 작성자가 아닌 사람이 라벨 `리뷰봇-예외`를 붙이고, 본문에 `예외 이유:`를 적으면 경고로 바뀐다. 비밀 값·금지 파일·이슈 연결·양식 규칙은 예외가 없다.

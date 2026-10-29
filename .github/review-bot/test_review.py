@@ -154,6 +154,14 @@ class AI(unittest.TestCase):
         _, issues = review.parse_ai(text, ["api/Dockerfile"], RULES)
         self.assertEqual([i["severity"] for i in issues], ["막음", "고침 권함", "참고"])
 
+    def test_fenced_json_is_read(self):
+        text = '```json\n{"summary": "s", "issues": []}\n```'
+        self.assertEqual(review.parse_ai(text, [], RULES), ("s", []))
+
+    def test_render_tells_when_draft_failed(self):
+        text = review.render(True, [], True, "s", [], "abcdef1", RULES, drafted=False)
+        self.assertIn("되돌리지 못했다", text)
+
     def test_bad_json_raises(self):
         with self.assertRaises(ValueError):
             review.parse_ai("이건 JSON이 아니다", [], RULES)

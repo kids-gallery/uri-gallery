@@ -209,7 +209,10 @@ def apply_override(findings: list[dict], ctx: dict, rules: dict) -> list[dict]:
 
 def parse_ai(text: str, names: list[str], rules: dict) -> tuple[str, list[dict]]:
     """AI 답(JSON)을 검사한다. 막음은 PR에 실제로 있는 파일을 가리킬 때만 막음으로 둔다."""
-    data = json.loads(text)
+    m = re.search(r"\{.*\}", text or "", re.S)  # 코드 블록(```json)으로 감싸 와도 읽는다
+    data = json.loads(m.group(0) if m else text)
+    if not isinstance(data, dict):
+        raise ValueError("JSON 객체가 아니다")
     issues = []
     for it in (data.get("issues") or [])[: rules["ai"]["max_issues"]]:
         sev = str(it.get("severity", "참고"))
@@ -252,7 +255,10 @@ class GH:
             page += 1
 
     def graphql(self, query: str, **variables) -> Any:
-        return self.call("POST", f"{self.api}/graphql", {"query": query, "variables": variables})
+        res = self.call("POST", f"{self.api}/graphql", {"query": query, "variables": variables})
+        if res and res.get("errors"):  # GraphQL은 실패해도 200으로 답한다
+            raise RuntimeError("GraphQL: " + "; ".join(e.get("message", "") for e in res["errors"]))
+        return res
 
 
 def ai_review(token: str, ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
@@ -279,20 +285,25 @@ def ai_review(token: str, ctx: dict, rules: dict) -> tuple[bool, str, list[dict]
     req = urllib.request.Request(ai["endpoint"], data=json.dumps(body).encode(), method="POST")
     req.add_header("Authorization", f"Bearer {token}")
     req.add_header("Content-Type", "application/json")
+    raw = b""
     try:
         with urllib.request.urlopen(req, timeout=90) as r:
-            text = json.loads(r.read())["choices"][0]["message"]["content"]
+            raw = r.read()
+            text = json.loads(raw)["choices"][0]["message"]["content"]
         summary, issues = parse_ai(text, [f["filename"] for f in ctx["files"]], rules)
         return True, summary + (" (바뀐 내용이 길어 앞부분만 봤다)" if cut else ""), issues
     except (urllib.error.URLError, KeyError, IndexError, ValueError, TimeoutError) as e:
         why = f"HTTP {e.code}" if isinstance(e, urllib.error.HTTPError) else type(e).__name__
+        if isinstance(e, urllib.error.HTTPError):
+            raw = e.read()
+        print(f"[AI 검토 실패] {why}: {raw[:300]!r}", file=sys.stderr)  # 원인은 실행 기록에만 남긴다
         return False, f"AI 검토를 하지 못했다({why}). 규칙 검사로만 판정했다.", []
 
 
 # ---------- 결과 쓰기 ----------
 
 def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: str, ai_issues: list[dict],
-           sha: str, rules: dict) -> str:
+           sha: str, rules: dict, drafted: bool = True) -> str:
     msg = rules["messages"]
     blocks = [f for f in findings if f["level"] == "block"]
     warns = [f for f in findings if f["level"] == "warn"]
@@ -301,7 +312,8 @@ def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: s
     lines = [MARK, f"## 리뷰봇 판정: {'막음 ' + str(n) + '건' if verdict_block else '통과'}", "",
              f"검사한 커밋 `{sha[:7]}` · AI 검토 {'함' if ai_ok else '못 함'}", ""]
     if verdict_block:
-        lines += ["고치기 전에는 병합할 수 없다. PR을 초안으로 되돌렸다. 고쳐서 커밋을 올리거나 본문을 고치면 다시 검사한다.", ""]
+        lines += ["고치기 전에는 병합할 수 없다. " + ("PR을 초안으로 되돌렸다." if drafted else "PR을 초안으로 되돌리지 못했다. 이 검사가 실패로 남아 있는 동안 병합하지 않는다.")
+                  + " 고쳐서 커밋을 올리거나 본문을 고치면 다시 검사한다.", ""]
     else:
         lines += ["규칙 검사를 통과했다. 이제 사람 리뷰 차례다. 봇은 승인하지 않는다.", ""]
 
@@ -361,7 +373,14 @@ def main() -> int:
             if i["severity"] == "막음":
                 i["severity"], i["problem"] = "고침 권함", i["problem"] + " (예외 승인)"
     block = any(f["level"] == "block" for f in findings) or any(i["severity"] == "막음" for i in ai_issues)
-    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules)
+    drafted = pr["draft"]
+    if block and not drafted:
+        try:
+            gh.graphql("mutation($id:ID!){convertPullRequestToDraft(input:{pullRequestId:$id}){clientMutationId}}", id=pr["node_id"])
+            drafted = True
+        except (RuntimeError, urllib.error.HTTPError) as e:
+            print(f"[초안 되돌리기 실패] {e}", file=sys.stderr)
+    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules, drafted)
 
     # 댓글 하나를 계속 고쳐 쓴다
     mine = [c for c in gh.all(f"{R}/issues/{num}/comments") if c["user"]["login"] == BOT and c["body"].startswith(MARK)]
@@ -381,8 +400,6 @@ def main() -> int:
                                                           "body": "리뷰봇 판정: 막음. 자세한 내용은 리뷰봇 댓글에 있다."})
         if block_label not in labels:
             gh.call("POST", f"{R}/issues/{num}/labels", {"labels": [block_label]})
-        if not pr["draft"]:
-            gh.graphql("mutation($id:ID!){convertPullRequestToDraft(input:{pullRequestId:$id}){clientMutationId}}", id=pr["node_id"])
         print(text)
         return 1
     for r in old:
