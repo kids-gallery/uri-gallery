@@ -37,8 +37,8 @@ type Phase = 'checking' | 'title' | 'starting' | 'ready' | 'nostorage';
 type Panel = null | 'upload' | 'archive' | 'avatar' | 'theme' | 'settings' | 'social' | 'play' | 'help' | 'view' | 'overview' | 'privacy' | 'storage' | 'usage';
 
 // 빌드할 때 값이 정해지는 조건만 쓴다 — 일반 배포 빌드에서는 이 불러오기 코드가 통째로 빠진다(AT-UC01-02)
-// 테스트 계정 입구는 설정 값으로만 켠다(SD_02 17-20-1): 개발 서버는 web/.env.development, 시험 빌드는 --mode localtest
-const TEST_ENTRY = import.meta.env.VITE_TEST_ENTRY === '1' || import.meta.env.MODE === 'localtest';
+// 테스트 계정 입구(SD_02 17-20-1): 개발 서버에서만, VITE_TEST_ENTRY=0이면 숨김. 시험 빌드(--mode localtest)는 켬. 배포 빌드에는 없다
+const TEST_ENTRY = (import.meta.env.DEV && import.meta.env.VITE_TEST_ENTRY !== '0') || import.meta.env.MODE === 'localtest';
 const TestEntry = TEST_ENTRY ? defineAsyncComponent(() => import('./WorldTestEntry.vue')) : null;
 const WorldPlay=defineAsyncComponent(()=>import('./WorldPlay.vue'));
 const TestFamilies=import.meta.env.DEV||import.meta.env.MODE==='localtest'?defineAsyncComponent(()=>import('./WorldFamilies.vue')):null;
