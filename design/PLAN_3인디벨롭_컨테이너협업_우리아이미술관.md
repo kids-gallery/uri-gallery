@@ -100,14 +100,14 @@ Docker 파일은 만들지 않았다. 팀원 환경(리눅스, x86_64·arm64)에
 
 **이루려는 것.** 핸드북 규칙과 이 계획서의 범위를 지키지 않은 PR을 사람 리뷰 전에 걸러낸다. 걸러진 PR에는 무엇이 왜 문제이고 어떻게 고치는지를 남긴다. 사람 리뷰를 대신하지 않는다. 승인은 사람이 하고, 병합은 팀장이 한다.
 
-**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 22개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
+**파일.** `.github/workflows/review-bot.yml`(실행), `.github/review-bot/rules.json`(규칙 값), `.github/review-bot/review.py`(적용), `.github/review-bot/test_review.py`(시험 24개, `python3 .github/review-bot/test_review.py`), `.github/pull_request_template.md`(부록 B), `.github/CODEOWNERS`(폴더 주인).
 
 **동작.**
 - PR을 열 때, 새 커밋을 올릴 때, 본문·라벨을 바꿀 때, 닫힌 PR을 다시 열 때 돈다(`.github/workflows/review-bot.yml`).
 - 검사 코드는 PR 가지가 아니라 `main`의 것을 쓴다(`pull_request_target`). PR이 검사 코드를 고쳐 스스로 통과하지 못하게 하려는 것이다. PR의 코드는 실행하지 않고, 바뀐 내용만 GitHub API로 읽는다.
 - 판정은 두 단계다.
   1. **규칙 검사**: 아래 표의 규칙을 `.github/review-bot/rules.json`에서 읽어 적용한다. 규칙을 바꿀 때는 이 표와 그 파일을 같이 고친다.
-  2. **AI 비판 검토**: OpenAI 호환 대화 API(주소·모델은 저장소 변수 `REVIEW_AI_ENDPOINT`·`REVIEW_AI_MODEL`, 키는 비밀 `REVIEW_AI_KEY`)가 바뀐 내용을 이 계획서의 핵심 범위(3절)와 Docker·Git 원칙에 비춰 비판적으로 읽는다. 지적마다 파일·문제·고칠 방법·심각도(막음·고침 권함·참고)를 적는다. "막음" 지적은 그 파일이 PR에 실제로 있을 때만 판정에 넣는다. 셋 중 하나라도 없거나 호출이 실패하면 "AI 검토를 하지 못했다(꺼져 있다)"고 적고 규칙 검사로만 판정한다. 통과로 꾸미지 않는다. 처음 고른 GitHub Models는 2026-07-30에 서비스가 끝나(실행에서 응답이 `OK`뿐임을 확인) 쓰지 못한다. 어느 AI를 쓸지는 사용자 결정이다(무료 등급은 보낸 코드가 학습에 쓰일 수 있다).
+  2. **AI 비판 검토**: Claude API(Messages API, 사용자 결정 2026-10-29)가 바뀐 내용을 이 계획서의 핵심 범위(3절)와 Docker·Git 원칙에 비춰 비판적으로 읽는다. 키는 저장소 비밀 `REVIEW_AI_KEY`, 모델은 `rules.json`의 기본값(`claude-haiku-5-5`)이고 저장소 변수 `REVIEW_AI_MODEL`로 바꿀 수 있다. 지적마다 파일·문제·고칠 방법·심각도(막음·고침 권함·참고)를 적는다. "막음" 지적은 그 파일이 PR에 실제로 있을 때만 판정에 넣는다. 같은 커밋·같은 본문이면 지난 결과를 다시 쓰고 API를 부르지 않는다(비용). 키가 없거나 호출이 실패하면 "AI 검토를 하지 못했다(꺼져 있다)"고 적고 규칙 검사로만 판정한다. 통과로 꾸미지 않는다. 처음 고른 GitHub Models는 2026-07-30에 서비스가 끝나(실행에서 응답이 `OK`뿐임을 확인) 쓰지 않는다. OpenAI 호환 방식은 Claude 문서가 시험용이라고 적고 있고 `temperature` 1 미만을 거절해서 쓰지 않는다.
 - **결과**:
   - 막음이 하나라도 있으면 변경 요청 리뷰를 남기고, 라벨 `리뷰봇-막음`을 붙이고, **PR을 닫고**, 검사를 실패로 둔다. 닫힌 PR은 병합할 수 없다. 워크플로 토큰은 PR을 초안으로 바꿀 권한이 없어서(2026-10-29 실행에서 "Resource not accessible by integration" 확인) 닫는 방식을 쓴다. 닫기에 실패하면 댓글에 그렇게 적는다.
   - 본문을 고치면 바로 다시 검사하고, 통과하면 봇이 PR을 다시 연다. 코드를 고쳤으면 커밋을 올린 뒤 작성자가 다시 연다(닫힌 PR에는 새 커밋 신호가 오지 않는다). 다시 열면 검사가 다시 돈다. 막음이 없으면 검사를 통과로 둔다. 결과는 PR 댓글 하나에 계속 고쳐 쓴다.

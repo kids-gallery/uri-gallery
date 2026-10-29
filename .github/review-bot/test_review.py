@@ -163,11 +163,42 @@ class AI(unittest.TestCase):
         self.assertIn("닫지 못했다", text)
 
     def test_ai_off_without_settings(self):
-        for k in ("REVIEW_AI_ENDPOINT", "REVIEW_AI_MODEL", "REVIEW_AI_KEY"):
+        for k in ("REVIEW_AI_MODEL", "REVIEW_AI_KEY"):
             os.environ.pop(k, None)
         ok, summary, issues = review.ai_review(good(), RULES)
         self.assertEqual((ok, issues), (False, []))
         self.assertIn("꺼져 있다", summary)
+
+    def test_cache_reused_only_for_same_commit_and_body(self):
+        c = dict(good(), head="abc123")
+        key = review.ai_key(c)
+        cache = json.dumps({"key": key, "summary": "s", "issues": []})
+        text = review.render(False, [], True, "s", [], "abc123", RULES, True, cache)
+        self.assertEqual(review.cached_ai(text, key), (True, "s", []))
+        self.assertIsNone(review.cached_ai(text, review.ai_key(dict(c, body=c["body"] + "x"))))
+        self.assertIsNone(review.cached_ai(text, review.ai_key(dict(c, head="def456"))))
+
+    def test_claude_request_and_answer(self):
+        from unittest import mock
+        seen = {}
+
+        class Resp:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self):
+                return json.dumps({"content": [{"type": "text", "text": '{"summary": "요약", "issues": [{"file": "api/Dockerfile", "severity": "막음", "problem": "p", "fix": "f"}]}'}]}).encode()
+
+        def fake(req, timeout):
+            seen["url"], seen["headers"], seen["body"] = req.full_url, dict(req.header_items()), json.loads(req.data)
+            return Resp()
+
+        with mock.patch.dict(os.environ, {"REVIEW_AI_KEY": "k", "REVIEW_AI_MODEL": ""}), mock.patch("urllib.request.urlopen", fake):
+            ok, summary, issues = review.ai_review(good(), RULES)
+        self.assertEqual((ok, summary, issues[0]["severity"]), (True, "요약", "막음"))
+        self.assertEqual(seen["url"], RULES["ai"]["endpoint"])
+        self.assertEqual(seen["headers"].get("X-api-key"), "k")
+        self.assertEqual(seen["body"]["model"], RULES["ai"]["model"])
+        self.assertNotIn("temperature", seen["body"])
 
     def test_bad_json_raises(self):
         with self.assertRaises(ValueError):

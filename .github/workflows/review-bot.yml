@@ -27,7 +27,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          REVIEW_AI_ENDPOINT: ${{ vars.REVIEW_AI_ENDPOINT }}
           REVIEW_AI_MODEL: ${{ vars.REVIEW_AI_MODEL }}
           REVIEW_AI_KEY: ${{ secrets.REVIEW_AI_KEY }}
+          REVIEW_AI_WORKSPACE: ${{ vars.REVIEW_AI_WORKSPACE }}
         run: python3 .github/review-bot/review.py

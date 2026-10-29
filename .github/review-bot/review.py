@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import json
 import os
 import posixpath
@@ -256,12 +257,31 @@ class GH:
             page += 1
 
 
+def ai_key(ctx: dict) -> str:
+    """같은 커밋·같은 본문이면 AI를 다시 부르지 않는다(비용). 라벨만 바뀐 실행 등."""
+    return ctx["head"] + ":" + hashlib.sha256((ctx["body"] or "").encode()).hexdigest()[:12]
+
+
+def cached_ai(comment: str, key: str):
+    """지난 리뷰봇 댓글에 같은 키의 AI 결과가 있으면 돌려준다."""
+    m = re.search(r"<!-- ai-cache:(.*?) -->", comment or "", re.S)
+    if not m:
+        return None
+    try:
+        c = json.loads(m.group(1))
+    except ValueError:
+        return None
+    return (True, c["summary"], c["issues"]) if c.get("key") == key else None
+
+
 def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
-    """OpenAI 호환 대화 API로 비판 검토. 주소·모델·키가 모두 있어야 켜진다(저장소 변수·비밀)."""
+    """Claude API(Messages API)로 비판 검토. 키(비밀 REVIEW_AI_KEY)가 있어야 켜진다.
+    모델은 rules.json 기본값, 저장소 변수 REVIEW_AI_MODEL이 있으면 그것을 쓴다."""
     ai = rules["ai"]
-    endpoint, model, key = (os.environ.get(k, "").strip() for k in ("REVIEW_AI_ENDPOINT", "REVIEW_AI_MODEL", "REVIEW_AI_KEY"))
-    if not (endpoint and model and key):
-        return False, "AI 검토가 꺼져 있다(저장소에 AI 주소·모델·키가 설정되지 않음). 규칙 검사로만 판정했다.", []
+    key = os.environ.get("REVIEW_AI_KEY", "").strip()
+    model = os.environ.get("REVIEW_AI_MODEL", "").strip() or ai["model"]
+    if not key:
+        return False, "AI 검토가 꺼져 있다(저장소 비밀 REVIEW_AI_KEY가 없음). 규칙 검사로만 판정했다.", []
     diff = ""
     for f in ctx["files"]:
         diff += f"\n--- {f['filename']} ({f.get('status')})\n{f.get('patch') or '(내용 없음: 바이너리이거나 너무 큼)'}\n"
@@ -279,16 +299,21 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
     )
     user = (f"PR 제목: {ctx['title']}\n작성자: {ctx['author']}\n가지: {ctx['branch']}\n\nPR 본문:\n{ctx['body']}\n\n"
             "커밋:\n" + "\n".join(ctx["commits"]) + f"\n\n바뀐 내용{'(앞부분만)' if cut else ''}:\n{diff}")
-    body = {"model": model, "temperature": 0.2,
-            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-    req = urllib.request.Request(endpoint, data=json.dumps(body).encode(), method="POST")
-    req.add_header("Authorization", f"Bearer {key}")
+    # temperature는 보내지 않는다(최신 Claude 모델은 1 미만 값을 400으로 거절한다)
+    body = {"model": model, "max_tokens": ai["max_output_tokens"], "system": system,
+            "messages": [{"role": "user", "content": user}]}
+    req = urllib.request.Request(ai["endpoint"], data=json.dumps(body).encode(), method="POST")
+    req.add_header("x-api-key", key)
+    req.add_header("anthropic-version", ai["api_version"])
     req.add_header("Content-Type", "application/json")
+    ws = os.environ.get("REVIEW_AI_WORKSPACE", "").strip()
+    if ws:  # 작업 공간에 묶이지 않은 키일 때만 필요하다
+        req.add_header("anthropic-workspace-id", ws)
     raw = b""
     try:
         with urllib.request.urlopen(req, timeout=90) as r:
             raw = r.read()
-            text = json.loads(raw)["choices"][0]["message"]["content"]
+            text = "".join(b.get("text", "") for b in json.loads(raw)["content"] if b.get("type") == "text")
         summary, issues = parse_ai(text, [f["filename"] for f in ctx["files"]], rules)
         return True, summary + (" (바뀐 내용이 길어 앞부분만 봤다)" if cut else ""), issues
     except (urllib.error.URLError, KeyError, IndexError, ValueError, TimeoutError) as e:
@@ -302,7 +327,7 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
 # ---------- 결과 쓰기 ----------
 
 def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: str, ai_issues: list[dict],
-           sha: str, rules: dict, closed: bool = True) -> str:
+           sha: str, rules: dict, closed: bool = True, cache: str = "") -> str:
     msg = rules["messages"]
     blocks = [f for f in findings if f["level"] == "block"]
     warns = [f for f in findings if f["level"] == "warn"]
@@ -333,6 +358,8 @@ def render(verdict_block: bool, findings: list[dict], ai_ok: bool, ai_summary: s
             cell = lambda s: s.replace("|", "\\|").replace("\n", " ")
             lines.append(f"| {i['severity']} | `{cell(i['file'])}` | {cell(i['problem'])} | {cell(i['fix'])} |")
         lines.append("")
+    if cache:
+        lines.append(f"<!-- ai-cache:{cache} -->")
     lines += ["---", f"판정 기준: 계획서 4-1, `.github/review-bot/rules.json`. 틀린 판정이면 댓글로 근거를 남기고 팀장과 정한다."]
     return "\n".join(lines)
 
@@ -361,12 +388,17 @@ def main() -> int:
     events = gh.all(f"{R}/issues/{num}/events")
     last = [e for e in events if e.get("event") == "labeled" and e.get("label", {}).get("name") == rules["labels"]["override"]]
     override_by_other = rules["labels"]["override"] in labels and bool(last) and last[-1]["actor"]["login"] != author
-    ctx = {"author": author, "branch": pr["head"]["ref"], "title": pr["title"], "body": pr.get("body") or "",
+    ctx = {"head": head, "author": author, "branch": pr["head"]["ref"], "title": pr["title"], "body": pr.get("body") or "",
            "commits": commits, "files": files, "sizes": sizes, "tree": set(sizes), "file_text": file_text,
            "codeowners": codeowners, "override_by_other": override_by_other}
 
     findings = apply_override(evaluate(ctx, rules), ctx, rules)
-    ai_ok, ai_summary, ai_issues = ai_review(ctx, rules)
+    mine = [c for c in gh.all(f"{R}/issues/{num}/comments") if c["user"]["login"] == BOT and c["body"].startswith(MARK)]
+    key = ai_key(ctx)
+    hit = cached_ai(mine[0]["body"], key) if mine else None
+    ai_ok, ai_summary, ai_issues = hit if hit else ai_review(ctx, rules)
+    cache = json.dumps({"key": key, "summary": ai_summary, "issues": ai_issues}, ensure_ascii=False).replace("--", "- -") if ai_ok else ""
+    ai_issues = [dict(i) for i in ai_issues]  # 아래 예외 처리가 저장본을 바꾸지 않게
     if override_by_other and "ai" in rules["overridable"] and rules["override_reason"] in ctx["body"]:
         for i in ai_issues:
             if i["severity"] == "막음":
@@ -379,10 +411,9 @@ def main() -> int:
             closed = True
         except urllib.error.HTTPError as e:
             print(f"[PR 닫기 실패] HTTP {e.code}: {e.read()[:300]!r}", file=sys.stderr)
-    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules, closed)
+    text = render(block, findings, ai_ok, ai_summary, ai_issues, head, rules, closed, cache)
 
     # 댓글 하나를 계속 고쳐 쓴다
-    mine = [c for c in gh.all(f"{R}/issues/{num}/comments") if c["user"]["login"] == BOT and c["body"].startswith(MARK)]
     if mine:
         gh.call("PATCH", f"{R}/issues/comments/{mine[0]['id']}", {"body": text})
     else:
