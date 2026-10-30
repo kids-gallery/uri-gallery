@@ -143,7 +143,7 @@
 | 사람 | 환경 | 역할 | 맡는 폴더 | 하는 일 | 리뷰어 |
 |---|---|---|---|---|---|
 | 최호준(`zozu001`) | Windows(WSL, x86_64) | A 모델 서빙 + 묶기 | `serving/`, `compose.yaml` | serving 이미지(model-api·worker-cpu), 실제 모델(M1·M2·M5), compose로 묶기와 db·mailpit·sweeper 서비스 설정, `.env.example` | 신지현 |
-| 신지현(`tlswlgus960-prog`, 팀장) | Windows(WSL, x86_64) | B 입구·3D 화면 | `web/`(화면·빌드), 입구 nginx, `.gitattributes` | web 이미지와 nginx, 3D 화면의 가입·로그인·아이·확정·결정 창, 개인정보 문구와 서비스 워커, 깨끗한 PC에서 처음부터 띄워 보기 | 이제민 |
+| 신지현(`tlswlgus960-prog`, 팀장) | Windows(WSL, x86_64) | B 프론트엔드 + 입구·처음부터 띄워 보기 | `web/`(화면·빌드), 입구 nginx, `.gitattributes` | 3D 미술관 화면의 디자인과 인터페이스 전반(화면 흐름, 창, 문구, 상태·오류 표시, 반응형), web 이미지와 nginx, 개인정보 문구와 서비스 워커, 깨끗한 PC에서 처음부터 띄워 보기 | 이제민 |
 | 이제민(`wpalswpa`) | 맥(arm64, 메모리 여유) | C 앱·데이터·연결 + 병합 | `api/`, `db/`, `contracts/`, `web/src/app/world/`의 서버 연결 층 | api 이미지와 주소·프록시 설정, 스키마 시험과 대응표, 3D 화면의 서버 연결 층(올리기·상태·전시, 3-3 표), 설계 PR 작성 | 최호준 |
 
 - 배정은 2026-10-30 다시 정했다. 바꾸면 이 표와 `.github/CODEOWNERS`부터 고친다.
