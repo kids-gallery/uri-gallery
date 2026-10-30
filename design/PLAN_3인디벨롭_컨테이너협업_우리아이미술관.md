@@ -119,7 +119,8 @@
 
 3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 실제 모델은 [미검증]이다.
    - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
-   - #16(Windows WSL)과 #43(맥)에서 `docker stats` 최대치를 재서 실제 모델을 켤 PC와 worker 메모리 한도를 정한다.
+   - [확인] 최호준 PC는 메모리 7.73 GiB, WSL 3.8 GiB다(#15, 2026-10-30). WSL 한도를 늘려도 PC 전체가 M1 추론 RSS(8.5GB)보다 작아 이 PC에서는 실제 M1을 돌리지 않는다. 마스터플랜 4절 대비책대로 Windows에서는 가짜 모델로 이미지·compose를 만들고, 실제 모델 실측은 맥(이제민 PC)에서 함께 한다(#43). 신지현 PC는 #15 결과로 같은 기준을 적용한다.
+   - #16(Windows WSL: 가짜 모델 compose의 메모리, 가능하면 M2·M5 한 장)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다.
    - [추론] 메모리가 모자라 worker가 죽으면 재시작되고, 맡던 작업은 점유 60초가 지난 뒤 다시 시도된다. 3번 실패하면 "결과 미도달"이다(`limits.yaml` `claim.seconds 60`, `retry.max_attempts 3`).
 4. **데이터와 비밀 값.**
 
