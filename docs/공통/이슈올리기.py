@@ -155,7 +155,7 @@ def build_body(it: dict, numbers: dict[str, int] | None = None) -> str:
 
 
 def full_title(it: dict) -> str:
-    return f"[{it['label']}] {it['title']}"
+    return f"[{it['label']} · {it['담당']}] {it['title']}"
 
 
 def summary_table(issues: list[dict]) -> str:
@@ -192,7 +192,8 @@ def apply(issues: list[dict], repo: str) -> None:
         numbers[it["id"]] = int(url.rstrip("/").rsplit("/", 1)[1])
         print(f"{it['id']} 올림 #{numbers[it['id']]} {full_title(it)}")
     for it in issues:   # 2차: 선행 I-번호를 실제 #번호로 바꾼다
-        gh("issue", "edit", str(numbers[it["id"]]), "-R", repo, "--body-file", "-", stdin=build_body(it, numbers))
+        gh("issue", "edit", str(numbers[it["id"]]), "-R", repo, "--title", full_title(it), "--body-file", "-",
+           stdin=build_body(it, numbers))
     print("선행 번호를 실제 이슈 번호로 바꿨다.")
     print("\n| I-번호 | GitHub |\n|---|---|\n" + "\n".join(f"| {k} | #{v} |" for k, v in sorted(numbers.items())))
 
