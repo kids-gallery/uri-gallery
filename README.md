@@ -148,7 +148,7 @@ flowchart LR
 
 1. 이슈 하나 = 가지 하나 = PR 하나. 가지는 `종류/이슈번호-설명`, 커밋은 `종류: 설명 (#이슈번호)`
 2. 설계서(`design/`)를 먼저 고치고 구현합니다.
-3. PR은 양식대로 올리고 본문에 `Closes #이슈번호`를 적습니다.
+3. 이슈와 PR은 양식([작업](.github/ISSUE_TEMPLATE/작업.md) · [문제](.github/ISSUE_TEMPLATE/문제.md) · [PR](.github/pull_request_template.md))대로 쓰고, PR 본문에 `Closes #이슈번호`를 적습니다.
 4. 리뷰어가 확인 목록을 보고 승인하면 이제민이 병합하고, 이슈는 저절로 닫힙니다. → [마스터플랜 4-1](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md)
 5. `.env`, 비밀 값 파일(`secrets/`), 모델 가중치는 저장소에 올리지 않습니다.
 
