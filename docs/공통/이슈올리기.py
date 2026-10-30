@@ -19,7 +19,8 @@ TEMPLATE = ROOT / ".github/ISSUE_TEMPLATE/작업.md"
 PLAN = ROOT / "design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md"
 
 COMMON = "공통"   # 셋이 함께 맡는 이슈. 리뷰어는 작성자가 아닌 사람
-FIELDS = ["담당", "선행", "근거", "대상 경로", "이루려는 것", "해야 할 일", "끝나는 조건"]
+FIELDS = ["담당", "종류", "선행", "근거", "대상 경로", "이루려는 것", "해야 할 일", "끝나는 조건"]
+TYPE = {"feat": "Feature", "fix": "Bug", "docs": "Task", "chore": "Task", "test": "Task"}   # 종류(커밋 종류) → 이슈 타입
 MARK = "<!-- issue-id: {} -->"
 
 HEAD_RE = re.compile(r"^#### (I-\d{2}) \[([^\]]+)\] (.+)$", re.M)
@@ -33,10 +34,20 @@ def template_sections() -> list[str]:
     return re.findall(r"^## (.+?)\s*$", body, re.M)
 
 
-def roles() -> dict[str, tuple[str, str]]:
-    """마스터플랜 4절 역할표에서 이름 → (GitHub 아이디, 리뷰어)."""
+def roles() -> dict[str, dict[str, str]]:
+    """마스터플랜 4절 역할표에서 이름 → 아이디·영역(역할 칸)·리뷰어."""
     sec = PLAN.read_text(encoding="utf-8").split("## 4. 역할 배정", 1)[1].split("\n## ", 1)[0]
-    return {name.strip(): (login, reviewer) for name, login, reviewer in re.findall(r"^\| ([^|(]+)\(`([^`]+)`[^|]*\|.*\| (\S+) \|$", sec, re.M)}
+    out = {}
+    for line in sec.splitlines():
+        if m := re.match(r"\| ([^|(]+)\(`([^`]+)`", line):
+            cells = [c.strip() for c in line.strip(" |").split("|")]
+            out[m[1].strip()] = {"login": m[2], "area": cells[2].split(" +")[0], "reviewer": cells[-1]}
+    return out
+
+
+def labels(it: dict) -> list[str]:
+    area = roles().get(it["담당"], {}).get("area", COMMON)
+    return [f"영역: {area}", f"종류: {it['종류']}"]
 
 
 def parse_day(label: str) -> tuple[int, str] | None:
@@ -97,6 +108,8 @@ def check(issues: list[dict]) -> tuple[list[str], list[str]]:
             errs.append(f"{tag} 해야 할 일이 없다")
         if it.get("담당") not in [*people, COMMON]:
             errs.append(f"{tag} 담당 '{it.get('담당')}'이 역할표에 없다")
+        if it.get("종류") not in TYPE:
+            errs.append(f"{tag} 종류 '{it.get('종류')}'가 {list(TYPE)} 가운데 하나가 아니다")
         if not re.search(r"\d", it.get("근거", "")):
             errs.append(f"{tag} 근거에 마스터플랜 절 번호가 없다")
         for d in it["deps"]:
@@ -141,7 +154,7 @@ def body_parts(it: dict, numbers: dict[str, int] | None = None) -> dict[str, str
             f"- 날짜: {day[1]}",
             f"- 담당: {owner}",
             f"- 선행: {ref(', '.join(it['deps'])) if it['deps'] else '없음'}",
-            f"- 리뷰어: {roles().get(owner, ('', '작성자가 아닌 사람'))[1]}",
+            f"- 리뷰어: {roles().get(owner, {}).get('reviewer', '작성자가 아닌 사람')}",
         ]),
     }
     return parts
@@ -173,7 +186,7 @@ def gh(*args: str, stdin: str | None = None) -> str:
     return subprocess.run(["gh", *args], input=stdin, text=True, capture_output=True, check=True).stdout
 
 
-def apply(issues: list[dict], repo: str) -> None:
+def apply(issues: list[dict], repo: str, project: str | None = None) -> None:
     listed = json.loads(gh("issue", "list", "-R", repo, "--state", "all", "--limit", "500", "--json", "number,body"))
     people = roles()
     numbers = {}
@@ -182,6 +195,10 @@ def apply(issues: list[dict], repo: str) -> None:
         if m:
             numbers[m.group(1)] = row["number"]
     have = {m["title"] for m in json.loads(gh("api", f"repos/{repo}/milestones?state=all&per_page=100"))}
+    have_labels = {x["name"] for x in json.loads(gh("label", "list", "-R", repo, "--limit", "200", "--json", "name"))}
+    for name in dict.fromkeys(l for it in issues for l in labels(it)):   # 영역·종류 라벨
+        if name not in have_labels:
+            gh("label", "create", name, "-R", repo)
     for day in dict.fromkeys(it["day"][1] for it in issues):   # 날짜별 마일스톤(제목의 날짜에서 만든다)
         if day not in have:
             gh("api", f"repos/{repo}/milestones", "-f", f"title={day}")
@@ -190,14 +207,15 @@ def apply(issues: list[dict], repo: str) -> None:
             print(f"{it['id']} 이미 있음 #{numbers[it['id']]}")
             continue
         owner = it["담당"]
-        who = [login for login, _ in people.values()] if owner == COMMON else [people[owner][0]]
+        who = [p["login"] for p in people.values()] if owner == COMMON else [people[owner]["login"]]
         url = gh("issue", "create", "-R", repo, "--title", full_title(it), "--body-file", "-",
                  *sum((["--assignee", w] for w in who), []), stdin=build_body(it)).strip()
         numbers[it["id"]] = int(url.rstrip("/").rsplit("/", 1)[1])
         print(f"{it['id']} 올림 #{numbers[it['id']]} {full_title(it)}")
     for it in issues:   # 2차: 선행 I-번호를 실제 #번호로 바꾼다
         gh("issue", "edit", str(numbers[it["id"]]), "-R", repo, "--title", full_title(it), "--body-file", "-",
-           "--milestone", it["day"][1], stdin=build_body(it, numbers))
+           "--milestone", it["day"][1], "--add-label", ",".join(labels(it)), "--type", TYPE[it["종류"]],
+           *(["--add-project", project] if project else []), stdin=build_body(it, numbers))
     print("선행 번호를 실제 이슈 번호로 바꿨다.")
     print("\n| I-번호 | GitHub |\n|---|---|\n" + "\n".join(f"| {k} | #{v} |" for k, v in sorted(numbers.items())))
 
@@ -208,6 +226,7 @@ def main() -> int:
     ap.add_argument("--out", metavar="폴더", help="모든 본문을 파일로 저장한다")
     ap.add_argument("--apply", action="store_true", help="실제로 올린다(--repo 필요)")
     ap.add_argument("--repo", help="올릴 저장소(예: kids-gallery/uri-gallery)")
+    ap.add_argument("--project", help="이슈를 넣을 프로젝트 보드 제목(gh에 project 권한 필요)")
     a = ap.parse_args()
 
     issues = parse_doc()
@@ -238,7 +257,7 @@ def main() -> int:
         if not a.repo:
             print("--apply에는 --repo가 필요하다")
             return 1
-        apply(issues, a.repo)
+        apply(issues, a.repo, a.project)
     return 0
 
 
