@@ -19,6 +19,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -209,20 +210,30 @@ def apply_override(findings: list[dict], ctx: dict, rules: dict) -> list[dict]:
             if f["level"] == "block" and f["rule"] in rules["overridable"] else f for f in findings]
 
 
+GUIDE = Path(__file__).with_name("AI_리뷰지침.md")
+
+
+def block_rules() -> set[str]:
+    """지침 2절 표의 막을 수 있는 경우 번호(B1…)."""
+    return set(re.findall(r"^\| (B\d+) \|", GUIDE.read_text(encoding="utf-8"), re.M))
+
+
 def parse_ai(text: str, names: list[str], rules: dict) -> tuple[str, list[dict]]:
-    """AI 답(JSON)을 검사한다. 막음은 PR에 실제로 있는 파일을 가리킬 때만 막음으로 둔다."""
+    """AI 답(JSON)을 검사한다. 막음은 지침 번호를 대고 PR에 실제로 있는 파일을 가리킬 때만 막음으로 둔다."""
     m = re.search(r"\{.*\}", text or "", re.S)  # 코드 블록(```json)으로 감싸 와도 읽는다
     data = json.loads(m.group(0) if m else text)
     if not isinstance(data, dict):
         raise ValueError("JSON 객체가 아니다")
-    issues = []
+    issues, allowed = [], block_rules()
     for it in (data.get("issues") or [])[: rules["ai"]["max_issues"]]:
         sev = str(it.get("severity", "참고"))
         sev = sev if sev in ("막음", "고침 권함", "참고") else "참고"
         f = str(it.get("file", "")).strip().lstrip("/")
-        if sev == "막음" and f not in names:
+        rule = str(it.get("rule", "")).strip()
+        if sev == "막음" and (f not in names or rule not in allowed):
             sev = "고침 권함"
-        issues.append({"severity": sev, "file": f, "problem": str(it.get("problem", ""))[:400],
+        tag = f"[{rule}] " if sev == "막음" else ""
+        issues.append({"severity": sev, "file": f, "problem": tag + str(it.get("problem", ""))[:400],
                        "fix": str(it.get("fix", ""))[:400]})
     return str(data.get("summary", ""))[:600], issues
 
@@ -293,14 +304,9 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
     cut = len(diff) > ai["max_diff_chars"]
     diff = diff[: ai["max_diff_chars"]]
     system = (
-        "너는 이 팀 저장소의 엄격한 코드 리뷰어다. 칭찬하지 말고 문제만 찾는다. 기준은 아래 '작업 범위와 원칙'이다.\n"
-        "보는 것: ① 이번 작업 범위에 필요한 변경인가(범위 밖이면 막음) ② Dockerfile·compose 원칙 위반 "
-        "③ 실제 버그·보안 문제 ④ PR 본문의 '확인한 것'이 바뀐 내용을 실제로 확인하는가 ⑤ 설계서와 구현이 어긋나는가.\n"
-        "막음은 병합하면 서비스가 깨지거나, 비밀이 새거나, 범위 밖이거나, 원칙을 분명히 어긴 경우에만 쓴다. "
-        "확실하지 않으면 '고침 권함'이나 '참고'로 낮춘다. 보이지 않는 코드를 추측해 지적하지 않는다. 문제가 없으면 issues를 비운다.\n"
-        "한국어로 짧게 쓴다. JSON만 답한다: "
-        '{"summary": "한두 문장", "issues": [{"file": "경로", "severity": "막음|고침 권함|참고", "problem": "무엇이 왜 문제인가", "fix": "어떻게 고치나"}]}\n\n'
-        "작업 범위와 원칙: " + ai["context"]
+        "너는 이 팀 저장소의 코드 리뷰어다. 아래 지침만 따르고, 지침에 없는 이유로 막지 않는다. 한국어로 짧게 쓴다. JSON만 답한다: "
+        '{"summary": "한두 문장", "issues": [{"file": "경로", "severity": "막음|고침 권함|참고", "rule": "막음일 때 지침 2절 번호(B1~B5)", '
+        '"problem": "무엇이 왜 문제인가", "fix": "어떻게 고치나"}]}\n\n' + GUIDE.read_text(encoding="utf-8")
     )
     user = (f"PR 제목: {ctx['title']}\n작성자: {ctx['author']}\n가지: {ctx['branch']}\n\nPR 본문:\n{ctx['body']}\n\n"
             "커밋:\n" + "\n".join(ctx["commits"]) + f"\n\n바뀐 내용{'(앞부분만)' if cut else ''}:\n{diff}")

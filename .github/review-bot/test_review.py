@@ -150,11 +150,17 @@ class Rules(unittest.TestCase):
 class AI(unittest.TestCase):
     def test_block_needs_real_file(self):
         text = json.dumps({"summary": "s", "issues": [
-            {"file": "api/Dockerfile", "severity": "막음", "problem": "p", "fix": "f"},
-            {"file": "없는/파일.ts", "severity": "막음", "problem": "p", "fix": "f"},
-            {"file": "api/Dockerfile", "severity": "아주 나쁨", "problem": "p", "fix": "f"}]})
+            {"file": "api/Dockerfile", "severity": "막음", "rule": "B4", "problem": "p", "fix": "f"},
+            {"file": "없는/파일.ts", "severity": "막음", "rule": "B4", "problem": "p", "fix": "f"},
+            {"file": "api/Dockerfile", "severity": "아주 나쁨", "problem": "p", "fix": "f"},
+            {"file": "api/Dockerfile", "severity": "막음", "problem": "번호 없음", "fix": "f"},
+            {"file": "api/Dockerfile", "severity": "막음", "rule": "B9", "problem": "지침에 없는 번호", "fix": "f"}]})
         _, issues = review.parse_ai(text, ["api/Dockerfile"], RULES)
-        self.assertEqual([i["severity"] for i in issues], ["막음", "고침 권함", "참고"])
+        self.assertEqual([i["severity"] for i in issues], ["막음", "고침 권함", "참고", "고침 권함", "고침 권함"])
+        self.assertTrue(issues[0]["problem"].startswith("[B4] "))
+
+    def test_guide_lists_block_rules_and_goes_to_ai(self):
+        self.assertEqual(review.block_rules(), {"B1", "B2", "B3", "B4", "B5"})
 
     def test_fenced_json_is_read(self):
         text = '```json\n{"summary": "s", "issues": []}\n```'
@@ -188,7 +194,7 @@ class AI(unittest.TestCase):
             def __enter__(self): return self
             def __exit__(self, *a): return False
             def read(self):
-                return json.dumps({"content": [{"type": "text", "text": '{"summary": "요약", "issues": [{"file": "api/Dockerfile", "severity": "막음", "problem": "p", "fix": "f"}]}'}]}).encode()
+                return json.dumps({"content": [{"type": "text", "text": '{"summary": "요약", "issues": [{"file": "api/Dockerfile", "severity": "막음", "rule": "B2", "problem": "p", "fix": "f"}]}'}]}).encode()
 
         def fake(req, timeout):
             seen["url"], seen["headers"], seen["body"] = req.full_url, dict(req.header_items()), json.loads(req.data)
@@ -201,6 +207,7 @@ class AI(unittest.TestCase):
         self.assertEqual(seen["headers"].get("X-api-key"), "k")
         self.assertEqual(seen["body"]["model"], RULES["ai"]["model"])
         self.assertNotIn("temperature", seen["body"])
+        self.assertIn("지적하지 않는 것", seen["body"]["system"])   # 지침 파일이 그대로 간다
 
     def test_thinking_first_and_output_limit(self):
         from unittest import mock
