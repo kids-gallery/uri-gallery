@@ -165,7 +165,7 @@ curl -b jar -s -X PUT $BASE/v1/artworks/$ART/story -H 'content-type: application
 curl -b jar -s "$BASE/v1/gallery?child=$CHILD" | jq '.groups[0].items[0].title'   # "우리 가족"
 ```
 
-장애 주입(원인 분리 정확도, `docs/B/B_통합시험.md`):
+장애 주입(원인 분리 정확도, `docs/기록/B/B_통합시험.md`):
 
 ```bash
 # 어댑터가 지정 분류를 돌려주게 함: stage=outcome 쌍
@@ -207,4 +207,4 @@ ssh <team-server> 'cd ~/project2610 && git pull --ff-only \
   && pm2 reload ops/server/ecosystem.config.cjs'
 ```
 
-팀 서버 사양·GPU·모델 경로는 `docs/A/A_팀서버_자원확인.md`(U2·U14) 확인 뒤 이 절을 갱신한다.
+팀 서버 사양·GPU·모델 경로는 `docs/기록/A/A_팀서버_자원확인.md`(U2·U14) 확인 뒤 이 절을 갱신한다.

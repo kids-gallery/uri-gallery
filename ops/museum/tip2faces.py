@@ -1,6 +1,6 @@
 """한 점 투시 사진 → Tour Into the Picture 3D 상자 5면 조각 webp 두 벌 + manifest 갱신 (SD_04 §3-3 사진 자산, kind "tip").
 
-세션2(docs/C/louvre-walk/tip.py, 2026-09-30)의 변환을 그대로 옮기고, 상수를 인자로·두 벌(desktop·mobile)·예산·manifest를 더했다.
+세션2(docs/기록/C/louvre-walk/tip.py, 2026-09-30)의 변환을 그대로 옮기고, 상수를 인자로·두 벌(desktop·mobile)·예산·manifest를 더했다.
 새 의존성 없이 serving/.venv의 numpy·Pillow만 쓴다.
 
   serving/.venv/bin/python ops/museum/tip2faces.py <사진.jpg> --node grande-galerie-v1 \\

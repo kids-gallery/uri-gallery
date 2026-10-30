@@ -2,7 +2,7 @@
 
 **Spec**: [spec.md](./spec.md) v2.2(D18 포함) · **Plan**: [plan.md](./plan.md) · **Data Model**: [data-model.md](./data-model.md) · **Contracts**: [contracts/](./contracts/) · **Quickstart**: [quickstart.md](./quickstart.md)
 **Created**: 2026-09-28
-**입력**: `Intent-Tasks.md`(작업에 붙일 스킬 5종) · `design/`(UC_00~UC_14 · SD_01 P0~P10·G0~G27·H1~H16 · SD_02 S0~S12·C1~C10 · SD_03 DDL `design/uri_gallery_ddl.sql` · REF D1~D18) · `docs/공통/역할분담.md` · spec clarify 2026-09-28(U1 공동 보호자 · U10 화면 동작 · 삭제 미완료 · 첫 버전 비활성화)
+**입력**: `Intent-Tasks.md`(작업에 붙일 스킬 5종) · `design/`(UC_00~UC_14 · SD_01 P0~P10·G0~G27·H1~H16 · SD_02 S0~S12·C1~C10 · SD_03 DDL `design/uri_gallery_ddl.sql` · REF D1~D18) · `docs/기록/공통/역할분담.md` · spec clarify 2026-09-28(U1 공동 보호자 · U10 화면 동작 · 삭제 미완료 · 첫 버전 비활성화)
 
 ## 표기 규약
 
@@ -10,7 +10,7 @@
 - `[US1]` — 해당 사용자 스토리 전용 작업
 - 같은 파일을 수정하는 작업에는 `[P]`를 붙이지 않는다 (순차 실행)
 - 각 작업은 파일 경로를 명시한다
-- **담당**: `A` 최호준(모델 서빙) · `B` 이제민(API·오케스트레이션) · `C` 신지현(보호자 경험·설명) — `docs/공통/역할분담.md`
+- **담당**: `A` 최호준(모델 서빙) · `B` 이제민(API·오케스트레이션) · `C` 신지현(보호자 경험·설명) — `docs/기록/공통/역할분담.md`
 - **스킬**(Intent-Tasks.md): `FD` Frontend Design · `RL` Responsive Layout · `API` API Development · `DB` Database Design · `AUTH` Authentication · `—` 해당 스킬 없음(모델 재현·문서)
 - **근거**: FR(spec) · UC · G(게이트, SD_01 §15) · BR(업무규칙) · R(research) · S/C(SD_02 화면/컴포넌트)
 - **시험 작업을 넣는다.** plan R-19(Vitest·Supertest·Playwright·pytest·계약 시험·장애 주입)와 SD_03 "DDL 검증 3종"이 시험을 명시적으로 요구한다. 스토리마다 시험 작업이 구현보다 앞선다.
@@ -49,7 +49,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 - [ ] T009 [P] nginx 라우팅을 만든다: `/`·`/app/*`·`/ops/*` → `web/dist`, `/v1/models/*` → :8100, 그 밖 `/v1/*`·`/live`·`/ready`·`/metrics` → :3000, `/_files/*` internal(X-Accel-Redirect), HTTPS — `ops/server/nginx.conf` · 담당 B · 스킬 — · 근거 R-02, plan Architecture
 - [ ] T010 [P] GitLab CI를 lint·타입 검사·단위 시험·계약 lint만 돌게 만든다(배포 없음) — `.gitlab-ci.yml` · 담당 B · 스킬 — · 근거 R-02
 - [ ] T011 [P] 디자인 토큰과 글꼴을 옮긴다: `design/style-guide/`의 `--color-*`·`--r-*`·`--s-*`·`.t-*` → CSS 변수, `@fontsource/inter`·`pretendard` 자체 호스팅 — `web/src/styles/tokens.css` · `web/src/styles/base.css` · 담당 C · 스킬 FD · 근거 R-20
-- [ ] T012 `Intent-Plan.md`의 평문 DB 비밀번호 처리(교체 또는 문서 정리)를 팀에 결정 요청하고 결과를 기록한다 — `docs/공통/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
+- [ ] T012 `Intent-Plan.md`의 평문 DB 비밀번호 처리(교체 또는 문서 정리)를 팀에 결정 요청하고 결과를 기록한다 — `docs/기록/공통/결정_DB비밀정보.md` · 담당 B · 스킬 — · 근거 R-21, plan Open Questions
 
 **Checkpoint**: 세 프로젝트가 빌드되고 CI가 녹색이다.
 
@@ -156,9 +156,9 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 #### 실제 모델 (A — 가짜 흐름과 병행, 스토리 완료에는 가짜로 충분)
 
-- [ ] T068 [P] [US2] 팀 서버 자원·GPU를 확인하고 기록한다(U2·U14) — `docs/A/A_팀서버_자원확인.md` · 담당 A · 스킬 — · 근거 plan 단계 3
-- [ ] T069 [P] [US2] 모델 라이선스 확정 기록을 만든다(OpenCLIP 가중치 A2, Qwen3, TRELLIS 제외, AGPL 예비 모델) — `docs/A/A_모델_라이선스_확정.md` · 담당 A · 스킬 — · 근거 U4, BR-MDL-07, D17
-- [ ] T070 [US2] M1 BiRefNet·M2 OpenCLIP을 재현하고 시간·메모리·SHA-256을 기록한다 — `docs/A/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
+- [ ] T068 [P] [US2] 팀 서버 자원·GPU를 확인하고 기록한다(U2·U14) — `docs/기록/A/A_팀서버_자원확인.md` · 담당 A · 스킬 — · 근거 plan 단계 3
+- [ ] T069 [P] [US2] 모델 라이선스 확정 기록을 만든다(OpenCLIP 가중치 A2, Qwen3, TRELLIS 제외, AGPL 예비 모델) — `docs/기록/A/A_모델_라이선스_확정.md` · 담당 A · 스킬 — · 근거 U4, BR-MDL-07, D17
+- [ ] T070 [US2] M1 BiRefNet·M2 OpenCLIP을 재현하고 시간·메모리·SHA-256을 기록한다 — `docs/기록/A/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-16, R-22
 - [ ] T071 [US2] M1·M2 실제 어댑터를 만든다 — `serving/adapters/m1_birefnet.py` · `serving/adapters/m2_openclip.py` · 담당 A · 스킬 — · 근거 BR-MDL-02
 - [ ] T072 [US2] M3 관절 추출(렌더 없이)과 M4 규칙 실제 어댑터를 만든다 — `serving/adapters/m3_joints.py` · `serving/rules/m4_geometry.py` · 담당 A · 스킬 — · 근거 FR-21
 
@@ -185,8 +185,8 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 #### 실제 모델 (A)
 
-- [ ] T081 [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 venv + TorchServe 네이티브 127.0.0.1, 헤드리스 렌더, 체크섬 — `docs/A/A_모델재현기록.md` · `ops/torchserve/config.properties` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
-- [ ] T082 [US3] M5 Depth Anything V2 Small을 재현하고 CPU/GPU 시간을 잰다 — `docs/A/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
+- [ ] T081 [US3] M3 Animated Drawings를 Docker 없이 재현한다: 별도 venv + TorchServe 네이티브 127.0.0.1, 헤드리스 렌더, 체크섬 — `docs/기록/A/A_모델재현기록.md` · `ops/torchserve/config.properties` · 담당 A · 스킬 — · 근거 R-03, BR-MDL-06, plan 위험 1
+- [ ] T082 [US3] M5 Depth Anything V2 Small을 재현하고 CPU/GPU 시간을 잰다 — `docs/기록/A/A_모델재현기록.md` · `models/manifest.yaml` · 담당 A · 스킬 — · 근거 FR-22, U2, U6
 - [ ] T083 [US3] M3 렌더·M5 깊이 실제 어댑터를 만든다(MP4 H.264, 깊이 PNG16) — `serving/adapters/m3_render.py` · `serving/adapters/m5_depth.py` · 담당 A · 스킬 — · 근거 R-07
 
 **Checkpoint**: US3 독립 검증 기준 통과.
@@ -293,7 +293,7 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 **목표**: 보호자가 키워드·태그로 설명 초안을 받아 고치고 승인한다. 걸린 초안은 저장하지 않고, LLM 장애는 보호자가 고른다.
 **독립 검증 기준**: llm-contract.md 전 항목, Scenario 17, 입력에 이미지·별칭 없음, 규칙 검사 반복 실패 → 템플릿 낮춤, 승인 뒤 재생성 409.
 
-- [ ] T126 [P] [US10] M6 Qwen3-4B를 Ollama로 재현하고 llm-server를 만든다(:8200, 동기) — `serving/llm_server/` · `docs/A/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
+- [ ] T126 [P] [US10] M6 Qwen3-4B를 Ollama로 재현하고 llm-server를 만든다(:8200, 동기) — `serving/llm_server/` · `docs/기록/A/A_모델재현기록.md` · 담당 A · 스킬 API · 근거 R-18
 - [ ] T127 [P] [US10] caption 패키지를 만든다(허용 입력 조립·규칙 검사·템플릿) + 시험 — `caption/` · `caption/tests/` · 담당 C · 스킬 — · 근거 llm-contract.md, BR-CAP-01·02·07
 - [ ] T128 [US10] 설명 API를 만든다(`/captions`, 승인 고정, G13~G16) — `api/src/modules/captions/` · 담당 B · 스킬 API · 근거 FR-27
 - [ ] T129 [US10] S7 설명 초안 패널을 만든다(보낼 입력 미리보기, AI 작성 표시, G15 선택지) — `web/src/app/views/CaptionPanel.vue` · 담당 C · 스킬 FD, RL · 근거 S7
@@ -314,12 +314,12 @@ spec의 FR과 수용 시나리오(Scenario 1~19)를 유스케이스 단위로 �
 
 - [ ] T134 옛 이름을 정리한다: quickstart·research의 `process_job`·`unprocessable`·`staff_account`·`session` 테이블 표기를 SD_03 이름(`artwork_outcome`·`failed`·`team_member`·`app_session`)으로 — `.specify/features/우리-아이-미술관/quickstart.md` · `research.md` · 담당 B · 스킬 — · 근거 data-model §1
 - [ ] T135 SD_03에 구현 보완 S1~S8과 공동 보호자 변경을 역반영한다(DDL 검증 3종 재실행) — `design/uri_gallery_ddl.sql` · `design/SD_03_데이터베이스설계서_우리아이미술관.md` · 담당 B · 스킬 DB · 근거 data-model §6
-- [ ] T136 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/B/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
+- [ ] T136 통합 시험을 하고 기록한다: 장애 주입 5종 × 결과 단계(인프라→낮춤 집계 0), 삭제 완전성, 가족 교차 접근, 로그 표본(이미지·객체 키·자유 입력 0), 성능 1차(움직임 p95 3분·액자 p95 30초 잠정) — `docs/기록/B/B_통합시험.md` · 담당 B · 스킬 — · 근거 spec Success Criteria, plan 단계 10
 - [ ] T137 [P] 평가 묶음 1차 측정과 임계값 제안(U5)·시간 상한 교체(U6) — `docs/A_평가묶음_1차측정.md` · `serving/config/thresholds.yaml` · `serving/config/limits.yaml` · 담당 A · 스킬 — · 근거 FR-17, U5, U6
 - [ ] T138 [P] 접근성·반응형 점검: 390px·1440px, 키보드만 조작, 비활성 버튼 사유 낭독, 대비 4.5:1, 움직임 줄이기, 점수·미리 선택·토스트 0 — `web/e2e/a11y.spec.ts` · 담당 C · 스킬 RL, FD · 근거 SD_02 §17
-- [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/C/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
+- [ ] T139 [P] 사용 관찰(팀원 보호자 역할, 실제 아동 제외)과 막힌 지점 기록 — `docs/기록/C/C_사용관찰.md` · 담당 C · 스킬 — · 근거 FR-18, U13
 - [ ] T140 팀 서버 배포 절차를 정리하고 한 번 올린다(ssh·git pull·npm ci·build·pm2 reload, nginx HTTPS) — `ops/server/DEPLOY.md` · 담당 B · 스킬 — · 근거 R-02, quickstart §7
-- [ ] T141 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/공통/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
+- [ ] T141 추적성 표를 만든다: FR → UC → 작업(T) → 검증 증거 — `docs/기록/공통/추적성.md` · 담당 B · 스킬 — · 근거 FR-19
 
 ---
 

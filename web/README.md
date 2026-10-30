@@ -1,7 +1,7 @@
 # web — 보호자 앱(/app) · 운영 화면(/ops) (담당 C 신지현)
 
 Vue 3.5 · Vite 8 · TypeScript 5.9 · Pinia 3 · Vue Router 4.6 · Vitest 5 · Playwright (D23, Node 22 LTS 이상).
-화면 기준은 `design/SD_02_UIUX설계서_우리아이미술관.md`, 모양은 `design/style-guide/스타일가이드_우리아이미술관.html`, 문구는 `docs/C/C_화면문구.md`.
+화면 기준은 `design/SD_02_UIUX설계서_우리아이미술관.md`, 모양은 `design/style-guide/스타일가이드_우리아이미술관.html`, 문구는 `docs/기록/C/C_화면문구.md`.
 API는 `contracts/openapi.yaml`에 있는 것만 부른다. 모델·DB를 직접 부르지 않는다.
 
 | 명령 | 하는 일 |

@@ -4,7 +4,7 @@
 
 - 입력은 M1 컷아웃(RGBA). 알파가 없으면(점검 그림 원본) 그림 전체를 전경으로 본다.
 - 전처리: 전경을 85%로 맞추고 회색(0.5) 배경에 합성(공식 run.py와 같다). rembg는 쓰지 않는다.
-- MPS 보완 2건(docs/D/D_M7_TripoSR_보완사항.md): ① PYTORCH_ENABLE_MPS_FALLBACK=1 ② 메시 추출 입력을 CPU로.
+- MPS 보완 2건(docs/기록/D/D_M7_TripoSR_보완사항.md): ① PYTORCH_ENABLE_MPS_FALLBACK=1 ② 메시 추출 입력을 CPU로.
 - 결과: GLB(정점 색) + 다시 읽기. 표준 출력 한 줄 JSON {"vertices", "faces", "reload_faces", "device"}.
 - 종료 코드: 0 성공 · 2 입력을 읽지 못함 · 3 면이 없음(품질 미달) · 1 그 밖의 실패. 오류 원문은 내보내지 않는다(BR-PRV-01).
 """

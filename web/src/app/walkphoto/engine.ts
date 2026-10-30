@@ -1,4 +1,4 @@
-// 1인칭 고전 회랑 엔진(D33, SD_02 §17-9) — 이제민 세션2 시안(docs/C/louvre-walk/index.html)을 제품용으로 옮긴 것.
+// 1인칭 고전 회랑 엔진(D33, SD_02 §17-9) — 이제민 세션2 시안(docs/기록/C/louvre-walk/index.html)을 제품용으로 옮긴 것.
 // 사진 한 장(한 점 투시)을 Tour Into the Picture로 편 조각(manifest `kind: "tip"`)을 CSS perspective · preserve-3d로 세우고 그 안을 걷는다.
 // 3D 엔진 없음. 좌표는 미터(Z = 사진 찍은 자리에서 앞, X = 오른쪽 +, 눈높이 1.5m), CSS는 1m = 100px.
 // 화면 글자 · 계기판은 부르는 쪽(Vue)이 그린다. 이 파일은 장면 · 카메라 · 입력 · 자동 걷기 · 가까운 작품 감지만.

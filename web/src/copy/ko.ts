@@ -1,11 +1,11 @@
-// 화면 문구 사전(T035, U10, R-20). 정본은 docs/C/C_화면문구.md — 문구를 바꿀 때는 그 문서 → SD_02 → 이 파일 순서로 고친다(D22 ⑦).
+// 화면 문구 사전(T035, U10, R-20). 정본은 docs/기록/C/C_화면문구.md — 문구를 바꿀 때는 그 문서 → SD_02 → 이 파일 순서로 고친다(D22 ⑦).
 // [추론] 표시 문구는 문서와 같은 검토 대상이다.
 import { josa } from './josa';
 
 /** 차단 블록 변형(SD_02 C2 · §17). */
 export type BlockVariant = 'block' | 'hold' | 'final';
 
-/** 오류 사유 → 차단 블록 문구(docs/C/C_화면문구.md §3). */
+/** 오류 사유 → 차단 블록 문구(docs/기록/C/C_화면문구.md §3). */
 export interface ProblemCopy {
   variant: BlockVariant;
   /** 블록 제목 옆 요약 */
@@ -110,7 +110,7 @@ export const ko = {
     checkMailboxBody: '확인 링크를 보냈어요. 이미 가입한 주소라면 안내 메일이 가요',
     verified: '이제 아이를 등록해 주세요',
     resetDone: '이메일과 새 비밀번호로 로그인해 주세요',
-    // S0·S0b 화면(T052·T053, docs/C/C_화면문구.md §4 S0 — 2026-09-29 추가)
+    // S0·S0b 화면(T052·T053, docs/기록/C/C_화면문구.md §4 S0 — 2026-09-29 추가)
     signupTitle: '이메일로 가입',
     signupLead: '이메일과 비밀번호만 받아요',
     mailboxHint: '메일이 없으면 스팸함을 보거나 잠시 뒤 다시 받아 주세요',
@@ -135,7 +135,7 @@ export const ko = {
     newPassword: '새 비밀번호',
     newPasswordConfirm: '새 비밀번호 확인',
     save: '저장',
-    // S0c 계정 - 비밀번호 변경(T161, UC14 A5, docs/C/C_화면문구.md §4 S0c)
+    // S0c 계정 - 비밀번호 변경(T161, UC14 A5, docs/기록/C/C_화면문구.md §4 S0c)
     changePwTitle: '비밀번호 바꾸기', currentPassword: '현재 비밀번호', changePw: '바꾸기', needCurrent: '현재 비밀번호를 적어 주세요', // [추론]
     pwChanged: '비밀번호를 바꿨어요 - 다른 기기에서는 다시 로그인해야 해요', myAccount: '내 계정', // [추론]
   },
@@ -144,7 +144,7 @@ export const ko = {
     signup: '가입', verify: '메일 확인', child: '아이 등록', upload: '작품 올리기',
     confirm: '확정', review: '결과 확인', story: '이야기', exhibit: '전시',
   },
-  /** S1 아이 관리(T054, docs/C/C_화면문구.md §4 S1). */
+  /** S1 아이 관리(T054, docs/기록/C/C_화면문구.md §4 S1). */
   child: {
     title: '우리 아이',
     count: (n: number) => `우리 아이 ${n}명`,
@@ -166,7 +166,7 @@ export const ko = {
     keep: '그대로 두기',
     cancel: '취소',
   },
-  /** S2~S8 구현 문구(docs/C/C_화면문구.md §4 "S2~S8 구현 문구", 2026-09-29 이제민 — 신지현 위임). */
+  /** S2~S8 구현 문구(docs/기록/C/C_화면문구.md §4 "S2~S8 구현 문구", 2026-09-29 이제민 — 신지현 위임). */
   kind: { animated: '움직이는 그림', relief: '입체 그림', frame: '원본 액자', sculpture: '입체 조각' } as Record<string, string>, // D34 ④(SD_02 §17-8)
   /** 낮춤 안내(C6)에 쓰는 결과 이름 — 앞 결과를 만들지 못해 뒤 결과로 바꿨다 */
   downgrade: {
@@ -203,7 +203,7 @@ export const ko = {
     needPhoto: '사진을 골라 주세요',
     tooBig: '더 작은 사진을 골라 주세요', // D34 ④ 숫자 없음
     sending: '올리는 중이에요', // [추론]
-    // 작품 영역 자르기(D32, docs/C/C_화면문구.md §4 S2 작품 영역 — [추론])
+    // 작품 영역 자르기(D32, docs/기록/C/C_화면문구.md §4 S2 작품 영역 — [추론])
     crop: {
       title: '작품 영역 (선택)', hint: '작품에 맞게 네모를 줄여 주세요. 네모 밖은 올라가지 않아요',
       keys: '화살표로 조절, Shift+화살표는 크게', reset: '사진 전체로',
@@ -241,10 +241,10 @@ export const ko = {
     exhibitTitle: '전시 조건', condReview: '결과 확인', condStory: '제목 · 그린 날 · 나이', condNote: '두 가지가 갖춰지면 전시에 걸려요',
     fixDate: '그린 날을 고쳐 주세요', ageRange: '나이는 0살부터 18살까지예요', titleLong: '제목은 100자까지예요', // [추론] 나이·제목
     mine: '내가 적은 내용', // [추론]
-    // D25 보호자 감상평(docs/C/C_화면문구.md 전시실 홈 절)
+    // D25 보호자 감상평(docs/기록/C/C_화면문구.md 전시실 홈 절)
     note: '보호자 감상평 - 선택 - 적은 그대로 보여요', noteHint: '작품을 보고 느낀 점을 적어 주세요', noteLong: '감상평은 1000자까지예요', // [추론]
   },
-  /** S7 설명 초안 받기(T129, P0.5, docs/C/C_화면문구.md §4 "S7 구현 문구", SD_02 §10). */
+  /** S7 설명 초안 받기(T129, P0.5, docs/기록/C/C_화면문구.md §4 "S7 구현 문구", SD_02 §10). */
   caption: {
     title: '설명 초안 받기', notGate: '설명은 전시 조건이 아니에요', withExhibit: '전시될 때 함께 보여요',
     keywords: '키워드', keywordsHint: '쉼표로 나눠 5개까지, 한 개에 20자까지', tags: '태그 후보', // [추론] 힌트
@@ -267,7 +267,7 @@ export const ko = {
     empty: '아직 걸린 작품이 없어요', noMatch: '찾는 작품이 없어요', // [추론] noMatch
     toList: '목록으로', toUpload: '작품 올리기',
   },
-  /** 전시실 홈(제안, SD_02 §17-2, docs/C/C_화면문구.md "전시실 홈 구현 문구" — 팀 확인 전). */
+  /** 전시실 홈(제안, SD_02 §17-2, docs/기록/C/C_화면문구.md "전시실 홈 구현 문구" — 팀 확인 전). */
   museum: {
     name: '우리 아이 미술관', tagline: '작은 손이 그린 큰 이야기', enter: '입장하기', // [추론] tagline
     hall: (alias: string) => `${alias}의 미술관`, // [추론]
@@ -301,7 +301,7 @@ export const ko = {
     roomMeta: (n: number, from: string) => `${n}점 · ${from} ~`, // [추론]
     intro1: '아이가 그린 그림을 가족의 미술관에 걸어요', intro2: '올릴 때 한마디를 함께 남기고, 큐레이터가 해설을 붙여요', // [추론]
   },
-  /** 홈 시안(D26, SD_02 §17-3 — 시안, docs/C/C_화면문구.md). */
+  /** 홈 시안(D26, SD_02 §17-3 — 시안, docs/기록/C/C_화면문구.md). */
   paper: {
     draft: '시안 - 아날로그 감성 홈 (검토용)', toCurrent: '지금 홈 보기', enterHall: '전시실로 들어가기', // [추론]
     statWorks: '소장 작품', unitWorks: '점', statRooms: '세관', unitRooms: '개', statFirst: '첫 그림', // [추론]
@@ -309,7 +309,7 @@ export const ko = {
     reel: '걸린 작품', prev: '이전 작품', next: '다음 작품', pos: (i: number, n: number) => `${i} / ${n}`, // [추론]
     family: '가족 보호자', toFamily: '가족 보호자 보기', // [추론]
   },
-  /** 고전 미술관 시안 A · B(D30, SD_02 §17-5 — 시안, docs/C/C_화면문구.md "고전 미술관 시안"). 두 시안 문구 같음. */
+  /** 고전 미술관 시안 A · B(D30, SD_02 §17-5 — 시안, docs/기록/C/C_화면문구.md "고전 미술관 시안"). 두 시안 문구 같음. */
   classic: {
     room: (no: number, age: number | null) => `제${no}전시실 · ${AGE(age)}`, // [추론]
     roomNo: (no: number) => `제${no}전시실`, // [추론]
@@ -318,7 +318,7 @@ export const ko = {
     plaqueOpen: (title: string) => `${title} - 크게 보기`, // [추론]
     map: '미술관 안내도', here: '현재 위치', cell: (age: number | null, n: number) => `${AGE(age)} · ${n}점`, // [추론]
   },
-  /** 걸어 다니는 미술관(D31, SD_02 §17-6 — docs/C/C_화면문구.md "걸어 다니는 미술관"). */
+  /** 걸어 다니는 미술관(D31, SD_02 §17-6 — docs/기록/C/C_화면문구.md "걸어 다니는 미술관"). */
   walk: {
     enter: '입장하기', skip: '건너뛰기', upload: '작품 올리기', list: '한눈에 보기', wall: '벽 색', // [추론] 벽 색
     forward: '앞으로', backward: '뒤로', toCorridor: '회랑으로', close: '닫기', toWalk: '걸어서 보기', // [추론]
@@ -330,8 +330,8 @@ export const ko = {
     listTitle: (alias: string) => `${alias}의 미술관 - 한눈에 보기`, // [추론]
     scene: '미술관 장면', // [추론] 장면 영역 이름
   },
-  /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/C/C_화면문구.md "1인칭 고전 회랑") */
-  /** 사진 고치기(D39, SD_02 §17-12 · docs/C/C_화면문구.md) [추론] */
+  /** 1인칭 고전 회랑(D33, SD_02 §17-9 — docs/기록/C/C_화면문구.md "1인칭 고전 회랑") */
+  /** 사진 고치기(D39, SD_02 §17-12 · docs/기록/C/C_화면문구.md) [추론] */
   fix: { open: '사진 고치기', title: '사진 고치기', hint: '네 모서리를 그림 끝에 맞춰 주세요. 원본 사진은 그대로 남아요.', preview: '액자에 걸릴 모습',
     left: '왼쪽으로 돌리기', right: '오른쪽으로 돌리기', reset: '원래대로', save: '저장', done: '사진을 고쳤어요', fail: '고치지 못했어요 — 다시 해 볼까요?',
     corner: ['왼쪽 위 모서리', '오른쪽 위 모서리', '오른쪽 아래 모서리', '왼쪽 아래 모서리'] },
@@ -342,7 +342,7 @@ export const ko = {
     agePh: '비우면 지난 나이', words: '아이의 한마디', note: '부모 감상', lockNote: '미술관처럼, 걸린 작품은 바꾸지 않아요. 설명은 큐레이터가 해 드려요. 내리고 싶으면 작품을 지울 수 있어요.' },
   /** 가족 코멘트(D46 ④ · ⑨) [추론] */
   comment: { title: '가족 코멘트', ph: '코멘트를 남겨 주세요', send: '남기기', del: '지우기', empty: '아직 코멘트가 없어요', me: '나', owner: '보호자', co: '공동 보호자', gone: '보호자', fail: '코멘트를 남기지 못했어요 — 다시 해 볼까요?', delFail: '지우지 못했어요 — 다시 해 볼까요?', loadFail: '코멘트를 불러오지 못했어요', retry: '다시 불러오기' }, // D46 ⑨: 7일 기한은 내부 규칙 — 화면 안내 없음
-  /** 저장하기(D37, SD_02 §17-10 · docs/C/C_화면문구.md) [추론] */
+  /** 저장하기(D37, SD_02 §17-10 · docs/기록/C/C_화면문구.md) [추론] */
   /** 움직임 질문(D49, SD_02 §17-9) — 문구는 이제민 지시 그대로 */
   animAsk: { q: '애니메이션으로 만드시겠습니까?', yes: '예', no: '아니오', later: '나중에', hint: '만드는 동안 지금 액자는 그대로 걸려 있어요',
     judging: '그림을 살펴보는 중이에요', started: '만들기 시작했어요', startedHint: '다 되면 작품 목록에서 [좋아요]를 눌러 바꿔 걸어요', close: '닫기',
@@ -363,7 +363,7 @@ export const ko = {
     titleAsk: '제목을 붙여 줄까요?', titleWrite: '제목 적기', // D34 ③ [추론]
     keys: 'W A S D 걷기 · 끌기 둘러보기 · Shift 빨리 · E 크게 보기 · Space 다음 작품', // [추론]
   },
-  /** S1b~S1d 공동 보호자(docs/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
+  /** S1b~S1d 공동 보호자(docs/기록/C/C_화면문구.md §4 "S1b~S1d 구현 문구", T107). */
   // 카카오 로그인·초대 링크(D36, SD_02 §17-7 — 이제민 요청서 §3 문구)
   kakao: {
     start: '카카오로 시작하기',
@@ -410,7 +410,7 @@ export const ko = {
     waitTitle: '초대 기다리기', wait1: '다른 보호자에게 초대를 부탁하고 메일의 링크를 눌러 주세요', wait2: '가족 공간이 없는 동안에는 바로 수락할 수 있어요',
     create: '새 가족 공간 만들기', create1: '만들면 이 가족의 만든 보호자가 돼요', create2: '만든 보호자는 나갈 수 없어 다른 가족의 초대를 받을 수 없어요',
   },
-  /** S9 삭제(docs/C/C_화면문구.md §4 "S9 구현 문구", T101). */
+  /** S9 삭제(docs/기록/C/C_화면문구.md §4 "S9 구현 문구", T101). */
   del: {
     artwork: '작품 삭제', child: '아이 삭제',
     title: '아이를 지울까요? 되돌릴 수 없어요', artworkTitle: '이 작품을 지울까요?', // 외부 피드백 4차(SD_02 §17-14)
@@ -422,7 +422,7 @@ export const ko = {
     noWait: '기다리지 않아도 돼요', toList: '목록으로',
     locked: '삭제 중 - 이 작품의 모든 조작이 잠겼어요',
   },
-  /** S12 API활용(docs/C/C_화면문구.md §4 "S12 구현 문구", T125). */
+  /** S12 API활용(docs/기록/C/C_화면문구.md §4 "S12 구현 문구", T125). */
   apiGuide: {
     tabs: { endpoints: '엔드포인트', guideline: '가이드라인', manual: '매뉴얼' } as Record<string, string>,
     colGroup: '묶음', colPath: '경로', colTier: '구간', p0: 'P0', p05: 'P0.5 예정', internalKey: 'P0 팀 내부 키',
@@ -434,7 +434,7 @@ export const ko = {
     colOutcome: '결과 분류', colModel: '모델 ID 버전', colTime: '처리 시간', colState: '상태',
     noFamily: '결과는 가족 저장소에 쓰지 않아요',
   },
-  /** S10·S11 운영(docs/C/C_화면문구.md §4 "S10~S11 구현 문구", 2026-09-29 이제민). 비율은 소수 둘째 자리(퍼센트 기호 없음). */
+  /** S10·S11 운영(docs/기록/C/C_화면문구.md §4 "S10~S11 구현 문구", 2026-09-29 이제민). 비율은 소수 둘째 자리(퍼센트 기호 없음). */
   ops: {
     alive: '생존', aliveOk: '응답함', aliveNo: '응답 없음', // [추론] 응답 없음
     ready: '준비', readyAll: '준비됨', readySome: '일부 모델 미준비', readyNo: '준비 안 됨', // [추론] 준비됨·준비 안 됨
@@ -473,7 +473,7 @@ export const ko = {
     noRollback: '되돌릴 후보가 없어요',
     deactivateConfirm: '이 모델이 필요한 선택지가 보호자 화면에서 막혀요. 비활성화할까요?',
     readOnly: '읽기 전용이에요 - 조작은 평가 담당만', // [추론]
-    // S11 모델 점검(T157, D20 — docs/C/C_화면문구.md "S11 모델 점검 구현 문구")
+    // S11 모델 점검(T157, D20 — docs/기록/C/C_화면문구.md "S11 모델 점검 구현 문구")
     colCheck: '마지막 점검', check: '점검', checking: '점검 중이에요', checkRunning: '점검 중', checkQueued: '점검 대기', checkNone: '점검 없음', // [추론] 대기·없음
     checkPassed: (sec: string, ago: string) => `통과 - ${sec}초 - ${ago}`, checkFailed: (why: string) => `실패 - ${why}`,
     ago: (min: number) => (min < 1 ? '방금' : min < 60 ? `${min}분 전` : `${Math.floor(min / 60)}시간 전`), // [추론] 방금·시간 전
@@ -491,7 +491,7 @@ export const ko = {
   },
 } as const;
 
-/** gate·reason 사전(docs/C/C_화면문구.md §3). 키는 `G번호:reason`, gate 없는 사유는 `-:reason`. */
+/** gate·reason 사전(docs/기록/C/C_화면문구.md §3). 키는 `G번호:reason`, gate 없는 사유는 `-:reason`. */
 const P: Record<string, ProblemCopy> = {
   'G0:not_found': { variant: 'final', summary: '찾을 수 없어요', reason: '찾을 수 없어요', releaser: '없음', self: false, actions: ['목록으로'] },
   '-:not_found': { variant: 'final', summary: '찾을 수 없어요', reason: '찾을 수 없어요', releaser: '없음', self: false, actions: ['목록으로'] },

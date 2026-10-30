@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ko } from '../src/copy/ko';
 import { home as hc } from '../src/app/town/copy';
 
-const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../docs/B/카카오로그인_캡처');
+const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../docs/기록/B/카카오로그인_캡처');
 async function shot(page: Page, name: string, project: string) {
   if (project !== 'mobile-390') return;
   fs.mkdirSync(SHOTS, { recursive: true });

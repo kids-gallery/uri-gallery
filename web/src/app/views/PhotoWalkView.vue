@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 홈 /app — 1인칭 고전 회랑(D33 이제민 결정, SD_02 §17-9). 시안 docs/C/louvre-walk/를 제품으로 옮김(엔진 walkphoto/engine.ts).
+// 홈 /app — 1인칭 고전 회랑(D33 이제민 결정, SD_02 §17-9). 시안 docs/기록/C/louvre-walk/를 제품으로 옮김(엔진 walkphoto/engine.ts).
 // 자유 라이선스 실사진을 편 조각(/museum/photos/manifest.json의 kind:"tip")을 CSS 3D로 세워 걷는다. 3D 엔진 없음, 미술관 이름 · 로고 없음.
 // 나이 구역 = N살 전시실(입구 쪽이 최근). 두 번째 방문은 마지막 구역에서(walk/prefs.ts의 방문 기억). 크게 보기는 ArtViewer 그대로.
 // 사진 목록을 못 읽으면 §17-6 걷는 미술관(WalkHomeView, SVG)으로 대신한다. 셸의 [올리기] · [목록] · [메뉴]는 MuseumBar(§17-8).
@@ -360,7 +360,7 @@ function measure() { const r = rootEl.value?.getBoundingClientRect(); if (r) top
 </style>
 
 <style>
-/* 엔진이 만드는 3D 요소(scoped 밖) — 시안 docs/C/louvre-walk/ 그대로 */
+/* 엔진이 만드는 3D 요소(scoped 밖) — 시안 docs/기록/C/louvre-walk/ 그대로 */
 .pw-world{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
 .pw-pl{position:absolute;left:0;top:0;backface-visibility:hidden;background-size:100% 100%;background-repeat:no-repeat}
 .pw-pl.pw-two{backface-visibility:visible}

@@ -2,7 +2,7 @@
 
 > Docker 없음. 호스트 네이티브 프로세스를 pm2로 띄우고 Homebrew nginx가 HTTPS·라우팅을 맡는다. GitLab CI는 검사만 한다(배포하지 않는다).
 > 비밀번호·키 원문은 이 문서와 커밋에 적지 않는다. 모두 서버의 `.env`(git 제외)에만 둔다.
-> 팀 서버 사양·GPU·모델 경로(U2·U14)는 `docs/A/A_팀서버_자원확인.md` 확인 뒤 표시된 칸을 채운다.
+> 팀 서버 사양·GPU·모델 경로(U2·U14)는 `docs/기록/A/A_팀서버_자원확인.md` 확인 뒤 표시된 칸을 채운다.
 
 ## 1. 한 번만: 서버 준비
 
@@ -48,7 +48,7 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://<도메인>:950
 **한 번에(D48 ④, 2026-09-30)**: `ops/checklist/check-live.sh [주소]` — 위 항목과 웹 첫 화면 · `/version.json`을 **내용까지** 본다(200이어도 웹 화면 HTML이면 실패). `EXPECT_COMMIT=<커밋>`을 주면 배포 커밋도 대조. 하나라도 틀리면 0 아닌 종료.
 **웹 배포 확인(D48 ③)**: `ops/p1/deploy-web.sh`가 `version.json`(커밋 · 배포 시각)을 함께 올리고 공개 주소에서 읽어 맞는지 확인한다 — 다르면 이전 판(`p1-web.old`)으로 되돌리고 실패. 성공하면 마지막 줄 "배포됨 {커밋} {시각}"을 팀 채널에 붙인다. nginx 설정(`/version.json` 캐시 없음)을 바꾼 첫 배포는 `pm2 restart p1-nginx` 뒤에 확인된다.
 
-운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/A/A_모델적재_화면요구.md`).
+운영 화면(S11)의 모델 상태 표에서 M1·M2·M3·M5가 `ready`인지 본다. `loading`은 오류가 아니다(A `docs/기록/A/A_모델적재_화면요구.md`).
 
 ## 4. 키와 비밀 정보
 
@@ -83,7 +83,7 @@ Studio-B(192.168.0.19)의 공유 Homebrew nginx(다른 계정 소유, `servers/p
 | 사진 자산 | `/museum/photos/` 1년 immutable 캐시, `manifest.json`은 no-cache, 없는 파일은 SPA로 떨어지지 않고 404(SD_04 §3-3 사진 자산) |
 | API | `/v1/*`·`/live`·`/ready`·`/openapi.json` → app-api 9521, `/v1/models/*` → model-api 9541(`location ^~` — 정규식 location보다 먼저 잡혀야 한다. §1 `ops/server/nginx.conf`도 같은 수정 필요), `/internal/*` 404, `/model-api`·`/model-api/*` 404 problem+json, 본문 상한(`client_max_body_size 21m`) 초과는 nginx 기본 HTML 대신 413 problem+json(`payload_too_large`, 계약 PayloadTooLarge — 2026-09-30 점검)(SPA 대체로 떨어지지 않게 — 공개 범위 팀 결정 전, SD_04 §내부망 배치), `/metrics`는 로컬만 |
 | 프로세스 | `ops/p1/ecosystem.config.cjs` — 저장소 루트 `.env`를 읽어 `ops/server/ecosystem.config.cjs`의 각 앱에 넣고, 입구 nginx·Mailpit·TorchServe를 더한다. `pm2 start ops/p1/ecosystem.config.cjs` |
-| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/A/A_모델재현기록.md` M3 절 |
+| `.env` 추가 값 | `SESSION_SECRET`·`AUTH_HMAC_SECRET`(`openssl rand -hex 32`), `APP_BASE_URL=https://p1.sumzip.com`, `SECURE_COOKIES=true`, `STORAGE_ROOT=<저장소>/.data/store`, `MODEL_ROOT=<저장소>/models`(U14), `GPU_ENABLED=true`(U2, MPS), `UAM_FAKE_MODELS=0`(운영값), `TORCHSERVE_URL=http://127.0.0.1:9561`, `M3_AD_PYTHON=<저장소>/serving/.venv-m3/bin/python`, `M3_AD_ROOT=<저장소>/models/m3/AnimatedDrawings`(R-03). M3 환경 설치는 `docs/기록/A/A_모델재현기록.md` M3 절 |
 | 메일 | Mailpit 단일 실행 파일(`~/.local/bin/mailpit`, 공유 Homebrew에 설치하지 않음), SMTP 127.0.0.1:1025 · 화면 127.0.0.1:8025(외부 비공개) · **실제 발송은 Gmail SMTP 자동 중계**(R-23 2026-09-30): `ops/p1/mailpit-relay.example.yaml`을 `.data/mailpit-relay.yaml`로 복사해 계정·앱 비밀번호를 채우고 `chmod 600` → `pm2 restart mailpit`(파일이 있을 때만 중계 인자가 붙는다). 확인은 `ops/checklist/check-mail-relay.sh` |
 | DB | 팀 DB `ABC10pioneer1`에 `npm run db:migrate`(0001_sd03_baseline, 추가만·재실행 안전) |
 | 모델 | 매니페스트 해시로 버전을 등록하지 않았고 라이선스 확정(U4) 전이라 모든 모델이 비활성이다. 작품은 접수되지만 모델 단계는 `model_not_ready` → 액자 경로로 간다(BR-PRC-01). 팀 확정 뒤 `ops.models register`가 만든 본문으로 app-api에 후보를 등록하고 평가·승격한다(§1) |
