@@ -111,7 +111,8 @@ class Rules(unittest.TestCase):
         self.assertIn("size", rules_hit(c))
         c = good()
         c["files"].append({"filename": "web/package-lock.json", "status": "modified", "additions": 5000, "deletions": 0})
-        self.assertNotIn("size", rules_hit(c) | rules_hit(c, "warn"))
+        c["files"].append({"filename": "docs/공통/이슈목록.md", "status": "added", "additions": 900, "deletions": 0})
+        self.assertNotIn("size", rules_hit(c) | rules_hit(c, "warn"))   # 잠금 파일과 문서는 세지 않는다
 
     def test_dockerfile_tag_and_ignore(self):
         c = good(); c["file_text"]["api/Dockerfile"] = "FROM node\nCOPY . .\n"
@@ -135,6 +136,14 @@ class Rules(unittest.TestCase):
         c["body"] += "\n예외 이유: 팀 합의 #20\n"
         self.assertNotIn("bot_self", rules_hit(c))
         self.assertIn("bot_self", rules_hit(c, "warn"))
+
+    def test_templates_and_codeowners_are_not_bot_self(self):
+        c = good()
+        for n in (".github/ISSUE_TEMPLATE/작업.md", ".github/CODEOWNERS", ".github/pull_request_template.md"):
+            c["files"].append({"filename": n, "status": "modified", "additions": 1, "deletions": 1, "patch": "+x"})
+        self.assertNotIn("bot_self", rules_hit(c))
+        c["files"].append({"filename": ".github/workflows/review-bot.yml", "status": "modified", "additions": 1, "deletions": 1, "patch": "+x"})
+        self.assertIn("bot_self", rules_hit(c))
 
     def test_override_never_covers_secret(self):
         c = good(); c["override_by_other"] = True; c["body"] += "\n예외 이유: x\n"
