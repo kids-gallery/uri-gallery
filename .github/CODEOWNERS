@@ -1,10 +1,11 @@
-# 폴더 주인(계획서 4절 역할표). PR이 이 폴더를 고치면 주인에게 리뷰가 자동으로 요청된다. 리뷰봇은 역할 밖 폴더를 고치면 경고한다.
+# 폴더 주인(계획서 4절 역할표, 2026-10-30 배정). PR이 이 폴더를 고치면 주인에게 리뷰가 자동으로 요청된다. 리뷰봇은 역할 밖 폴더를 고치면 경고한다.
 *                    @wpalswpa
-/web/                @zozu001
-/.gitattributes      @zozu001
-/api/                @tlswlgus960-prog
-/db/                 @tlswlgus960-prog
-/contracts/          @tlswlgus960-prog
-/serving/            @wpalswpa
-/compose*.yaml       @wpalswpa
+/web/                @tlswlgus960-prog
+/.gitattributes      @tlswlgus960-prog
+/api/                @wpalswpa
+/db/                 @wpalswpa
+/contracts/          @wpalswpa
+/serving/            @zozu001
+/models/             @zozu001
+/compose*.yaml       @zozu001
 /.github/            @tlswlgus960-prog @wpalswpa
