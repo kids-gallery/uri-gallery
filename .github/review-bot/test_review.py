@@ -202,6 +202,27 @@ class AI(unittest.TestCase):
         self.assertEqual(seen["body"]["model"], RULES["ai"]["model"])
         self.assertNotIn("temperature", seen["body"])
 
+    def test_thinking_first_and_output_limit(self):
+        from unittest import mock
+
+        def answer(body):
+            class Resp:
+                def __enter__(self): return self
+                def __exit__(self, *a): return False
+                def read(self): return json.dumps(body).encode()
+            return lambda req, timeout: Resp()
+
+        thinking = {"type": "thinking", "thinking": "", "signature": "s"}
+        done = {"stop_reason": "end_turn", "content": [thinking, {"type": "text", "text": '{"summary": "요약", "issues": []}'}]}
+        cut = {"stop_reason": "max_tokens", "content": [thinking, {"type": "text", "text": '{"summary": "요'}]}
+        with mock.patch.dict(os.environ, {"REVIEW_AI_KEY": "k", "REVIEW_AI_MODEL": ""}):
+            with mock.patch("urllib.request.urlopen", answer(done)):
+                self.assertEqual(review.ai_review(good(), RULES)[:2], (True, "요약"))
+            with mock.patch("urllib.request.urlopen", answer(cut)):
+                ok, summary, _ = review.ai_review(good(), RULES)
+        self.assertFalse(ok)
+        self.assertIn("출력 한도", summary)
+
     def test_key_with_non_ascii_is_reported(self):
         from unittest import mock
         with mock.patch.dict(os.environ, {"REVIEW_AI_KEY": "sk-ant-api03-키값"}):

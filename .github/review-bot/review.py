@@ -316,9 +316,13 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
         req.add_header("anthropic-workspace-id", ws)
     raw = b""
     try:
-        with urllib.request.urlopen(req, timeout=90) as r:
+        with urllib.request.urlopen(req, timeout=180) as r:
             raw = r.read()
-            text = "".join(b.get("text", "") for b in json.loads(raw)["content"] if b.get("type") == "text")
+        res = json.loads(raw)
+        if res.get("stop_reason") == "max_tokens":  # 생각한 토큰도 한도에 들어간다
+            print(f"[AI 검토 실패] 출력 한도 {ai['max_output_tokens']}에 걸림 usage={res.get('usage')}", file=sys.stderr)
+            return False, "AI 검토를 하지 못했다(출력 한도에 걸림, rules.json max_output_tokens). 규칙 검사로만 판정했다.", []
+        text = "".join(b.get("text", "") for b in res["content"] if b.get("type") == "text")
         summary, issues = parse_ai(text, [f["filename"] for f in ctx["files"]], rules)
         return True, summary + (" (바뀐 내용이 길어 앞부분만 봤다)" if cut else ""), issues
     except (urllib.error.URLError, KeyError, IndexError, ValueError, TimeoutError) as e:
