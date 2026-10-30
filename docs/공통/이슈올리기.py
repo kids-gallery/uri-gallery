@@ -16,12 +16,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DOC = ROOT / "docs/공통/이슈설계_컨테이너협업.md"
 TEMPLATE = ROOT / ".github/ISSUE_TEMPLATE/작업.md"
+PLAN = ROOT / "design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md"
 
-# 마스터플랜 4절 역할표
-LOGIN = {"최호준": "zozu001", "신지현": "tlswlgus960-prog", "이제민": "wpalswpa"}
-REVIEWER = {"최호준": "신지현", "신지현": "이제민", "이제민": "최호준", "공통": "작성자가 아닌 사람"}
-DAY_TEXT = {0: "준비(1일차 시작 전)"}
-WEEKDAY = {"금", "월", "화", "수", "목"}
+COMMON = "공통"   # 셋이 함께 맡는 이슈. 리뷰어는 작성자가 아닌 사람
 FIELDS = ["담당", "선행", "근거", "대상 경로", "이루려는 것", "해야 할 일", "끝나는 조건"]
 MARK = "<!-- issue-id: {} -->"
 
@@ -36,11 +33,17 @@ def template_sections() -> list[str]:
     return re.findall(r"^## (.+?)\s*$", body, re.M)
 
 
+def roles() -> dict[str, tuple[str, str]]:
+    """마스터플랜 4절 역할표에서 이름 → (GitHub 아이디, 리뷰어)."""
+    sec = PLAN.read_text(encoding="utf-8").split("## 4. 역할 배정", 1)[1].split("\n## ", 1)[0]
+    return {name.strip(): (login, reviewer) for name, login, reviewer in re.findall(r"^\| ([^|(]+)\(`([^`]+)`[^|]*\|.*\| (\S+) \|$", sec, re.M)}
+
+
 def parse_day(label: str) -> tuple[int, str] | None:
     if label == "준비":
-        return 0, DAY_TEXT[0]
+        return 0, label
     m = DAY_RE.match(label)
-    if not m or m.group(3) not in WEEKDAY:
+    if not m:
         return None
     return int(m.group(1)), f"{m.group(1)}일차 {m.group(2)}({m.group(3)})"
 
@@ -78,6 +81,7 @@ def check(issues: list[dict]) -> tuple[list[str], list[str]]:
     if ids != [f"I-{n:02d}" for n in range(1, len(ids) + 1)]:
         errs.append(f"I-번호가 1부터 차례가 아니다: {ids}")
     sections = template_sections()
+    people = roles()
     for it in issues:
         tag = it["id"]
         day = parse_day(it["label"])
@@ -91,7 +95,7 @@ def check(issues: list[dict]) -> tuple[list[str], list[str]]:
             errs.append(f"{tag} 한 줄 설명(> 줄)이 없다")
         if not it["todo"]:
             errs.append(f"{tag} 해야 할 일이 없다")
-        if it.get("담당") not in REVIEWER:
+        if it.get("담당") not in [*people, COMMON]:
             errs.append(f"{tag} 담당 '{it.get('담당')}'이 역할표에 없다")
         if not re.search(r"\d", it.get("근거", "")):
             errs.append(f"{tag} 근거에 마스터플랜 절 번호가 없다")
@@ -137,7 +141,7 @@ def body_parts(it: dict, numbers: dict[str, int] | None = None) -> dict[str, str
             f"- 날짜: {day[1]}",
             f"- 담당: {owner}",
             f"- 선행: {ref(', '.join(it['deps'])) if it['deps'] else '없음'}",
-            f"- 리뷰어: {REVIEWER.get(owner, '')}",
+            f"- 리뷰어: {roles().get(owner, ('', '작성자가 아닌 사람'))[1]}",
         ]),
     }
     return parts
@@ -156,7 +160,7 @@ def full_title(it: dict) -> str:
 
 def summary_table(issues: list[dict]) -> str:
     days = sorted({it["day"][0] for it in issues if it.get("day")})
-    names = ["최호준", "신지현", "이제민", "공통"]
+    names = [*roles(), COMMON]
     head = "| 담당 | " + " | ".join("준비" if d == 0 else f"{d}일차" for d in days) + " | 합계 |"
     rows = [head, "|" + "---|" * (len(days) + 2)]
     for n in names:
@@ -171,6 +175,7 @@ def gh(*args: str, stdin: str | None = None) -> str:
 
 def apply(issues: list[dict], repo: str) -> None:
     listed = json.loads(gh("issue", "list", "-R", repo, "--state", "all", "--limit", "500", "--json", "number,body"))
+    people = roles()
     numbers = {}
     for row in listed:
         m = re.search(r"<!-- issue-id: (I-\d{2}) -->", row.get("body") or "")
@@ -181,7 +186,7 @@ def apply(issues: list[dict], repo: str) -> None:
             print(f"{it['id']} 이미 있음 #{numbers[it['id']]}")
             continue
         owner = it["담당"]
-        who = list(LOGIN.values()) if owner == "공통" else [LOGIN[owner]]
+        who = [login for login, _ in people.values()] if owner == COMMON else [people[owner][0]]
         url = gh("issue", "create", "-R", repo, "--title", full_title(it), "--body-file", "-",
                  *sum((["--assignee", w] for w in who), []), stdin=build_body(it)).strip()
         numbers[it["id"]] = int(url.rstrip("/").rsplit("/", 1)[1])
