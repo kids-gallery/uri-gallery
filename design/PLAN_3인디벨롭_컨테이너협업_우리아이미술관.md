@@ -50,11 +50,11 @@
 | sweeper | app-api와 같은 이미지, 실행 명령만 다르다 | 없음 | 작품 파일 | 프로세스가 살아 있음 | 최호준(서비스 설정), 이제민(이미지) |
 | db | MariaDB 공식 이미지(12.0 계열) | 없음 | DB 자료 | 공식 이미지의 확인 스크립트 | 최호준 |
 | mailpit | Mailpit 공식 이미지 | 8025(메일 화면) | 없음 | 없음 | 최호준 |
-| model-api | serving 이미지(`python:3.11`) | 없음 | 작품 파일, 작업자 상태 폴더, 모델 가중치(읽기 전용) | `/internal/ready` | 최호준 |
-| worker-cpu | model-api와 같은 이미지 + 모델 묶음, 실행 명령만 다르다 | 없음 | 위와 같음 | 상태 폴더 기록 | 최호준 |
+| model-api | serving 이미지(`python:3.11`) | 없음 | 작품 파일, 작업자 상태 폴더(읽기), 모델 가중치(읽기 전용) | `/internal/ready` HTTP 응답(자기 프로세스) | 최호준 |
+| worker-cpu | model-api와 같은 이미지 + 모델 묶음, 실행 명령만 다르다 | 없음 | 작품 파일, 작업자 상태 폴더(쓰기), 모델 가중치(읽기 전용) | 상태 파일이 60초 안에 갱신됨 | 최호준 |
 
 - nginx: `/`는 `dist-world` 정적 파일(없는 경로는 `index.html`), `/v1/*`·`/live`·`/ready`는 app-api, `/v1/models/*`는 model-api. 화면과 API가 같은 출처라 CORS가 필요 없다(쿠키 세션 그대로).
-- 기동 순서: db가 준비되면 db-migrate가 스키마를 넣고, 그 뒤 app-api·sweeper가 뜬다. model-api·worker-cpu는 db 준비 뒤에 뜬다. 준비됨의 기준은 3-5 6번 표. 모든 서비스 `restart: unless-stopped`, `init: true`.
+- 기동 순서: db 준비 → db-migrate(스키마, 개발 환경이면 모델 첫 활성까지) 완료 → app-api·sweeper·model-api·worker-cpu. 준비됨의 기준은 3-5 6번 표. 상시 서비스는 `restart: unless-stopped`, db-migrate는 `restart: "no"`. 모든 서비스 `init: true`(종료 신호 전달용이고 정상 종료를 보장하지는 않는다, 3-5 6번).
 - 메일을 끄면 이메일 가입도 꺼지므로(`api/src/modules/auth/routes.ts` 66행) Mailpit을 둔다.
 - 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4).
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
@@ -88,55 +88,93 @@
 | `.gitattributes`(줄바꿈 LF) | Windows에서 셸 스크립트가 CRLF가 되면 컨테이너에서 깨진다 | 신지현 |
 | app-api 시작 명령을 빌드 결과에 맞게(`package.json` `start` → `node dist/src/server.js`) | 지금 값(`dist/server.js`)은 빌드 결과에 없다(3-5 2번) | 이제민 |
 | 마이그레이션 폴더를 설정 값으로(`MIGRATIONS_DIR`, 기본값은 지금 경로) | 빌드된 이미지에서 경로가 어긋난다(3-5 판정) | 최호준 |
+| 개발 환경 모델 첫 활성(db-migrate, `DEV_ACTIVATE_MODELS=1`일 때만) | 새 DB에 활성 모델 버전이 없어 처리 작업이 생기지 않는다(3-5 1번) | 최호준(이제민 지원) |
+| serving이 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE`) | compose `secrets:`. 지금 `serving/common/config.py`는 환경 변수만 읽는다 | 최호준 |
 | app-api가 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE` 등, 없으면 지금처럼 환경 변수) | compose `secrets:`(3-2)는 값을 파일로 넣는다. 지금 `api/src/config.ts`는 환경 변수만 읽는다 | 이제민 |
 
-### 3-5. 설계 PR의 답(#20, 2026-10-30)
+### 3-5. 설계 PR의 답(#20, 2026-10-30, 검토 반영)
 
-1. **서비스 나누기.** 상시 서비스는 3-2의 7개로 충분하다. 같은 코드를 쓰는 둘은 이미지를 나눠 쓴다(app-api·sweeper = api 이미지, model-api·worker-cpu = serving 이미지). 여기에 스키마를 한 번 넣고 끝나는 `db-migrate`(api 이미지, `restart: "no"`)를 둔다. 직접 빌드하는 이미지는 web·api·serving 3개이고, db(`mariadb:12.0`)와 mailpit(`axllent/mailpit`)은 공식 이미지를 쓴다.
+표시: [확인] 코드·실행으로 확인함, [추론] 코드에서 읽은 위험, [미검증] 해당 이슈에서 실행으로 확인한다.
+
+1. **서비스 나누기.** 상시 서비스 7개(`restart: unless-stopped`)와 한 번 돌고 끝나는 db-migrate(`restart: "no"`)를 둔다. 같은 코드를 쓰는 둘은 이미지를 나눠 쓴다(app-api·sweeper·db-migrate = api 이미지, model-api·worker-cpu = serving 이미지). 직접 빌드하는 이미지는 web·api·serving 3개, 공식 이미지는 db(`mariadb:12.0`)·mailpit(`axllent/mailpit`).
+   - **개발 환경 모델 첫 활성.** [확인] 새 DB에는 활성 모델 버전이 없다(마이그레이션에 `model_version` 시드 없음). 워커는 활성 버전이 있는 모델만 올리고(`serving/workers/runner.py` `refresh_enabled`), 앱 서버는 M1·M2·M3이 모두 활성일 때만 분리·판정 작업을 만든다(`api/src/modules/artworks/models.ts` `JUDGE_MODELS`). 그래서 db-migrate가 개발 환경일 때(`DEV_ACTIVATE_MODELS=1`) 스키마 다음에 M1·M2·M3·M5를 `active`·`license_confirmed`로 만든다. 조건은 SD_04 9-4의 D27 예외와 같고, 팀 서버·운영 DB에서는 켜지 않는다. 기존 도구(`scripts/dev_activate_models.py`)는 `DB_HOST`가 127.0.0.1이 아니면 멈추고 127.0.0.1 API를 불러 compose에 그대로 쓸 수 없다. 담당은 #33.
 2. **이미지.**
-   - 빌드 맥락은 저장소 맨 위로 잡는다. app-api는 `contracts/`, model-api는 `contracts/model-api.openapi.yaml`, 둘 다 `models/manifest.yaml`을 실행 중에 읽기 때문이다(#18·#19 점검). `.dockerignore`는 저장소 맨 위에 하나 두고 `node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물을 뺀다.
-   - 순서: 의존성 파일(`package*.json`, `requirements*.lock`)을 먼저 복사해 설치하고 소스는 나중에 넣는다.
-   - 기반 이미지: node 22, python 3.11, nginx, mariadb 12.0, mailpit. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인한 값을 적는다(`latest` 금지).
-   - api 이미지는 빌드 단계에서 `npm run build` 뒤 실행 단계에 운영 의존성과 `dist/`만 넣는다. 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다(2026-10-30 `tsc` 확인). 지금 `package.json`의 `start`(`node dist/server.js`)는 이 경로와 달라 고친다(#22).
-3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`)이다. 실제 모델은 메모리가 넉넉한 PC에서만 켜고 worker-cpu에 메모리 한도를 준다. 이제민 맥은 colima 가상 머신이 CPU 6개·메모리 14GiB라 실제 모델을 돌릴 수 있다. Windows 두 대의 WSL 메모리는 #16 측정으로 정한다.
-4. **데이터.**
+   - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지).
+   - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다.
 
-   | 볼륨 | 붙는 곳 | 경로(설정 값) |
+     | 서비스 | 명령 |
+     |---|---|
+     | app-api | `node dist/src/server.js`(지금 `package.json` `start`의 `dist/server.js`는 틀려서 고친다, #22) |
+     | sweeper | `node dist/src/sweeper/main.js` |
+     | db-migrate | `node dist/scripts/migrate.js`(`MIGRATIONS_DIR` 필요, #33) |
+
+   - 이미지 안 경로는 저장소 구조를 따른다.
+
+     | 무엇 | 이미지 안 경로 | 설정 값 |
+     |---|---|---|
+     | 앱 서버 빌드 결과 | `/app/api/dist` | |
+     | SQL 마이그레이션 | `/app/db/migrations` | `MIGRATIONS_DIR` |
+     | API 계약 | `/app/contracts` | `CONTRACTS_DIR` |
+     | 모델 매니페스트 | `/app/models/manifest.yaml` | `MODEL_MANIFEST` |
+
+3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 실제 모델은 [미검증]이다.
+   - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
+   - #16(Windows WSL)과 #43(맥)에서 `docker stats` 최대치를 재서 실제 모델을 켤 PC와 worker 메모리 한도를 정한다.
+   - [추론] 메모리가 모자라 worker가 죽으면 재시작되고, 맡던 작업은 점유 60초가 지난 뒤 다시 시도된다. 3번 실패하면 "결과 미도달"이다(`limits.yaml` `claim.seconds 60`, `retry.max_attempts 3`).
+4. **데이터와 비밀 값.**
+
+   | 저장 | 방식 | 쓰기 | 읽기 | 경로(설정 값) |
+   |---|---|---|---|---|
+   | DB 자료 | 이름 있는 볼륨 | db | | `/var/lib/mysql` |
+   | 작품 파일 | 이름 있는 볼륨 | app-api · sweeper · worker-cpu | model-api | `STORAGE_ROOT` |
+   | 작업자 상태 | 이름 있는 볼륨 | worker-cpu | model-api | `UAM_RUN_DIR` |
+   | 모델 가중치 | 호스트 `models/hf` → `/models/hf` 읽기 전용 | 없음 | model-api · worker-cpu | `MODEL_ROOT=/models` |
+   | 모델 쓰기 캐시 | 작업자 상태 볼륨 아래 | model-api · worker-cpu | | `HF_HOME` |
+
+   - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`을 둔다. [미검증] #42에서 네트워크를 끈 상태로 세 모델이 `ready`가 되는지 확인한다.
+   - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
+   - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
+5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
+   - **필수 동작(C 연결 층, 계약 근거):**
+     - [확인] 응답의 `state`는 처리 상태가 아니라 표시 상태다. 원본 액자가 걸린 작품은 판정 중·확정 대기에도 `exhibited`로 온다(SD_03 뷰 `v_artwork_display`). 그래서 `state`만으로 판단하지 않는다.
+
+       | 화면 판단 | 기준 |
+       |---|---|
+       | 진행 중(폴링 계속) | 상세 `stages`에 대기·실행 중 단계가 있다(목록은 `currentStage`가 null이 아님) |
+       | 확정 창 | `choices`에 확정 값(`animated`·`relief`·`frame`·`sculpture`)이 있고 `confirmedKind`가 null |
+       | 결정 창 | `choices`에 결정 값(`like`·`use_lower`·`frame`·`retake`)이 있다 |
+       | 실패 | `state`가 `failed`(고를 수 있는 것은 `choices`대로) |
+
+     - 폴링은 진행 중일 때만 3→6→10초, 숨긴 탭에서 멈춘다(기술 컨텍스트).
+     - 로그인이 만료되면(401) 다시 로그인 창으로 보낸다(#30).
+     - 중복 제출은 계약이 이미 막는다(업로드 `Idempotency-Key`, 확정은 같은 값이면 200, 결정은 회차당 1회). 화면은 처리 중 버튼만 잠근다.
+     - 파일 주소(`/v1/files/{token}`)는 계약에 [추론] 5분 만료로 적혀 있어, 실패하면 상세를 다시 읽는다.
+     - 서버에 닿지 않으면 알리고 다시 시도하게 한다. 기기 저장으로 몰래 바꾸지 않는다(3-3).
+   - **화면 배치(B가 #29·#38·#39에서 정함):** 로그인 창 위치, 확정·결정 알림과 창의 모양·위치. #19의 초안은 제안일 뿐이다.
+6. **기동·준비 상태·종료.**
+
+   | 서비스 | 준비됨의 기준 | 먼저 끝나야 하는 것 |
    |---|---|---|
-   | DB 자료(이름 있는 볼륨) | db | `/var/lib/mysql` |
-   | 작품 파일(이름 있는 볼륨) | app-api · sweeper · model-api · worker-cpu | `STORAGE_ROOT` |
-   | 작업자 상태(이름 있는 볼륨) | model-api · worker-cpu | `UAM_RUN_DIR` |
-   | 모델 가중치(저장소의 `models/`를 읽기 전용으로) | model-api · worker-cpu | `MODEL_ROOT` |
-
-   가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 `models/hf/`에 둔다(`.gitignore`로 저장소에 올리지 않음). 비밀 값은 `secrets:`로 넣는다(3-2 "비밀 값").
-5. **연결.** 3-3 표의 각 줄을 실제 경로와 응답 칸으로 #19에 정리했다. 화면 흐름은 다음을 기본으로 하고, 창 위치는 신지현이 #29·#38·#39에서 고칠 수 있다.
-   - 로그인·가입: 3D 미술관에 들어가기 전 첫 화면(지금 가족 고르기 자리). 로그인 직후 아이를 고른다.
-   - 사진 올리기: 지금 올리기 창에서 기기 처리 대신 서버로 보낸다. 202 응답에서 이미 원본 액자로 걸려 있다.
-   - 상태 묻기: `received`·`judging`·`processing`일 때만 3→6→10초, 숨긴 탭에서는 멈춘다. `cutoutUrl`은 분리 단계(M1)가 끝난 뒤 채워진다.
-   - 확정·결정 창: 상태가 `awaiting_confirm`·`awaiting_review`가 되면 화면 아래 알림을 띄우고, 누르면 작은 창을 연다. 서버가 준 `choices`만 누를 수 있다.
-   - 파일 주소(`/v1/files/{token}`)는 5분 뒤 만료되므로 만료되면 상세를 다시 읽는다.
-   - 서버에 닿지 않으면 화면 위 알림과 다시 시도 버튼을 보이고, 기기 저장으로 몰래 바꾸지 않는다.
-6. **기동.**
-
-   | 서비스 | 준비됨의 기준 | 먼저 준비돼야 하는 것 |
-   |---|---|---|
-   | db | 공식 확인 스크립트 `healthcheck.sh --connect --innodb_initialized` | 없음 |
-   | db-migrate | `npm run db:migrate`가 끝남(다시 돌려도 안전, #18) | db healthy |
-   | app-api · sweeper | app-api `/live` 응답 | db-migrate `service_completed_successfully` |
-   | model-api | `/internal/ready` 본문의 `groups.cpu`가 `true`. 이 경로는 준비 전에도 200을 돌려주므로 본문을 본다 | db healthy |
-   | worker-cpu | 상태 파일 갱신(60초 넘게 멈추면 model-api가 멈춤으로 본다, `serving/common/model_state.py`) | db healthy |
+   | db | 공식 스크립트 `healthcheck.sh --connect --innodb_initialized`(DB 접속 가능) | 없음 |
+   | db-migrate | `node dist/scripts/migrate.js`(+ 개발 환경 모델 첫 활성)가 성공으로 끝남(스키마 준비 완료) | db healthy |
+   | app-api | `/live` 응답 | db-migrate `service_completed_successfully` |
+   | sweeper | 프로세스가 살아 있음 | db-migrate 완료 |
+   | model-api | `/internal/ready`가 HTTP로 응답(자기 프로세스) | db-migrate 완료 |
+   | worker-cpu | 상태 파일이 60초 안에 갱신됨 | db-migrate 완료 |
    | web | `/` 응답 | app-api healthy |
    | mailpit | 없음 | 없음 |
 
-   모든 서비스에 `restart: unless-stopped`와 `init: true`를 준다. Node·Python이 컨테이너의 1번 프로세스면 종료 신호를 기본 처리하지 못해 `docker compose stop`이 10초를 기다린다. `init: true`를 주면 바로 끝난다.
+   - [확인] 워커는 시작할 때 `model_version`을 조회하고(`runner.py` 62행), 실행 중에도 20초마다 다시 조회한다(354행). 둘 다 오류를 잡는 범위 밖이라 DB 오류가 나면 프로세스가 끝나고, 재시작 정책이 다시 띄운다. 작업을 가져오는 중의 DB 오류만 기다렸다 다시 연결한다(361~364행). 그래서 스키마가 준비되기 전(db-migrate 완료 전)에는 띄우지 않는다.
+   - [확인] `/internal/ready` 본문의 `groups.cpu`는 "cpu 워커의 상태 파일이 60초 안에 갱신됐다"(워커 생존)는 뜻이다. 모델 준비는 `models[].load.state`로 따로 본다. 그래서 `groups.cpu`를 model-api의 상태 검사로 쓰지 않고, 모델 준비는 #41·#42의 확인 항목으로 둔다.
+   - [확인] `init: true`는 종료 신호를 전달하고 좀비 프로세스를 거둘 뿐이다. app-api·sweeper는 종료 신호 처리가 없어 즉시 끝난다. [추론] 커밋하지 않은 DB 작업은 연결이 끊기면 DB가 되돌린다. 워커는 종료 신호를 받으면 멈춤 표시를 하지만(`serving/workers/main.py` 15행), 진행 중 작업이 `docker compose stop`의 10초 안에 끝나지 않으면 강제 종료되고, 점유 60초가 지난 뒤 sweeper가 이어받는다. [미검증] #41에서 "작업 도중 worker를 멈추고 다시 켜면 그 작업이 이어받아져 끝난다"를 확인한다.
 
 **기존 코드 수정 판정(#33·#34·#35).**
 
 | 이슈 | 판정 | 근거 |
 |---|---|---|
-| #33 마이그레이션 경로 | **고친다(1줄).** 마이그레이션 폴더를 설정 값(`MIGRATIONS_DIR`)으로 받는다. 기본값은 지금 경로 | 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다(2026-10-30 `tsc` 확인) |
-| #34 워커 준비 상태 | **고치지 않는다.** compose 상태 확인만 본문을 본다 | 상태 파일이 60초 넘게 멈추면 이미 멈춤으로 본다(`STALE_AFTER_S = 60`) |
-| #35 sweeper 종료 | **고치지 않는다.** compose `init: true` | 한 번 다 돈 뒤 다음 차례를 잡아 겹치지 않는다. 도중에 꺼져도 DB 작업은 되돌려지고 다음 sweeper가 이어받는다 |
+| #33 DB 초기화 | **고친다.** 마이그레이션 폴더를 설정 값(`MIGRATIONS_DIR`)으로 받고(1줄), 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
+| #34 워커 준비 상태 | 코드는 고치지 않는다. 상태 검사 기준만 위 표대로 | [확인] 상태 파일이 60초 넘게 멈추면 이미 멈춤으로 본다(`STALE_AFTER_S = 60`) |
+| #35 sweeper 종료 | 코드는 고치지 않는다. `init: true`는 신호 전달용으로만 쓴다 | [확인] 한 번 다 돈 뒤 다음 차례를 잡아 겹치지 않는다(`setTimeout`). 이어받기는 #41에서 확인한다 |
 
 ## 4. 역할 배정
 
