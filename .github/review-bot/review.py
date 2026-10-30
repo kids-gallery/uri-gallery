@@ -329,7 +329,8 @@ def ai_review(ctx: dict, rules: dict) -> tuple[bool, str, list[dict]]:
         why = f"HTTP {e.code}" if isinstance(e, urllib.error.HTTPError) else type(e).__name__
         if isinstance(e, urllib.error.HTTPError):
             raw = e.read()
-        print(f"[AI 검토 실패] {why}: {raw[:300]!r}", file=sys.stderr)  # 원인은 실행 기록에만 남긴다
+        # 원인은 실행 기록에만 남긴다. 앞은 thinking 서명뿐이라 stop_reason·답이 있는 끝도 남긴다
+        print(f"[AI 검토 실패] {why}: 앞 {raw[:200]!r} … 끝 {raw[-400:]!r}", file=sys.stderr)
         return False, f"AI 검토를 하지 못했다({why}). 규칙 검사로만 판정했다.", []
 
 
