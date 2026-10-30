@@ -1,11 +1,11 @@
-// T035 시험: 문구 사전이 문서(docs/C/C_화면문구.md)의 사유 코드를 모두 덮고, 금지 표현이 없다.
+// T035 시험: 문구 사전이 문서(docs/기록/C/C_화면문구.md)의 사유 코드를 모두 덮고, 금지 표현이 없다.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ko, problemCopy, problemKeys } from '../copy/ko';
 import { josa } from '../copy/josa';
 
-const doc = readFileSync(resolve(process.cwd(), '../docs/C/C_화면문구.md'), 'utf8');
+const doc = readFileSync(resolve(process.cwd(), '../docs/기록/C/C_화면문구.md'), 'utf8');
 
 describe('화면 문구(T035)', () => {
   it('문서 §3의 reason 코드가 모두 사전에 있다(리다이렉트 전용 제외)', () => {

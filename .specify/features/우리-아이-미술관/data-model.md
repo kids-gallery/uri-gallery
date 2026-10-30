@@ -40,7 +40,7 @@
 | `awaiting_review` | `awaiting_review` | 확인 대기 | |
 | `failed` | `failed` | 처리하지 못함 | 결과 단계 소진(G9). 이전 초안의 `unprocessable` |
 | `approved` | `approved` | 승인됨 | |
-| (저장 안 함) | `exhibited` | 전시 중 | `v_artwork_display.display_status='exhibited'` = 승인 + 필수 이야기(G12) → **D34: 걸림(`artwork.hung_result_id`) + 제목 · 그린 날**. 올리기 트랜잭션이 원본 액자 결과를 만들어 바로 건다. 상태(`status`)는 권유 · 다시 만들기 진행만 나타낸다(`docs/B/B_D34_설계반영안_2026-09-30.md`) |
+| (저장 안 함) | `exhibited` | 전시 중 | `v_artwork_display.display_status='exhibited'` = 승인 + 필수 이야기(G12) → **D34: 걸림(`artwork.hung_result_id`) + 제목 · 그린 날**. 올리기 트랜잭션이 원본 액자 결과를 만들어 바로 건다. 상태(`status`)는 권유 · 다시 만들기 진행만 나타낸다(`docs/기록/B/B_D34_설계반영안_2026-09-30.md`) |
 | `deleting` | (목록에서 제외) | 삭제 중 | 과도 상태(D4). 트리거가 새 작업·이야기·설명을 막음 |
 
 ### 2.2 단계 작업 `stage_job`

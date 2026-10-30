@@ -1,4 +1,4 @@
-// D34 시험(올리면 원본 액자로 바로 전시): docs/B/B_D34_설계반영안_2026-09-30.md §7 — 자동 이야기 · 촬영일 · 나이 미정 · 걸린 채 다시 만들기 · 걸린 결과 트리거.
+// D34 시험(올리면 원본 액자로 바로 전시): docs/기록/B/B_D34_설계반영안_2026-09-30.md §7 — 자동 이야기 · 촬영일 · 나이 미정 · 걸린 채 다시 만들기 · 걸린 결과 트리거.
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';

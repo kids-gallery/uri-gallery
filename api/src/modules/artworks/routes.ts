@@ -1,5 +1,5 @@
 // 작품 접수·상세·목록·확정(T061~T063·T078, UC2·UC3, FR-2·3·21, G5·G6·G8·G17, BR-INT-01~05, BR-SUG-03·05, stage-job §2).
-// D34: 올리면 원본 액자로 바로 건다(hung_result_id) · 이야기 자동 채우기 · 걸린 뒤 다시 만들기(docs/B/B_D34_설계반영안_2026-09-30.md).
+// D34: 올리면 원본 액자로 바로 건다(hung_result_id) · 이야기 자동 채우기 · 걸린 뒤 다시 만들기(docs/기록/B/B_D34_설계반영안_2026-09-30.md).
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';

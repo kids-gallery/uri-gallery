@@ -32,7 +32,7 @@
 | 상태·전이 변경 | REF §5 · UC 사후조건 · SD_01 도면 · SD_02 상태 전이 절 · SD_03 CHECK |
 | 테이블·컬럼·제약·트리거·뷰 | `uri_gallery_ddl.sql` → `db/migrations/0001_sd03_baseline.sql` 복사(같아야 함) · SD_03 ERD(전체 §4 + 영역 절)·엔티티 표·§14·§15·§18 개수와 검증 · SD_04 §3-3 배정 · data-model §1·§3·§4 |
 | 기존 DB에 들어가야 하는 스키마 변경 | DDL 안에 멱등 ALTER(`ADD COLUMN IF NOT EXISTS`, 제약은 `DROP CONSTRAINT IF EXISTS` 뒤 `ADD`) |
-| 화면·버튼·문구·라우트 | SD_02 해당 S# 와이어프레임·영역·상호작용·상태 전이 · §2-1(역할) · §2-2(지도) · `docs/C/C_화면문구.md` |
+| 화면·버튼·문구·라우트 | SD_02 해당 S# 와이어프레임·영역·상호작용·상태 전이 · §2-1(역할) · §2-2(지도) · `docs/기록/C/C_화면문구.md` |
 | 워커·어댑터·큐 규칙 | `contracts/stage-job.md`(정본·사본) · SD_04 §4~§8 · SD_01 P0(§3) |
 | 서빙 모듈·배치·pm2·포트 | SD_04 · plan 기술 컨텍스트 · CLAUDE.md 기술 컨텍스트 표 |
 | 기능 요구 추가 | spec FR 목록·본문·개정 이력 · tasks(새 T번호) |

@@ -7,7 +7,7 @@
 
 - **같은 main 작업 폴더에 세션이 여럿이다.** 커밋은 자기 파일만 add, 공유 파일(SD_02·tasks.md 등)은 hunk 단위로. 16:00에 SD_02의 D20 변경이 다른 커밋에 섞였다가 바로잡은 일이 있다(79c461b·5db616a).
 - **요청은 "작업 브랜치에 커밋, main 병합 금지"다.** 브랜치 전환은 다른 세션 작업을 흔드니 git worktree(`.worktrees/<이름>`)를 쓴다(이제민1이 `.worktrees/museum-home`을 같은 방식으로 쓴다). **worktree 안에 `serving/.venv` 링크를 커밋하지 말 것** — 16:15 병합(6a0eea9)에 섞여 main의 실제 가상환경을 지운 사고가 있었고 7130807로 복구했다.
-- **이미 있는 자료**: `docs/D/D_M3_AnimatedDrawings_시험기록.md` · `docs/D/D_M7_TripoSR_시험기록.md`(MPS 약 6초/장, 보완 2개 전제, 시험 폴더는 git 밖 약 1.4GB) · `docs/D/M1_BiRefNet_시험기록.md` · `serving/tests/test_real_m1·m2·m3·m5.py`(`UAM_REAL_MODELS=1`) · `serving/adapters/*` · `models/manifest.yaml`(전부 `license_confirmed: false`) · `docs/A/A_모델_라이선스_확정.md`(M2 보류 권고) · 집 그림 0.946 사례는 `7c4da1f`(T058) 시험에 있다.
+- **이미 있는 자료**: `docs/기록/D/D_M3_AnimatedDrawings_시험기록.md` · `docs/기록/D/D_M7_TripoSR_시험기록.md`(MPS 약 6초/장, 보완 2개 전제, 시험 폴더는 git 밖 약 1.4GB) · `docs/기록/D/M1_BiRefNet_시험기록.md` · `serving/tests/test_real_m1·m2·m3·m5.py`(`UAM_REAL_MODELS=1`) · `serving/adapters/*` · `models/manifest.yaml`(전부 `license_confirmed: false`) · `docs/기록/A/A_모델_라이선스_확정.md`(M2 보류 권고) · 집 그림 0.946 사례는 `7c4da1f`(T058) 시험에 있다.
 - **현재 판정 구조**: model-api 외부 기능 `FUNC_MODEL = segment:M1, classify:M2, pose:M3, relief:M5`(`serving/model_api/external.py:30`) · 확정 선택지 순서 `KIND_ORDER = animated, relief, frame, sculpture`(`web/src/app/artwork.ts:15`) · 결과 종류 CHECK·`stage_kind`·낮춤 체인은 `design/uri_gallery_ddl.sql`과 `db/migrations/0001_sd03_baseline.sql`.
 - **확인 필요**: 만들기 사진 여러 장(앞·옆·뒤)을 저장할 자리가 지금 스키마에 있는가 — `artwork_original`은 작품당 한 장 구조로 보인다.
 - **D20 모델 점검 API가 16:18부터 서버에 올라와 있다**(`/v1/ops/model-checks`, 점검 실행기 T155 배포 전). 오프라인 시험과 겹치지 않게 한다.

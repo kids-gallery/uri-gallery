@@ -1,4 +1,4 @@
-"""공유 Ollama 서버 클라이언트 — `docs/참고/Ollama 유저 가이드.md`(원본 /Users/Shared/ollama/ollama-user-guide.md) §2.2 템플릿을 따른다.
+"""공유 Ollama 서버 클라이언트 — `docs/기록/참고/Ollama 유저 가이드.md`(원본 /Users/Shared/ollama/ollama-user-guide.md) §2.2 템플릿을 따른다.
 
 가이드 규칙을 코드로 강제한다(표준 라이브러리만):
 - num_ctx 8192 고정(모든 요청·미리 올리기 포함). 다른 값은 받지 않는다 — 다르면 공용 모델이 다시 올라간다(§1.3, §1.7-1)

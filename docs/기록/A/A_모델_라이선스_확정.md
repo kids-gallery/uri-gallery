@@ -1,6 +1,6 @@
 # 모델 라이선스 확정 기록 (A2 · T069 · U4 · BR-MDL-07)
 
-> 작성: A 최호준 · 확인일 2026-09-29 · 기준: `docs/공통/팀원별_작업지시_프롬프트.md` A2, REF §2 모델 표·BR-MDL-06·07·D17, research R-03·R-22
+> 작성: A 최호준 · 확인일 2026-09-29 · 기준: `docs/_claude/팀원별_작업지시_프롬프트.md` A2, REF §2 모델 표·BR-MDL-06·07·D17, research R-03·R-22
 > 확인 방법: Hugging Face 모델 API(`/api/models/<id>`의 `cardData.license`)와 모델 카드, GitHub 저장소 API(`license.spdx_id`, `archived`)와 LICENSE 원문. 모두 같은 날 조회했다.
 > 이 문서는 **기록과 권고**다. 매니페스트·DB의 `license_confirmed`를 켜는 것은 §4의 팀 확정 뒤에 한다(G21·G22, SD_03 `chk_mv_license_active`).
 
