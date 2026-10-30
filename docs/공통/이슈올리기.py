@@ -181,6 +181,10 @@ def apply(issues: list[dict], repo: str) -> None:
         m = re.search(r"<!-- issue-id: (I-\d{2}) -->", row.get("body") or "")
         if m:
             numbers[m.group(1)] = row["number"]
+    have = {m["title"] for m in json.loads(gh("api", f"repos/{repo}/milestones?state=all&per_page=100"))}
+    for day in dict.fromkeys(it["day"][1] for it in issues):   # 날짜별 마일스톤(제목의 날짜에서 만든다)
+        if day not in have:
+            gh("api", f"repos/{repo}/milestones", "-f", f"title={day}")
     for it in issues:   # 1차: 없는 것만 올린다
         if it["id"] in numbers:
             print(f"{it['id']} 이미 있음 #{numbers[it['id']]}")
@@ -193,7 +197,7 @@ def apply(issues: list[dict], repo: str) -> None:
         print(f"{it['id']} 올림 #{numbers[it['id']]} {full_title(it)}")
     for it in issues:   # 2차: 선행 I-번호를 실제 #번호로 바꾼다
         gh("issue", "edit", str(numbers[it["id"]]), "-R", repo, "--title", full_title(it), "--body-file", "-",
-           stdin=build_body(it, numbers))
+           "--milestone", it["day"][1], stdin=build_body(it, numbers))
     print("선행 번호를 실제 이슈 번호로 바꿨다.")
     print("\n| I-번호 | GitHub |\n|---|---|\n" + "\n".join(f"| {k} | #{v} |" for k, v in sorted(numbers.items())))
 
