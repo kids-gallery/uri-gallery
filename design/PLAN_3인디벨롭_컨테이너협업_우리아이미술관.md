@@ -65,6 +65,8 @@
 
 - **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
+**권유 확정 창(#38).** 상태 묻기가 받은 상세에서 `state`가 `awaiting_review`·`failed`가 아니고 `confirmedKind`가 null이며 `choices`가 있으면 화면 아래 알림에 연다. 보호자가 눌러야 창이 뜨며 자동으로 선택하지 않는다. `choices`만 활성 버튼으로, `unavailableChoices`는 이유와 함께 비활성으로 보인다. `confirmKind`로 확정하고 성공 후 `artWatch.add([id])`로 상태 묻기를 잇는다. 409는 상세를 다시 읽어 선택지를 갱신한다.
+
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
 `store.ts`(기기 저장) 옆에 서버를 쓰는 층을 하나 두고, 작품 관련 부분만 서버로 바꾼다.

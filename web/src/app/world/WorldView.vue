@@ -17,6 +17,7 @@ import { deleteArtwork, failureOf, failureReason } from './server';
 import { galleryFailure, isStale, movingIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
+import WorldConfirm from './WorldConfirm.vue';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
 import WorldPrivacy from './WorldPrivacy.vue';
@@ -433,6 +434,8 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
+const confirmOpenId = ref<string | null>(null);
+const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.some((c) => ['animated','relief','frame','sculpture'].includes(c))) ?? null);
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
@@ -718,6 +721,10 @@ function openSettings() {
     <section v-if="worldFailure && phase==='ready'" class="w-nudge g-panel" role="status" aria-label="작품 처리 상태">
       <span>{{ failureReason(worldFailure) }}</span>
       <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
+    </section>
+    <section v-if="SERVER_WORLD && confirmPrompt && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
+      <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
+      <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
     </section>
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
@@ -1043,6 +1050,7 @@ function openSettings() {
         @close="closePanel"
       />
 
+      <WorldConfirm v-if="confirmOpenId && confirmPrompt?.id === confirmOpenId" :detail="confirmPrompt" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.add([d.id]); }" @refreshed="(d) => { if (!d.choices.length) confirmOpenId=null; }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>
