@@ -4,7 +4,7 @@
 // - 서버에 닿지 않아도 기기 저장(store.ts)으로 바꾸지 않는다. 창은 failureOf의 종류대로 알리고 다시 시도하게 한다.
 import { api, ApiError } from '@/api/client';
 import type { components, paths } from '@/api/types.gen';
-import type { ArtworkDetail } from '@/app/artwork';
+import type { ArtworkDetail, ArtworkSummary } from '@/app/artwork';
 import { problemCopy } from '@/copy/ko';
 import type { GuardianMe } from '@/stores/session';
 
@@ -17,7 +17,7 @@ export type Child = components['schemas']['Child'];
 export type Gallery = components['schemas']['Gallery'];
 export type ConfirmKind = Json<'/v1/artworks/{artworkId}/confirm', 'post'>['kind'];
 export type Decision = Json<'/v1/artworks/{artworkId}/decision', 'post'>['decision'];
-export type { ArtworkDetail, GuardianMe };
+export type { ArtworkDetail, ArtworkSummary, GuardianMe };
 
 const o = { noRedirect: true } as const;
 // 인증된 호출에서만 만료를 알린다. 로그인 입력 오류의 401은 여기에 넣지 않는다.
@@ -48,7 +48,9 @@ export function uploadArtwork(childId: string, photo: Blob, key: string) {
   form.append('photo', photo);
   return authenticated(api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } }));
 }
+export const listArtworks = () => authenticated(api.get<ArtworkSummary[]>('/v1/artworks', o));
 export const getArtwork = (id: string) => authenticated(api.get<ArtworkDetail>(art(id), o));
+export const deleteArtwork = (id: string) => authenticated(api.del<void>(art(id), o));
 export const confirmKind = (id: string, kind: ConfirmKind) => authenticated(api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } }));
 export const decide = (id: string, decision: Decision) =>
   authenticated(api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } }));

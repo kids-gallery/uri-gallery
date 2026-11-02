@@ -44,11 +44,20 @@ describe('요청 경로·쿠키·응답', () => {
     expect(d).toEqual({ artwork: null, retake: { childId: 'c1' } });
   });
 
-  it('전시 목록은 아이를 고를 때만 child 조건을 붙인다', async () => {
-    const f = stub(json(200, {}), json(200, {}));
+  it('전시 목록은 아이를 지정해 읽는다(계약상 필수)', async () => {
+    const f = stub(json(200, {}));
     await server.gallery('c1');
-    await server.gallery();
-    expect([call(f, 0).url, call(f, 1).url]).toEqual(['/v1/gallery?child=c1', '/v1/gallery']);
+    expect(call(f).url).toBe('/v1/gallery?child=c1');
+  });
+
+  it('작품 지우기: DELETE를 보내고 화면을 옮기지 않는다', async () => {
+    const nav = { toLogin: vi.fn(), toNoFamily: vi.fn() };
+    setNavigator(nav);
+    const f = stub(new Response(null, { status: 202 }), problem(401, 'unauthorized', 'login_required', 'G0'));
+    await server.deleteArtwork('a/1');
+    expect(call(f)).toMatchObject({ url: '/v1/artworks/a%2F1', init: { method: 'DELETE' } });
+    expect(server.failureOf(await caught(server.deleteArtwork('a1')))).toEqual({ kind: 'login' });
+    expect(nav.toLogin).not.toHaveBeenCalled();
   });
 });
 

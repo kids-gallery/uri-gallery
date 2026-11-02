@@ -4,6 +4,8 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { installTransitions } from './transitions';
 
 export const worldOnlyRoutes: RouteRecordRaw[] = [
+  { path: '/app/signup', component: () => import('@/app/world/WorldSignup.vue'), meta: { shell: 'app', public: true } },
+  { path: '/app/verify', component: () => import('@/app/world/WorldVerify.vue'), meta: { shell: 'app', public: true } },
   { path: '/app/world', component: () => import('@/app/world/WorldSession.vue'), meta: { shell: 'app', public: true } },
   { path: '/:pathMatch(.*)*', redirect: '/app/world' },
 ];
