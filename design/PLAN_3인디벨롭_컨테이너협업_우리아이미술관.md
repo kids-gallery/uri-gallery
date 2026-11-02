@@ -79,8 +79,8 @@
 
 **서버 연결 층(`web/src/app/world/server/`, #28).** 3D 화면의 창들은 서버를 이 층으로만 부른다.
 
-- 새 HTTP 코드를 만들지 않는다. `/app` 화면이 쓰는 `web/src/api/client.ts`(같은 출처·쿠키 세션·Problem Details → `ApiError`)와 `web/src/app/artwork.ts`(작품 타입·`loadArtwork`)를 그대로 쓴다. 이 층에는 #19 대응표 한 줄에 함수 하나만 둔다: `signup`·`verifyEmail`·`resendVerify`·`login`·`logout`·`me`·`listChildren`·`addChild`·`uploadArtwork`·`getArtwork`·`confirmKind`·`decide`·`gallery`.
-- 모든 호출은 `noRedirect`로 부른다. 401이 와도 `/app/login`으로 화면을 옮기지 않고, 3D 화면 안의 로그인 창(#30)을 연다.
+- 새 HTTP 코드를 만들지 않는다. `/app` 화면이 쓰는 `web/src/api/client.ts`(같은 출처·쿠키 세션·Problem Details → `ApiError`)와 `web/src/app/artwork.ts`의 작품 타입을 그대로 쓴다. `loadArtwork`는 `noRedirect` 없이 부르는 `/app` 화면용이라 쓰지 않는다. 이 층에는 #19 대응표 한 줄에 함수 하나만 둔다: `signup`·`verifyEmail`·`resendVerify`·`login`·`logout`·`me`·`listChildren`·`addChild`·`uploadArtwork`·`getArtwork`·`confirmKind`·`decide`·`gallery`.
+- 모든 호출은 `noRedirect`로 부른다. 401이나 409 `no_family`가 와도 `/app/login` 등으로 화면을 옮기지 않고, 3D 화면 안에서 처리한다(401은 로그인 창 #30).
 - 오류는 `failureOf(e)` 하나로 세 가지로 나눠 창에 넘긴다.
 
 | 종류 | 언제 | 창이 할 일 |

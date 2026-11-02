@@ -61,6 +61,17 @@ describe('오류 전달(failureOf)', () => {
     expect(nav.toLogin).not.toHaveBeenCalled();
   });
 
+  it('작품 상세의 401·409 no_family도 화면을 옮기지 않고 3D 화면에 넘긴다', async () => {
+    const nav = { toLogin: vi.fn(), toNoFamily: vi.fn() };
+    setNavigator(nav);
+    const f = stub(problem(401, 'unauthorized', 'login_required', 'G0'), problem(409, 'conflict', 'no_family', 'G0'));
+    expect(server.failureOf(await caught(server.getArtwork('a/1')))).toEqual({ kind: 'login' });
+    expect(server.failureOf(await caught(server.getArtwork('a/1')))).toMatchObject({ kind: 'refused' });
+    expect(call(f).url).toBe('/v1/artworks/a%2F1');
+    expect(nav.toLogin).not.toHaveBeenCalled();
+    expect(nav.toNoFamily).not.toHaveBeenCalled();
+  });
+
   it('네트워크 실패와 5xx는 offline', async () => {
     stub(new TypeError('Failed to fetch'), problem(502, 'internal', 'internal', null));
     expect(server.failureOf(await caught(server.listChildren()))).toEqual({ kind: 'offline' });

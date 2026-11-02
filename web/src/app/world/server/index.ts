@@ -4,7 +4,7 @@
 // - 서버에 닿지 않아도 기기 저장(store.ts)으로 바꾸지 않는다. 창은 failureOf의 종류대로 알리고 다시 시도하게 한다.
 import { api, ApiError } from '@/api/client';
 import type { components, paths } from '@/api/types.gen';
-import { loadArtwork, type ArtworkDetail } from '@/app/artwork';
+import type { ArtworkDetail } from '@/app/artwork';
 import { problemCopy } from '@/copy/ko';
 import type { GuardianMe } from '@/stores/session';
 
@@ -39,7 +39,7 @@ export function uploadArtwork(childId: string, photo: Blob, key: string) {
   form.append('photo', photo);
   return api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } });
 }
-export const getArtwork = (id: string) => loadArtwork(id);
+export const getArtwork = (id: string) => api.get<ArtworkDetail>(art(id), o);
 export const confirmKind = (id: string, kind: ConfirmKind) => api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } });
 export const decide = (id: string, decision: Decision) =>
   api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } });
