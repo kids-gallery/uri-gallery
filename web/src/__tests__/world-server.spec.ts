@@ -94,3 +94,22 @@ describe('오류 전달(failureOf)', () => {
     expect(server.failureOf(new Error('x'))).toEqual({ kind: 'offline' });
   });
 });
+
+it('잘못된 비밀번호와 failureOf는 만료를 알리지 않고 인증된 작품 호출만 알린다', async () => {
+  const expired = vi.fn();
+  window.addEventListener('world-session-expired', expired);
+  try {
+    stub(problem(401, 'unauthorized', 'login_required', 'G0'));
+    const e = await caught(server.login({email:'a@b.c',password:'wrong'}));
+    expect(server.failureOf(e)).toEqual({kind:'login'});
+    expect(expired).not.toHaveBeenCalled();
+    stub(problem(401, 'unauthorized', 'login_required', 'G0'));
+    await caught(server.getArtwork('a1'));
+    expect(expired).toHaveBeenCalledTimes(1);
+    stub(problem(401, 'unauthorized', 'login_required', 'G0'));
+    await caught(server.me());
+    expect(expired).toHaveBeenCalledTimes(2);
+  } finally {
+    window.removeEventListener('world-session-expired', expired);
+  }
+});

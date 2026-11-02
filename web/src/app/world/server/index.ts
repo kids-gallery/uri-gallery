@@ -20,6 +20,15 @@ export type Decision = Json<'/v1/artworks/{artworkId}/decision', 'post'>['decisi
 export type { ArtworkDetail, GuardianMe };
 
 const o = { noRedirect: true } as const;
+// 인증된 호출에서만 만료를 알린다. 로그인 입력 오류의 401은 여기에 넣지 않는다.
+async function authenticated<T>(request: Promise<T>): Promise<T> {
+  try {
+    return await request;
+  } catch (e) {
+    if (failureOf(e).kind === 'login') window.dispatchEvent(new Event('world-session-expired'));
+    throw e;
+  }
+}
 const art = (id: string, tail = '') => `/v1/artworks/${encodeURIComponent(id)}${tail}`;
 
 export const signup = (body: Json<'/v1/auth/signup', 'post'>) => api.post<void>('/v1/auth/signup', { ...o, body });
@@ -27,36 +36,40 @@ export const verifyEmail = (token: string) => api.post<void>('/v1/auth/email/ver
 export const resendVerify = (email: string) => api.post<void>('/v1/auth/email/verify/resend', { ...o, body: { email } });
 export const login = (body: Json<'/v1/auth/login', 'post'>) => api.post<void>('/v1/auth/login', { ...o, body });
 export const logout = () => api.post<void>('/v1/auth/logout', o);
-export const me = () => api.get<GuardianMe>('/v1/me', o);
+export const me = () => authenticated(api.get<GuardianMe>('/v1/me', o));
 
-export const listChildren = () => api.get<Child[]>('/v1/children', o);
-export const addChild = (alias: string) => api.post<Child>('/v1/children', { ...o, body: { alias } });
+export const listChildren = () => authenticated(api.get<Child[]>('/v1/children', o));
+export const addChild = (alias: string) => authenticated(api.post<Child>('/v1/children', { ...o, body: { alias } }));
 
 /** 다시 보낼 때는 같은 key를 넘긴다. 서버가 기존 작품을 돌려줘 작품이 두 번 생기지 않는다(계약 Idempotency-Key). */
 export function uploadArtwork(childId: string, photo: Blob, key: string) {
   const form = new FormData();
   form.append('childId', childId);
   form.append('photo', photo);
-  return api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } });
+  return authenticated(api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } }));
 }
-export const getArtwork = (id: string) => api.get<ArtworkDetail>(art(id), o);
-export const confirmKind = (id: string, kind: ConfirmKind) => api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } });
+export const getArtwork = (id: string) => authenticated(api.get<ArtworkDetail>(art(id), o));
+export const confirmKind = (id: string, kind: ConfirmKind) => authenticated(api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } }));
 export const decide = (id: string, decision: Decision) =>
-  api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } });
-export const gallery = (childId?: string) => api.get<Gallery>('/v1/gallery', { ...o, query: { child: childId } });
+  authenticated(api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } }));
+export const gallery = (childId?: string) => authenticated(api.get<Gallery>('/v1/gallery', { ...o, query: { child: childId } }));
 
 export type Failure =
   | { kind: 'offline' }
   | { kind: 'login' }
   | { kind: 'refused'; reason: string; fields: { name: string; reason: string }[] };
 
+/** 창에 보일 문장. 화면 글에 "서버"를 쓰지 않는다(D48) */
+export function failureReason(f: Failure): string {
+  if (f.kind === 'offline') return '미술관에 연결되지 않아요. 다시 시도해 주세요';
+  if (f.kind === 'login') return '로그인이 필요해요. 로그인한 뒤 다시 시도해 주세요';
+  return f.reason;
+}
+
 /** 창에 넘길 오류 종류(마스터플랜 3-3 표). ApiError가 아닌 것(코드 오류 등)도 서버에 닿지 않은 것으로 다룬다. */
 export function failureOf(e: unknown): Failure {
   if (!(e instanceof ApiError) || e.unavailable) return { kind: 'offline' };
-  if (e.status === 401) {
-    window.dispatchEvent(new Event('world-session-expired'));
-    return { kind: 'login' };
-  }
+  if (e.status === 401) return { kind: 'login' };
   const fields = (e.problem?.fields ?? []).map((f) => ({ name: f.name ?? '', reason: f.reason ?? '' }));
   return { kind: 'refused', reason: problemCopy({ gate: e.gate, reason: e.reason, code: e.code }).reason, fields };
 }
