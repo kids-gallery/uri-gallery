@@ -1,0 +1,11 @@
+{
+  "model": "M2",
+  "device": "cpu",
+  "revision": "1a25a446712ba5ee05982a381eed697ef9b435cf",
+  "input": "256x256 합성 그림 한 장",
+  "load_s": 9.154,
+  "inference_s": 0.157,
+  "process_peak_rss_mib": 1488.1,
+  "outcome": "ok",
+  "diagnostic": null
+}

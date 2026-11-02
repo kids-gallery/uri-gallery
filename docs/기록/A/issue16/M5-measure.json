@@ -1,0 +1,12 @@
+{
+  "model": "M5",
+  "device": "cpu",
+  "revision": "5426e4f0f36572d16453bbda7a8389317b1bef99",
+  "input": "256x256 합성 컷아웃 한 장",
+  "load_s": 2.032,
+  "inference_s": 1.889,
+  "process_peak_rss_mib": 629.3,
+  "outcome": "ok",
+  "diagnostic": null,
+  "output_valid": true
+}
