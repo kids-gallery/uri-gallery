@@ -25,5 +25,5 @@ export default defineConfig(({ mode }) => ({
   },
   server: { host: '127.0.0.1', port, strictPort: true, proxy },
   preview: { host: '127.0.0.1', port, strictPort: true, proxy },
-  test: { environment: 'jsdom', include: ['src/**/*.spec.ts'] },
+  test: { environment: 'jsdom', include: ['src/**/*.spec.ts'], testTimeout: 30_000 }, // 메모리 7.7GB PC와 부하가 높은 맥에서 무거운 시험이 기본 5초를 넘는다
 }));
