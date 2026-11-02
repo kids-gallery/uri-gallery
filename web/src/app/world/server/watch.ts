@@ -1,7 +1,7 @@
 // 3D 화면 작품 상태 묻기(마스터플랜 3-3, 3-5 5번, #37). 진행 중인 작품만 묻고, 통신 실패를 창에 넘긴다.
-// - 간격, 숨긴 탭, 화면을 벗어날 때 멈추기는 /app과 같은 usePolling(3→6→10초)이 맡는다.
+// - 간격과 숨긴 탭은 /app과 같은 usePolling(3→6→10초)이 맡는다.
 // - 묻는 작품은 이 화면의 메모리에만 둔다. 서버 목록으로 다시 읽는 일은 #40.
-import { ref, shallowRef } from 'vue';
+import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue';
 import { usePolling } from '@/composables/usePolling';
 import { failureOf, getArtwork, type ArtworkDetail, type Failure } from './index';
 
@@ -69,5 +69,7 @@ export function useArtworkWatch() {
     failure.value = null;
   }
 
+  // usePolling은 타이머만 멈춘다. 다시 시도를 기다리는 중에 화면을 벗어나면 그 뒤의 poll.start()까지 막아야 한다(watching이 비어 ask가 false를 돌려준다)
+  if (getCurrentScope()) onScopeDispose(clear);
   return { details, failure, retrying, add, retry, clear };
 }

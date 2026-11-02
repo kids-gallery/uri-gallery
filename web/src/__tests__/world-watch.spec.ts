@@ -202,6 +202,37 @@ describe('늦게 도착한 옛 응답', () => {
     expect(n).toBeGreaterThanOrEqual(3); // 옛 응답의 done 때문에 멈추지 않는다
   });
 
+  it('다시 시도를 기다리는 중에 화면을 벗어나면, 응답이 와도 묻기가 되살아나지 않는다', async () => {
+    let release: (r: Response) => void = () => undefined;
+    const f = server(() => new Promise<Response>((r) => { release = r; }));
+    const w = start();
+    w.add(['a1']);
+    const retried = w.retry();
+    scope.stop();
+    release(art('a1', 'running'));
+    await retried;
+    expect(w.details.value.size).toBe(0);
+    await flush(60000);
+    expect(f).toHaveBeenCalledTimes(1);
+    visibility = 'hidden'; document.dispatchEvent(new Event('visibilitychange'));
+    visibility = 'visible'; document.dispatchEvent(new Event('visibilitychange'));
+    await flush(0);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('자동 묻기를 기다리는 중에 화면을 벗어나도 늦은 응답을 넣지 않는다', async () => {
+    let release: (r: Response) => void = () => undefined;
+    const f = server(() => new Promise<Response>((r) => { release = r; }));
+    const w = start();
+    w.add(['a1']);
+    await flush(3000);
+    scope.stop();
+    release(art('a1', 'running'));
+    await flush(60000);
+    expect(w.details.value.size).toBe(0);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
   it('다시 시도 뒤에 도착한 옛 실패는 안내를 띄우지 않는다', async () => {
     let fail: (r: Response) => void = () => undefined;
     let n = 0;
