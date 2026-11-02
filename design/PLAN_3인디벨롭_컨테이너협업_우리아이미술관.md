@@ -77,6 +77,18 @@
 - 개인정보 안내(`WorldPrivacy.vue`)를 바꾼다: 사진은 우리 서버로 보내 처리하고, 원본은 덮어쓰지 않으며, 아이 사진은 외부 API로 보내지 않는다.
 - 서비스 워커가 `/v1/`을 캐시하지 않는지 확인한다.
 
+**서버 연결 층(`web/src/app/world/server/`, #28).** 3D 화면의 창들은 서버를 이 층으로만 부른다.
+
+- 새 HTTP 코드를 만들지 않는다. `/app` 화면이 쓰는 `web/src/api/client.ts`(같은 출처·쿠키 세션·Problem Details → `ApiError`)와 `web/src/app/artwork.ts`(작품 타입·`loadArtwork`)를 그대로 쓴다. 이 층에는 #19 대응표 한 줄에 함수 하나만 둔다: `signup`·`verifyEmail`·`resendVerify`·`login`·`logout`·`me`·`listChildren`·`addChild`·`uploadArtwork`·`getArtwork`·`confirmKind`·`decide`·`gallery`.
+- 모든 호출은 `noRedirect`로 부른다. 401이 와도 `/app/login`으로 화면을 옮기지 않고, 3D 화면 안의 로그인 창(#30)을 연다.
+- 오류는 `failureOf(e)` 하나로 세 가지로 나눠 창에 넘긴다.
+
+| 종류 | 언제 | 창이 할 일 |
+|---|---|---|
+| `offline` | 서버에 닿지 않음(네트워크 실패, 5xx. 단 503 `not_saved`는 아래 `refused`) | "서버에 닿지 않아요"와 다시 시도. 기기 저장으로 바꾸지 않는다 |
+| `login` | 401 | 로그인 창을 연다 |
+| `refused` | 서버가 거절(그 밖의 4xx, `not_saved`) | 이유 문장(`problemCopy`의 `reason`, `/app`과 같은 사전)과 칸별 이유(`fields`) |
+
 ### 3-4. 컨테이너로 옮기며 고칠 코드(작게, 설계서 먼저)
 
 | 고칠 것 | 왜 | 담당 |

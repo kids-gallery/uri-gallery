@@ -60,6 +60,8 @@ export interface paths {
             parameters: {
                 query?: {
                     invite?: string;
+                    /** @description 로그인 뒤 돌아갈 보호자 앱 주소(D47 — 로그인 전에 연 이웃 링크 등). 같은 셸 상대 경로만, 없으면 기본 도착지 */
+                    next?: string;
                 };
                 header?: never;
                 path?: never;
@@ -104,7 +106,7 @@ export interface paths {
          * 카카오 로그인 콜백 (UC13 §0, R-26) — 항상 웹 화면으로 302
          * @description 카카오가 돌려보내는 주소(카카오 디벨로퍼스 Redirect URI와 같아야 한다: APP_BASE_URL + /v1/auth/kakao/callback).
          *     state 대조 → 인가 코드를 토큰으로 → 회원번호 → 계정 찾기(없으면 가족 공간 + 만든 보호자, 초대면 그 가족의 공동 보호자) → 세션 쿠키 uam_sid.
-         *     결과는 이동할 화면으로 알린다 — 처음 `/app/children?welcome=1` · 다시 옴 `/app/after-login` · 초대 합류 `/app/family?joined=1` ·
+         *     결과는 이동할 화면으로 알린다 — 처음 `/app/children/new?welcome=1`(캐릭터 만들기, D47) · 다시 옴 `/app`(홈 = 아이 미술관, D47) · 초대 합류 `/app/family?joined=1` ·
          *     취소 `/app/login?kakao=cancelled` · 실패 `/app/login?kakao=failed` · 초대 무효 `/app/invite?error=<reason>`. 토큰·코드·회원번호는 저장·로그하지 않는다.
          */
         get: {
@@ -1735,6 +1737,24 @@ export interface paths {
                         /** Format: binary */
                         photo: string;
                         /**
+                         * @description (D46) 만들기(입체 작품)면 true — 올릴 때만 고른다, 기본 그림. 미술관 받침대(D45)
+                         * @enum {string}
+                         */
+                        making?: "true" | "false" | "1" | "0";
+                        /** @description (D46) 제목 — 올린 뒤 고칠 수 없다. 비우면 "제목 없는 그림 N" */
+                        title?: string;
+                        /**
+                         * Format: date
+                         * @description (D46) 그린 날 — 비우면 capturedOn, 없으면 올린 날. 미래는 422 made_on_in_future
+                         */
+                        madeOn?: string;
+                        /** @description (D46) 그때 나이 0~18 — 비우면 그 아이의 최근 기록 */
+                        ageAtMaking?: string;
+                        /** @description (D46) 아이의 한마디 — 입력 그대로 */
+                        childWords?: string;
+                        /** @description (D46) 보호자 감상평 — 올린 뒤의 느낌은 댓글로 */
+                        guardianNote?: string;
+                        /**
                          * Format: date
                          * @description (D34) 사진 촬영일 — 브라우저가 EXIF DateTimeOriginal에서 날짜만 읽어 보낸다(위치·기기 정보는 보내지 않음). 그린 날로 쓴다. 없으면 올린 날, 미래면 오늘. 형식이 틀리면 422 captured_on
                          */
@@ -2000,7 +2020,8 @@ export interface paths {
         get?: never;
         /**
          * 이야기 기록 (UC5, FR-7, BR-STY-01~03, G11·G12)
-         * @description 부분 저장 허용. 승인됨 + 필수 3항목이 채워지면 `exhibited`로 전환. 보호자 감상평(`guardianNote`, D25)은 선택이고 전시 조건이 아니다.
+         * @description **D46: 한 번 올라간 작품은 고치지 않는다 — 이 요청은 늘 409 `artwork_locked`**(바꾸려면 지우고 다시 올린다). 아래는 D46 전의 설명.
+         *     부분 저장 허용. 승인됨 + 필수 3항목이 채워지면 `exhibited`로 전환. 보호자 감상평(`guardianNote`, D25)은 선택이고 전시 조건이 아니다.
          *     `exhibited` 작품의 필수 항목을 비우는 요청은 422. `childWords`는 받은 그대로 저장한다(트림·교정 없음).
          *     공동 보호자 동시 수정: `baseUpdatedAt`이 저장된 `updatedAt`과 다르면 저장하지 않고 409 `story_conflict`("다른 보호자가 먼저 고쳤어요") — 화면은 최신 이야기를 다시 불러온다.
          */
@@ -2048,7 +2069,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/artworks/{artworkId}/photo": {
+    "/v1/artworks/{artworkId}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -2057,14 +2078,50 @@ export interface paths {
             };
             cookie?: never;
         };
-        get?: never;
         /**
-         * 사진 고치기 (D39, SD_02 §17-12)
-         * @description 보호자가 브라우저에서 고친 사진(네 모서리 펴기 · 90° 돌리기)을 올린다. **원본은 그대로**(BR-INT-04) 두고 고친 사진을 따로 건다
-         *     (`stored_object.object_kind = display`). 다시 고치면 이전 고친 사진은 지운다. 원본 액자 · 전시 · 저장하기는 `photoUrl`(고친 사진)을 쓴다.
-         *     움직이는 그림 · 입체 그림은 다시 만들지 않는다. 형식 · 용량 · 판독 검사는 올리기와 같다(G5).
+         * 부모 댓글 목록 (D46 ④)
+         * @description 가족 보호자(공동 보호자 포함)만. 가족 밖(이웃 방문)에는 없다. 오래된 것부터. **기한**(이제민 결정) — 걸린 날부터 7일 동안만 쓰고 지운다(`open`), 그 뒤로는 보기만.
          */
-        put: {
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    artworkId: components["parameters"]["ArtworkId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 댓글과 기한 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["ArtworkComment"][];
+                            /** @description 지금 쓰고 지울 수 있음 */
+                            open: boolean;
+                            /**
+                             * Format: date-time
+                             * @description 걸린 때(없으면 올린 때) + 7일
+                             */
+                            openUntil: string;
+                            /** @description 기한 일수(7) */
+                            days: number;
+                        };
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        /**
+         * 부모 댓글 남기기 (D46 ④)
+         * @description 500자, 입력 그대로(트림 · 교정 없음). 빈칸은 422 comment_blank. 기한(7일)이 지나면 409 comments_closed.
+         */
+        post: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -2075,34 +2132,73 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "multipart/form-data": {
-                        /**
-                         * Format: binary
-                         * @description PNG · JPEG · HEIC, 20MB 이하
-                         */
-                        photo: string;
+                    "application/json": {
+                        body: string;
                     };
                 };
             };
             responses: {
-                /** @description 고쳤음 */
-                200: {
+                /** @description 남김 */
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ArtworkDetail"];
+                        "application/json": components["schemas"]["ArtworkComment"];
                     };
                 };
-                400: components["responses"]["InvalidInput"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
-                413: components["responses"]["PayloadTooLarge"];
-                503: components["responses"]["NotSaved"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
-        post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/artworks/{artworkId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 내 댓글 지우기 (D46 ④)
+         * @description 자기 댓글만. 남의 댓글은 403 forbidden_role(not_your_comment). 기한(7일)이 지나면 409 comments_closed.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    artworkId: components["parameters"]["ArtworkId"];
+                    commentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 지움 */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                403: components["responses"]["ForbiddenRole"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -2950,7 +3046,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 평가 묶음 전체 실행 (UC9, FR-17, G20·G21) */
+        /** 그 모델의 평가 대상 전체 실행 (UC9, FR-17, G20·G21, D51 — M3는 사람 항목만, 대상 0개면 409 no_eval_items) */
         post: {
             parameters: {
                 query?: never;
@@ -3547,6 +3643,19 @@ export interface components {
             /** @description mine·neighbor만 */
             children?: components["schemas"]["TownChild"][];
         };
+        /** @description (D46 ④) 부모 댓글 — 가족 안에서만 */
+        ArtworkComment: {
+            id: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            mine: boolean;
+            /**
+             * @description me=나 · owner=만든 보호자 · co=공동 보호자 · gone=지운 계정
+             * @enum {string}
+             */
+            author: "me" | "owner" | "co" | "gone";
+        };
         VisitGallery: {
             child: components["schemas"]["TownChild"];
             /** @description 전시실 1·2… (나이는 싣지 않는다) */
@@ -3561,6 +3670,8 @@ export interface components {
                     primaryUrl?: string | null;
                     /** @description animated는 그림 사진(포스터) · relief는 오려 낸 그림(시차 앞면) · 그 밖 null */
                     auxUrl?: string | null;
+                    /** @description (D46) 만들기 → 받침대(D45) */
+                    making?: boolean;
                 }[];
             }[];
         };
@@ -3621,8 +3732,12 @@ export interface components {
             originalUrl?: string | null;
             /** @description (D39) 액자 · 전시 · 저장에 쓰는 사진 — 고쳤으면 고친 사진, 아니면 원본 */
             photoUrl?: string | null;
-            /** @description (D39) 보호자가 사진을 고쳤음 */
+            /** @description (D39 폐기 — 늘 false) */
             photoEdited?: boolean;
+            /** @description (D46) 만들기(입체 작품) — 올릴 때 고름 */
+            making?: boolean;
+            /** @description (D46) 올린 작품은 고정 — 늘 true(이야기 · 사진 · 종류를 고칠 수 없다, 삭제만) */
+            locked?: boolean;
             cutoutUrl?: string | null;
             /** @description 제안 문구 코드만. 점수·확률·순위 없음(BR-SUG-02). null=제안 전 */
             suggestion?: components["schemas"]["Suggestion"] | null;
@@ -3673,6 +3788,10 @@ export interface components {
             title?: string | null;
             /** @description (D34) 제목이 "제목 없는 그림 N"으로 자동으로 붙음. 보호자가 제목을 고치면 false */
             readonly titleAuto?: boolean;
+            /** @description (D46 ⑩) 그린 날을 비워 촬영일 · 올린 날로 채움 — 해설이 날짜를 단정하지 않는다 */
+            readonly madeOnAuto?: boolean;
+            /** @description (D46 ⑩) 나이를 비워 최근 나이로 채움 — 해설이 나이를 단정하지 않는다 */
+            readonly ageAuto?: boolean;
             /**
              * Format: date
              * @description 만든 날. 오늘이나 지난 날짜만 — 미래 날짜는 422 made_on_in_future(G11, 서버·DB 트리거가 막는다)
@@ -3735,9 +3854,15 @@ export interface components {
             originalUrl?: string;
             /** @description (D39) 원본 액자 그림 — 고쳤으면 고친 사진 */
             photoUrl?: string | null;
+            /** @description (D46) 만들기 → 미술관 받침대(D45) */
+            making?: boolean;
             title: string;
             /** @description (D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다 */
             titleAuto?: boolean;
+            /** @description (D46 ⑩) 자동 그린 날 */
+            madeOnAuto?: boolean;
+            /** @description (D46 ⑩) 자동 나이 */
+            ageAuto?: boolean;
             /** Format: date */
             madeOn: string;
             /** @description (D34) null = 나이 미정 */
@@ -3929,7 +4054,10 @@ export interface components {
                 evalItemId?: string;
                 /** @enum {string} */
                 status?: "done" | "incomplete" | "timeout";
+                /** @description 이 모델 기준 기대 경로(D57 — M1·M5는 항목 기대 animated를 relief로 본다). actualPath와 같으면 일치 */
                 expectedPath?: string | null;
+                /** @description 평가 항목에 적힌 원래 기대 경로(eval_item.expected_path) */
+                itemExpectedPath?: string | null;
                 actualPath?: string | null;
                 outcome?: string | null;
                 downgradeReason?: string | null;
