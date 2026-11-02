@@ -112,7 +112,7 @@
    - **개발 환경 모델 첫 활성.** [확인] 새 DB에는 활성 모델 버전이 없다(마이그레이션에 `model_version` 시드 없음). 워커는 활성 버전이 있는 모델만 올리고(`serving/workers/runner.py` `refresh_enabled`), 앱 서버는 M1·M2·M3이 모두 활성일 때만 분리·판정 작업을 만든다(`api/src/modules/artworks/models.ts` `JUDGE_MODELS`). 그래서 db-migrate가 개발 환경일 때(`DEV_ACTIVATE_MODELS=1`) 스키마 다음에 M1·M2·M3·M5를 `active`·`license_confirmed`로 만든다. 조건은 SD_04 9-4의 D27 예외와 같고, 팀 서버·운영 DB에서는 켜지 않는다. 기존 도구(`scripts/dev_activate_models.py`)는 `DB_HOST`가 127.0.0.1이 아니면 멈추고 127.0.0.1 API를 불러 compose에 그대로 쓸 수 없다. 담당은 #33.
 2. **이미지.**
    - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지).
-   - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다.
+   - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다. 이미지에 `/data/store`를 `node` 소유로 미리 만든다. 없으면 app-api가 새 작품 볼륨을 먼저 붙일 때 폴더가 root 소유가 되어 쓰지 못한다.
 
      | 서비스 | 명령 |
      |---|---|
