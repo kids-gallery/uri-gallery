@@ -45,7 +45,7 @@
 
 | 서비스 | 이미지 | 바깥 포트 | 볼륨 | 상태 확인 | 담당 |
 |---|---|---|---|---|---|
-| web(입구) | 빌드 단계 `node:22`(`npm run build:world`) → 실행 단계 nginx | 9501 | 없음 | `/` 응답 | 신지현 |
+| web(입구) | 빌드 단계 `node:22.23.4-bookworm-slim`(`VITE_WORLD_SERVER=1 npm run build:world`) → 실행 단계 `nginx:1.28.0-alpine` | 9501 | 없음 | `/` 응답 | 신지현 |
 | app-api | api 이미지(`node:22`) | 없음 | 작품 파일 | `/live`·`/ready` | 이제민 |
 | sweeper | app-api와 같은 이미지, 실행 명령만 다르다 | 없음 | 작품 파일 | 프로세스가 살아 있음 | 최호준(서비스 설정), 이제민(이미지) |
 | db | MariaDB 공식 이미지(12.0 계열) | 없음 | DB 자료 | 공식 이미지의 확인 스크립트 | 최호준 |
@@ -60,6 +60,8 @@
 - **#66 리뷰 반영:** 컨테이너 예시는 APP_HOST=0.0.0.0, MAIL_ENABLED=true를 각각 한 번 둔다. TRUST_PROXY의 compose망 CIDR과 고정 subnet은 #32에서 함께 정하며, 예시의 loopback은 그 전까지 기본값으로 명시한다. 호스트 pm2 배포 문서에는 주소·저장 경로·쿠키 값을 호스트 기준으로 설정하는 절차를 분리한다.
 - **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
+
+- **#26 입구 이미지:** 저장소 루트에서 `docker build -f web/Dockerfile .`. 의존성 파일을 먼저 복사하고 `npm ci`한 뒤 웹 소스를 복사한다. `VITE_WORLD_SERVER=1`을 빌드 단계에서 고정한다. 실행 이미지는 `dist-world` 전체(생성된 `/licenses/THIRD_PARTY.txt` 포함)를 정적 루트에 담고 80번에서 받는다. API 라우팅과 SPA 대체는 #27에서 설정한다. 루트 `.dockerignore`를 재사용하며 `web/.dockerignore`는 만들지 않는다.
 
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
