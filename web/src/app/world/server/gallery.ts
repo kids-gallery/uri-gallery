@@ -7,7 +7,9 @@ import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, typ
 
 type Item = Gallery['groups'][number]['items'][number];
 
-const shown = new Map<string, { work: store.Artwork; kind: string }>();
+const shown = new Map<string, { work: store.Artwork; kind: string; childId: string }>();
+/** 로그아웃하면 늘어난다. 그 전에 시작한 요청의 결과는 버린다 */
+let epoch = 0;
 
 /** 목록을 읽지 못했을 때. 보던 작품은 그대로 두고 화면이 알린다 */
 export const galleryFailure = ref<Failure | null>(null);
@@ -39,11 +41,13 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
 }
 
 /** 받지 못한 작품 수를 돌려준다 */
-async function load(items: Item[]): Promise<number> {
+async function load(entries: { item: Item; childId: string }[], mine: number): Promise<number> {
   let missed = 0;
-  for (const [i, item] of items.entries()) {
+  for (const [i, { item, childId }] of entries.entries()) {
     try {
-      shown.set(item.id, { work: await workOf(item, i + 1), kind: item.kind });
+      const work = await workOf(item, i + 1);
+      if (mine !== epoch) return 0;
+      shown.set(item.id, { work, kind: item.kind, childId });
     } catch {
       missed++; // 한 장 때문에 전시 전체가 비지 않게 한다(열 수 없는 사진 등)
     }
@@ -52,28 +56,34 @@ async function load(items: Item[]): Promise<number> {
 }
 
 export async function galleryWorks(childId: string | null): Promise<store.Artwork[]> {
+  const mine = epoch;
   try {
     const children = childId ? [childId] : (await listChildren()).map((c) => c.id);
-    const read = async () => (await Promise.all(children.map(gallery))).flatMap((g) => g.groups.flatMap((x) => x.items));
-    let items = await read();
-    if (await load(items)) { items = await read(); await load(items); } // 파일 주소는 5분 뒤 만료된다. 새 주소로 한 번 더 받는다
-    const ids = new Set(items.map((x) => x.id));
+    const read = async () => (await Promise.all(children.map(gallery))).flatMap((g) => g.groups.flatMap((x) => x.items.map((item) => ({ item, childId: g.childId }))));
+    let entries = await read();
+    if (await load(entries, mine)) { entries = await read(); await load(entries, mine); } // 파일 주소는 5분 뒤 만료된다. 새 주소로 한 번 더 받는다
+    if (mine !== epoch) return [];
+    const ids = new Set(entries.map((x) => x.item.id));
     for (const id of shown.keys()) if (!ids.has(id)) shown.delete(id);
-    const order = items.flatMap((x) => shown.get(x.id)?.work ?? []);
+    const order = entries.flatMap((x) => shown.get(x.item.id)?.work ?? []);
     await store.saveRooms([...await store.getRooms(), ...order.map((a) => a.age)]);
     galleryFailure.value = null;
     return order;
   } catch (e) {
+    if (mine !== epoch) return [];
     galleryFailure.value = failureOf(e);
-    return [...shown.values()].map((s) => s.work);
+    return [...shown.values()].filter((s) => !childId || s.childId === childId).map((s) => s.work); // 다른 아이의 작품을 대신 보이지 않는다
   }
 }
 
 /** 올리자마자 원본 액자를 건다. 화면이 그리지 못해도 보관은 끝났으므로 false만 돌려준다 */
 export async function hangUploaded(d: ArtworkDetail): Promise<boolean> {
   if (shown.has(d.id)) return true;
+  const mine = epoch;
   try {
-    shown.set(d.id, { work: await photoWork(d.id, d.photoUrl ?? ''), kind: 'frame' });
+    const work = await photoWork(d.id, d.photoUrl ?? '');
+    if (mine !== epoch) return false;
+    shown.set(d.id, { work, kind: 'frame', childId: d.childId });
     return true;
   } catch {
     return false;
@@ -92,6 +102,7 @@ export const movingIds = () => listArtworks().then((list) => list.filter((a) => 
 
 /** 로그아웃(#30): 다른 가족의 작품이 남지 않게 지운다 */
 export function clearGallery() {
+  epoch++;
   shown.clear();
   galleryFailure.value = null;
 }

@@ -161,7 +161,7 @@ describe('올린 직후와 로그아웃', () => {
   it('올린 사진을 걸어 두면 목록을 읽을 때 다시 받지 않는다', async () => {
     const s = server({ c1: [item('a1')] });
     const { g } = await load();
-    expect(await g.hangUploaded(detail('a1', { photoUrl: '/v1/files/a1' }))).toBe(true);
+    expect(await g.hangUploaded(detail('a1', { childId: 'c1', photoUrl: '/v1/files/a1' }))).toBe(true);
     await g.galleryWorks(null);
     expect(s.fileCalls()).toEqual(['/v1/files/a1']);
   });
@@ -177,6 +177,84 @@ describe('올린 직후와 로그아웃', () => {
     g.clearGallery();
     s.state.down = true;
     expect(await g.galleryWorks(null)).toEqual([]);
+  });
+});
+
+describe('다른 가족·다른 아이의 작품이 남지 않는다', () => {
+  /** 파일 응답을 원하는 때까지 붙잡는다 */
+  function held() {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => { release = r; });
+    let started: () => void = () => undefined;
+    const reached = new Promise<void>((r) => { started = r; });
+    return { release, reached, respond: async () => { started(); await gate; return new Response('img'); } };
+  }
+  function holdFiles(s: ReturnType<typeof server>, h: ReturnType<typeof held>) {
+    const f = vi.mocked(fetch).getMockImplementation()!;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.startsWith('/v1/files/')) { s.calls.push(url); return h.respond(); }
+      return f(url as never, init);
+    }));
+  }
+
+  it('로그아웃 전에 시작한 목록 읽기가 늦게 끝나도 옛 가족 작품을 넣지 않는다', async () => {
+    const s = server({ c1: [item('family-a')] });
+    const h = held();
+    holdFiles(s, h);
+    const { g, store } = await load();
+    const reading = g.galleryWorks(null);
+    await h.reached;
+    g.clearGallery();
+    h.release();
+    expect(await reading).toEqual([]);
+    expect(store.saveRooms).not.toHaveBeenCalled();
+    server({ c1: [] }).state.down = true;
+    expect(await g.galleryWorks(null)).toEqual([]);
+  });
+
+  it('로그아웃 전에 시작한 올리기 걸기가 늦게 끝나도 넣지 않는다', async () => {
+    const s = server({ c1: [] });
+    const h = held();
+    holdFiles(s, h);
+    const { g } = await load();
+    const hanging = g.hangUploaded(detail('family-a', { childId: 'c1', photoUrl: '/v1/files/family-a' }));
+    await h.reached;
+    g.clearGallery();
+    h.release();
+    expect(await hanging).toBe(false);
+    server({ c1: [] }).state.down = true;
+    expect(await g.galleryWorks(null)).toEqual([]);
+  });
+
+  it('로그아웃 전에 시작한 읽기가 늦게 실패해도 안내를 띄우지 않는다', async () => {
+    let fail: (e: Error) => void = () => undefined;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((_, rej) => { fail = rej; })));
+    const { g } = await load();
+    const reading = g.galleryWorks(null);
+    g.clearGallery();
+    fail(new TypeError('x'));
+    expect(await reading).toEqual([]);
+    expect(g.galleryFailure.value).toBeNull();
+  });
+
+  it('다른 아이의 목록을 못 읽으면 이전 아이의 작품을 돌려주지 않는다', async () => {
+    const s = server({ a: [item('child-a')], b: [item('child-b')] });
+    const { g } = await load();
+    expect((await g.galleryWorks('a')).map((x) => x.id)).toEqual(['child-a']);
+    s.state.down = true;
+    expect(await g.galleryWorks('b')).toEqual([]);
+    expect(g.galleryFailure.value).toEqual({ kind: 'offline' });
+    expect((await g.galleryWorks('a')).map((x) => x.id)).toEqual(['child-a']); // 같은 아이면 보던 작품을 둔다
+  });
+
+  it('올린 직후 목록을 못 읽어도 그 아이의 새 작품은 보인다', async () => {
+    const s = server({ a: [item('child-a')] });
+    const { g } = await load();
+    await g.galleryWorks('a');
+    await g.hangUploaded(detail('new', { childId: 'a', photoUrl: '/v1/files/new' }));
+    s.state.down = true;
+    expect((await g.galleryWorks('a')).map((x) => x.id)).toEqual(['child-a', 'new']);
+    expect(await g.galleryWorks('b')).toEqual([]);
   });
 });
 
