@@ -57,6 +57,8 @@
 - 기동 순서: db 준비 → db-migrate(스키마, 개발 환경이면 모델 첫 활성까지) 완료 → app-api·sweeper·model-api·worker-cpu. 준비됨의 기준은 3-5 6번 표. 상시 서비스는 `restart: unless-stopped`, db-migrate는 `restart: "no"`. 모든 서비스 `init: true`(종료 신호 전달용이고 정상 종료를 보장하지는 않는다, 3-5 6번).
 - 메일을 끄면 이메일 가입도 꺼지므로(`api/src/modules/auth/routes.ts` 66행) Mailpit을 둔다.
 - 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4).
+- **#66 리뷰 반영:** 컨테이너 예시는 APP_HOST=0.0.0.0, MAIL_ENABLED=true를 각각 한 번 둔다. TRUST_PROXY의 compose망 CIDR과 고정 subnet은 #32에서 함께 정하며, 예시의 loopback은 그 전까지 기본값으로 명시한다. 호스트 pm2 배포 문서에는 주소·저장 경로·쿠키 값을 호스트 기준으로 설정하는 절차를 분리한다.
+- **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
 
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
