@@ -5,7 +5,7 @@ import { ref } from 'vue';
 import { ApiError } from '@/api/client';
 import { problemCopy } from '@/copy/ko';
 import * as store from '../store';
-import { failureOf, listChildren, uploadArtwork, type ArtworkDetail } from './index';
+import { failureOf, failureReason, listChildren, uploadArtwork, type ArtworkDetail } from './index';
 
 export const SERVER_WORLD = import.meta.env.VITE_WORLD_SERVER === '1';
 
@@ -48,9 +48,7 @@ export async function sendPhoto(file: File, key: string): Promise<SendResult> {
     detail = await uploadArtwork(childId, file, key);
   } catch (e) {
     const f = failureOf(e);
-    if (f.kind === 'offline') return { ok: false, reason: '미술관에 연결되지 않아요. 다시 시도해 주세요', retryable: true };
-    if (f.kind === 'login') return { ok: false, reason: '로그인이 필요해요. 로그인한 뒤 다시 시도해 주세요', retryable: true };
-    return { ok: false, reason: f.reason, retryable: e instanceof ApiError && e.code === 'not_saved' };
+    return { ok: false, reason: failureReason(f), retryable: f.kind !== 'refused' || (e instanceof ApiError && e.code === 'not_saved') };
   }
   return { ok: true, id: detail.id, hung: await hang(detail) };
 }

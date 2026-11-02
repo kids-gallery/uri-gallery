@@ -13,6 +13,8 @@ import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, worldWorks } from './server/upload';
+import { failureReason } from './server';
+import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
@@ -428,7 +430,10 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
 
 /** 업로드 결과(§2-15): 다시 그리고, 마지막 작품을 앞마당 대표작 자리에 공개하며 그 앞으로 간다.
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
+const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
+const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {
+  if (SERVER_WORLD && from === 'upload') artWatch.add(ids);
   panel.value = null; pendingFiles.value = []; firstPrompt.value = false;
   await reload();
   const last = ids.at(-1) ?? null;
@@ -702,6 +707,10 @@ function openSettings() {
     <section v-if="nudge && phase==='ready' && !panel && !visiting && !recentSaved" class="w-nudge g-panel" role="status" aria-label="백업 권유">
       <span>백업 파일에 없는 작품이 쌓였어요. 백업을 내보내 둘까요?</span>
       <span class="row"><button class="g-btn g-btn--primary" type="button" @click="backupFromNudge">백업 내보내기</button><button class="g-btn" type="button" @click="backupLater">나중에</button></span>
+    </section>
+    <section v-if="watchFailure && phase==='ready'" class="w-nudge g-panel" role="status" aria-label="작품 처리 상태">
+      <span>{{ failureReason(watchFailure) }}</span>
+      <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="artWatch.retry">{{ watchFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
