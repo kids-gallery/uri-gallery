@@ -122,6 +122,11 @@ services:
     restart: unless-stopped
     ports: ["9501:80"]
     networks: [edge]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 10s
+      timeout: 5s
+      retries: 6
     depends_on:
       app-api:
         condition: service_healthy
