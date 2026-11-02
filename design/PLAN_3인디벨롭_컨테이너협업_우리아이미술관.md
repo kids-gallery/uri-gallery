@@ -145,7 +145,7 @@
 | 모델 묶음 잠금을 CPU 종류에 따라 고르는 빌드 인자 | 맥(arm64)과 Windows(x86_64)가 같은 Dockerfile을 쓴다 | 최호준 |
 | `.gitattributes`(줄바꿈 LF) | Windows에서 셸 스크립트가 CRLF가 되면 컨테이너에서 깨진다 | 신지현 |
 | app-api 시작 명령을 빌드 결과에 맞게(`package.json` `start` → `node dist/src/server.js`) | 지금 값(`dist/server.js`)은 빌드 결과에 없다(3-5 2번) | 이제민 |
-| 마이그레이션 폴더를 설정 값으로(`MIGRATIONS_DIR`, 기본값은 지금 경로) | 빌드된 이미지에서 경로가 어긋난다(3-5 판정) | 최호준 |
+| 마이그레이션 폴더를 설정 값으로(`MIGRATIONS_DIR`, 기본값은 지금 경로) | 빌드된 이미지에서 경로가 어긋난다(3-5 판정). #22의 끝나는 조건이라 #22에서 고쳤다 | 이제민 |
 | 개발 환경 모델 첫 활성(db-migrate, `DEV_ACTIVATE_MODELS=1`일 때만) | 새 DB에 활성 모델 버전이 없어 처리 작업이 생기지 않는다(3-5 1번) | 최호준(이제민 지원) |
 | serving이 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE`) | compose `secrets:`. 지금 `serving/common/config.py`는 환경 변수만 읽는다 | 최호준 |
 | app-api가 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE` 등, 없으면 지금처럼 환경 변수) | compose `secrets:`(3-2)는 값을 파일로 넣는다. 지금 `api/src/config.ts`는 환경 변수만 읽는다 | 이제민 |
@@ -167,7 +167,7 @@
      |---|---|
      | app-api | `node dist/src/server.js`(지금 `package.json` `start`의 `dist/server.js`는 틀려서 고친다, #22) |
      | sweeper | `node dist/src/sweeper/main.js` |
-     | db-migrate | `node dist/scripts/migrate.js`(`MIGRATIONS_DIR` 필요, #33) |
+     | db-migrate | `node dist/scripts/migrate.js`(`MIGRATIONS_DIR`은 이미지에 있음, #22) |
 
    - 이미지 안 경로는 저장소 구조를 따른다.
 
@@ -239,7 +239,7 @@
 
 | 이슈 | 판정 | 근거 |
 |---|---|---|
-| #33 DB 초기화 | **고친다.** 마이그레이션 폴더를 설정 값(`MIGRATIONS_DIR`)으로 받고(1줄), 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
+| #33 DB 초기화 | **고친다.** 마이그레이션 폴더 설정 값(`MIGRATIONS_DIR`)은 #22에서 고쳤다. 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
 | #34 워커 준비 상태 | 코드는 고치지 않는다. 상태 검사 기준만 위 표대로 | [확인] 상태 파일이 60초 넘게 멈추면 이미 멈춤으로 본다(`STALE_AFTER_S = 60`) |
 | #35 sweeper 종료 | 지금은 코드를 고치지 않는다. `init: true`는 신호 전달용으로만 쓴다. #35에서 종료 시간·종료 결과를 기록하고, 정리가 안 되는 문제가 드러나면 그때 종료 처리 코드를 더한다 | [확인] 한 번 다 돈 뒤 다음 차례를 잡아 겹치지 않는다(`setTimeout`). 빠른 종료와 작업·DB·파일의 정상 정리는 다르므로, 작업 중단 뒤 재시작·이어받기는 #41에서 따로 확인한다 |
 
