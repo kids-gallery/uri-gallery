@@ -18,6 +18,6 @@ export default defineConfig({
     port: WEB_PORT,
     reuseExistingServer: false,
     timeout: 240_000, // 팀 서버가 바쁠 때 빌드가 60초(기본)를 넘는다
-    env: { WEB_PORT: String(WEB_PORT), APP_API_URL: `http://127.0.0.1:${API_PORT}`, MODEL_API_URL: 'http://127.0.0.1:9' },
+    env: { VITE_WORLD_SERVER: '1', WEB_PORT: String(WEB_PORT), APP_API_URL: `http://127.0.0.1:${API_PORT}`, MODEL_API_URL: 'http://127.0.0.1:9' },
   },
 });
