@@ -1,0 +1,16 @@
+# 빌드 맥락은 저장소 맨 위(이미지마다 contracts/·db/·models/manifest.yaml을 함께 쓴다). 가중치·비밀 값·빌드 결과는 넣지 않는다.
+.git
+**/node_modules
+**/dist
+**/dist-world
+**/.venv*
+**/__pycache__
+**/.pytest_cache
+.data
+models/hf
+models/m3
+models/m7
+secrets
+**/.env
+**/.env.*
+!.env.example
