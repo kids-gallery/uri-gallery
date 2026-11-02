@@ -12,6 +12,7 @@ import { DECOR_KINDS, SPOT_LABEL, type DecorItem, type DecorKind, type DecorSpot
 import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
+import { SERVER_WORLD, worldWorks } from './server/upload';
 import WorldArchive from './WorldArchive.vue';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
@@ -280,7 +281,7 @@ watch(panel,async(next,previous)=>{
 let reloading:Promise<void>=Promise.resolve();
 function reload():Promise<void>{
   const run=async()=>{
-    artworks.value = await store.listArtworks();
+    artworks.value = await worldWorks();
     rooms.value = await store.getRooms();
     if (engine.value && account.value) await engine.value.setWorld(account.value.child, artworks.value, rooms.value);
   };
@@ -292,7 +293,7 @@ function reload():Promise<void>{
 async function boot(title = true) {
   account.value = (await store.getAccount()) ?? null;
   prefs.value = await store.getPrefs();setSoundEnabled(prefs.value.sound);
-  artworks.value=account.value?await store.listArtworks():[];rooms.value=account.value?await store.getRooms():[];
+  artworks.value=account.value?await worldWorks():[];rooms.value=account.value?await store.getRooms():[];
   const showTitle=title||!account.value;
   // 시작 버튼은 엔진이 시작 화면을 그리고 작품을 다 불러온 뒤에 보인다(그 전에 누르면 연출이 시작되지 않고 멈췄다)
   if(showTitle)phase.value='checking';
@@ -321,7 +322,7 @@ async function start(sample=false){
     await store.createLocalFamily(sample,(done,total)=>{progress.value={done,total};});
     account.value=(await store.getAccount())??null;prefs.value=await store.getPrefs();
     if(!account.value)throw new Error('가족을 만들지 못했어요');
-    artworks.value=await store.listArtworks();rooms.value=await store.getRooms();
+    artworks.value=await worldWorks();rooms.value=await store.getRooms();
     await e.setWorld(account.value.child,artworks.value,rooms.value);
     void e.loadDecor(); // 가족이 생긴 뒤 명화·흉상 장식을 불러온다(가족이 있던 경우는 boot에서 부른다)
   })();
@@ -432,7 +433,7 @@ async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = '
   await reload();
   const last = ids.at(-1) ?? null;
   savedCount.value = ids.length; recentSaved.value = null; pendingReveal.value = reveal ? last : null; selection.value = null;
-  savedIds.value = [...ids]; askStep.value = 'age'; askIndex.value = 0; askMsg.value = ''; // §2-22 4: 질문은 처음부터
+  savedIds.value = [...ids]; askStep.value = SERVER_WORLD ? 'done' : 'age'; askIndex.value = 0; askMsg.value = ''; // §2-22 4: 질문은 처음부터. 서버 판은 서버가 이야기를 채우고 올린 뒤 고칠 수 없다(D46)
   if (from === 'upload' && ids.length) { countUse((u) => bump(u, 'uploads', ids.length)); measure('first-saved'); }
   if (reveal && last) engine.value?.reveal(last); // 결과 카드가 상태를 알리므로 같은 말의 알림은 띄우지 않는다
   else if (ids.length) say(`${ids.length}점을 보관했어요`);
@@ -696,7 +697,7 @@ function openSettings() {
   <div ref="worldRoot" class="world" :class="{'w-hud-intro':hudIntro}" :style="{'--w-panel':uiLook.ui,'--w-ink':uiLook.ink}">
     <component :is="Measure" v-if="Measure" />
     <div v-show="!webglFailed" ref="stage" class="stage" />
-    <Transition name="w-ui-fade"><p v-if="phase==='ready' && bandOn" class="local-band" role="status">이 기기에 저장돼요</p></Transition>
+    <Transition name="w-ui-fade"><p v-if="phase==='ready' && bandOn && !SERVER_WORLD" class="local-band" role="status">이 기기에 저장돼요</p></Transition>
     <!-- 백업 권유 한 줄(§2-22 7, UI 계약 10절): 앱을 열 때 한 번만, 다른 창이 없을 때 -->
     <section v-if="nudge && phase==='ready' && !panel && !visiting && !recentSaved" class="w-nudge g-panel" role="status" aria-label="백업 권유">
       <span>백업 파일에 없는 작품이 쌓였어요. 백업을 내보내 둘까요?</span>
@@ -713,7 +714,7 @@ function openSettings() {
           <button ref="startBtn" class="g-btn g-btn--primary g-btn--big" type="button" :disabled="phase !== 'title'" @click="start(false)">시작하기</button>
           <button v-if="!account" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
         </div>
-        <p v-if="!account" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
+        <p v-if="!account && !SERVER_WORLD" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
       </div>
       <div v-if="TestEntry && !account && phase === 'title'" class="w-test-entry"><component :is="TestEntry" @enter="enterTest" /></div>
     </section>
@@ -813,7 +814,7 @@ function openSettings() {
             <span class="w-saved-sub">{{ savedLine }}</span>
             <span v-if="askStatus" class="w-saved-sub w-cut-state">{{ askStatus }}</span>
           </div>
-          <div class="w-turn" role="group" aria-label="사진 돌리기">
+          <div v-if="!SERVER_WORLD" class="w-turn" role="group" aria-label="사진 돌리기">
             <button class="g-btn" type="button" aria-label="왼쪽으로 돌리기" :disabled="rotating || askBusy" @click="rotateSaved(-1)">{{ rotating ? '돌리는 중…' : '↺ 왼쪽' }}</button>
             <button class="g-btn" type="button" aria-label="오른쪽으로 돌리기" :disabled="rotating || askBusy" @click="rotateSaved(1)">{{ rotating ? '돌리는 중…' : '↻ 오른쪽' }}</button>
           </div>

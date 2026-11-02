@@ -2,11 +2,13 @@
 // 작품 올리기(3D미술관_재설계 §2-15·§2-22): 사진 선택 → 한 장씩 원본 확인·전시용 사진 만들기·보관 → 전시. 입력은 묻지 않는다.
 // 배경 지우기는 걸고 난 뒤 미술관 화면이 이어서 한다(cutoutState 'pending').
 // 원본은 그대로 저장하고, 실패한 항목만 다시 시도한다. 성공한 작품은 남는다.
+// 서버 판(VITE_WORLD_SERVER=1, 마스터플랜 3-3)은 기기 저장 대신 서버로 보낸다. 형식·용량을 먼저 보고, 다시 시도해도 요청 번호는 같다.
 import { computed, onMounted, ref } from 'vue';
 import * as store from './store';
+import { SERVER_WORLD, checkPhoto, newUploadKey, sendPhoto } from './server/upload';
 
 export type UploadStatus = 'wait' | 'check' | 'make' | 'save' | 'done' | 'fail' | 'skip';
-interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean }
+interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; uploadKey: string; hung: boolean }
 
 /** 한 번에 받는 묶음(§2-15): 10장, 합계 100MB. 처리는 한 장씩 차례로 한다 */
 const MAX_BATCH = 10, MAX_BATCH_BYTES = 100 * 1024 * 1024;
@@ -26,7 +28,9 @@ const camera = ref<HTMLInputElement | null>(null);
 let known: Set<string> | null = null;
 const hashes = new Map<string, string>(); // 이 묶음의 원본 해시 → 항목 키
 
-const doneIds = computed(() => items.value.filter((i) => i.status === 'done').map((i) => i.artworkId));
+const stored = computed(() => items.value.filter((i) => i.status === 'done'));
+/** 화면에 걸린 작품. 서버 판에서 보관됐지만 이 브라우저가 그리지 못한 사진은 뺀다 */
+const doneIds = computed(() => stored.value.filter((i) => i.hung).map((i) => i.artworkId));
 const failed = computed(() => items.value.filter((i) => i.status === 'fail'));
 /** 다시 해서 될 수 있는 실패(저장 실패·멈춤). 빈 파일·손상·형식은 같은 사진으로 다시 해도 안 된다 */
 const retryable = computed(() => failed.value.filter((i) => i.retryable));
@@ -58,7 +62,7 @@ function accept(files: File[]) {
   for (const f of files) {
     if (taken >= room || bytes + f.size > MAX_BATCH_BYTES) { left.push(f.name); continue; }
     bytes += f.size; taken++;
-    items.value.push({ key: store.newId(), name: f.name || '사진', file: f, status: 'wait', reason: '', artworkId: store.newId(), retryable: false });
+    items.value.push({ key: store.newId(), name: f.name || '사진', file: f, status: 'wait', reason: '', artworkId: store.newId(), retryable: false, uploadKey: newUploadKey(), hung: true });
   }
   if (left.length) notice.value = `한 번에 ${MAX_BATCH}장, 모두 합해 100MB까지 올릴 수 있어요. ${left.length}장은 다음에 다시 골라 주세요`;
   void run();
@@ -103,20 +107,31 @@ async function runItem(it: Item) {
   }
 }
 
+async function runServerItem(it: Item) {
+  it.status = 'check'; it.reason = ''; it.retryable = false;
+  const bad = checkPhoto(it.file);
+  if (bad) { it.status = 'fail'; it.reason = bad; return; }
+  it.status = 'save';
+  const r = await sendPhoto(it.file, it.uploadKey);
+  if (!r.ok) { it.status = 'fail'; it.reason = r.reason; it.retryable = r.retryable; return; }
+  it.status = 'done'; it.artworkId = r.id; it.hung = r.hung;
+  if (!r.hung) it.reason = '보관했지만 이 브라우저가 열 수 없는 사진이라 미술관에 걸지 못했어요';
+}
+
 async function run() {
   if (running.value) return;
   step.value = 'run'; running.value = true;
   try {
     for (const it of items.value) {
       if (stopRequested) break;
-      if (it.status === 'wait') await runItem(it);
+      if (it.status === 'wait') await (SERVER_WORLD ? runServerItem(it) : runItem(it));
     }
   } finally {
     running.value = false;
     if (stopRequested) { for (const it of items.value) if (it.status === 'wait') { it.status = 'fail'; it.reason = '멈춰서 올리지 않았어요'; it.retryable = true; } }
     stopRequested = false; stopping.value = false;
   }
-  if (!failed.value.length && doneIds.value.length && !notice.value) { emit('saved', doneIds.value, true); return; }
+  if (!failed.value.length && doneIds.value.length && doneIds.value.length === stored.value.length && !notice.value) { emit('saved', doneIds.value, true); return; }
   step.value = 'done';
 }
 
@@ -135,24 +150,25 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
         <button class="g-btn" type="button" :disabled="running" @click="requestClose">닫기</button>
       </header>
 
-      <input ref="album" class="hidden" type="file" accept="image/*" multiple @change="onPick" />
+      <input ref="album" class="hidden" type="file" :accept="SERVER_WORLD ? 'image/jpeg,image/png,image/heic,image/heif,.heic,.heif' : 'image/*'" multiple @change="onPick" />
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
 
       <template v-if="step === 'pick'">
         <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>
         <div class="row"><button class="g-btn g-btn--primary g-btn--big" type="button" @click="album?.click()">앨범에서 고르기</button><button class="g-btn g-btn--big" type="button" @click="camera?.click()">사진 찍기</button></div>
-        <p class="small">한 번에 10장까지, 한 장 20MB까지 골라요. 원본 사진은 그대로 보관하고 이 기기에 저장돼요.</p>
+        <p v-if="SERVER_WORLD" class="small">한 번에 10장까지, JPEG·PNG·HEIC 사진을 한 장 20MB까지 골라요. 사진은 우리 미술관으로 보내 원본 그대로 보관해요.</p>
+        <p v-else class="small">한 번에 10장까지, 한 장 20MB까지 골라요. 원본 사진은 그대로 보관하고 이 기기에 저장돼요.</p>
       </template>
 
       <template v-else>
         <p class="lead" role="status">
           <template v-if="running">{{ stopping ? '지금 사진을 마치고 멈춰요' : '사진을 한 장씩 전시하고 있어요' }}</template>
-          <template v-else>{{ doneIds.length }}점을 보관했어요<template v-if="failed.length"> · 실패 {{ failed.length }}점</template><template v-if="skipped.length"> · 건너뜀 {{ skipped.length }}점</template></template>
+          <template v-else>{{ stored.length }}점을 보관했어요<template v-if="failed.length"> · 실패 {{ failed.length }}점</template><template v-if="skipped.length"> · 건너뜀 {{ skipped.length }}점</template></template>
         </p>
         <ul class="w-upload-list" aria-live="polite">
           <li v-for="it in items" :key="it.key" :class="'w-st-' + it.status">
             <span class="w-up-name">{{ it.name }}</span>
-            <span class="w-up-state">{{ LABEL[it.status] }}<template v-if="it.reason">: {{ it.reason }}</template></span>
+            <span class="w-up-state"><template v-if="it.status === 'done' && it.reason">{{ it.reason }}</template><template v-else>{{ LABEL[it.status] }}<template v-if="it.reason">: {{ it.reason }}</template></template></span>
             <button v-if="it.status === 'fail' && it.retryable && !running" class="g-btn w-up-retry" type="button" @click="retry(it)">다시 시도</button>
           </li>
         </ul>

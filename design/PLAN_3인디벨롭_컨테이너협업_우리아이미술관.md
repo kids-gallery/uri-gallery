@@ -19,7 +19,7 @@
 | 모델 서빙 | app-api(Express) · sweeper · model-api(FastAPI) · 워커(Python, DB 작업 큐 `stage_job`) · MariaDB. 모델 M1 BiRefNet · M2 OpenCLIP · M5 Depth Anything V2(M3·M7은 가짜 어댑터로 둘 수 있다). 팀 서버(맥)에서 pm2로 띄웠다 | `api/` `serving/` `db/` `ops/p1/` |
 | API | 가입·로그인·아이·작품 올리기·권유 확정·결과 결정·미술관 목록·파일(`contracts/openapi.yaml`, 경로 69개). 작품 상세가 M1 컷아웃 주소(`cutoutUrl`)와 결과 파일 주소를 준다 | `contracts/openapi.yaml` |
 | 3D 화면 | Vue 3.5 + three.js 0.170. 작품·방·설정은 IndexedDB(`store.ts`), 배경 지우기는 브라우저 규칙(`cutout.ts`). 서버를 부르지 않는다. 서버 모델로 바꿀 자리를 나눠 두었다(`cutout.ts` 2행: `removeBackground()`·`buildRelief()`) | `web/src/app/world/` |
-| 3D 화면 실행 | 개발: `cd web && npm run dev` → `http://127.0.0.1:9501/app/world`(개발 서버가 `/v1/*`를 app-api로 넘긴다). 배포본: `npm run build:world` → `web/dist-world/` | `web/vite.config.ts`, `web/package.json` |
+| 3D 화면 실행 | 개발: `cd web && npm run dev` → `http://127.0.0.1:9501/app/world`(개발 서버가 `/v1/*`를 app-api로 넘긴다). 배포본: `npm run build:world` → `web/dist-world/`. 서버로 올리려면 둘 다 `VITE_WORLD_SERVER=1`(3-3) | `web/vite.config.ts`, `web/package.json` |
 | 개인정보 문구 | 3D 화면 안내 창에 "사진을 이 기기 밖으로 보내지 않아요"라고 적혀 있다. 서버로 보내게 되므로 바꿔야 한다 | `web/src/app/world/WorldPrivacy.vue` 20행 |
 | 리눅스 | 리눅스 컨테이너(arm64·x86_64)에서 서빙·api 시험 통과, x86_64용 CPU 전용 모델 잠금 있음 | `serving/README.md` |
 | Docker | Dockerfile·compose·`.dockerignore` 0개 | 저장소 |
@@ -85,9 +85,21 @@
 
 | 종류 | 언제 | 창이 할 일 |
 |---|---|---|
-| `offline` | 서버에 닿지 않음(네트워크 실패, 5xx. 단 503 `not_saved`는 아래 `refused`) | "서버에 닿지 않아요"와 다시 시도. 기기 저장으로 바꾸지 않는다 |
+| `offline` | 서버에 닿지 않음(네트워크 실패, 5xx. 단 503 `not_saved`는 아래 `refused`) | 연결되지 않는다고 알리고 다시 시도하게 한다. 화면 글에 "서버"를 쓰지 않는다(D48). 기기 저장으로 바꾸지 않는다 |
 | `login` | 401 | 로그인 창을 연다 |
 | `refused` | 서버가 거절(그 밖의 4xx, `not_saved`) | 이유 문장(`problemCopy`의 `reason`, `/app`과 같은 사전)과 칸별 이유(`fields`) |
+
+**사진 올리기(`web/src/app/world/server/upload.ts`, #31).** 올리기 창(`WorldUpload.vue`)이 서버로 사진을 보내고, 받은 원본 액자를 바로 건다.
+
+- **켜는 값: 빌드 설정 `VITE_WORLD_SERVER=1`.** 값이 없으면 지금처럼 기기 판이다. compose의 web 이미지는 이 값으로 빌드한다(#26), 개발 서버는 `VITE_WORLD_SERVER=1 npm run dev`.
+  - 고른 이유: 로그인(#30)·아이 선택(#36)·서버 전시(#40)가 끝나기 전에 전부 바꾸면 3D 화면이 그동안 쓸 수 없다. 세션이 있는지로 자동 전환하면 로그인이 풀렸을 때 기기 판으로 몰래 바뀌어 위 규칙을 어긴다. 한 빌드는 한 저장소만 쓴다.
+  - 기기 판을 없애는 일은 #40 뒤에 따로 정한다.
+- **요청 번호(`Idempotency-Key`):** 사진마다 UUID 하나를 만들어 다시 시도할 때도 그대로 쓴다. 서버가 UUID만 받는다. `crypto.randomUUID`는 https나 localhost에서만 되므로(#41의 `http://<IP>:9501`에서는 없음) `crypto.getRandomValues`로 대신 만든다.
+- **올리기 전 안내:** JPEG·PNG·HEIC, 한 장 20MB까지. 빈 파일·큰 파일·다른 형식은 서버에 보내지 않는다. 그래도 서버가 내용을 다시 검사하므로 깨진 사진은 서버 이유 문장으로 보인다.
+- **다시 시도:** `offline`·`login`과 503 `not_saved`만 다시 시도할 수 있다. 그 밖의 `refused`는 같은 사진으로 다시 해도 안 되므로 버튼을 두지 않는다. `login`은 #30의 로그인 창이 생기기 전까지 안내 문장만 보인다.
+- **어느 아이의 작품인가:** `selectedChild`(#36이 정함)를 먼저 쓰고, 없으면 아이가 1명일 때 그 아이로 한다. 0명이거나 여러 명인데 고르지 않았으면 올리지 않고 안내한다. 다른 아이 작품으로 들어가는 일을 막기 위해서다.
+- **원본 액자 걸기:** 202의 `photoUrl`을 받아 화면용 사본을 만들고(`processImage`, 배경 지우기 없음) 3D 화면에 건다. 서버 판은 기기 저장소의 작품을 섞지 않는다. 올린 뒤 나이·주제 질문과 돌리기 버튼도 두지 않는다(서버가 이야기를 채우고 올린 작품은 고칠 수 없다, D46). 기기에 저장한다는 안내 띠와 브라우저 배경 지우기 결과 문구도 보이지 않는다. 화면이 그리지 못하는 사진(HEIC를 못 여는 브라우저)은 서버에는 보관됐으므로 실패로 치지 않고 안내만 한다.
+- [한계] 걸린 작품은 이 화면의 메모리에만 있어 새로 고침하면 사라져 보이고, 정보 고치기·지우기도 아직 서버로 가지 않는다. 서버 목록과 함께 #40에서 바꾼다. 설정·개인정보 창의 "이 기기에만 저장" 문구는 #44에서 바꾼다.
 
 ### 3-4. 컨테이너로 옮기며 고칠 코드(작게, 설계서 먼저)
 
