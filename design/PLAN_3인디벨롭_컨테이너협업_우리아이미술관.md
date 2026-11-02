@@ -63,7 +63,7 @@
 
 - **#26 입구 이미지:** 저장소 루트에서 `docker build -f web/Dockerfile .`. 의존성 파일을 먼저 복사하고 `npm ci`한 뒤 웹 소스를 복사한다. `VITE_WORLD_SERVER=1`을 빌드 단계에서 고정한다. 실행 이미지는 `dist-world` 전체(생성된 `/licenses/THIRD_PARTY.txt` 포함)를 정적 루트에 담고 80번에서 받는다. API 라우팅과 SPA 대체는 #27에서 설정한다. 루트 `.dockerignore`를 재사용하며 `web/.dockerignore`는 만들지 않는다.
 
-- **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다.
+- **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
