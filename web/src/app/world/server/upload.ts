@@ -34,12 +34,16 @@ export function checkPhoto(f: File): string | null {
 export type SendResult = { ok: true; id: string; hung: boolean } | { ok: false; reason: string; retryable: boolean };
 
 const hung = new Map<string, store.Artwork>();
+let generation = 0;
+/** 로그아웃·만료 시 이전 가족의 작품과 선택을 버린다. 진행 중 응답도 무효다. */
+export function clearWorldWorks() { generation++; hung.clear(); selectedChild.value = null; }
 
 /** 3D 화면에 그릴 작품. 서버 판은 기기 저장소의 작품을 섞지 않는다 */
 export const worldWorks = async (): Promise<store.Artwork[]> => (SERVER_WORLD ? [...hung.values()] : store.listArtworks());
 
 /** key는 사진마다 하나다. 다시 시도할 때 같은 key를 넘겨야 작품이 두 번 생기지 않는다 */
 export async function sendPhoto(file: File, key: string): Promise<SendResult> {
+  const current = generation;
   let detail: ArtworkDetail;
   try {
     const list = await listChildren();
@@ -52,11 +56,14 @@ export async function sendPhoto(file: File, key: string): Promise<SendResult> {
     if (f.kind === 'login') return { ok: false, reason: '로그인이 필요해요. 로그인한 뒤 다시 시도해 주세요', retryable: true };
     return { ok: false, reason: f.reason, retryable: e instanceof ApiError && e.code === 'not_saved' };
   }
-  return { ok: true, id: detail.id, hung: await hang(detail) };
+  if (current !== generation) return { ok: false, reason: '로그인이 바뀌었어요. 다시 로그인해 주세요', retryable: true };
+  const displayed = await hang(detail, current);
+  if (current !== generation) return { ok: false, reason: '로그인이 바뀌었어요. 다시 로그인해 주세요', retryable: true };
+  return { ok: true, id: detail.id, hung: displayed };
 }
 
 /** 서버에 보관된 사진으로 원본 액자를 건다. 배경 분리는 서버 몫이라 cutoutState를 두지 않는다. 화면이 그리지 못해도 보관은 끝났으므로 실패로 돌려주지 않는다 */
-async function hang(d: ArtworkDetail): Promise<boolean> {
+async function hang(d: ArtworkDetail, current: number): Promise<boolean> {
   if (hung.has(d.id)) return true;
   try {
     const res = await fetch(d.photoUrl ?? '', { credentials: 'same-origin' });
@@ -64,6 +71,7 @@ async function hang(d: ArtworkDetail): Promise<boolean> {
     const original = await res.blob();
     const { display } = await store.processImage(original, false);
     await store.saveRooms([...await store.getRooms(), store.UNSORTED_AGE]);
+    if (current !== generation) return false;
     hung.set(d.id, {
       id: d.id, no: hung.size + 1, title: d.story?.title ?? '', kind: d.making ? 'making' : 'drawing', subject: 'etc', material: '',
       age: store.UNSORTED_AGE, madeOn: d.story?.madeOn ?? '', words: '', original, display, cutout: null,

@@ -1,0 +1,14 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
+import Session from '../app/world/WorldSession.vue';
+const s=vi.hoisted(()=>({me:vi.fn(),login:vi.fn(),logout:vi.fn(),clear:vi.fn()}));
+vi.mock('../app/world/server',()=>({...s,failureOf:()=>({kind:'login'})}));
+vi.mock('../app/world/server/upload',()=>({SERVER_WORLD:true,clearWorldWorks:s.clear}));
+vi.mock('../app/world/WorldView.vue',()=>({__esModule:true,default:{template:'<div data-private>가족 작품</div>'}}));
+const views:ReturnType<typeof mount>[]=[];
+const open=()=>{const w=mount(Session,{global:{stubs:{RouterLink:true}}});views.push(w);return w;};
+afterEach(()=>{views.forEach(w=>w.unmount());views.length=0;vi.resetAllMocks();});
+it('새로 고침의 me 결과가 올 때까지 작품을 만들지 않고 성공한 세션을 복원한다',async()=>{let done!:(x:object)=>void;s.me.mockImplementation(()=>new Promise(r=>{done=r;}));const w=open();expect(w.find('[data-private]').exists()).toBe(false);done({hasFamily:true});await flushPromises();await flushPromises();expect(w.find('[data-private]').exists()).toBe(true);expect(s.login).not.toHaveBeenCalled();});
+it('로그아웃을 누르면 응답 전에도 작품을 제거하고 성공 뒤 로그인 입력을 보인다',async()=>{s.me.mockResolvedValue({hasFamily:true});s.logout.mockResolvedValue(undefined);const w=open();await flushPromises();await flushPromises();await w.find('.logout').trigger('click');expect(w.find('[data-private]').exists()).toBe(false);expect(s.clear).toHaveBeenCalled();await flushPromises();expect(w.text()).toContain('로그아웃했어요');expect(w.find('input[type=password]').exists()).toBe(true);});
+it('401 만료 알림은 가족 작품을 제거하고 로그인 안내를 보여 준다',async()=>{s.me.mockResolvedValue({hasFamily:true});const w=open();await flushPromises();await flushPromises();window.dispatchEvent(new Event('world-session-expired'));await flushPromises();expect(w.find('[data-private]').exists()).toBe(false);expect(w.text()).toContain('만료됐어요');expect(s.clear).toHaveBeenCalled();});
+it('로그아웃 통신 실패를 성공으로 표시하지 않고 재시도만 제공한다',async()=>{s.me.mockResolvedValue({hasFamily:true});s.logout.mockRejectedValue(new Error('offline'));const w=open();await flushPromises();await flushPromises();await w.find('.logout').trigger('click');await flushPromises();expect(w.find('[data-private]').exists()).toBe(false);expect(w.text()).toContain('마치지 못했어요');expect(w.text()).toContain('로그아웃 다시 시도');expect(w.find('form').exists()).toBe(false);});

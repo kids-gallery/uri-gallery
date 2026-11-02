@@ -53,7 +53,10 @@ export type Failure =
 /** 창에 넘길 오류 종류(마스터플랜 3-3 표). ApiError가 아닌 것(코드 오류 등)도 서버에 닿지 않은 것으로 다룬다. */
 export function failureOf(e: unknown): Failure {
   if (!(e instanceof ApiError) || e.unavailable) return { kind: 'offline' };
-  if (e.status === 401) return { kind: 'login' };
+  if (e.status === 401) {
+    window.dispatchEvent(new Event('world-session-expired'));
+    return { kind: 'login' };
+  }
   const fields = (e.problem?.fields ?? []).map((f) => ({ name: f.name ?? '', reason: f.reason ?? '' }));
   return { kind: 'refused', reason: problemCopy({ gate: e.gate, reason: e.reason, code: e.code }).reason, fields };
 }
