@@ -53,7 +53,11 @@ export default async function globalSetup() {
 
   const kakaoFake = await startKakaoFake(KAKAO_PORT);
   procs.push(spawn(path.join(os.homedir(), '.local/bin/mailpit'), ['--smtp', `127.0.0.1:${SMTP_PORT}`, '--listen', `127.0.0.1:${MAIL_PORT}`, '--database', path.join(dir, 'mail.db')], { stdio: ['ignore', log('mailpit'), log('mailpit')] }));
-  procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] }));
+  const api = spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/server.ts'], { cwd: API, env, stdio: ['ignore', log('api'), log('api')] });
+  procs.push(api);
+  // 흐름 시험이 app-api를 껐다 켤 때 쓴다(api-control.ts). 값은 모두 임시 스택 전용이고 이 폴더와 함께 지워진다
+  fs.writeFileSync(path.join(dir, 'api-env.json'), JSON.stringify(env), { mode: 0o600 });
+  fs.writeFileSync(path.join(dir, 'api.pid'), String(api.pid));
   // 삭제(S9)를 끝까지 처리하는 sweeper(10초 주기, pm2 'sweeper'와 같은 진입점)
   procs.push(spawn(path.join(API, 'node_modules/.bin/tsx'), ['src/sweeper/main.ts'], { cwd: API, env, stdio: ['ignore', log('sweeper'), log('sweeper')] }));
   // 액자 경로(frame_compose)를 처리하는 CPU 워커 — 모델 없이 도는 단계만 실제로 돈다(활성 모델 없음, p1과 같음)
@@ -69,6 +73,7 @@ export default async function globalSetup() {
   process.env.E2E_DIR = dir;
   return async () => {
     kakaoFake.close();
+    try { process.kill(Number(fs.readFileSync(path.join(dir, 'api.pid'), 'utf8'))); } catch { /* 이미 끝남 */ }
     // 끝나기를 기다린 뒤 지운다(MariaDB가 닫히며 파일을 쓰는 중이면 ENOTEMPTY)
     await Promise.all(procs.reverse().map((p) => new Promise<void>((r) => {
       if (p.exitCode !== null || p.signalCode) return r();
