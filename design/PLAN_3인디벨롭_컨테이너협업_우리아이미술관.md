@@ -129,10 +129,10 @@
      | API 계약 | `/app/contracts` | `CONTRACTS_DIR` |
      | 모델 매니페스트 | `/app/models/manifest.yaml` | `MODEL_MANIFEST` |
 
-3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 실제 모델은 [미검증]이다.
-   - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
-   - [확인] 최호준 PC는 메모리 7.73 GiB, WSL 3.8 GiB다(#15, 2026-10-30). WSL 한도를 늘려도 PC 전체가 M1 추론 RSS(8.5GB)보다 작아 이 PC에서는 실제 M1을 돌리지 않는다. 신지현 PC도 메모리 7.70 GiB, WSL 3.7 GiB(사용 가능 2.4 GiB)로 같다(#15). 마스터플랜 4절 대비책대로 Windows 두 대에서는 가짜 모델로 이미지·compose를 만들고, 실제 모델 실측은 맥(이제민 PC)에서 함께 한다(#43). [미검증] 가짜 모델 compose 전체도 WSL 사용 가능 메모리 2~3 GiB 안에 들어가는지는 #16·#41에서 잰다. 모자라면 `%UserProfile%\.wslconfig`의 `memory`를 늘린다(PC 전체의 절반 이상).
-   - #16(Windows WSL: 가짜 모델 compose의 메모리, 가능하면 M2·M5 한 장)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다.
+3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 컨테이너 안에서 실제 모델을 돌리는 일은 [미검증]이다(#42·#43).
+   - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이번 재측정에서는 재현되지 않았다. 최호준 PC의 Ubuntu 가상환경은 3284.7MiB(스왑 사용), 이제민 맥의 CPU 2스레드는 4827.1MiB다(#16, PR #64, 각 1회). 차이의 원인은 [미확인]이므로 8.5GB를 버리지 않고 #43에서 다시 잰다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
+   - [확인] 최호준 PC는 메모리 7.73 GiB, WSL 3.8 GiB다(#15, 2026-10-30). 이 PC에서 M1은 돌아가지만 추론이 109.678초로 `limits.yaml`의 split 제한 60초를 넘고, 그 값도 스왑을 쓴 1회 측정이다(#16). 신지현 PC도 메모리 7.70 GiB, WSL 3.7 GiB(사용 가능 2.4 GiB)로 비슷하다(#15). 그래서 Windows 두 대는 가짜 모델로 개발하고, 실제 M1·M2·M5 실행과 실측은 맥(이제민 PC)에서 이제민이 맡는다(2026-11-02 결정, #42·#43). Windows에서 M1 컨테이너 측정은 하지 않는다. [미검증] 가짜 모델 compose 전체도 WSL 사용 가능 메모리 2~3 GiB 안에 들어가는지는 #41에서 잰다. 모자라면 `%UserProfile%\.wslconfig`의 `memory`를 늘린다(PC 전체의 절반 이상).
+   - #41(Windows WSL: 가짜 모델 compose의 메모리)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다. [추정] #16에서 M2·M5에 쓴 3GiB 제한이면 M1은 메모리 부족으로 죽을 수 있다(맥 4827.1MiB 기준).
    - [추론] 메모리가 모자라 worker가 죽으면 재시작되고, 맡던 작업은 점유 60초가 지난 뒤 다시 시도된다. 3번 실패하면 "결과 미도달"이다(`limits.yaml` `claim.seconds 60`, `retry.max_attempts 3`).
 4. **데이터와 비밀 값.**
 
@@ -197,12 +197,12 @@
 
 | 사람 | 환경 | 역할 | 맡는 폴더 | 하는 일 | 리뷰어 |
 |---|---|---|---|---|---|
-| 최호준(`zozu001`) | Windows(WSL, x86_64) | A 모델 서빙 + 묶기 | `serving/`, `compose.yaml` | serving 이미지(model-api·worker-cpu), 실제 모델(M1·M2·M5), compose로 묶기와 db·mailpit·sweeper 서비스 설정, `.env.example` | 신지현 |
+| 최호준(`zozu001`) | Windows(WSL, x86_64) | A 모델 서빙 + 묶기 | `serving/`, `compose.yaml` | serving 이미지(model-api·worker-cpu), compose로 묶기와 db·mailpit·sweeper 서비스 설정, `.env.example` | 신지현 |
 | 신지현(`tlswlgus960-prog`, 팀장) | Windows(WSL, x86_64) | B 프론트엔드 + 입구·처음부터 띄워 보기 | `web/`(화면·빌드), 입구 nginx, `.gitattributes` | 3D 미술관 화면의 디자인과 인터페이스 전반(화면 흐름, 창, 문구, 상태·오류 표시, 반응형), web 이미지와 nginx, 개인정보 문구와 서비스 워커, 깨끗한 PC에서 처음부터 띄워 보기 | 이제민 |
-| 이제민(`wpalswpa`) | 맥(arm64, 메모리 여유) | C 앱·데이터·연결 + 병합 | `api/`, `db/`, `contracts/`, `web/src/app/world/`의 서버 연결 층 | api 이미지와 주소·프록시 설정, 스키마 시험과 대응표, 3D 화면의 서버 연결 층(올리기·상태·전시, 3-3 표), 설계 PR 작성 | 최호준 |
+| 이제민(`wpalswpa`) | 맥(arm64, 메모리 여유) | C 앱·데이터·연결 + 병합 | `api/`, `db/`, `contracts/`, `web/src/app/world/`의 서버 연결 층 | api 이미지와 주소·프록시 설정, 스키마 시험과 대응표, 3D 화면의 서버 연결 층(올리기·상태·전시, 3-3 표), 설계 PR 작성, 실제 모델(M1·M2·M5) 켜기와 맥 실측 | 최호준 |
 
 - 배정은 2026-10-30 다시 정했다. 바꾸면 이 표와 `.github/CODEOWNERS`부터 고친다.
-- **실제 모델과 PC.** 역할 A는 Windows에서 일한다. WSL2는 따로 정하지 않으면 PC 메모리의 절반만 쓴다(Microsoft WSL 설정 문서, `.wslconfig`의 `memory`). M1 추론 중 약 8.5GB가 들므로, 1일차 측정(I-04)에서 WSL 메모리 한도를 먼저 확인하고 모자라면 `.wslconfig`로 늘린다. 그래도 모자라면 Windows에서는 가짜 모델로 만들고, 실제 모델 한 바퀴와 7절 수치는 맥(이제민 PC)에서 둘이 함께 잰다.
+- **실제 모델과 PC.** 역할 A는 Windows에서 가짜 모델로 일한다. 1일차 측정(#16)에서 M1이 그 PC의 split 제한 60초를 넘었기 때문이다(3-5 3번). 실제 모델 켜기(#42)와 한 바퀴, 7절 수치(#43)는 맥(이제민 PC)에서 이제민이 맡고, 최호준이 리뷰한다. 2026-11-02에 이렇게 바꿨다.
 - 협업 규칙은 팀 핸드북(`kids-gallery/team-handbook`)을 따른다: Issue 먼저, 작업 가지에서 커밋, PR은 작성자가 아닌 사람의 승인 1회, `main` 직접 push 금지(관리자 포함). 병합은 이제민이 하고, 이제민 자신의 PR은 다른 사람이 승인한 뒤 병합한다. 자기 PR을 자기 승인으로 합치지 않는다.
 - PR을 올리기 전에 자기 폴더의 시험(`npm test`, `pytest`)을 로컬에서 돌리고 결과를 PR에 적는다.
 - 모든 작업은 "설계서 수정 → 구현 → 결과가 달라지면 설계서 다시 맞춤" 순서다.
@@ -237,7 +237,7 @@
 | 1일차 바탕(10-30 금) | 역할 확인, 셋 다 `docker run hello-world`와 저장소 clone·push 확인, 3D 화면을 개발 서버로 띄워 써 보기, 설계 PR(3-5) 쓰기 시작 | 리눅스 컨테이너 CPU로 M1·M2·M5 한 장당 시간과 메모리 재기(WSL 메모리 한도 먼저 확인) | `.gitattributes`, WSL에서 `npm run build:world` | MariaDB 컨테이너에 스키마 넣어 보기, 3D 화면 ↔ API 대응표 확정 | 설계 PR이 올라와 있다 |
 | 2일차 따로 만들기(11-02 월) | 오전에 설계 PR 리뷰·병합 | serving 이미지(가짜 모델 먼저), model-api 주소 설정, CPU별 모델 묶음, Mailpit·환경 변수 | web 이미지와 nginx, 3D 화면 가입·로그인 창 | api 이미지, 주소·프록시 설정, 서버 연결 층, 사진 올리기 | 각자 이미지가 혼자 뜬다. 개발 서버에서 3D 화면이 API로 사진을 올린다 |
 | 3일차 묶기(11-03 화) | 저녁에 셋이 같은 compose를 받아 띄우기 | `compose.yaml`에 7개 묶기(볼륨·기동 순서), DB 초기화, 가짜 모델 워커, sweeper | 아이 고르기·확정·결정 창 | 상태 묻기와 재시도, 전시 목록과 컷아웃 입체 | 가짜 모델로 세 PC 모두 가입 → 사진 → 확정 → 3D 전시 한 바퀴 |
-| 4일차 재고 다듬기(11-04 수) | 저녁에 기능 동결, 예비 시연 영상 | 실제 모델 켜기, 맥(이제민 PC)에서 이제민과 함께 한 바퀴, 처리 시간·메모리 재기 | 개인정보 문구와 서비스 워커, 깨끗한 PC에서 처음부터 띄워 보고 README 실행 방법, `down` 뒤 `up`에도 작품이 남는지 | 맥 실측 함께, 병합과 발표를 막는 버그 고치기 | 맥에서 실제 모델로 한 바퀴, 7절 수치표 |
+| 4일차 재고 다듬기(11-04 수) | 저녁에 기능 동결, 예비 시연 영상 | Windows에서 compose·서빙 문제 고치기, 실제 모델 PR 리뷰 | 개인정보 문구와 서비스 워커, 깨끗한 PC에서 처음부터 띄워 보고 README 실행 방법, `down` 뒤 `up`에도 작품이 남는지 | 실제 모델 켜기, 맥에서 한 바퀴, 처리 시간·메모리 재기, 병합과 발표를 막는 버그 고치기 | 맥에서 실제 모델로 한 바퀴, 7절 수치표 |
 | 5일차 발표(11-05 목) | 오전 리허설 2회 | 모델 서빙·compose 설계, 한계 | 입구·화면 부분 | 문제, 앱·데이터·연결 부분, 시연 진행 | 발표 |
 
 ## 6. 발표 구성(10분)
