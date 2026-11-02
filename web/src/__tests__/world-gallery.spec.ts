@@ -237,6 +237,32 @@ describe('다른 가족·다른 아이의 작품이 남지 않는다', () => {
     expect(g.galleryFailure.value).toBeNull();
   });
 
+  it.each(['getRooms', 'saveRooms'] as const)('%s를 기다리는 중에 로그아웃하면 옛 작품을 돌려주지 않고 방도 저장하지 않는다', async (at) => {
+    server({ c1: [item('family-a')] });
+    const { g, store } = await load();
+    let release: () => void = () => undefined;
+    let reached: () => void = () => undefined;
+    const arrived = new Promise<void>((r) => { reached = r; });
+    const hold = new Promise<void>((r) => { release = r; });
+    if (at === 'getRooms') vi.mocked(store.getRooms).mockImplementation(async () => { reached(); await hold; return [4]; });
+    else vi.mocked(store.saveRooms).mockImplementation(async () => { reached(); await hold; });
+    const reading = g.galleryWorks(null);
+    await arrived;
+    g.clearGallery();
+    release();
+    expect(await reading).toEqual([]);
+    expect(store.saveRooms).toHaveBeenCalledTimes(at === 'getRooms' ? 0 : 1);
+    expect(g.galleryFailure.value).toBeNull();
+  });
+
+  it('방을 저장하지 못해도 전시는 그대로이고 연결 실패로 알리지 않는다', async () => {
+    server({ c1: [item('a1')] });
+    const { g, store } = await load();
+    vi.mocked(store.saveRooms).mockRejectedValue(new Error('quota'));
+    expect((await g.galleryWorks(null)).map((a) => a.id)).toEqual(['a1']);
+    expect(g.galleryFailure.value).toBeNull();
+  });
+
   it('다른 아이의 목록을 못 읽으면 이전 아이의 작품을 돌려주지 않는다', async () => {
     const s = server({ a: [item('child-a')], b: [item('child-b')] });
     const { g } = await load();

@@ -55,6 +55,14 @@ async function load(entries: { item: Item; childId: string }[], mine: number): P
   return missed;
 }
 
+/** 나이 전시실을 기기에 남긴다. 못 남겨도 전시는 그대로이고, 연결 실패도 아니다 */
+async function saveRooms(works: store.Artwork[], mine: number) {
+  try {
+    const rooms = await store.getRooms();
+    if (mine === epoch) await store.saveRooms([...rooms, ...works.map((a) => a.age)]);
+  } catch { /* 다음에 읽을 때 다시 남긴다 */ }
+}
+
 export async function galleryWorks(childId: string | null): Promise<store.Artwork[]> {
   const mine = epoch;
   try {
@@ -66,9 +74,9 @@ export async function galleryWorks(childId: string | null): Promise<store.Artwor
     const ids = new Set(entries.map((x) => x.item.id));
     for (const id of shown.keys()) if (!ids.has(id)) shown.delete(id);
     const order = entries.flatMap((x) => shown.get(x.item.id)?.work ?? []);
-    await store.saveRooms([...await store.getRooms(), ...order.map((a) => a.age)]);
     galleryFailure.value = null;
-    return order;
+    await saveRooms(order, mine);
+    return mine === epoch ? order : [];
   } catch (e) {
     if (mine !== epoch) return [];
     galleryFailure.value = failureOf(e);

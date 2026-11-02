@@ -434,7 +434,7 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
-async function retryWorld() { await artWatch.retry(); if (galleryFailure.value) await reload(); }
+async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
   void movingIds().then(artWatch.add); // 새로 고침해도 진행 중인 작품을 이어서 묻는다
   watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
