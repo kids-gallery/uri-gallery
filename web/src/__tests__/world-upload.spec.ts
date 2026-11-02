@@ -31,7 +31,7 @@ function fakeServer(children: { id: string; alias: string }[] = [{ id: 'c1', ali
       const id = works.get(key)!;
       return json(202, { id, childId: 'c1', state: 'exhibited', choices: [], stages: [], photoUrl: `/v1/files/${id}`, story: { title: '제목 없는 그림 1' } });
     }
-    if (url.startsWith('/v1/files/')) return new Response(new Blob(['img'], { type: 'image/jpeg' }));
+    if (url.startsWith('/v1/files/')) return new Response('img', { headers: { 'content-type': 'image/jpeg' } });
     throw new Error(`예상 못 한 요청 ${url}`);
   });
   vi.stubGlobal('fetch', fetchStub);
