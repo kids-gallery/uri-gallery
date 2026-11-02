@@ -1,11 +1,22 @@
-// 앱 API 설정 — 환경 변수만 읽는다(.env.example, research R-21). 이름은 serving/common/config.py(A)와 같다.
+// 앱 API 설정 — 환경 변수를 읽는다(.env.example, research R-21). 이름은 serving/common/config.py(A)와 같다.
+// 비밀 값은 NAME_FILE이 있으면 그 파일에서 읽는다(compose secrets, SD_04 4-3).
+import fs from 'node:fs';
 import path from 'node:path';
 
 const bool = (v: string | undefined, d = false) =>
   v === undefined ? d : ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase());
+/** NAME_FILE이 있으면 그 파일(끝 줄바꿈 하나 뺌), 없으면 NAME. 파일을 못 읽으면 예외로 기동을 멈춘다 */
+const secret = (env: NodeJS.ProcessEnv, name: string) => {
+  const file = env[`${name}_FILE`];
+  return file ? fs.readFileSync(file, 'utf8').replace(/\r?\n$/, '') : env[name] ?? '';
+};
 
 export interface Config {
   port: number;
+  /** 바인딩 주소. compose는 0.0.0.0(SD_04 4-3) */
+  host: string;
+  /** Express trust proxy 값(쉼표로 여러 개). 요청 한도가 믿는 입구 뒤의 사용자 주소로 걸린다 */
+  trustProxy: string;
   db: { host: string; port: number; user: string; password: string; database: string; socketPath?: string };
   sessionSecret: string;
   storageRoot: string;
@@ -31,22 +42,24 @@ export interface Config {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     port: Number(env.APP_PORT ?? 9521),
+    host: env.APP_HOST || '127.0.0.1',
+    trustProxy: env.TRUST_PROXY || 'loopback',
     db: {
       host: env.DB_HOST ?? '127.0.0.1',
       port: Number(env.DB_PORT ?? 3306),
       user: env.DB_USER ?? 'uam',
-      password: env.DB_PASSWORD ?? '',
+      password: secret(env, 'DB_PASSWORD'),
       database: env.DB_NAME ?? 'uam',
       socketPath: env.DB_SOCKET || undefined,
     },
-    sessionSecret: env.SESSION_SECRET ?? '',
+    sessionSecret: secret(env, 'SESSION_SECRET'),
     storageRoot: env.STORAGE_ROOT ?? path.resolve('.data/store'),
     modelApiUrl: env.MODEL_API_INTERNAL_URL ?? 'http://127.0.0.1:9541',
     llmServerUrl: env.LLM_SERVER_URL ?? 'http://127.0.0.1:8200',
     mailSmtpUrl: env.MAIL_SMTP_URL ?? 'smtp://127.0.0.1:1025',
     mailFrom: env.MAIL_FROM ?? 'no-reply@localhost',
     appBaseUrl: env.APP_BASE_URL ?? 'http://127.0.0.1:9501',
-    authHmacSecret: env.AUTH_HMAC_SECRET ?? '',
+    authHmacSecret: secret(env, 'AUTH_HMAC_SECRET'),
     captionEnabled: bool(env.CAPTION_ENABLED), // P0에서는 꺼짐(llm-contract.md)
     gpuEnabled: bool(env.GPU_ENABLED), // U2 — 꺼져 있으면 M5는 cpu_vision(BR-SRV-02)
     modelCheckEnabled: bool(env.MODEL_CHECK_ENABLED), // D20 ⑨ — serving 점검 실행기(stage-job §13) 배포 뒤에만 켠다
