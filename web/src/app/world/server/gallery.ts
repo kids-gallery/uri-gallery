@@ -1,0 +1,116 @@
+// 3D 화면 전시 목록(마스터플랜 3-3, #40). 서버 판은 GET /v1/gallery에 있는 작품만 건다.
+// - 컷아웃은 승인되어 걸린 부조(kind가 relief)의 auxUrl만 쓴다. 판정 중에도 오는 상세의 cutoutUrl은 쓰지 않는다.
+// - 파일은 작품마다 메모리에 두고, 결과 종류가 바뀔 때만 다시 받는다.
+import { ref } from 'vue';
+import * as store from '../store';
+import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, type Failure, type Gallery } from './index';
+
+type Item = Gallery['groups'][number]['items'][number];
+
+const shown = new Map<string, { work: store.Artwork; kind: string; childId: string }>();
+/** 로그아웃하면 늘어난다. 그 전에 시작한 요청의 결과는 버린다 */
+let epoch = 0;
+
+/** 목록을 읽지 못했을 때. 보던 작품은 그대로 두고 화면이 알린다 */
+export const galleryFailure = ref<Failure | null>(null);
+
+async function file(url: string): Promise<Blob> {
+  const res = await fetch(url, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(`file ${res.status}`);
+  return res.blob();
+}
+
+/** 원본에서 화면용 사본을 만든다. 배경 분리는 서버 몫이라 cutoutState를 두지 않는다 */
+async function photoWork(id: string, photoUrl: string): Promise<store.Artwork> {
+  const original = await file(photoUrl);
+  const { display } = await store.processImage(original, false);
+  return {
+    id, no: 0, title: '', kind: 'drawing', subject: 'etc', material: '', age: store.UNSORTED_AGE, madeOn: '', words: '',
+    original, display, cutout: null, sample: false, createdAt: Date.now(), rotation: 0,
+  };
+}
+
+async function workOf(item: Item, no: number): Promise<store.Artwork> {
+  const had = shown.get(item.id);
+  const base = had?.work ?? await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
+  const cutout = had?.kind === item.kind ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await file(item.auxUrl) : null;
+  return {
+    ...base, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
+    madeOn: item.madeOn, words: item.childWords ?? '', cutout, cutoutState: cutout ? 'done' : undefined,
+  };
+}
+
+/** 받지 못한 작품 수를 돌려준다 */
+async function load(entries: { item: Item; childId: string }[], mine: number): Promise<number> {
+  let missed = 0;
+  for (const [i, { item, childId }] of entries.entries()) {
+    try {
+      const work = await workOf(item, i + 1);
+      if (mine !== epoch) return 0;
+      shown.set(item.id, { work, kind: item.kind, childId });
+    } catch {
+      missed++; // 한 장 때문에 전시 전체가 비지 않게 한다(열 수 없는 사진 등)
+    }
+  }
+  return missed;
+}
+
+/** 나이 전시실을 기기에 남긴다. 못 남겨도 전시는 그대로이고, 연결 실패도 아니다 */
+async function saveRooms(works: store.Artwork[], mine: number) {
+  try {
+    const rooms = await store.getRooms();
+    if (mine === epoch) await store.saveRooms([...rooms, ...works.map((a) => a.age)]);
+  } catch { /* 다음에 읽을 때 다시 남긴다 */ }
+}
+
+export async function galleryWorks(childId: string | null): Promise<store.Artwork[]> {
+  const mine = epoch;
+  try {
+    const children = childId ? [childId] : (await listChildren()).map((c) => c.id);
+    const read = async () => (await Promise.all(children.map(gallery))).flatMap((g) => g.groups.flatMap((x) => x.items.map((item) => ({ item, childId: g.childId }))));
+    let entries = await read();
+    if (await load(entries, mine)) { entries = await read(); await load(entries, mine); } // 파일 주소는 5분 뒤 만료된다. 새 주소로 한 번 더 받는다
+    if (mine !== epoch) return [];
+    const ids = new Set(entries.map((x) => x.item.id));
+    for (const id of shown.keys()) if (!ids.has(id)) shown.delete(id);
+    const order = entries.flatMap((x) => shown.get(x.item.id)?.work ?? []);
+    galleryFailure.value = null;
+    await saveRooms(order, mine);
+    return mine === epoch ? order : [];
+  } catch (e) {
+    if (mine !== epoch) return [];
+    galleryFailure.value = failureOf(e);
+    return [...shown.values()].filter((s) => !childId || s.childId === childId).map((s) => s.work); // 다른 아이의 작품을 대신 보이지 않는다
+  }
+}
+
+/** 올리자마자 원본 액자를 건다. 화면이 그리지 못해도 보관은 끝났으므로 false만 돌려준다 */
+export async function hangUploaded(d: ArtworkDetail): Promise<boolean> {
+  if (shown.has(d.id)) return true;
+  const mine = epoch;
+  try {
+    const work = await photoWork(d.id, d.photoUrl ?? '');
+    if (mine !== epoch) return false;
+    shown.set(d.id, { work, kind: 'frame', childId: d.childId });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** 걸린 결과가 지금 보이는 것과 다르면 목록을 다시 읽어야 한다. 조각은 공개 설정이 꺼져 있으면 액자로 내려온다(D10) */
+export function isStale(d: ArtworkDetail): boolean {
+  if (!d.exhibited) return false;
+  const now = shown.get(d.id)?.kind, hung = d.hungResultKind ?? 'frame';
+  return now !== hung && !(hung === 'sculpture' && now === 'frame');
+}
+
+/** 새로 고침 뒤 이어서 물을 작품. 못 읽으면 묻지 않을 뿐 전시는 그대로다 */
+export const movingIds = () => listArtworks().then((list) => list.filter((a) => a.currentStage).map((a) => a.id), () => []);
+
+/** 로그아웃(#30): 다른 가족의 작품이 남지 않게 지운다 */
+export function clearGallery() {
+  epoch++;
+  shown.clear();
+  galleryFailure.value = null;
+}

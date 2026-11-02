@@ -13,7 +13,8 @@ import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, worldWorks } from './server/upload';
-import { failureReason } from './server';
+import { deleteArtwork, failureOf, failureReason } from './server';
+import { galleryFailure, isStale, movingIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldAvatar from './WorldAvatar.vue';
@@ -432,6 +433,12 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
+const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
+async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
+if (SERVER_WORLD) {
+  void movingIds().then(artWatch.add); // 새로 고침해도 진행 중인 작품을 이어서 묻는다
+  watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
+}
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {
   if (SERVER_WORLD && from === 'upload') artWatch.add(ids);
   panel.value = null; pendingFiles.value = []; firstPrompt.value = false;
@@ -483,11 +490,11 @@ async function rotateSaved(dir: 1 | -1) {
 
 async function onDelete(id: string) {
   try {
-    await store.deleteArtwork(id);
+    await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');
-  } catch { say('지우지 못했어요. 다시 해 주세요'); }
+  } catch (e) { say(SERVER_WORLD ? failureReason(failureOf(e)) : '지우지 못했어요. 다시 해 주세요'); }
 }
 
 async function toggleSamples() {
@@ -708,9 +715,9 @@ function openSettings() {
       <span>백업 파일에 없는 작품이 쌓였어요. 백업을 내보내 둘까요?</span>
       <span class="row"><button class="g-btn g-btn--primary" type="button" @click="backupFromNudge">백업 내보내기</button><button class="g-btn" type="button" @click="backupLater">나중에</button></span>
     </section>
-    <section v-if="watchFailure && phase==='ready'" class="w-nudge g-panel" role="status" aria-label="작품 처리 상태">
-      <span>{{ failureReason(watchFailure) }}</span>
-      <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="artWatch.retry">{{ watchFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
+    <section v-if="worldFailure && phase==='ready'" class="w-nudge g-panel" role="status" aria-label="작품 처리 상태">
+      <span>{{ failureReason(worldFailure) }}</span>
+      <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
@@ -879,7 +886,7 @@ function openSettings() {
             <template v-if="!visiting">
               <p class="by">{{ plaqueOf({ ...viewWork, child: account?.child ?? '' }).byline }}</p>
               <label class="w-field w-story">아이가 한 말, 그때 이야기
-                <textarea v-model="storyDraft" class="w-input" maxlength="200" rows="4" placeholder="아이에게 이 그림 이야기를 들려 달라고 해 보세요" />
+                <textarea v-model="storyDraft" class="w-input" maxlength="200" rows="4" :readonly="SERVER_WORLD" :placeholder="SERVER_WORLD ? '' : '아이에게 이 그림 이야기를 들려 달라고 해 보세요'" />
               </label>
               <p v-if="storyMsg" class="g-note" aria-live="polite">{{ storyMsg }}</p>
               <fieldset class="w-share">
@@ -894,7 +901,7 @@ function openSettings() {
               </fieldset>
             </template>
             <div class="row">
-              <button v-if="!visiting" class="g-btn g-btn--primary" type="button" :disabled="storyBusy || storyDraft === viewWork.words" @click="saveStory">이야기 남기기</button>
+              <button v-if="!visiting && !SERVER_WORLD" class="g-btn g-btn--primary" type="button" :disabled="storyBusy || storyDraft === viewWork.words" @click="saveStory">이야기 남기기</button>
               <button class="g-btn" type="button" @click="closePanel">닫기</button>
             </div>
           </div>

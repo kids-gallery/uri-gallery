@@ -233,6 +233,17 @@ describe('늦게 도착한 옛 응답', () => {
     expect(f).toHaveBeenCalledTimes(1);
   });
 
+  it('화면을 벗어난 뒤 작품을 더해도(새로 고침 뒤 늦게 온 목록) 묻지 않는다', async () => {
+    const f = server(() => art('a1', 'running'));
+    const w = start();
+    scope.stop();
+    w.add(['a1']);
+    await flush(60000);
+    expect(f).toHaveBeenCalledTimes(0);
+    await w.retry();
+    expect(f).toHaveBeenCalledTimes(0);
+  });
+
   it('다시 시도 뒤에 도착한 옛 실패는 안내를 띄우지 않는다', async () => {
     let fail: (r: Response) => void = () => undefined;
     let n = 0;

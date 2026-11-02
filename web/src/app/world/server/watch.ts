@@ -17,6 +17,7 @@ export function useArtworkWatch() {
   const retrying = ref(false);
   const watching = new Set<string>();
   let round = 0;
+  let left = false; // 화면을 벗어나면 다시 묻지 않는다
 
   async function ask(): Promise<boolean> {
     const mine = ++round;
@@ -44,6 +45,7 @@ export function useArtworkWatch() {
   const poll = usePolling(ask);
 
   function add(ids: string[]) {
+    if (left) return;
     for (const id of ids) watching.add(id);
     if (watching.size) poll.start();
   }
@@ -70,6 +72,6 @@ export function useArtworkWatch() {
   }
 
   // usePolling은 타이머만 멈춘다. 다시 시도를 기다리는 중에 화면을 벗어나면 그 뒤의 poll.start()까지 막아야 한다(watching이 비어 ask가 false를 돌려준다)
-  if (getCurrentScope()) onScopeDispose(clear);
+  if (getCurrentScope()) onScopeDispose(() => { left = true; clear(); });
   return { details, failure, retrying, add, retry, clear };
 }
