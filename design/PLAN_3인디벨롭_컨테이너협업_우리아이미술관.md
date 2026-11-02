@@ -165,7 +165,7 @@
 3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 맥 arm64 컨테이너에서 세 모델을 한 프로세스로 돌렸다(아래). compose 안에서 도는 것은 [미검증]이다(#42·#43).
    - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이번 재측정에서는 재현되지 않았다. 최호준 PC의 Ubuntu 가상환경은 3284.7MiB(스왑 사용), 이제민 맥의 CPU 2스레드는 4827.1MiB다(#16, PR #64, 각 1회). 차이의 원인은 [미확인]이므로 8.5GB를 버리지 않고 #43에서 다시 잰다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
    - [확인] 최호준 PC는 메모리 7.73 GiB, WSL 3.8 GiB다(#15, 2026-10-30). 이 PC에서 M1은 돌아가지만 추론이 109.678초로 `limits.yaml`의 split 제한 60초를 넘고, 그 값도 스왑을 쓴 1회 측정이다(#16). 신지현 PC도 메모리 7.70 GiB, WSL 3.7 GiB(사용 가능 2.4 GiB)로 비슷하다(#15). 그래서 Windows 두 대는 가짜 모델로 개발하고, 실제 M1·M2·M5 실행과 실측은 맥(이제민 PC)에서 이제민이 맡는다(2026-11-02 결정, #42·#43). Windows에서 M1 컨테이너 측정은 하지 않는다. [미검증] 가짜 모델 compose 전체도 WSL 사용 가능 메모리 2~3 GiB 안에 들어가는지는 #41에서 잰다. 모자라면 `%UserProfile%\.wslconfig`의 `memory`를 늘린다(PC 전체의 절반 이상).
-   - #41(Windows WSL: 가짜 모델 compose의 메모리)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다. [확인] 맥 컨테이너(CPU 6개, 2026-11-02, 800×600 합성 그림 1회)에서 M1 추론 32.18초, M2 0.08초, M5 1.93초, 세 모델을 함께 올린 컨테이너 최대 메모리 6471.3MiB다. 메모리 3GiB 제한(CPU 2개)에서는 M1 단계에서 메모리 부족으로 죽었다(종료 코드 137). 그래서 worker 한도는 7GiB 아래로 두지 않는다. 최종 값은 #43에서 정한다.
+   - #41(Windows WSL: 가짜 모델 compose의 메모리)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다. [확인] 맥 컨테이너(CPU 6개, 2026-11-02, 800×600 합성 그림, 2회)에서 M1 추론 32.18·35.7초, M2 0.08·0.14초, M5 1.93·2.25초, 세 모델을 함께 올린 컨테이너 최대 메모리 6471.3·6547.9MiB다. 다른 작업이 돌던 때의 값이라 #43에서 다시 잰다. 메모리 3GiB 제한(CPU 2개)에서는 M1 단계에서 메모리 부족으로 죽었다(종료 코드 137). 그래서 worker 한도는 7GiB 아래로 두지 않는다. 최종 값은 #43에서 정한다.
    - [추론] 메모리가 모자라 worker가 죽으면 재시작되고, 맡던 작업은 점유 60초가 지난 뒤 다시 시도된다. 3번 실패하면 "결과 미도달"이다(`limits.yaml` `claim.seconds 60`, `retry.max_attempts 3`).
 4. **데이터와 비밀 값.**
 
@@ -175,7 +175,7 @@
    | 작품 파일 | 이름 있는 볼륨 | app-api · sweeper · worker-cpu · model-api(외부 요청 사진 `ext/`) | | `STORAGE_ROOT` |
    | 작업자 상태 | 이름 있는 볼륨 | worker-cpu(상태 파일) · model-api(지금 불러오기 요청 `warmup/`) | model-api(워커 상태) | `UAM_RUN_DIR` |
    | 모델 가중치 | 호스트 `models/hf` → `/models/hf` 읽기 전용 | 없음 | worker-cpu | `MODEL_ROOT=/models` |
-   | 모델 쓰기 캐시 | 이름 있는 볼륨 → `/data/hf-cache` | 없음 | worker-cpu | `HF_HOME=/data/hf-cache` |
+   | 모델 쓰기 캐시 | worker-cpu만 쓰는 이름 있는 볼륨 → `/data/hf-cache` | worker-cpu | | `HF_HOME=/data/hf-cache` |
 
    - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다. [미검증] 작업자 상태 볼륨의 쓰기는 #34에서 지금 불러오기 요청이 202로 응답하고, 워커가 요청을 처리해 파일을 지우는지로 확인한다.
 
