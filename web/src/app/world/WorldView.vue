@@ -435,7 +435,7 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const confirmOpenId = ref<string | null>(null);
-const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.some((c) => ['animated','relief','frame','sculpture'].includes(c))) ?? null);
+const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
@@ -722,7 +722,7 @@ function openSettings() {
       <span>{{ failureReason(worldFailure) }}</span>
       <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
-    <section v-if="SERVER_WORLD && confirmPrompt && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
+    <section v-if="SERVER_WORLD && confirmPrompt && !decisionPrompt && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
       <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
     </section>
