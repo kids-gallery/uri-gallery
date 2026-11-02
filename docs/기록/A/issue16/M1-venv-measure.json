@@ -1,0 +1,11 @@
+{
+  "model": "M1",
+  "device": "cpu",
+  "revision": "e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4",
+  "load_s": 19.938,
+  "inference_s": 109.678,
+  "process_peak_rss_mib": 3284.7,
+  "outcome": "ok",
+  "diagnostic": null,
+  "note": "Ubuntu venv; 256x256 synthetic input; adapter resizes internally to 1024x1024; load may include download"
+}

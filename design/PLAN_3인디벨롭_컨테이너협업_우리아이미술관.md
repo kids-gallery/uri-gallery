@@ -99,7 +99,8 @@
 1. **서비스 나누기.** 상시 서비스 7개(`restart: unless-stopped`)와 한 번 돌고 끝나는 db-migrate(`restart: "no"`)를 둔다. 같은 코드를 쓰는 둘은 이미지를 나눠 쓴다(app-api·sweeper·db-migrate = api 이미지, model-api·worker-cpu = serving 이미지). 직접 빌드하는 이미지는 web·api·serving 3개, 공식 이미지는 db(`mariadb:12.0`)·mailpit(`axllent/mailpit`).
    - **개발 환경 모델 첫 활성.** [확인] 새 DB에는 활성 모델 버전이 없다(마이그레이션에 `model_version` 시드 없음). 워커는 활성 버전이 있는 모델만 올리고(`serving/workers/runner.py` `refresh_enabled`), 앱 서버는 M1·M2·M3이 모두 활성일 때만 분리·판정 작업을 만든다(`api/src/modules/artworks/models.ts` `JUDGE_MODELS`). 그래서 db-migrate가 개발 환경일 때(`DEV_ACTIVATE_MODELS=1`) 스키마 다음에 M1·M2·M3·M5를 `active`·`license_confirmed`로 만든다. 조건은 SD_04 9-4의 D27 예외와 같고, 팀 서버·운영 DB에서는 켜지 않는다. 기존 도구(`scripts/dev_activate_models.py`)는 `DB_HOST`가 127.0.0.1이 아니면 멈추고 127.0.0.1 API를 불러 compose에 그대로 쓸 수 없다. 담당은 #33.
 2. **이미지.**
-   - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. `MODEL_LOCK`을 명시하면 해당 CPU의 정해진 파일과 일치해야 한다. 지원하지 않는 CPU·설치 값·잠금 조합은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐으므로 Linux arm64 설치 가능 여부는 #43에서 실제 확인하며 이 PR에서 성공을 주장하지 않는다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
+   - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
+   - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
    - **#23 serving 이미지:** `python:3.11.18-slim-bookworm`(실제 pull 후 Python 판 확인), 기본 `requirements.lock`을 해시 검증하여 설치한다. model-api 기본 명령은 `python -m model_api.main`, worker는 같은 이미지에서 `python -m workers.main --group cpu_vision`로 바꾼다. `MODEL_API_HOST`는 기본 127.0.0.1이고 컨테이너 간 통신 시 0.0.0.0을 명시한다. 계약과 매니페스트는 `/app/contracts`, `/app/models/manifest.yaml`, 작품과 상태는 `/data/store`, `/data/run`이다. 기본 이미지에 모델 묶음과 가중치를 넣지 않는다. `DB_PASSWORD_FILE`이 있으면 환경 변수보다 먼저 읽고 끝의 줄바꿈 한 개(LF/CRLF)만 없앤다. 읽기 실패는 기동 실패다. `.dockerignore`는 #61의 저장소 루트 파일을 재사용한다.
    - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지).
    - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다.
@@ -134,7 +135,7 @@
    | 모델 가중치 | 호스트 `models/hf` → `/models/hf` 읽기 전용 | 없음 | worker-cpu | `MODEL_ROOT=/models` |
    | 모델 쓰기 캐시 | worker-cpu만 쓰는 이름 있는 볼륨 | worker-cpu | | `HF_HOME` |
 
-   - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다.
+   - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다. [미검증] 작업자 상태 볼륨의 쓰기는 #34에서 지금 불러오기 요청이 202로 응답하고, 워커가 요청을 처리해 파일을 지우는지로 확인한다.
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [미검증] #42에서 네트워크를 끈 상태로 세 모델이 `ready`가 되는지 확인한다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
@@ -143,7 +144,7 @@
    - **필수 동작(C 연결 층, 계약 근거):**
      - [확인] 응답의 `state`는 처리 상태가 아니라 표시 상태다. 원본 액자가 걸린 작품은 판정 중·확정 대기에도 `exhibited`로 온다(SD_03 뷰 `v_artwork_display`). 그래서 `state`만으로 판단하지 않는다.
 
-       위에서부터 먼저 맞는 줄 하나로 정한다. `frame`은 확정 값과 결정 값에 모두 있어서 `choices`만으로는 어느 창인지 가를 수 없다. [확인] `processing`·`awaiting_review`·`failed`는 원본 액자가 걸려 있어도 `state`에 그대로 나온다(같은 뷰). 그래서 창 종류는 `state`·`confirmedKind`로 정하고, `choices`는 그 창에 보일 버튼만 정한다.
+       위에서부터 먼저 맞는 줄 하나로 정한다. `frame`은 확정 값과 결정 값에 모두 있어서 `choices`만으로는 어느 창인지 가를 수 없다. [확인] `processing`·`awaiting_review`·`failed`는 원본 액자가 걸려 있어도 `state`에 그대로 나온다(같은 뷰). 그래서 창 종류는 `state`·`confirmedKind`로 정하고, `choices`는 그 창에 보일 버튼만 정한다. [미검증] 액자만 고를 수 있는 확정 단계와 `frame`이 있는 결정 단계에서 창이 하나만 열리는지는 #38·#39에서 확인한다.
 
        | 순서 | 화면 판단 | 기준 | 버튼 |
        |---|---|---|---|
