@@ -5,7 +5,7 @@ import uvicorn
 
 
 def main() -> None:
-    uvicorn.run("model_api.app:app", host="127.0.0.1", port=int(os.environ.get("MODEL_API_PORT", "9541")),
+    uvicorn.run("model_api.app:app", host=os.environ.get("MODEL_API_HOST") or "127.0.0.1", port=int(os.environ.get("MODEL_API_PORT", "9541")),
                 workers=1, log_level="warning")
 
 
