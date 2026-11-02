@@ -1,0 +1,11 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
+import { createRouter, createMemoryHistory } from 'vue-router';
+import Signup from '../app/world/WorldSignup.vue';
+import Verify from '../app/world/WorldVerify.vue';
+const calls=vi.hoisted(()=>({signup:vi.fn(),verifyEmail:vi.fn(),resendVerify:vi.fn()}));
+vi.mock('../app/world/server',()=>({...calls,failureOf:()=>({kind:'refused',reason:'잘못된 링크',fields:[]})}));
+afterEach(()=>vi.clearAllMocks());
+it('비밀번호가 다르면 전송하지 않고 입력을 보존한다',async()=>{const w=mount(Signup,{global:{stubs:{RouterLink:true}}});const fields=w.findAll('input');await fields[0]!.setValue('test@example.com');await fields[1]!.setValue('abcdefgh');await fields[2]!.setValue('different');await w.find('form').trigger('submit');expect(calls.signup).not.toHaveBeenCalled();expect(w.text()).toContain('서로 달라요');w.unmount();});
+it('가입 응답 뒤에만 메일 안내를 보이고 재발송은 이메일만 보낸다',async()=>{calls.signup.mockResolvedValue(undefined);calls.resendVerify.mockResolvedValue(undefined);const w=mount(Signup,{global:{stubs:{RouterLink:true}}});for(const [i,value] of ['test@example.com','abcdefgh','abcdefgh'].entries())await w.findAll('input')[i]!.setValue(value);await w.find('form').trigger('submit');await flushPromises();expect(calls.signup).toHaveBeenCalledWith({email:'test@example.com',password:'abcdefgh',passwordConfirm:'abcdefgh'});expect(w.findAll('input')).toHaveLength(0);await w.find('button').trigger('click');await flushPromises();expect(calls.resendVerify).toHaveBeenCalledWith('test@example.com');w.unmount();});
+it('확인 경로는 토큰을 호출에 보존하고 주소에서 제거하며 실패시 재발송을 제공한다',async()=>{calls.verifyEmail.mockRejectedValue(new Error('invalid'));const router=createRouter({history:createMemoryHistory(),routes:[{path:'/app/verify',component:Verify}]});await router.push('/app/verify?token=sample-unit-token');await router.isReady();const w=mount(Verify,{global:{plugins:[router]}});await flushPromises();expect(calls.verifyEmail).toHaveBeenCalledWith('sample-unit-token');expect(router.currentRoute.value.query.token).toBeUndefined();expect(w.text()).toContain('유효 시간이 지났어요');expect(w.text()).not.toContain('sample-unit-token');expect(w.find('form').exists()).toBe(true);w.unmount();});

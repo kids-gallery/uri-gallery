@@ -714,6 +714,7 @@ function openSettings() {
           <button ref="startBtn" class="g-btn g-btn--primary g-btn--big" type="button" :disabled="phase !== 'title'" @click="start(false)">시작하기</button>
           <button v-if="!account" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
         </div>
+        <RouterLink v-if="SERVER_WORLD" to="/app/signup" class="g-btn">이메일로 가입하기</RouterLink>
         <p v-if="!account && !SERVER_WORLD" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
       </div>
       <div v-if="TestEntry && !account && phase === 'title'" class="w-test-entry"><component :is="TestEntry" @enter="enterTest" /></div>
