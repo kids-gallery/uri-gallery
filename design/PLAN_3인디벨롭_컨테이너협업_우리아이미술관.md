@@ -132,7 +132,7 @@
    | 모델 가중치 | 호스트 `models/hf` → `/models/hf` 읽기 전용 | 없음 | worker-cpu | `MODEL_ROOT=/models` |
    | 모델 쓰기 캐시 | worker-cpu만 쓰는 이름 있는 볼륨 | worker-cpu | | `HF_HOME` |
 
-   - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다.
+   - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다. [미검증] 작업자 상태 볼륨의 쓰기는 #34에서 지금 불러오기 요청이 202로 응답하고, 워커가 요청을 처리해 파일을 지우는지로 확인한다.
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [미검증] #42에서 네트워크를 끈 상태로 세 모델이 `ready`가 되는지 확인한다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
@@ -141,7 +141,7 @@
    - **필수 동작(C 연결 층, 계약 근거):**
      - [확인] 응답의 `state`는 처리 상태가 아니라 표시 상태다. 원본 액자가 걸린 작품은 판정 중·확정 대기에도 `exhibited`로 온다(SD_03 뷰 `v_artwork_display`). 그래서 `state`만으로 판단하지 않는다.
 
-       위에서부터 먼저 맞는 줄 하나로 정한다. `frame`은 확정 값과 결정 값에 모두 있어서 `choices`만으로는 어느 창인지 가를 수 없다. [확인] `processing`·`awaiting_review`·`failed`는 원본 액자가 걸려 있어도 `state`에 그대로 나온다(같은 뷰). 그래서 창 종류는 `state`·`confirmedKind`로 정하고, `choices`는 그 창에 보일 버튼만 정한다.
+       위에서부터 먼저 맞는 줄 하나로 정한다. `frame`은 확정 값과 결정 값에 모두 있어서 `choices`만으로는 어느 창인지 가를 수 없다. [확인] `processing`·`awaiting_review`·`failed`는 원본 액자가 걸려 있어도 `state`에 그대로 나온다(같은 뷰). 그래서 창 종류는 `state`·`confirmedKind`로 정하고, `choices`는 그 창에 보일 버튼만 정한다. [미검증] 액자만 고를 수 있는 확정 단계와 `frame`이 있는 결정 단계에서 창이 하나만 열리는지는 #38·#39에서 확인한다.
 
        | 순서 | 화면 판단 | 기준 | 버튼 |
        |---|---|---|---|
