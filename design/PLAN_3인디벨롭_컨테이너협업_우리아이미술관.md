@@ -129,7 +129,7 @@
    - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
    - **#23 serving 이미지:** `python:3.11.18-slim-bookworm`(실제 pull 후 Python 판 확인), 기본 `requirements.lock`을 해시 검증하여 설치한다. model-api 기본 명령은 `python -m model_api.main`, worker는 같은 이미지에서 `python -m workers.main --group cpu_vision`로 바꾼다. `MODEL_API_HOST`는 기본 127.0.0.1이고 컨테이너 간 통신 시 0.0.0.0을 명시한다. 계약과 매니페스트는 `/app/contracts`, `/app/models/manifest.yaml`, 작품과 상태는 `/data/store`, `/data/run`이다. 기본 이미지에 모델 묶음과 가중치를 넣지 않는다. `DB_PASSWORD_FILE`이 있으면 환경 변수보다 먼저 읽고 끝의 줄바꿈 한 개(LF/CRLF)만 없앤다. 읽기 실패는 기동 실패다. `.dockerignore`는 #61의 저장소 루트 파일을 재사용한다.
    - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지).
-   - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다.
+   - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다. 이미지에 `/data/store`를 `node` 소유로 미리 만든다. 없으면 app-api가 새 작품 볼륨을 먼저 붙일 때 폴더가 root 소유가 되어 쓰지 못한다.
 
      | 서비스 | 명령 |
      |---|---|
