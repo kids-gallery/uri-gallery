@@ -13,12 +13,25 @@
 | nginx · mailpit | `brew install nginx mailpit` | P0 메일은 Mailpit(R-23) |
 | 저장소 | `git clone <gitlab>/project2610 ~/project2610` | 원본 한 곳에서만 운영(파생 폴더 없음) |
 | 저장 영역 | `mkdir -p /srv/uam/store/{family,tmp,ext,evalset} /srv/uam/web/dist` · 소유자는 pm2 실행 계정, 모드 750 | R-06 |
-| `.env` | 저장소 루트에 `.env.example`을 복사해 채운다 | `DB_*`·`SESSION_SECRET`·`AUTH_HMAC_SECRET`(각각 `openssl rand -hex 32`)·`STORAGE_ROOT`·`MODEL_ROOT`[U14]·`GPU_ENABLED`[U2]·`MODEL_MANIFEST`·`API_GUIDE_TEST_KEY`(아래 4) · 운영 `APP_BASE_URL=https://<도메인>:9501`(메일 링크 기준, nginx 입구 D19) |
+| `.env` | 저장소 루트에 호스트용 `.env`를 작성한다. `.env.example`은 컨테이너 전용이므로 그대로 복사해 실행하지 않는다 | `DB_*`·`SESSION_SECRET`·`AUTH_HMAC_SECRET`(각각 `openssl rand -hex 32`)·`STORAGE_ROOT`·`MODEL_ROOT`[U14]·`GPU_ENABLED`[U2]·`MODEL_MANIFEST`·`API_GUIDE_TEST_KEY`(아래 4) · 운영 `APP_BASE_URL=https://<도메인>:9501`(메일 링크 기준, nginx 입구 D19) |
 | Python 가상환경 | `cd serving && python3.11 -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.lock -r requirements-models.lock` | M3는 `.venv-m3` + TorchServe(A 문서) |
 | DB 스키마 | `cd api && npm ci && npm run build && npm run db:migrate` | `0001_sd03_baseline`(= `design/uri_gallery_ddl.sql`) 재실행 안전. **팀 DB에 시험을 돌리지 않는다**(시험은 임시 MariaDB) |
 | 팀원 계정 | `npm run ops:staff -- add --email <메일> --role operator[,evaluator,integrator]` (비밀번호는 표준 입력) · 역할 `grant`/`revoke --email <메일> --role <역할>` · 정지·해제 `disable`/`enable --email <메일>` · 비밀번호 `passwd --email <메일>`(표준 입력) · 목록 `list`(D24 ③). 정지·비밀번호 변경은 그 팀원 세션을 모두 지운다. 역할 회수·정지는 다음 요청부터 반영된다 | G1 · BR-ACC-05 |
 | 3D 노출(P1, D10·G17) | `npm run ops:feature -- status sculpture_exposure` · 켜기 `… enable sculpture_exposure --by <운영자 이메일>`(서비스 운영자만, **M7 활성 버전이 없으면 거부**) · 끄기 `… disable …`(언제나). 다음 요청부터 반영 — 재시작 불필요 |
 | 모델 버전 | `cd serving && .venv/bin/python -m ops.models check <Mx>` → `digest <Mx> --write`(실행 환경 다이제스트, R-03·SD_04 §9-2) → `register <Mx> --label …`이 출력한 JSON 본문으로 평가 담당이 `POST /v1/admin/models/<Mx>/versions`(G1) → 평가·승격은 운영 화면(S11). CLI는 DB에 쓰지 않는다 | G21·G22 |
+
+### 호스트용 환경 값
+
+현재 `.env.example`의 `db`, `mailpit`, `model-api`, `/data/...`는 compose 망과 볼륨을 위한 값이다.
+pm2 호스트에서는 실제 DB 주소·포트와 `DB_NAME`을 지정하고, 호스트 Mailpit은
+`MAIL_SMTP_URL=smtp://127.0.0.1:1025`, model-api는 `MODEL_API_INTERNAL_URL=http://127.0.0.1:9541`로 둔다.
+`APP_HOST=127.0.0.1`, `MODEL_API_HOST=127.0.0.1`, `TRUST_PROXY=loopback`,
+`STORAGE_ROOT=/srv/uam/store`를 사용하고 `MODEL_ROOT`, `MODEL_MANIFEST`, `UAM_RUN_DIR`은
+pm2 실행 계정이 접근 가능한 호스트 절대 경로로 지정한다.
+`MAIL_ENABLED=true`, HTTPS 운영은 `SECURE_COOKIES=true`, `APP_BASE_URL=https://<실제 도메인>:9501`이다.
+`GPU_ENABLED`와 모델 묶음은 호스트 실제 실행 장치에 맞춘다.
+호스트에서 `*_FILE`을 사용한다면 compose의 `/run/secrets/...`를 복사하지 말고 읽을 수 있는 로컬 파일 경로를 지정한다.
+앱·마이그레이션은 `.env`를 자동으로 읽지 않는다. 기존 pm2 설정이 환경 변수를 전달하도록 유지한다.
 
 ## 2. 매번: 배포
 
