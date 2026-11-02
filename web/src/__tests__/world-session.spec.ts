@@ -2,10 +2,19 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { ApiError } from '../api/client';
 import Session from '../app/world/WorldSession.vue';
-const s=vi.hoisted(()=>({me:vi.fn(),login:vi.fn(),logout:vi.fn(),clear:vi.fn()}));
+const s=vi.hoisted(()=>({me:vi.fn(),login:vi.fn(),logout:vi.fn(),clear:vi.fn(),selected:{value:null}}));
 vi.mock('../app/world/server',async (original)=>({...await original<typeof import('../app/world/server')>(),...s}));
-vi.mock('../app/world/server/upload',()=>({SERVER_WORLD:true,clearWorldWorks:s.clear}));
+vi.mock('../app/world/server/upload',()=>({SERVER_WORLD:true,clearWorldWorks:s.clear,selectedChild:s.selected}));
 vi.mock('../app/world/WorldView.vue',()=>({__esModule:true,default:{template:'<div data-private>가족 작품<button class=logout @click="$emit(\'logout\')">로그아웃</button></div>'}}));
+vi.mock('../app/world/WorldChildren.vue', async () => {
+  const { defineComponent, onMounted } = await import('vue');
+  return { default: defineComponent({
+    setup(_, { emit }) {
+      onMounted(() => emit('selected', { id: 'child-1', alias: '별이' }));
+      return () => null;
+    },
+  }) };
+});
 const views:ReturnType<typeof mount>[]=[];
 const open=()=>{const w=mount(Session,{global:{stubs:{RouterLink:true}}});views.push(w);return w;};
 afterEach(()=>{views.forEach(w=>w.unmount());views.length=0;vi.resetAllMocks();});

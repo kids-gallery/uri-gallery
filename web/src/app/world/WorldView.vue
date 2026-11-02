@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const emit = defineEmits<{ logout: [] }>();
+const props = defineProps<{ selectedChildName?: string }>();
+const emit = defineEmits<{ logout: []; changeChild: [] }>();
 // 3D 가족 미술관 로컬 판(3D미술관_재설계 §2, 기초 설계 v2 §5). 경로 /app/world. 서버 호출 없음.
 import '@/styles/game.css';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
@@ -64,6 +65,7 @@ let socialChannel:BroadcastChannel|null=null;
 const phase = ref<Phase>('checking');
 const progress = ref({ done: 0, total: store.SAMPLES.length });
 const account = ref<Account | null>(null);
+const serverChildName = computed(() => props.selectedChildName || account.value?.child || '아이');
 const artworks = shallowRef<Artwork[]>([]);
 const rooms = ref<number[]>([]);
 const prefs = ref<Prefs | null>(null);
@@ -287,7 +289,7 @@ function reload():Promise<void>{
   const run=async()=>{
     artworks.value = await worldWorks();
     rooms.value = await store.getRooms();
-    if (engine.value && account.value) await engine.value.setWorld(account.value.child, artworks.value, rooms.value);
+    if (engine.value && account.value) await engine.value.setWorld(SERVER_WORLD ? serverChildName.value : account.value.child, artworks.value, rooms.value);
   };
   reloading=reloading.then(run,run);
   return reloading;
@@ -309,7 +311,7 @@ async function boot(title = true) {
   e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
   e.setFeaturedId(prefs.value.featured??null);e.setDecor(prefs.value.decor??[]);
   if(showTitle){e.showTitle();e.start();} // 작품을 불러오는 동안에도 시작 화면 배경을 그린다
-  await e.setAvatar(prefs.value.avatar,prefs.value.avatarImage);await e.setWorld(account.value?.child??store.NEW_FAMILY_CHILD,artworks.value,rooms.value);
+  await e.setAvatar(prefs.value.avatar,prefs.value.avatarImage);await e.setWorld(SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,artworks.value,rooms.value);
   if(showTitle){phase.value='title';measure('start-ready');await nextTick();startBtn.value?.focus({preventScroll:true});}
   else{e.showPlaza(false);phase.value='ready';showHud(false);if(inviteToken.value)panel.value='social';runCutouts();}
   e.start();if(account.value){void e.loadDecor();noteVisit();void checkBackup();}
@@ -356,7 +358,7 @@ function pickFirst(){if(visiting.value||panel.value)return;beforeUpload(()=>firs
 function onFirstPicked(e:Event){const input=e.target as HTMLInputElement,files=Array.from(input.files??[]);input.value='';if(!files.length)return;firstPrompt.value=false;pendingFiles.value=files;openPanel('upload');}
 function onRevealed(id:string){if(pendingReveal.value!==id)return;pendingReveal.value=null;recentSaved.value=id;}
 async function familyChanged(){visiting.value=null;selectedBuilding.value=null;panel.value=null;selection.value=null;nearId.value=null;await boot(false);}
-async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',account.value.child,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
+async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',serverChildName.value,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
 async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
 async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
@@ -750,7 +752,7 @@ function openSettings() {
       <!-- §2-19 기준 5: 3D를 못 그리는 기기는 한눈에 보기로 작품을 보고 올린다 -->
       <section v-if="webglFailed" class="fallback">
         <p class="g-note">이 기기에서는 3D 미술관을 열 수 없어 작품을 한눈에 보여 드려요.</p>
-        <WorldOverview v-if="account" inline :artworks="artworks" :child="visiting?.child ?? account.child" @upload="beforeUpload(() => openPanel('upload'))" />
+        <WorldOverview v-if="account" inline :artworks="artworks" :child="visiting?.child ?? serverChildName" @upload="beforeUpload(() => openPanel('upload'))" />
       </section>
 
       <header class="hud-top" :class="{ 'w-menu-open': moreTools }">
@@ -980,11 +982,17 @@ function openSettings() {
           <div v-if="resend?.kind === 'backup'" class="row"><button class="g-btn g-btn--primary" type="button" @click="sendAgain">파일 보내기</button></div>
           <hr />
           <component :is="TestFamilies" v-if="TestFamilies" @change="familyChanged" />
-          <label class="w-field">아이 이름<input v-model="childName" class="w-input" maxlength="20" /></label>
-          <label class="w-field">지금 나이
-            <select v-model.number="childAge" class="w-input"><option :value="0">모름</option><option v-for="n in MAX_AGE" :key="n" :value="n">{{ n }}세</option></select>
-          </label>
-          <div class="row"><button class="g-btn g-btn--primary" type="button" @click="saveChild(childName, childAge)">저장</button></div>
+          <div v-if="SERVER_WORLD" class="row">
+            <span>{{ serverChildName }}의 작품을 보고 있어요.</span>
+            <button class="g-btn g-btn--primary" type="button" @click="emit('changeChild')">아이 바꾸기</button>
+          </div>
+          <template v-else>
+            <label class="w-field">아이 이름<input v-model="childName" class="w-input" maxlength="20" /></label>
+            <label class="w-field">지금 나이
+              <select v-model.number="childAge" class="w-input"><option :value="0">모름</option><option v-for="n in MAX_AGE" :key="n" :value="n">{{ n }}세</option></select>
+            </label>
+            <div class="row"><button class="g-btn g-btn--primary" type="button" @click="saveChild(childName, childAge)">저장</button></div>
+          </template>
           <label class="w-field"><span>미술관 모양</span><select aria-label="미술관 모양" class="w-input" :value="prefs?.building" @change="setBuilding(($event.target as HTMLSelectElement).value as MuseumStyle)"><option v-for="id in STYLES" :key="id" :value="id">{{ STYLE_NAME[id] }}</option></select></label>
           <hr />
           <div class="row">
@@ -1016,7 +1024,7 @@ function openSettings() {
       <WorldArchive
         v-if="panel === 'archive' && account"
         :artworks="artworks"
-        :child="account.child"
+        :child="serverChildName"
         :focus="archiveFocus"
         @close="closePanel"
         @delete="onDelete"
@@ -1029,7 +1037,7 @@ function openSettings() {
       <WorldOverview
         v-if="panel === 'overview' && account"
         :artworks="artworks"
-        :child="account.child"
+        :child="serverChildName"
         @close="closePanel"
         @goto="gotoWork"
         @edit="(id: string) => openArchive(id)"
