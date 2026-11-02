@@ -185,6 +185,7 @@
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [미검증] #42에서 네트워크를 끈 상태로 세 모델이 `ready`가 되는지 확인한다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
+   - **실제 모델 켜기:** 기본 `compose.yaml`은 가짜 모델 그대로 두고 `compose.real.yaml`을 겹친다(`docker compose -f compose.yaml -f compose.real.yaml up -d`, #42). worker-cpu만 모델 묶음 이미지를 쓰고 가중치·캐시를 붙이며, model-api는 가벼운 이미지를 유지한다. 메모리 한도는 10GiB다. [확인] 맥에서 사진 올리기 → 분리·판정 → 부조 → 승인까지 돌렸을 때 worker 최대 7781~7899MiB였다(`memory.peak`, 파일 캐시 포함, 640×480 합성 그림). 8GiB는 여유가 없다. 최종 값은 #43에서 정한다.
    - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
 5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
    - **필수 동작(C 연결 층, 계약 근거):**
