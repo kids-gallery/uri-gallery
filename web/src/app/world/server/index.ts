@@ -50,6 +50,13 @@ export type Failure =
   | { kind: 'login' }
   | { kind: 'refused'; reason: string; fields: { name: string; reason: string }[] };
 
+/** 창에 보일 문장. 화면 글에 "서버"를 쓰지 않는다(D48) */
+export function failureReason(f: Failure): string {
+  if (f.kind === 'offline') return '미술관에 연결되지 않아요. 다시 시도해 주세요';
+  if (f.kind === 'login') return '로그인이 필요해요. 로그인한 뒤 다시 시도해 주세요';
+  return f.reason;
+}
+
 /** 창에 넘길 오류 종류(마스터플랜 3-3 표). ApiError가 아닌 것(코드 오류 등)도 서버에 닿지 않은 것으로 다룬다. */
 export function failureOf(e: unknown): Failure {
   if (!(e instanceof ApiError) || e.unavailable) return { kind: 'offline' };

@@ -23,6 +23,7 @@ COPY db/migrations /app/db/migrations
 COPY contracts /app/contracts
 COPY models/manifest.yaml /app/models/manifest.yaml
 ENV CONTRACTS_DIR=/app/contracts MODEL_MANIFEST=/app/models/manifest.yaml MIGRATIONS_DIR=/app/db/migrations
+RUN mkdir -p /data/store && chown node:node /data/store
 USER node
 EXPOSE 9521
 CMD ["node", "dist/src/server.js"]
