@@ -20,6 +20,15 @@ export type Decision = Json<'/v1/artworks/{artworkId}/decision', 'post'>['decisi
 export type { ArtworkDetail, ArtworkSummary, GuardianMe };
 
 const o = { noRedirect: true } as const;
+// 인증된 호출에서만 만료를 알린다. 로그인 입력 오류의 401은 여기에 넣지 않는다.
+async function authenticated<T>(request: Promise<T>): Promise<T> {
+  try {
+    return await request;
+  } catch (e) {
+    if (failureOf(e).kind === 'login') window.dispatchEvent(new Event('world-session-expired'));
+    throw e;
+  }
+}
 const art = (id: string, tail = '') => `/v1/artworks/${encodeURIComponent(id)}${tail}`;
 
 export const signup = (body: Json<'/v1/auth/signup', 'post'>) => api.post<void>('/v1/auth/signup', { ...o, body });
@@ -27,25 +36,25 @@ export const verifyEmail = (token: string) => api.post<void>('/v1/auth/email/ver
 export const resendVerify = (email: string) => api.post<void>('/v1/auth/email/verify/resend', { ...o, body: { email } });
 export const login = (body: Json<'/v1/auth/login', 'post'>) => api.post<void>('/v1/auth/login', { ...o, body });
 export const logout = () => api.post<void>('/v1/auth/logout', o);
-export const me = () => api.get<GuardianMe>('/v1/me', o);
+export const me = () => authenticated(api.get<GuardianMe>('/v1/me', o));
 
-export const listChildren = () => api.get<Child[]>('/v1/children', o);
-export const addChild = (alias: string) => api.post<Child>('/v1/children', { ...o, body: { alias } });
+export const listChildren = () => authenticated(api.get<Child[]>('/v1/children', o));
+export const addChild = (alias: string) => authenticated(api.post<Child>('/v1/children', { ...o, body: { alias } }));
 
 /** 다시 보낼 때는 같은 key를 넘긴다. 서버가 기존 작품을 돌려줘 작품이 두 번 생기지 않는다(계약 Idempotency-Key). */
 export function uploadArtwork(childId: string, photo: Blob, key: string) {
   const form = new FormData();
   form.append('childId', childId);
   form.append('photo', photo);
-  return api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } });
+  return authenticated(api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } }));
 }
-export const listArtworks = () => api.get<ArtworkSummary[]>('/v1/artworks', o);
-export const getArtwork = (id: string) => api.get<ArtworkDetail>(art(id), o);
-export const deleteArtwork = (id: string) => api.del<void>(art(id), o);
-export const confirmKind = (id: string, kind: ConfirmKind) => api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } });
+export const listArtworks = () => authenticated(api.get<ArtworkSummary[]>('/v1/artworks', o));
+export const getArtwork = (id: string) => authenticated(api.get<ArtworkDetail>(art(id), o));
+export const deleteArtwork = (id: string) => authenticated(api.del<void>(art(id), o));
+export const confirmKind = (id: string, kind: ConfirmKind) => authenticated(api.post<ArtworkDetail>(art(id, '/confirm'), { ...o, body: { kind } }));
 export const decide = (id: string, decision: Decision) =>
-  api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } });
-export const gallery = (childId: string) => api.get<Gallery>('/v1/gallery', { ...o, query: { child: childId } });
+  authenticated(api.post<Ok<'/v1/artworks/{artworkId}/decision', 'post'>>(art(id, '/decision'), { ...o, body: { decision } }));
+export const gallery = (childId?: string) => authenticated(api.get<Gallery>('/v1/gallery', { ...o, query: { child: childId } }));
 
 export type Failure =
   | { kind: 'offline' }

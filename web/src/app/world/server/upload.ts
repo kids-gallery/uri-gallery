@@ -5,7 +5,7 @@ import { ApiError } from '@/api/client';
 import { problemCopy } from '@/copy/ko';
 import * as store from '../store';
 import { failureOf, failureReason, listChildren, uploadArtwork, type ArtworkDetail } from './index';
-import { galleryWorks, hangUploaded } from './gallery';
+import { galleryWorks, hangUploaded, clearGallery } from './gallery';
 
 export const SERVER_WORLD = import.meta.env.VITE_WORLD_SERVER === '1';
 
@@ -33,11 +33,16 @@ export function checkPhoto(f: File): string | null {
 
 export type SendResult = { ok: true; id: string; hung: boolean } | { ok: false; reason: string; retryable: boolean };
 
+const hung = new Map<string, store.Artwork>();
+let generation = 0;
+/** 로그아웃·만료 시 이전 가족의 작품과 선택을 버린다. 진행 중 응답도 무효다. */
+export function clearWorldWorks() { generation++; hung.clear(); clearGallery(); selectedChild.value = null; }
 /** 3D 화면에 그릴 작품. 서버 판은 기기 저장소의 작품을 섞지 않는다 */
 export const worldWorks = async (): Promise<store.Artwork[]> => (SERVER_WORLD ? galleryWorks(selectedChild.value) : store.listArtworks());
 
 /** key는 사진마다 하나다. 다시 시도할 때 같은 key를 넘겨야 작품이 두 번 생기지 않는다 */
 export async function sendPhoto(file: File, key: string): Promise<SendResult> {
+  const current = generation;
   let detail: ArtworkDetail;
   try {
     const list = await listChildren();
@@ -48,5 +53,6 @@ export async function sendPhoto(file: File, key: string): Promise<SendResult> {
     const f = failureOf(e);
     return { ok: false, reason: failureReason(f), retryable: f.kind !== 'refused' || (e instanceof ApiError && e.code === 'not_saved') };
   }
+  if (current !== generation) return { ok: false, reason: '로그인이 바뀌었어요. 다시 로그인해 주세요', retryable: true };
   return { ok: true, id: detail.id, hung: await hangUploaded(detail) };
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const emit = defineEmits<{ logout: [] }>();
 // 3D 가족 미술관 로컬 판(3D미술관_재설계 §2, 기초 설계 v2 §5). 경로 /app/world. 서버 호출 없음.
 import '@/styles/game.css';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
@@ -779,6 +780,7 @@ function openSettings() {
           <button class="g-btn" type="button" @click="openPanel('privacy')">개인정보·이용 안내</button>
           <button v-if="!visiting" class="g-btn" type="button" @click="openUsage">사용 기록</button>
           <button v-if="space==='inside'" class="g-btn" type="button" @click="outside">밖으로</button>
+          <button v-if="SERVER_WORLD" class="g-btn w-logout" type="button" @click="emit('logout')">로그아웃</button>
           <button v-if="space==='town'" class="g-btn" type="button" @click="familyChanged">우리 미술관으로</button>
           </span>
         </nav>
