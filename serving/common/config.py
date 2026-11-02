@@ -37,13 +37,23 @@ class Settings:
     manifest_path: Path
 
 
+def _db_password() -> str:
+    path = os.environ.get("DB_PASSWORD_FILE")
+    if not path:
+        return os.environ.get("DB_PASSWORD", "")
+    value = Path(path).read_bytes().decode("utf-8")
+    if value.endswith("\r\n"):
+        return value[:-2]
+    return value[:-1] if value.endswith("\n") else value
+
+
 def load_settings() -> Settings:
     storage_root = Path(os.environ.get("STORAGE_ROOT", str(SERVING_ROOT / ".run" / "store")))
     return Settings(
         db_host=os.environ.get("DB_HOST", "127.0.0.1"),
         db_port=int(os.environ.get("DB_PORT", "3306")),
         db_user=os.environ.get("DB_USER", "uam"),
-        db_password=os.environ.get("DB_PASSWORD", ""),
+        db_password=_db_password(),
         db_name=os.environ.get("DB_NAME", "uam"),
         db_unix_socket=os.environ.get("DB_SOCKET") or None,
         storage_root=storage_root,
