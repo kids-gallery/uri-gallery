@@ -36,3 +36,16 @@ def test_listening_address(monkeypatch, host, expected):
     monkeypatch.setattr("model_api.main.uvicorn.run", lambda *a, **kw: calls.append(kw))
     main()
     assert calls[0]["host"] == expected
+
+
+def test_missing_secret_stops_model_api_process(tmp_path):
+    import os
+    import subprocess
+    import sys
+    env = dict(os.environ, DB_PASSWORD_FILE=str(tmp_path / "missing-secret"))
+    result = subprocess.run(
+        [sys.executable, "-m", "model_api.main"], env=env,
+        capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode != 0
+    assert "FileNotFoundError" in result.stderr
