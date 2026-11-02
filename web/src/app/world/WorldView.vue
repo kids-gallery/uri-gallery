@@ -438,7 +438,6 @@ const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는�
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const confirmOpenId = ref<string | null>(null);
 const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
-const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.some((c) => ['animated','relief','frame','sculpture'].includes(c))) ?? null);
 const decisionOpenId = ref<string | null>(null), decisionBusy = ref(false), decisionError = ref<Failure | null>(null);
 const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
 async function submitWorldDecision(id: string, decision: Decision) {
