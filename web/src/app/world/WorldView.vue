@@ -18,6 +18,7 @@ import { galleryFailure, isStale, movingIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
+import type { ArtworkDetail } from './server';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
 import WorldPrivacy from './WorldPrivacy.vue';
@@ -434,9 +435,11 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
+const setDetail = (d: ArtworkDetail) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); };
 const confirmOpenId = ref<string | null>(null);
 const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
 const confirmDetail = computed(() => confirmOpenId.value ? artWatch.details.value.get(confirmOpenId.value) ?? null : null);
+watch(confirmDetail, (d) => { if (confirmOpenId.value && (!d || d.confirmedKind || !d.choices.length || d.state === 'awaiting_review' || d.state === 'failed')) confirmOpenId.value = null; });
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
@@ -662,9 +665,10 @@ function joyUp(e: PointerEvent) {
 }
 
 function onKey(e: KeyboardEvent) {
+  if(e.key==='Escape'&&!panel.value&&confirmOpenId.value){e.preventDefault();confirmOpenId.value=null;return;}
   // [더보기]는 Escape로 접고 초점을 [더보기]로 돌린다(§2-17)
   if(e.key==='Escape'&&moreTools.value&&!panel.value){e.preventDefault();moreTools.value=false;worldRoot.value?.querySelector<HTMLElement>('.w-more-tools')?.focus();return;}
-  if(!panel.value)return;
+  if(!panel.value&&!confirmOpenId.value)return;
   if(e.key==='Escape'&&editing.value&&!panel.value){e.preventDefault();cancelDecor();return;}
   if(e.key==='Escape'){e.preventDefault();if(panel.value==='play')playPanel.value?.requestClose();else if(panel.value==='upload')uploadPanel.value?.requestClose();else void closePanel();return;}
   if(e.key!=='Tab')return;
@@ -723,7 +727,7 @@ function openSettings() {
       <span>{{ failureReason(worldFailure) }}</span>
       <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
-    <section v-if="SERVER_WORLD && confirmPrompt && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
+    <section v-if="SERVER_WORLD && confirmPrompt && !worldFailure && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
       <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
     </section>
@@ -1051,7 +1055,7 @@ function openSettings() {
         @close="closePanel"
       />
 
-      <WorldConfirm v-if="confirmOpenId && confirmDetail" :detail="confirmDetail" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind || d.state === 'awaiting_review' || d.state === 'failed') { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
+      <WorldConfirm v-if="confirmOpenId && confirmDetail" :detail="confirmDetail" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; setDetail(d); artWatch.add([d.id]); }" @refreshed="(d) => { setDetail(d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind || d.state === 'awaiting_review' || d.state === 'failed') { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>

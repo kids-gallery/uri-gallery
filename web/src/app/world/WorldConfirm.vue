@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { confirmKind, failureOf, failureReason, getArtwork, type ArtworkDetail, type ConfirmKind, type Failure } from './server';
 import { ko } from '@/copy/ko';
 
@@ -9,9 +9,14 @@ const detail = ref(props.detail);
 const busy = ref(false);
 const failure = ref<Failure | null>(null);
 const selected = ref<ConfirmKind | null>(null);
+const root = ref<HTMLElement | null>(null);
+let alive = true;
+onMounted(() => root.value?.querySelector<HTMLElement>('button:not(:disabled)')?.focus());
+onUnmounted(() => { alive = false; });
+watch(() => props.detail, (next) => { detail.value = next; if (selected.value && !next.choices.includes(selected.value)) selected.value = null; });
 const choices = computed(() => {
   const blocked = new Map((detail.value.unavailableChoices ?? []).map((entry) => [entry.choice, entry.reason]));
-  return (['animated', 'relief', 'frame', 'sculpture'] as const)
+  return (['relief', 'frame', 'sculpture'] as const)
     .filter((kind) => detail.value.choices.includes(kind) || blocked.has(kind))
     .map((kind) => ({ kind, reason: blocked.get(kind), available: detail.value.choices.includes(kind) }));
 });
@@ -22,12 +27,15 @@ async function submit(kind: ConfirmKind) {
   failure.value = null;
   try {
     const updated = await confirmKind(detail.value.id, kind);
-    emit('confirmed', updated);
+    if (alive) emit('confirmed', updated);
   } catch (error) {
+    if (!alive) return;
     failure.value = failureOf(error);
     if (error instanceof Error && 'status' in error && error.status === 409) {
       try {
-        detail.value = await getArtwork(detail.value.id);
+        const fresh = await getArtwork(detail.value.id);
+        if (!alive) return;
+        detail.value = fresh;
         selected.value = null;
         emit('refreshed', detail.value);
       } catch (refreshError) {
@@ -41,11 +49,11 @@ async function submit(kind: ConfirmKind) {
 </script>
 
 <template>
-  <section class="shade" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <section ref="root" class="shade" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="card">
       <h2 id="confirm-title">이 결과로 할까요?</h2>
       <img v-if="detail.cutoutUrl || detail.originalUrl" :src="detail.cutoutUrl || detail.originalUrl || ''" alt="올린 작품">
-      <p>{{ detail.suggestion ? ko.confirm.suggestion[detail.suggestion] || '원하는 방식을 골라 주세요' : '원하는 방식을 골라 주세요' }}</p>
+      <p>{{ detail.suggestion && detail.suggestion !== 'animated' ? ko.confirm.suggestion[detail.suggestion] || '원하는 방식을 골라 주세요' : '원하는 방식을 골라 주세요' }}</p>
       <div class="choices" role="group" aria-label="전시 방식">
         <button v-for="choice in choices" :key="choice.kind" type="button"
           :disabled="busy || !choice.available" :aria-pressed="selected === choice.kind"
@@ -71,6 +79,7 @@ img{width:100%;max-height:220px;object-fit:contain;background:#f5eddf;border-rad
 .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 button{min-height:48px;padding:8px 12px;border:1px solid #ad557e;border-radius:10px;background:#93405f;color:white;font:inherit}
 button:disabled{opacity:.58}
+.choices button[aria-pressed="true"]{outline:3px solid #443529;outline-offset:2px;font-weight:700}
 small{display:block;font-size:12px}
 .actions{display:flex;justify-content:flex-end;gap:8px}
 .actions button:last-child{background:#fffdf8;color:#443529}
