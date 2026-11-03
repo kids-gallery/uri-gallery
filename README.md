@@ -156,7 +156,9 @@ flowchart LR
 
 ### 시작하기
 
-**준비물:** Docker Engine과 Docker Compose, Git, OpenSSL. Windows에서는 WSL 안에서 저장소를 받습니다. 아래 Compose 절차는 #32·#41 통합이 선행되며, 현재 main에 compose 파일이 없다면 통합이 끝난 뒤 실행해 주세요.
+이 Compose 구성은 개발과 시연용입니다. 가짜 모델, 개발용 모델 활성, Mailpit, HTTP 쿠키가 기본값이라 공개 서버에 그대로 올리면 안 됩니다.
+
+**준비물:** Docker Engine과 Docker Compose, Git, OpenSSL, 이 저장소에 접근 권한이 있는 GitHub 계정(`gh auth login` 또는 개인 접근 토큰). Windows에서는 WSL 안에서 저장소를 받습니다.
 
 ```bash
 git clone https://github.com/kids-gallery/uri-gallery.git
@@ -164,10 +166,8 @@ cd uri-gallery
 # 처음 실행할 때만 없는 비밀 파일을 만듭니다. 재실행해도 기존 값을 보존합니다.
 umask 077
 for name in db_password session_secret auth_hmac_secret; do
-  if [ ! -e "secrets/$name" ]; then
-    (set -C; openssl rand -hex 32 > "secrets/$name") || exit 1
-  fi
-  test -s "secrets/$name" || { echo "비밀 파일이 비어 있습니다: $name" >&2; exit 1; }
+  [ -e "secrets/$name" ] || openssl rand -hex 32 > "secrets/$name"
+  [ -s "secrets/$name" ] || echo "비밀 파일이 비어 있습니다: $name"
 done
 docker compose config -q
 docker compose up -d --build
@@ -188,7 +188,7 @@ docker compose ps
 
 커밋하기 전 `git ls-files .env secrets`로 실제 비밀 파일이 추적되지 않는지 확인합니다. `secrets/README.md`와 `*.example`은 안내 파일입니다. 가중치는 `git ls-files '*.pt' '*.pth' '*.ckpt' '*.onnx' '*.safetensors'`로 점검하고, 실제 파일의 용도도 확인합니다. 비밀 값과 가중치를 PR에 넣지 마세요.
 
-**기기 저장 화면만 개발할 때:** Node.js 22 이상에서 `cd web && npm ci && npm run dev`를 실행하고 `http://127.0.0.1:9501/app/world`을 엽니다. 이 경로는 서버 판의 Compose 한 바퀴를 대신 검증하지 않습니다. 폴더별 시험은 `api/`에서 `npm test`, `serving/`에서 `pytest`입니다.
+**기기 저장 화면만 개발할 때:** Node.js 22에서 `cd web && npm ci && npm run dev`를 실행하고 `http://127.0.0.1:9501/app/world`을 엽니다. 이 경로는 서버 판의 Compose 한 바퀴를 대신 검증하지 않습니다. 폴더별 시험은 `api/`에서 `npm test`, `serving/`에서 `pytest`입니다.
 
 **막히면** 30분 안에 팀 채널에 명령·오류 문구·해 본 것을 붙여 묻습니다. 자주 걸리는 곳: Windows 줄바꿈 깨짐(WSL에서 받기), 컨테이너끼리 연결 안 됨(바인딩 주소), 로그인 유지 안 됨(`SECURE_COOKIES=false`). → [증상별 표](docs/공통/수행가이드.md#stuck)
 
