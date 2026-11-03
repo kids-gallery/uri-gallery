@@ -1073,7 +1073,7 @@ function openSettings() {
         @close="closePanel"
       />
 
-      <WorldConfirm v-if="confirmOpenId && confirmPrompt?.id === confirmOpenId" :detail="confirmPrompt" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.add([d.id]); }" @refreshed="(d) => { if (!d.choices.length) confirmOpenId=null; }" />
+      <WorldConfirm v-if="confirmOpenId && confirmPrompt?.id === confirmOpenId" :detail="confirmPrompt" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind) { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>
