@@ -1,10 +1,12 @@
 """T155 — 모델 점검 실행(D20, stage-job §13, SD_01 7.9·§10-4 출력 형식 확인): 가짜 모델로."""
 from __future__ import annotations
 
+import io
 import uuid
 
 import pytest
 import yaml
+from PIL import Image
 
 from adapters.base import AdapterResult
 from adapters.fake import FAKE_JOINTS, FakeAdapter, _png
@@ -130,6 +132,19 @@ def test_infra_error_fails_without_retry(ck):
     c, j = ck.mc(cid), ck.job_row(jid)
     assert (c["status"], c["fail_reason"], c["outcome"]) == ("failed", "engine_down", None)
     assert (j["status"], j["error_class"], j["attempt_count"]) == ("failed", "engine_down", 1)
+
+
+def test_m5_truncated_input_is_storage_not_engine_down(ck):
+    """머리만 멀쩡한 JPEG는 크기를 읽고 난 뒤 디코드에서 실패한다. 서버 문제로 기록되면 안 된다"""
+    cid, jid = ck.check("M5")
+    key = ck.one("""SELECT so.object_key FROM model_check mc JOIN eval_item ei ON ei.item_id = mc.eval_item_id
+                     JOIN stored_object so ON so.object_id = ei.object_id WHERE mc.check_id = %s""", cid)["object_key"]
+    b = io.BytesIO()
+    Image.effect_noise((200, 200), 80).convert("RGB").save(b, "JPEG")
+    (ck.store / key).write_bytes(b.getvalue()[:b.tell() // 2])
+    assert make_worker().run_once() == "failed"
+    c, j = ck.mc(cid), ck.job_row(jid)
+    assert (c["fail_reason"], j["error_class"]) == ("storage", "storage")
 
 
 def test_manifest_changed_is_model_not_ready(ck, tmp_path):

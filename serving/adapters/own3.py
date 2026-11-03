@@ -12,6 +12,8 @@ import threading
 from pathlib import Path
 
 from common.config import load_manifest, load_settings, load_yaml
+from common.cutout import cutout_image
+from common.images import open_upright
 from common.logging import get_logger
 
 from .base import Adapter, AdapterResult, JobInput
@@ -113,8 +115,7 @@ class Own3SplitAdapter(_Own3):
         from PIL import Image
 
         try:
-            img = Image.open(job.inputs.get("original"))
-            img.load()
+            img = open_upright(job.inputs.get("original"))
         except (OSError, TypeError):
             return AdapterResult("storage", diagnostic="input_unreadable")
         rgb = img.convert("RGB")
@@ -129,9 +130,7 @@ class Own3SplitAdapter(_Own3):
         mask_img = Image.fromarray((mask * 255).astype(np.uint8), "L")
         mask_p, cut_p = job.tmp_dir / "mask.png", job.tmp_dir / "cutout.png"
         mask_img.save(mask_p)
-        cut = rgb.copy()
-        cut.putalpha(mask_img)          # 원본 픽셀은 그대로, 알파만 더한다
-        cut.save(cut_p)
+        cutout_image(rgb, mask_img).save(cut_p)
         return AdapterResult("ok", score=ratio, outputs={"mask": str(mask_p), "cutout": str(cut_p)})
 
 
@@ -153,7 +152,7 @@ class Own3DepthAdapter(_Own3):
             rgba = Image.open(src).convert("RGBA")
             original = job.inputs.get("original")
             # 모델은 사진으로 배웠으므로 원본을 먼저 쓰고, 크기가 다르면 흰 바탕에 올린 컷아웃을 쓴다
-            rgb = Image.open(original).convert("RGB") if original and Path(original).exists() else None
+            rgb = open_upright(original).convert("RGB") if original and Path(original).exists() else None
         except OSError:
             return AdapterResult("storage", diagnostic="input_unreadable")
         if rgb is None or rgb.size != rgba.size:

@@ -80,10 +80,10 @@ class AnimatedDrawingsAdapter(Adapter):
                 raise RuntimeError("torchserve_unhealthy")
 
     def joints(self, job: JobInput) -> AdapterResult:
-        from PIL import Image
+        from common.images import open_upright
 
         try:
-            img = Image.open(job.inputs["original"]).convert("RGB")
+            img = open_upright(job.inputs["original"]).convert("RGB")
         except (OSError, KeyError):
             return AdapterResult("storage", diagnostic="input_unreadable")
         try:
@@ -116,8 +116,14 @@ class AnimatedDrawingsAdapter(Adapter):
     def render(self, job: JobInput) -> AdapterResult:
         if not (self.ad_python and self.ad_root):
             return AdapterResult("model_not_ready", diagnostic="ad_env_missing")
+        from common.images import upright_file
+
         out_dir = job.tmp_dir / "ad"
-        rc = self._run_proc([self.ad_python, self.runner, str(job.inputs["original"]), str(out_dir)],
+        try:
+            src = upright_file(job.inputs["original"], job.tmp_dir)   # AD는 파일 경로를 받는다
+        except (OSError, KeyError):
+            return AdapterResult("storage", diagnostic="input_unreadable")
+        rc = self._run_proc([self.ad_python, self.runner, str(src), str(out_dir)],
                             job, cwd=str(Path(self.ad_root) / "examples"), env=self._render_env())
         if rc is None:
             return AdapterResult("engine_down", diagnostic="cancelled_midway")

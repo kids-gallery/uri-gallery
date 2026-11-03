@@ -11,6 +11,8 @@ import os
 from pathlib import Path
 
 from common.config import load_manifest, load_settings, load_yaml
+from common.images import open_upright
+from common.cutout import cutout_image
 
 from .base import Adapter, AdapterResult, JobInput
 
@@ -57,8 +59,7 @@ class BiRefNetAdapter(Adapter):
 
         src = job.inputs.get("original")
         try:
-            img = Image.open(src)
-            img.load()
+            img = open_upright(src)
         except (OSError, TypeError):
             return AdapterResult("storage", diagnostic="input_unreadable")
         rgb = img.convert("RGB")
@@ -75,7 +76,5 @@ class BiRefNetAdapter(Adapter):
             return AdapterResult("quality_below", downgrade_cause="split_fail", score=ratio, diagnostic="foreground_ratio")
         mask_p, cut_p = job.tmp_dir / "mask.png", job.tmp_dir / "cutout.png"
         mask_img.save(mask_p)
-        cut = rgb.copy()
-        cut.putalpha(mask_img)          # 원본 픽셀은 그대로, 알파만 더한다
-        cut.save(cut_p)
+        cutout_image(rgb, mask_img).save(cut_p)   # 보이는 화소는 그대로, 투명한 곳의 색은 남기지 않는다
         return AdapterResult("ok", score=ratio, outputs={"mask": str(mask_p), "cutout": str(cut_p)})
