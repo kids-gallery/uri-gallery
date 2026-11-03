@@ -16,7 +16,7 @@ import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
 import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
-import { galleryFailure, isStale, movingIds } from './server/gallery';
+import { galleryFailure, isStale, watchIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
@@ -469,8 +469,12 @@ watch(confirmDetail, (d) => { if (confirmOpenId.value && (!d || d.confirmedKind 
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
-  void movingIds().then(artWatch.add); // 새로 고침해도 진행 중인 작품을 이어서 묻는다
-  watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
+  let staleSeen = ''; // 같은 차이로 되풀이해 읽지 않는다. 못 여는 사진은 차이가 영구히 남는다(마스터플랜 3-3)
+  watch(artWatch.details, (d) => { // 승인되어 걸린 결과가 바뀌면 다시 그린다
+    const stale = [...d.values()].filter(isStale).map((x) => `${x.id}:${x.hungResultKind}`).sort().join();
+    if (stale && stale !== staleSeen) void reload();
+    staleSeen = stale;
+  });
 }
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {
   if (SERVER_WORLD && from === 'upload') artWatch.add(ids);
@@ -524,6 +528,7 @@ async function rotateSaved(dir: 1 | -1) {
 async function onDelete(id: string) {
   try {
     await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
+    if (SERVER_WORLD) artWatch.forget(id);
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');
@@ -719,6 +724,7 @@ onMounted(async () => {
   if (!(await store.storageWorks())) { phase.value = 'nostorage'; return; }
   void store.keepStorage().then((v) => { persisted.value = v; }); // §2-19 기준 1: 브라우저가 저장 공간을 비울 때 이 미술관은 남기도록 요청
   await boot();
+  if (SERVER_WORLD) void artWatch.resume(() => watchIds(selectedChild.value)); // 새로 고침해도 진행 중인 작품과 확정·결정을 기다리는 작품을 이어서 본다
 });
 onBeforeUnmount(() => {
   alive=false;
