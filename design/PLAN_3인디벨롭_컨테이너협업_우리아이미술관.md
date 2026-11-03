@@ -167,7 +167,7 @@
      - 켜고 끌 때 활성 행도 따라간다. 활성 행이 개발용(`dev-` 이름)이고 지금 설정과 값이 다르면 `retired`로 내리고 새 행을 넣는다. 그래서 같은 볼륨에서 가짜↔실제, BiRefNet↔자체 모델로 바꿔도 활성 행과 어댑터가 어긋나지 않는다. 사람이 등록한 활성 행은 건드리지 않는다.
      - 매니페스트에 모델이나 해시가 없거나 `license_confirmed`가 참이 아니면 이유를 찍고 db-migrate가 실패한다. 가짜로 조용히 넘어가지 않으며, 그 경우 worker가 시작되지 않는다(BR-MDL-07).
      - 전환 전에 대기하던 작업은 워커가 가져갈 때 그때의 활성 행으로 기록된다(`serving/workers/runner.py` `claim`의 `COALESCE`, `test_claim_records_current_active_version`). 그래서 대기 작업은 실제로 돈 어댑터와 일치한다. 끝난 작업의 기록은 바꾸지 않으므로 전환 전 작업은 전환 전 행을 가리킨다.
-     - 사람이 등록한 활성 행이 지금 설정과 다르면 행은 그대로 두고 경고를 찍는다. 작업 기록은 그 행으로 남는다. 이 경우는 팀 서버에서 켜지 않는 개발 경로에서 드물게 생긴다.
+     - 사람이 등록한 활성 행은 바꾸지 않는다. 실제 모델로 켤 때 그 행의 해시, config, runtime 중 하나라도 지금 설정과 다르면 이유를 찍고 db-migrate가 실패한다. 그대로 돌면 다른 모델의 결과가 그 행으로 기록되기 때문이다. 가짜 모델로 켤 때는 #84 원칙대로 행을 두고 경고만 찍는다. 가짜 결과는 시연용이고 그 경로를 막으면 사람이 등록한 행이 있는 DB에서 가짜 기동이 막힌다.
      - 켜는 명령에 `--build`를 붙인다. 이미지 태그가 남아 있으면 compose가 다시 빌드하지 않아, 옛 db-migrate가 `DEV_REAL_MODELS`를 조용히 무시하고 옛 워커가 돈다.
 2. **이미지.**
    - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.

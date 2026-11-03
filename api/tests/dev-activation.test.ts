@@ -60,13 +60,32 @@ describe('개발용 모델 최초 활성', () => {
     expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ weights_sha256: 'd'.repeat(64) });
   });
 
-  it('사람이 등록한 활성 행은 실제로 켜도 그대로 둔다', async () => {
-    await conn.query('DELETE FROM model_version');
-    await conn.query(`INSERT INTO model_version
+  const human = (w: string, c: string, runtime: string) => conn.query(`INSERT INTO model_version
       (model_id, version_label, weights_sha256, config_hash, runtime, license_confirmed, release_state, exec_device)
-      VALUES ('M1', 'v1', REPEAT('e', 64), REPEAT('e', 64), 'hand', TRUE, 'active', 'cpu')`);
+      VALUES ('M1', 'v1', REPEAT(?, 64), REPEAT(?, 64), ?, TRUE, 'active', 'cpu')`, [w, c, runtime]);
+  const want = { weights: 'a'.repeat(64), config: 'b'.repeat(64), runtime: 'torch-2.4.1-cpu' };
+  it.each([
+    ['해시', 'e', 'b', 'torch-2.4.1-cpu'],
+    ['config', 'a', 'e', 'torch-2.4.1-cpu'],
+    ['runtime', 'a', 'b', 'hand'],
+  ])('실제로 켤 때 사람이 등록한 행의 %s만 달라도 이유를 찍고 멈추며 어떤 행도 바꾸지 않는다', async (_n, w, c, runtime) => {
+    await conn.query('DELETE FROM model_version');
+    await human(w, c, runtime);
+    await expect(activateDevModels(conn, { M1: want })).rejects.toThrow(/M1: 사람이 등록한 활성 행 v1/);
+    expect(await active()).toMatchObject([{ model_id: 'M1', runtime, weights_sha256: w.repeat(64) }]);
+    expect(await active()).toHaveLength(1); // 앞서 처리한 모델도 되돌린다
+  });
+  it('실제로 켤 때 사람이 등록한 행이 같은 값이면 통과한다', async () => {
+    await conn.query('DELETE FROM model_version');
+    await human('a', 'b', 'torch-2.4.1-cpu');
+    await activateDevModels(conn, { M1: want });
+    expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ runtime: 'torch-2.4.1-cpu', weights_sha256: 'a'.repeat(64) });
+  });
+  it('가짜로 켤 때는 사람이 등록한 행을 두고 경고만 찍는다', async () => {
+    await conn.query('DELETE FROM model_version');
+    await human('e', 'e', 'hand');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    await activateDevModels(conn, realVersions(['M1'], manifest(`models:\n${ok('M1', 'a', 'torch-2.4.1-cpu')}`)));
+    await activateDevModels(conn);
     expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ runtime: 'hand' });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('M1: 사람이 등록한 활성 행 v1'));
     warn.mockRestore();
