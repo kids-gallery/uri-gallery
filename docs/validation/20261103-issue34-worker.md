@@ -9,6 +9,7 @@
 - 가입과 메일 확인, 아이 생성 후 합성 PNG 업로드 202. split·judge 각각 done, relief 확정 후 depth_relief done, like 결정 200 및 `hungResultKind=relief`.
 - 실행 중 model-api `/internal/ready`: `groups.cpu=true`, M1·M2·M3·M5가 ready.
 - `docker compose stop worker-cpu` 이후 `groups.cpu=false`. 정상 중단 시 워커가 자기 상태 파일을 지우는 경로다. 강제 종료 후 상태 파일이 60초 지나 만료되는 경로는 이번에 측정하지 않았다.
+- 추가 경계 시험: 실제 61초를 기다리지 않고 임시 상태 파일과 모의 시각으로 `read_all`을 호출했다. 마지막 갱신 후 60초는 alive=true, 61초는 alive=false. 강제 종료된 전체 Compose에서의 경과 시간 실측은 아니다.
 - 워커 중단 상태에서 model-api의 `POST /internal/models/M1/warmup` → 202. 공유 폴더 `/data/run/warmup/M1` 파일 생성을 확인하고 worker-cpu를 다시 시작한 후 파일이 사라지는 것을 확인했다. 이는 요청 파일을 worker가 소비한 결과이며 별도의 실제 모델 적재 측정은 아니다.
 
 ## 재현에 쓰인 핵심 명령
