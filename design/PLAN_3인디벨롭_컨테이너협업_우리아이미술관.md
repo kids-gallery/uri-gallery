@@ -58,7 +58,7 @@
 - 메일을 끄면 이메일 가입도 꺼지므로(`api/src/modules/auth/routes.ts` 66행) Mailpit을 둔다.
 - 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4).
 - **#66 리뷰 반영:** 컨테이너 예시는 APP_HOST=0.0.0.0, MAIL_ENABLED=true를 각각 한 번 둔다. TRUST_PROXY의 compose망 CIDR과 고정 subnet은 #32에서 함께 정하며, 예시의 loopback은 그 전까지 기본값으로 명시한다. 호스트 pm2 배포 문서에는 주소·저장 경로·쿠키 값을 호스트 기준으로 설정하는 절차를 분리한다.
-- **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
+- **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. 저장소 폴더에 `.env`가 있으면 `.env.example` 값을 덮어쓴다. pm2용으로 만든 옛 `.env`는 옮겨 두고 필요한 값만 넣는다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
 
 - **#26 입구 이미지:** 저장소 루트에서 `docker build -f web/Dockerfile .`. 의존성 파일을 먼저 복사하고 `npm ci`한 뒤 웹 소스를 복사한다. `VITE_WORLD_SERVER=1`을 빌드 단계에서 고정한다. 실행 이미지는 `dist-world` 전체(생성된 `/licenses/THIRD_PARTY.txt` 포함)를 정적 루트에 담고 80번에서 받는다. API 라우팅과 SPA 대체는 #27에서 설정한다. 루트 `.dockerignore`를 재사용하며 `web/.dockerignore`는 만들지 않는다.
@@ -311,6 +311,13 @@
 | 3 구현 | 각자 만든 부분, 고친 코드, 잰 수치 | 각자 |
 | 4 시연 | `docker compose up -d` → 3D 미술관에서 가입 → 사진 → 확정 → 입체 전시 | 이제민 진행, 신지현·최호준 화면 |
 | 5 한계와 다음 | GPU, 메모리, 배포(Vercel 같은 정적 호스팅 + 서버 따로) | 최호준 |
+
+**시연 준비(2026-11-03 측정 반영).**
+
+- 사진은 JPEG로, 긴 변 1500 이하로, 그림이 화면을 대부분 채우게 찍는다. 3D 화면 업로드에는 자르기가 없고, 전경이 작을수록 분리 품질이 낮다(M1·own3 공통, 공개 그림 원본 60장에서 전경 비율 0.1 미만은 IoU 중앙값 0.65 이하까지 떨어짐, 그림이 작을수록 더 낮다). 12MP 사진은 작품 하나에 수십 MB를 받을 수 있다(합성 그림 계산값, 휴대폰 미측정).
+- 입체를 보여 줄 작품은 '입체 그림'을 고른다. M3이 가짜라 '움직이는 그림'은 재생되지 않는다.
+- 시연 직전 사진 한 장을 올려 모델을 데운다. 다른 시험 스택은 내린다. 메모리가 빠듯하면 split이 60초 제한에 걸려 액자로 낮아진다(측정한 첫 split 24초, 맥 한 대에서 다른 작업이 겹칠 때 그림 하나가 100초를 넘은 적이 있다).
+- 켜는 명령에 `--build`를 붙여 새 이미지로 띄운다.
 
 ## 7. 각자 남길 작업 기록
 
