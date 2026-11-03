@@ -7,6 +7,7 @@ import { computed, onMounted, ref } from 'vue';
 import PhotoFixer from '@/app/upload/PhotoFixer.vue';
 import * as store from './store';
 import { SERVER_WORLD, checkPhoto, newUploadKey, sendPhoto } from './server/upload';
+import { CROP_BOXES } from './cropBoxes';
 
 export type UploadStatus = 'crop' | 'wait' | 'check' | 'make' | 'save' | 'done' | 'fail' | 'skip';
 interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; uploadKey: string; hung: boolean }
@@ -94,11 +95,6 @@ function cropUnreadable() {
   it.reason = heicLike(it.file) ? '이 브라우저는 HEIC 사진을 열 수 없어요. JPEG로 저장해 다시 골라 주세요' : '이 사진은 열 수 없어요. 다른 사진을 골라 주세요';
   nextCrop();
 }
-/** 처음 네 모서리: 아이가 들고 찍은 세로 사진은 아래쪽, 그 밖에는 거의 전체 */
-const startBox = (w: number, h: number): [number, number][] => {
-  const [x0, y0, x1, y1] = h > w * 1.1 ? [0.08, 0.38, 0.92, 0.96] : [0.04, 0.04, 0.96, 0.96];
-  return [[x0 * w, y0 * h], [x1 * w, y0 * h], [x1 * w, y1 * h], [x0 * w, y1 * h]];
-};
 
 async function knownHashes() {
   if (known) return known;
@@ -184,7 +180,7 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
 
       <input ref="album" class="hidden" type="file" :accept="SERVER_WORLD ? 'image/jpeg,image/png,image/heic,image/heif,.heic,.heif' : 'image/*'" multiple @change="onPick" />
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
-      <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :start-box="startBox" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
+      <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
 
       <template v-if="step === 'pick'">
         <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>

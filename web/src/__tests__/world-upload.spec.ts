@@ -12,7 +12,7 @@ vi.mock('@/app/world/store', async (real) => ({
 // 자르기 창(#118)은 브라우저 캔버스가 필요하니 결과만 흉내 낸다
 const crop = vi.hoisted(() => ({ mode: 'done' as 'done' | 'skip' | 'unreadable', opened: [] as string[] }));
 vi.mock('@/app/upload/PhotoFixer.vue', () => ({ default: {
-  props: ['src', 'startBox', 'hint', 'closeLabel'],
+  props: ['src', 'boxOptions', 'boxAsk', 'hint', 'closeLabel'],
   emits: ['done', 'close', 'unreadable'],
   mounted(this: { src: string; $emit: (e: string, ...a: unknown[]) => void }) {
     crop.opened.push(this.src);
