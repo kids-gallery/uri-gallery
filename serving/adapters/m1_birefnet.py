@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 from common.config import load_manifest, load_settings, load_yaml
+from common.images import open_upright
 from common.cutout import cutout_image
 
 from .base import Adapter, AdapterResult, JobInput
@@ -58,8 +59,7 @@ class BiRefNetAdapter(Adapter):
 
         src = job.inputs.get("original")
         try:
-            img = Image.open(src)
-            img.load()
+            img = open_upright(src)
         except (OSError, TypeError):
             return AdapterResult("storage", diagnostic="input_unreadable")
         rgb = img.convert("RGB")

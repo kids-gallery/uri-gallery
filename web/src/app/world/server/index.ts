@@ -36,6 +36,7 @@ export const verifyEmail = (token: string) => api.post<void>('/v1/auth/email/ver
 export const resendVerify = (email: string) => api.post<void>('/v1/auth/email/verify/resend', { ...o, body: { email } });
 export const login = (body: Json<'/v1/auth/login', 'post'>) => api.post<void>('/v1/auth/login', { ...o, body });
 export const logout = () => api.post<void>('/v1/auth/logout', o);
+export const authProviders = () => api.get<{ kakao: boolean; emailSignup: boolean }>('/v1/auth/providers', o);
 export const me = () => authenticated(api.get<GuardianMe>('/v1/me', o));
 
 export const listChildren = () => authenticated(api.get<Child[]>('/v1/children', o));
