@@ -1,0 +1,21 @@
+import { mount, flushPromises } from '@vue/test-utils';
+import { afterEach, expect, it, vi } from 'vitest';
+import WorldConfirm from '../app/world/WorldConfirm.vue';
+import type { ArtworkDetail } from '../app/world/server';
+const api = vi.hoisted(() => ({ confirmKind: vi.fn() }));
+vi.mock('../app/world/server', async (original) => ({ ...await original<typeof import('../app/world/server')>(), ...api }));
+afterEach(() => vi.resetAllMocks());
+it('allows a frame-only confirmation and prevents duplicate requests', async () => {
+  const detail = { id: 'frame-1', choices: ['frame'], unavailableChoices: [] } as unknown as ArtworkDetail;
+  let resolve!: (value: ArtworkDetail) => void;
+  api.confirmKind.mockImplementation(() => new Promise((done) => { resolve = done; }));
+  const w = mount(WorldConfirm, { props: { detail } });
+  await w.find('.choices button').trigger('click');
+  await w.find('.actions button').trigger('click');
+  await w.find('.actions button').trigger('click');
+  expect(api.confirmKind).toHaveBeenCalledExactlyOnceWith('frame-1', 'frame');
+  const updated = { ...detail, confirmedKind: 'frame' } as ArtworkDetail;
+  resolve(updated); await flushPromises();
+  expect(w.emitted('confirmed')?.[0]).toEqual([updated]);
+  w.unmount();
+});
