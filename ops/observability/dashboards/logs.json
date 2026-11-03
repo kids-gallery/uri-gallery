@@ -1,0 +1,71 @@
+{
+  "uid": "fixture-logs",
+  "title": "시험 로그판",
+  "timezone": "Asia/Seoul",
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "id": 1,
+      "title": "INFO",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=\"fixture\"} | json | level = \"info\""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "WARN",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=\"fixture\"} | json | level = \"warn\""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "ERROR",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=\"fixture\"} | json | level = \"error\""
+        }
+      ]
+    }
+  ]
+}

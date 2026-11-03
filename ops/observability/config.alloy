@@ -1,0 +1,10 @@
+local.file_match "fixtures" {
+  path_targets = [{"__path__" = "/fixtures/*.jsonl", "service" = "fixture", "environment" = "test"}]
+}
+loki.source.file "fixtures" {
+  targets = local.file_match.fixtures.targets
+  forward_to = [loki.write.local.receiver]
+}
+loki.write "local" {
+  endpoint { url = "http://loki:3100/loki/api/v1/push" }
+}

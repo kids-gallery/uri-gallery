@@ -1,0 +1,38 @@
+name: uri-gallery-observability-test
+services:
+  loki:
+    image: grafana/loki:3.4.2
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./loki.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    networks: [internal]
+  alloy:
+    image: grafana/alloy:v1.9.0
+    command: [run, --storage.path=/var/lib/alloy, /etc/alloy/config.alloy]
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - ./fixtures:/fixtures:ro
+      - alloy-data:/var/lib/alloy
+    networks: [internal]
+    depends_on: [loki]
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_TEST_PASSWORD:?Set GRAFANA_TEST_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+    ports: ['127.0.0.1:13000:3000']
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    networks: [internal]
+    depends_on: [loki]
+networks:
+  internal:
+volumes:
+  loki-data:
+  alloy-data:
+  grafana-data:
