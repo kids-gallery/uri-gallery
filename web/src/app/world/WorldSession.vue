@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { authProviders, login, logout, me, failureOf, failureReason, type GuardianMe } from './server';
-import { SERVER_WORLD, clearWorldWorks } from './server/upload';
+import { authProviders, login, logout, me, failureOf, failureReason, type Child, type GuardianMe } from './server';
+import WorldChildren from './WorldChildren.vue';
+import { SERVER_WORLD, clearWorldWorks, selectedChild } from './server/upload';
 
 const WorldView = defineAsyncComponent(() => import('./WorldView.vue'));
 const guardian = ref<GuardianMe | null>(null);
 const checking = ref(true);
+const childReady = ref(false);
+const changingChild = ref(false);
+const childName = ref('');
 const busy = ref(false);
 const email = ref('');
 const password = ref('');
@@ -29,7 +33,17 @@ let alive = true;
 function clear() {
   epoch++;
   guardian.value = null;
+  childReady.value = false;
+  changingChild.value = false;
+  childName.value = '';
+  selectedChild.value = null;
   clearWorldWorks();
+}
+function childSelected(child: Child) {
+  selectedChild.value = child.id;
+  childName.value = child.alias;
+  childReady.value = true;
+  changingChild.value = false;
 }
 function expired() {
   if (!guardian.value) return;
@@ -61,6 +75,7 @@ async function restore() {
       guardian.value = value;
       notice.value = '';
       kakaoNote.value = '';
+      if (!wasAuthenticated) childReady.value = false;
     }
   } catch (e) {
     if (!alive || current !== epoch) return;
@@ -93,6 +108,7 @@ async function submit() {
     if (alive && current === epoch) {
       clearWorldWorks();
       guardian.value = value;
+      childReady.value = !!selectedChild.value;
       password.value = '';
     }
   } catch (e) {
@@ -144,7 +160,8 @@ onUnmounted(() => {
 <template>
   <WorldView v-if="!SERVER_WORLD" />
   <template v-else>
-    <WorldView v-if="guardian" @logout="signout" />
+    <WorldChildren v-if="guardian && !childReady" :changing="changingChild" @selected="childSelected" />
+    <WorldView v-else-if="guardian" :selected-child-name="childName" @logout="signout" @change-child="changingChild = true; childReady = false" />
     <main v-else class="auth">
       <section class="card" aria-labelledby="login-title">
         <h1 id="login-title">우리 아이 미술관</h1>
