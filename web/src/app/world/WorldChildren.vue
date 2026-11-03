@@ -4,6 +4,7 @@ import { addChild, failureOf, failureReason, listChildren, type Child, type Fail
 import { selectedChild } from './server/upload';
 import { clearGallery } from './server/gallery';
 
+const props = defineProps<{ changing?: boolean }>();
 const emit = defineEmits<{ selected: [child: Child] }>();
 const children = ref<Child[]>([]);
 const alias = ref('');
@@ -17,7 +18,7 @@ async function load() {
   failure.value = null;
   try {
     children.value = await listChildren();
-    if (children.value.length === 1) choose(children.value[0]!);
+    if (children.value.length === 1 && !props.changing) choose(children.value[0]!);
     else if (selectedChild.value && !children.value.some((child) => child.id === selectedChild.value)) selectedChild.value = null;
   } catch (error) {
     failure.value = failureOf(error);

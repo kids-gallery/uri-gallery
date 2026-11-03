@@ -8,6 +8,7 @@ const WorldView = defineAsyncComponent(() => import('./WorldView.vue'));
 const guardian = ref<GuardianMe | null>(null);
 const checking = ref(true);
 const childReady = ref(false);
+const changingChild = ref(false);
 const childName = ref('');
 const busy = ref(false);
 const email = ref('');
@@ -29,6 +30,7 @@ function childSelected(child: Child) {
   selectedChild.value = child.id;
   childName.value = child.alias;
   childReady.value = true;
+  changingChild.value = false;
 }
 function expired() {
   if (!guardian.value) return;
@@ -122,8 +124,8 @@ onUnmounted(() => {
 <template>
   <WorldView v-if="!SERVER_WORLD" />
   <template v-else>
-    <WorldChildren v-if="guardian && !childReady" @selected="childSelected" />
-    <WorldView v-else-if="guardian" :selected-child-name="childName" @logout="signout" @change-child="childReady = false" />
+    <WorldChildren v-if="guardian && !childReady" :changing="changingChild" @selected="childSelected" />
+    <WorldView v-else-if="guardian" :selected-child-name="childName" @logout="signout" @change-child="changingChild = true; childReady = false" />
     <main v-else class="auth">
       <section class="card" aria-labelledby="login-title">
         <h1 id="login-title">우리 아이 미술관</h1>
