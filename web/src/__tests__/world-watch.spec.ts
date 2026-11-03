@@ -257,6 +257,55 @@ describe('늦게 도착한 옛 응답', () => {
     expect(w.failure.value).toBeNull();
   });
 
+  describe('서버 목록 이어 보기(#40, #85 리뷰)', () => {
+    const down = () => Promise.reject(new TypeError('network'));
+    it('목록 첫 요청이 실패해도 복구 뒤 다시 시도하면 대기 작품을 읽는다', async () => {
+      const f = server((u) => art(u.split('/').pop()!, 'succeeded', { choices: ['like'] }));
+      const list = vi.fn<() => Promise<string[]>>().mockImplementationOnce(down).mockResolvedValue(['a1']);
+      const w = start();
+      await w.resume(list);
+      expect(w.failure.value?.kind).toBe('offline');
+      expect(f).not.toHaveBeenCalled();
+      await w.retry();
+      expect(list).toHaveBeenCalledTimes(2);
+      expect(w.failure.value).toBeNull();
+      expect(w.details.value.get('a1')?.choices).toEqual(['like']);
+    });
+    it('다시 시도에도 목록을 못 읽으면 안내가 남고, 묻던 작품의 성공 응답이 안내를 지우지 않는다', async () => {
+      server((u) => art(u.split('/').pop()!, 'running'));
+      const list = vi.fn<() => Promise<string[]>>(down);
+      const w = start();
+      w.add(['m1']);
+      await w.resume(list);
+      await flush(3_000);
+      expect(w.failure.value?.kind).toBe('offline');
+      await w.retry();
+      expect(list).toHaveBeenCalledTimes(2);
+      expect(w.failure.value?.kind).toBe('offline');
+      expect(w.details.value.get('m1')).toBeTruthy();
+    });
+    it('화면을 벗어난 뒤 실패한 목록은 안내를 띄우지 않는다', async () => {
+      server(() => art('x', 'running'));
+      let fail!: (e: Error) => void;
+      const w = start();
+      const p = w.resume(() => new Promise((_, no) => { fail = no; }));
+      scope.stop();
+      fail(new TypeError('network'));
+      await p;
+      expect(w.failure.value).toBeNull();
+    });
+    it('로그아웃하면 못 읽은 목록을 잊는다', async () => {
+      server(() => art('x', 'running'));
+      const list = vi.fn<() => Promise<string[]>>(down);
+      const w = start();
+      await w.resume(list);
+      w.clear();
+      await w.retry();
+      expect(list).toHaveBeenCalledTimes(1);
+      expect(w.failure.value).toBeNull();
+    });
+  });
+
   it('로그아웃하면 지우고, 그 뒤에 온 응답을 넣지 않는다', async () => {
     let release: (r: Response) => void = () => undefined;
     const f = server(() => new Promise<Response>((r) => { release = r; }));

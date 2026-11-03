@@ -437,7 +437,7 @@ const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
-  void watchIds(selectedChild.value).then(artWatch.add); // 새로 고침해도 진행 중인 작품과 확정·결정을 기다리는 작품을 이어서 본다
+  void artWatch.resume(() => watchIds(selectedChild.value)); // 새로 고침해도 진행 중인 작품과 확정·결정을 기다리는 작품을 이어서 본다
   watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
 }
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {

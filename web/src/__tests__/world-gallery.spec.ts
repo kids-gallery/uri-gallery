@@ -296,9 +296,9 @@ describe('새로 고침 뒤 이어 묻기', () => {
     const { g } = await load();
     expect(await g.watchIds('c2')).toEqual(['b1']);
   });
-  it('못 읽으면 빈 목록이다', async () => {
+  it('못 읽으면 빈 목록으로 숨기지 않고 실패를 넘긴다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('x'); }));
     const { g } = await load();
-    expect(await g.watchIds(null)).toEqual([]);
+    await expect(g.watchIds(null)).rejects.toThrow();
   });
 });
