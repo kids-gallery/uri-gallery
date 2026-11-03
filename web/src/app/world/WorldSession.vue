@@ -14,6 +14,7 @@ const notice = ref('');
 const logoutPending = ref(false);
 const providers = ref({ kakao: false, emailSignup: true }); // 확인 전·실패 때는 지금 이메일 화면(마스터플랜 3-3 #88)
 const showEmail = ref(false);
+const PROVIDERS_WAIT_MS = 3000;
 const canRetry = ref(false);
 const route = useRoute();
 const router = useRouter();
@@ -32,12 +33,15 @@ function clear() {
 function expired() {
   if (!guardian.value) return;
   clear();
+  kakaoNote.value = '';
   checking.value = false;
   notice.value = '로그인이 만료됐어요. 다시 로그인해 주세요';
 }
 async function loadProviders() {
   const value = await authProviders().catch(() => null);
-  if (value && alive) providers.value = value;
+  if (!value || !alive) return;
+  if (value.kakao && (email.value || password.value)) showEmail.value = true; // 입력 중인 칸을 접지 않는다
+  providers.value = value;
 }
 function startKakao() {
   window.location.assign('/v1/auth/kakao/start');
@@ -54,6 +58,7 @@ async function restore() {
     if (alive && current === epoch) {
       guardian.value = value;
       notice.value = '';
+      kakaoNote.value = '';
     }
   } catch (e) {
     if (!alive || current !== epoch) return;
@@ -64,11 +69,13 @@ async function restore() {
         ? '로그인이 만료됐어요. 다시 로그인해 주세요'
         : '로그인해 미술관을 열어 주세요';
     } else if (!(f.kind === 'offline' && wasAuthenticated)) {
+      kakaoNote.value = '';
       notice.value = failureReason(f);
       canRetry.value = true;
     }
   } finally {
-    await loading; // 켜짐을 알기 전에 이메일 입력을 잠깐 보이지 않게
+    // 켜짐을 알기 전에 이메일 입력을 잠깐 보이지 않게. 응답이 멈춰도 로그인 화면은 열려야 한다
+    if (loading) await Promise.race([loading, new Promise((done) => setTimeout(done, PROVIDERS_WAIT_MS))]);
     if (alive) checking.value = false;
   }
 }
@@ -98,6 +105,8 @@ async function submit() {
 async function signout() {
   if (busy.value) return;
   clear();
+  kakaoNote.value = '';
+  checking.value = false;
   busy.value = true;
   logoutPending.value = true;
   notice.value = '';
@@ -115,7 +124,8 @@ function visible() {
   if (document.visibilityState === 'visible' && guardian.value) void restore();
 }
 onMounted(() => {
-  if (Object.keys(route.query).length) void router.replace({ path: route.path, query: {} }); // 콜백이 붙인 쿼리. 새로 고침에 안내가 다시 뜨지 않게
+  const { kakao, welcome, next, ...rest } = route.query; // 콜백이 붙인 쿼리만 지운다. 새로 고침에 안내가 다시 뜨지 않게
+  if (kakao !== undefined || welcome !== undefined || next !== undefined) void router.replace({ path: route.path, query: rest });
   if (SERVER_WORLD) {
     window.addEventListener('world-session-expired', expired);
     document.addEventListener('visibilitychange', visible);
@@ -161,6 +171,7 @@ onUnmounted(() => {
             로그인 상태 다시 확인
           </button>
           <RouterLink v-if="!logoutPending && !providers.kakao && providers.emailSignup" to="/app/signup">처음 오셨나요? 이메일로 가입하기</RouterLink>
+          <p v-if="!logoutPending && !providers.kakao && !providers.emailSignup">지금은 새로 가입할 수 없어요. 이미 가입했다면 로그인해 주세요.</p>
         </template>
       </section>
     </main>

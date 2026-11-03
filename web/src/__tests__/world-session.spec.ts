@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { ApiError } from '../api/client';
 import Session from '../app/world/WorldSession.vue';
@@ -92,4 +92,61 @@ it('첫 로그인이 붙인 쿼리도 주소에서 지운다', async () => {
   open();
   await flushPromises(); await flushPromises();
   expect(s.replace).toHaveBeenCalledWith({ path: '/app/world', query: {} });
+});
+it('측정용 쿼리는 그대로 두고 콜백 쿼리만 지운다', async () => {
+  s.me.mockResolvedValue({ hasFamily: true }); s.query = { kakao: 'failed', measure: '1' };
+  open();
+  await flushPromises(); await flushPromises();
+  expect(s.replace).toHaveBeenCalledWith({ path: '/app/world', query: { measure: '1' } });
+});
+it('다른 쿼리뿐이면 주소를 건드리지 않는다', async () => {
+  s.me.mockResolvedValue({ hasFamily: true }); s.query = { measure: '1' };
+  open();
+  await flushPromises();
+  expect(s.replace).not.toHaveBeenCalled();
+});
+describe('켜짐 확인이 멈출 때(#93 리뷰)', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+  it('3초 뒤 로그인 화면이 열리고, 늦은 응답이 카카오 버튼을 보이되 입력 중인 칸을 접지 않는다', async () => {
+    loggedOut();
+    let late!: (v: object) => void;
+    s.authProviders.mockImplementation(() => new Promise((r) => { late = r; }));
+    const w = open();
+    await vi.advanceTimersByTimeAsync(2_900);
+    expect(w.find('form').exists()).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(w.find('form').exists()).toBe(true);
+    await w.find('input[type=email]').setValue('a@example.test');
+    late({ kakao: true, emailSignup: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.find('.kakao').exists()).toBe(true);
+    expect(w.find('form').exists()).toBe(true);
+  });
+  it('켜짐 확인이 멈춘 채 로그아웃이 거절돼도 다시 시도를 보인다', async () => {
+    s.me.mockResolvedValue({ hasFamily: true });
+    s.authProviders.mockImplementation(() => new Promise(() => undefined));
+    s.logout.mockRejectedValue(new Error('down'));
+    const w = open();
+    await vi.advanceTimersByTimeAsync(0);
+    await w.find('.logout').trigger('click');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.text()).toContain('로그아웃 다시 시도');
+  });
+});
+it('세션이 복원되면 카카오 실패 안내를 지워 로그아웃 안내를 가리지 않는다', async () => {
+  s.me.mockResolvedValue({ hasFamily: true }); s.logout.mockResolvedValue(undefined); s.query = { kakao: 'failed' };
+  const w = open();
+  await flushPromises(); await flushPromises();
+  await w.find('.logout').trigger('click');
+  await flushPromises(); await flushPromises();
+  expect(w.text()).toContain('로그아웃했어요');
+  expect(w.text()).not.toContain('카카오 로그인이 되지');
+});
+it('카카오 키도 메일도 없으면 가입 링크 대신 알린다', async () => {
+  loggedOut(); s.authProviders.mockResolvedValue({ kakao: false, emailSignup: false });
+  const w = open();
+  await flushPromises(); await flushPromises();
+  expect(w.text()).toContain('지금은 새로 가입할 수 없어요');
+  expect(w.findComponent({ name: 'RouterLink' }).exists()).toBe(false);
 });
