@@ -1,5 +1,5 @@
 # 자체 모델 own3를 M1·M5 자리에 켠다(마스터플랜 3-6). compose.real.yaml 위에 겹친다.
-#   docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d
+#   docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d --build
 # 가중치는 저장소에 없다. models/own3/own3.ts에 둔다.
 services:
   db-migrate:
