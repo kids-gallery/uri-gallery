@@ -1,7 +1,7 @@
 // #31 3D 화면 사진 올리기(마스터플랜 3-3): 실제 app-api·DB에 올린다. 정상 · 용량 초과 · 깨진 사진 · 응답을 못 받고 다시 시도해도 작품 1건 · 로그인 풀림. 390 · 1440.
 import { expect, test, type Page } from '@playwright/test';
 import { drawingPng } from './stack/guardian';
-import { album, openWorldUpload, photo, tag } from './stack/world';
+import { album, openWorldUpload, photo, tag, useCrop } from './stack/world';
 
 /** SHOTS=폴더면 화면을 찍어 둔다(사람 눈 확인용) */
 async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()!.width}.png` }); }
@@ -14,6 +14,7 @@ test('정상: 서버에 한 건 저장되고 원본 액자로 걸린다', async 
   await openUpload(page);
   const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const r = await res;
   expect(r.status(), await r.text()).toBe(202);
   expect(await r.json()).toMatchObject({ exhibited: true, hungResultKind: 'frame' });
@@ -41,10 +42,8 @@ test('용량 초과: 서버로 보내지 않고 이유를 보인다', async ({ p
 
 test('깨진 사진: 서버가 거절한 이유를 보이고 다시 시도 버튼이 없다', async ({ page }) => {
   await openUpload(page);
-  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo('broken.png', drawingPng().subarray(0, 60)));
-  expect((await res).status()).toBeGreaterThanOrEqual(400);
-  await expect(page.getByText('이 사진은 읽을 수 없어요')).toBeVisible();
+  await expect(page.getByText('이 사진은 열 수 없어요')).toBeVisible(); // 자르기 전에 브라우저가 거른다(#118). 서버로 보내지 않는다
   await expect(page.getByRole('button', { name: '다시 시도' })).toHaveCount(0);
   expect(await works(page)).toBe(0);
 });
@@ -62,6 +61,7 @@ test('서버는 저장했는데 응답을 못 받아도, 다시 시도하면 작
     await route.abort('connectionreset'); // 응답만 사라진다
   });
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   await expect(page.getByText('미술관에 연결되지 않아요')).toBeVisible();
   await shot(page, 'retry');
   expect(await works(page)).toBe(1);
@@ -77,6 +77,7 @@ test('로그인이 풀렸으면 알리고, 다시 로그인한 뒤 같은 사진
   const state = await context.storageState();
   await context.clearCookies();
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   await expect(page.getByText('로그인이 필요해요')).toBeVisible();
   expect(page.url()).toContain('/app/world'); // /app/login으로 옮기지 않는다
   await context.addCookies(state.cookies);

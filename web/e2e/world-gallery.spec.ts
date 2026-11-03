@@ -4,7 +4,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { animatedJobs, e2eDb, type Connection } from './stack/db';
-import { album, openWorldUpload, photo, tag } from './stack/world';
+import { album, openWorldUpload, photo, tag, useCrop } from './stack/world';
 
 async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()!.width}.png` }); }
 
@@ -58,6 +58,7 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   await openWorldUpload(page, tag('w40'));
   const posted = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const id = String((await (await posted).json() as { id: string }).id);
   await expect(page.locator('.w-saved-thumb')).toBeVisible({ timeout: 60_000 });
   await shot(page, 'gallery-1-frame');
