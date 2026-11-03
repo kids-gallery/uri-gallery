@@ -14,12 +14,14 @@ import { DECOR_KINDS, SPOT_LABEL, type DecorItem, type DecorKind, type DecorSpot
 import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
-import { SERVER_WORLD, worldWorks } from './server/upload';
-import { deleteArtwork, failureOf, failureReason } from './server';
+import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
+import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
 import { galleryFailure, isStale, movingIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
+import WorldDecision from './WorldDecision.vue';
+import { ko } from '@/copy/ko';
 import type { ArtworkDetail } from './server';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
@@ -441,6 +443,27 @@ const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const setDetail = (d: ArtworkDetail) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); };
 const confirmOpenId = ref<string | null>(null);
 const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
+const decisionOpenId = ref<string | null>(null), decisionBusy = ref(false), decisionError = ref<Failure | null>(null);
+const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
+const decisionDetail = computed(() => decisionOpenId.value ? artWatch.details.value.get(decisionOpenId.value) ?? null : null);
+watch(decisionDetail, (d) => { if (decisionOpenId.value && (!d || !d.choices.length || (d.state !== 'awaiting_review' && d.state !== 'failed'))) decisionOpenId.value = null; });
+async function submitWorldDecision(id: string, decision: Decision) {
+  if (!alive || decisionBusy.value) return;
+  const childId = artWatch.details.value.get(id)?.childId;
+  decisionBusy.value=true; decisionError.value=null;
+  try {
+    const out=await decide(id,decision);
+    if (!alive) return;
+    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    else {if(out.artwork)setDetail(out.artwork);artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
+    decisionOpenId.value=null;
+  } catch(e) {
+    if (!alive) return;
+    decisionError.value=failureOf(e);
+    try {const fresh=await getArtwork(id);if(alive)setDetail(fresh);}
+    catch(retryError){if(alive)decisionError.value=failureOf(retryError);}
+  } finally {decisionBusy.value=false;}
+}
 const confirmDetail = computed(() => confirmOpenId.value ? artWatch.details.value.get(confirmOpenId.value) ?? null : null);
 watch(confirmDetail, (d) => { if (confirmOpenId.value && (!d || d.confirmedKind || !d.choices.length || d.state === 'awaiting_review' || d.state === 'failed')) confirmOpenId.value = null; });
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
@@ -668,10 +691,10 @@ function joyUp(e: PointerEvent) {
 }
 
 function onKey(e: KeyboardEvent) {
-  if(e.key==='Escape'&&!panel.value&&confirmOpenId.value){e.preventDefault();confirmOpenId.value=null;return;}
+  if(e.key==='Escape'&&!panel.value&&(confirmOpenId.value||decisionOpenId.value)){e.preventDefault();if(decisionBusy.value)return;confirmOpenId.value=null;decisionOpenId.value=null;return;}
   // [더보기]는 Escape로 접고 초점을 [더보기]로 돌린다(§2-17)
   if(e.key==='Escape'&&moreTools.value&&!panel.value){e.preventDefault();moreTools.value=false;worldRoot.value?.querySelector<HTMLElement>('.w-more-tools')?.focus();return;}
-  if(!panel.value&&!confirmOpenId.value)return;
+  if(!panel.value&&!confirmOpenId.value&&!decisionOpenId.value)return;
   if(e.key==='Escape'&&editing.value&&!panel.value){e.preventDefault();cancelDecor();return;}
   if(e.key==='Escape'){e.preventDefault();if(panel.value==='play')playPanel.value?.requestClose();else if(panel.value==='upload')uploadPanel.value?.requestClose();else void closePanel();return;}
   if(e.key!=='Tab')return;
@@ -730,10 +753,15 @@ function openSettings() {
       <span>{{ failureReason(worldFailure) }}</span>
       <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
-    <section v-if="SERVER_WORLD && confirmPrompt && !worldFailure && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
+    <section v-if="SERVER_WORLD && confirmPrompt && !decisionPrompt && !decisionOpenId && !worldFailure && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
       <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
     </section>
+    <section v-if="SERVER_WORLD && decisionPrompt && !confirmOpenId && !worldFailure && phase==='ready' && !panel && !decisionOpenId" class="w-nudge g-panel" role="status" aria-label="작품 결과 확인">
+      <span>{{ decisionPrompt.story?.title || '새 작품' }}의 결과를 골라 주세요.</span>
+      <button class="g-btn g-btn--primary" type="button" @click="decisionOpenId=decisionPrompt.id">결과 확인</button>
+    </section>
+    <WorldDecision v-if="decisionOpenId && decisionDetail" :detail="decisionDetail" :busy="decisionBusy" :error="decisionError" @close="decisionOpenId=null" @decide="(choice: Decision)=>submitWorldDecision(decisionOpenId!,choice)" />
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
     <!-- 시작 화면(§2-17): 이 가족의 미술관을 배경으로 제목과 [시작하기]. 아래 세 갈래(v-if, v-else-if, v-else)는 붙여 둔다 -->
