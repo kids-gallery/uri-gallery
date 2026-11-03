@@ -52,11 +52,12 @@ class OpenClipAdapter(Adapter):
 
     def run(self, job: JobInput) -> AdapterResult:
         import torch
-        from PIL import Image
+
+        from common.images import open_upright
 
         src = job.inputs.get("original")
         try:
-            img = Image.open(src).convert("RGB")
+            img = open_upright(src).convert("RGB")
         except (OSError, TypeError):
             return AdapterResult("storage", diagnostic="input_unreadable")
         with torch.inference_mode():
