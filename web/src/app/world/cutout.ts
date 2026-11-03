@@ -495,6 +495,26 @@ export function buildRelief(texture: THREE.Texture, mask: Mask | null, aspect: n
   return mesh;
 }
 
+/** 컷아웃과 깊이 파일 → 입체 윤곽. 깊이를 읽지 못하면 두께판, 컷아웃을 읽지 못하면 null(사각 판)로 낮춘다. 한 장 때문에 전시가 멈추지 않게 한다(마스터플랜 3-3) */
+export async function reliefMask(cutout?: Blob | null, depth?: Blob | null): Promise<Mask | null> {
+  if (!cutout) return null;
+  let mask: Mask;
+  try {
+    const cb = await createImageBitmap(cutout);
+    const cc = document.createElement('canvas');
+    cc.width = cb.width; cc.height = cb.height;
+    cc.getContext('2d')!.drawImage(cb, 0, 0);
+    cb.close?.();
+    mask = maskFromCutout(cc);
+  } catch {
+    return null;
+  }
+  if (!mask.ok) return null;
+  const surface = depth ? await surfaceFromBlob(depth).catch(() => null) : null;
+  if (surface) mask.surface = surface;
+  return mask;
+}
+
 /** 마스크 → 원본 비율의 사본(저장용 · 다시 만들 때 같은 결과) */
 export function maskFromCutout(cut: HTMLCanvasElement, side = WORK_SIDE): Mask {
   const { w, h } = fit(cut.width, cut.height, side);

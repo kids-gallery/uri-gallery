@@ -1,6 +1,6 @@
 // 보관함용: 저장된 작품(축소본 + 배경 지운 그림)에서 입체를 다시 만들고, GLB로 내보낸다(유스케이스 UC-08).
 import * as THREE from 'three';
-import { buildRelief, maskFromCutout, surfaceFromBlob } from './cutout';
+import { buildRelief, reliefMask } from './cutout';
 import type { Artwork } from './store';
 
 export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout' | 'depth'>, height = 1): Promise<{ mesh: THREE.Mesh; dispose(): void }> {
@@ -11,18 +11,7 @@ export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout' | 'depth'>,
   bmp.close?.();
   const texture = new THREE.CanvasTexture(c);
   texture.colorSpace = THREE.SRGBColorSpace;
-  let mask = null;
-  if (a.cutout) {
-    const cb = await createImageBitmap(a.cutout);
-    const cc = document.createElement('canvas');
-    cc.width = cb.width; cc.height = cb.height;
-    cc.getContext('2d')!.drawImage(cb, 0, 0);
-    cb.close?.();
-    const m = maskFromCutout(cc);
-    mask = m.ok ? m : null;
-    if (mask && a.depth) mask.surface = await surfaceFromBlob(a.depth);
-  }
-  const mesh = buildRelief(texture, mask, c.width / c.height, { height });
+  const mesh = buildRelief(texture, await reliefMask(a.cutout, a.depth), c.width / c.height, { height });
   return {
     mesh,
     dispose() {
