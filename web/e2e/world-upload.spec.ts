@@ -100,6 +100,8 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
   expect((await res).status()).toBe(202);
   await expect.poll(() => works(page)).toBe(1);
 
+  await expect(page.getByRole('button', { name: '가까이 보기' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: '이 작품 이야기' })).toHaveCount(0);
   await page.getByRole('button', { name: '계속 둘러보기' }).click({ timeout: 30_000 });
   await page.locator('.w-more-tools').click();
   await page.getByRole('button', { name: '설정', exact: true }).click();

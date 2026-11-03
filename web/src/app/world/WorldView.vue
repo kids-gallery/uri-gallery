@@ -777,7 +777,7 @@ function openSettings() {
         <p class="w-entry-lead">{{ startLead }}</p>
         <div v-if="phase !== 'checking'" class="w-entry-actions">
           <button ref="startBtn" class="g-btn g-btn--primary g-btn--big" type="button" :disabled="phase !== 'title'" @click="start(false)">시작하기</button>
-          <button v-if="!account" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
+          <button v-if="!account && !SERVER_WORLD" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
         </div>
         <p v-if="!account && !SERVER_WORLD" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
       </div>
@@ -899,7 +899,7 @@ function openSettings() {
           <button v-if="askStep !== 'done'" class="g-btn" type="button" :disabled="askBusy" @click="askStep === 'age' ? skipAge() : nextSubject()">건너뛰기</button>
           <template v-else>
             <button class="g-btn g-btn--primary" type="button" :disabled="webglFailed" @click="playSaved">움직여 보기</button>
-            <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">이 작품 이야기</button>
+            <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">{{ SERVER_WORLD ? '가까이 보기' : '이 작품 이야기' }}</button>
             <button class="g-btn" type="button" @click="recentSaved=null;openPanel('upload')">다른 작품 올리기</button>
           </template>
           <button class="g-btn" type="button" @click="recentSaved=null">계속 둘러보기</button>
