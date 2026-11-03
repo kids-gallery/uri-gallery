@@ -110,11 +110,14 @@ flowchart LR
 
 ### 지금 상태
 
+2026-11-03 `main` 기준입니다.
+
 | 된 것 | 아직 안 된 것 |
 |---|---|
-| 모델 서빙(앱 서버·작업 큐·AI 모델·DB)이 한 대에서 돈다 | Dockerfile·compose(이번에 팀이 직접 만든다) |
-| 3D 미술관이 브라우저에서 돈다(기기 안에서만) | 3D 화면을 서버에 잇는 코드 |
-| 리눅스 컨테이너에서 시험 통과, 웹 빌드 확인 | 배포(이번 5일 밖), 모델 정확도 평가, 실제 사용자 검증 |
+| compose 상시 서비스 7개와 db-migrate. 맥에서 가짜 모델로 한 바퀴 | 세 PC 같은 커밋 한 바퀴(#41), Windows 화면 |
+| 3D 화면 ↔ 서버: 가입·로그인·아이·올리기·상태·확정·결정·전시 | 실제 휴대폰 사진으로 한 바퀴, 휴대폰 성능 |
+| 실제 모델 M1·M2·M5를 겹쳐 켜기. 맥에서 한 바퀴(worker `memory.peak` 8.35GiB) | M3 실제 실행(가짜 어댑터라 움직이는 그림은 재생되지 않음) |
+| 자동 시험(웹, API, 서빙) | 모델 정확도 평가, 실제 사용자 검증, 배포(이번 5일 밖) |
 
 ### 팀
 
@@ -165,6 +168,29 @@ cd web && npm ci && npm run dev     # 3D 미술관: http://127.0.0.1:9501/app/wo
 `docker compose up -d`는 3일차에 compose가 생기면 여기에 적습니다. 폴더별 시험은 `api/`에서 `npm test`, `serving/`에서 `pytest`입니다.
 
 **막히면** 30분 안에 팀 채널에 명령·오류 문구·해 본 것을 붙여 묻습니다. 자주 걸리는 곳: Windows 줄바꿈 깨짐(WSL에서 받기), 컨테이너끼리 연결 안 됨(바인딩 주소), 로그인 유지 안 됨(`SECURE_COOKIES=false`). → [증상별 표](docs/공통/수행가이드.md#stuck)
+
+### 실제 모델과 카카오 켜기
+
+**실제 모델(맥, 컨테이너 메모리 10GiB 이상).** 가중치를 `models/hf`에 둡니다. `models/manifest.yaml`의 `source`·`revision`이 받을 판입니다. 이미지가 남아 있으면 옛 코드로 뜨므로 `--build`를 붙입니다.
+
+```bash
+docker compose stop worker-cpu    # 가짜 모델로 돌던 스택을 바꿀 때만
+docker compose -f compose.yaml -f compose.real.yaml up -d --build
+```
+
+맥에서 포트와 이미지 이름만 바꿔 돌려 봤습니다. Windows는 재지 않았습니다. 처음 분리는 약 24초, 메모리가 빠듯하면 60초 제한에 걸려 액자로 낮아집니다.
+
+**카카오 로그인.** 저장소 폴더의 `.env`(Git 제외)에 값을 넣고, 카카오 콘솔 Redirect URI에 여는 주소를 등록한 뒤 `http://localhost:9501`로 엽니다. 값이 없으면 카카오 버튼 없이 이메일 가입 화면이 나옵니다.
+
+```text
+KAKAO_REST_API_KEY=...
+KAKAO_CLIENT_SECRET=...
+콘솔 등록: http://localhost:9501/v1/auth/kakao/callback
+```
+
+맥에서 실제 카카오 계정으로 로그인해 봤습니다(#93). 다른 PC·IP로 열려면 그 주소를 등록하고 `APP_BASE_URL`을 맞춰야 하며, 재지 않았습니다. 콘솔 오류 `KOE006`은 주소 미등록, `KOE010`은 시크릿 불일치입니다.
+
+저장소 폴더에 pm2용 옛 `.env`가 있으면 compose 값을 덮어쓰니 옮겨 두고 필요한 값만 넣습니다.
 
 ---
 
