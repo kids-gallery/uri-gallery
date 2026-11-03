@@ -2,6 +2,7 @@
 // - 컷아웃은 승인되어 걸린 부조(kind가 relief)의 auxUrl만 쓴다. 판정 중에도 오는 상세의 cutoutUrl은 쓰지 않는다.
 // - 파일은 작품마다 메모리에 두고, 결과 종류가 바뀔 때만 다시 받는다.
 import { ref } from 'vue';
+import { exhibitBlob } from '../exhibit';
 import * as store from '../store';
 import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, type Failure, type Gallery } from './index';
 
@@ -34,8 +35,10 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   const had = shown.get(item.id);
   const base = had?.work ?? await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const cutout = had?.kind === item.kind ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await file(item.auxUrl) : null;
+  // 걸린 부조는 벽에 전시용 판을 건다. 못 만들면 자른 사진 그대로 둔다
+  const display = cutout && had?.kind !== item.kind ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
   return {
-    ...base, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
+    ...base, display, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
     madeOn: item.madeOn, words: item.childWords ?? '', cutout, cutoutState: cutout ? 'done' : undefined,
   };
 }
