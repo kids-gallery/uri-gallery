@@ -2,17 +2,32 @@
 
 API는 받은 바이트를 그대로 저장한다(FR-22). 그래서 휴대폰 사진은 저장 방향과 표시 방향이 다를 수 있다.
 화면은 표시 방향으로 그리므로 모델 입력과 결과도 표시 방향에 맞춘다. 저장된 원본은 바꾸지 않는다.
+깨진 HEIC는 libheif 안에서 프로세스를 죽이므로 자식 프로세스에서 먼저 디코드한다.
 """
 from __future__ import annotations
 
+import os
 import struct
+import subprocess
+import sys
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
+
+from common.config import load_yaml
 
 ORIENTATION = 0x0112
 SWAPS_SIDES = {5, 6, 7, 8}   # 가로와 세로가 바뀌는 EXIF 방향
 _EXIF_BROKEN = (SyntaxError, ValueError, TypeError, struct.error)   # PIL이 깨진 EXIF에서 내는 예외
 _heif_registered = False
+_HEIF_CHECK = """
+import sys, pillow_heif
+from PIL import Image
+pillow_heif.register_heif_opener()
+with Image.open(sys.argv[1]) as im:
+    im.load()
+    im.getexif()
+"""
 
 
 def _register_heif() -> None:
@@ -25,11 +40,31 @@ def _register_heif() -> None:
         _heif_registered = True
 
 
+def _is_heif(path) -> bool:
+    with open(path, "rb") as f:
+        return f.read(12)[4:8] == b"ftyp"
+
+
+@lru_cache(maxsize=256)
+def _heif_decodes(path: str, size: int, mtime_ns: int) -> None:
+    """자식 프로세스에서 끝까지 디코드해 본다. 죽거나 실패하거나 시간을 넘기면 OSError. 통과만 기억한다(예외는 캐시되지 않는다)."""
+    try:
+        p = subprocess.run([sys.executable, "-I", "-c", _HEIF_CHECK, path], capture_output=True,
+                           timeout=load_yaml("limits")["image"]["heif_check_timeout_s"])
+    except subprocess.TimeoutExpired as e:
+        raise OSError("heif_check_timeout") from e
+    if p.returncode != 0:
+        raise OSError("image_unreadable")
+
+
 @contextmanager
 def _opened(path):
     """PIL 그림을 연다. 깨진 파일은 형식에 따라 다른 예외를 내므로(잘린 PNG·HEIC는 ValueError, 큰 HEIC는 RuntimeError) OSError로 모은다."""
     from PIL import Image
 
+    if _is_heif(path):
+        st = os.stat(path)
+        _heif_decodes(str(path), st.st_size, st.st_mtime_ns)
     _register_heif()
     try:
         with Image.open(path) as im:

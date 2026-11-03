@@ -1,7 +1,11 @@
 """입력 사진 방향과 HEIC(마스터플랜 3-4) — 모델 없이 본다. 합성 그림만 쓴다.
 세로 그림을 가로로 저장하고 EXIF 방향 6을 준다. 위쪽 절반만 빨간 그림이라 돌렸는지 픽셀로 알 수 있다."""
+import base64
+import os
 import random
+import signal
 import struct
+import subprocess
 import threading
 from types import SimpleNamespace
 
@@ -17,6 +21,16 @@ from common import images  # noqa: E402
 from workers.stages import check  # noqa: E402
 
 W, H = 60, 100   # 표시 방향
+_CRASHING_HEIC = base64.b64decode(
+    "AAAAHGZ0eXBoZWljAAAAAG1pZjFoZX5jbWlhZgAAAbVtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAA"
+    "AA5waXRtAAAAAAABAAAANGlsb2MAAAAAREAAAgABAAAAAAHZAAEAAAAAAAAAVAACAAAAAAItAAEAAAAAAAAAJAAAADhpaW5mAAAA"
+    "AAACAAAAFWluZmUCAAAAAAEAAGh2YzEAAAAAFWluZmUCAAABAAIAAEX8aWYAAAAA9GlwcnAAAADUaXBjbwAAAHdodmNDAQNwAAAA"
+    "AAAAAAAAHvAA/P34+AAADwMgAAEAGEABDAH//wNwAAADAJAAAAMAAAMAHroCQCEAAQArQgEBA3AAAAMAkAAAAwAAAwAeoCCBp95b"
+    "q5Ka5uAhoMCAAAADAIAAAAMAhCIAAQAGRAHBc8CJAAAAFGlzcGUAAAAAAAAAQAAAAGQAAAAoY2xhcAAAADwAAAABAAAAZAAAAAH/"
+    "///8AAAAAgAAAAAAAAACAAAACWlyb3QDAAAAEHBpeGkAAAAAAwgICAAAABhpcG1hAAAAAAAAAAEAAQWBAoMEBQAAABppcmVmAAAA"
+    "AAAAAA5jZHNjAAIAAQABAAAAgG1kYXQAAABQKAGvE4D4EOGn//tAo//gEzw/J7zuzltg4Q3pm+L/zvA6TZ52LKt4wvzfVXRUMz5w"
+    "eaR9LKyyH7kD5HmbYXM6u1o502qwEOP7qTUqzmAAIKAAAAAGRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAA="
+)   # 합성 HEIC 머리 바이트를 뒤집은 파일. 부모에서 열면 libheif 안에서 신호 11로 죽는다. API 검사(heic-decode)는 통과한다
 
 
 def _picture():
@@ -144,7 +158,7 @@ def test_decode_failure_is_oserror(plain, monkeypatch, error):
 @pytest.mark.parametrize("fmt, name", [("JPEG", "x.jpg"), ("PNG", "x.png")])
 def test_corrupted_files_only_raise_oserror(tmp_path, fmt, name):
     """정한 씨앗으로 바이트를 망가뜨려도 OSError나 정상 결과만 나온다. 다른 예외는 인프라 실패가 된다.
-    HEIC는 뺀다. 망가진 HEIC 일부는 libheif 안에서 프로세스가 죽어 시험을 함께 끝낸다(마스터플랜 3-4)."""
+    HEIC는 사진마다 자식 프로세스가 돌아 느리므로 아래 시험에서 따로 본다."""
     ex = Image.Exif()
     ex[images.ORIENTATION] = 6
     src = tmp_path / ("src." + name.split(".")[1])
@@ -163,6 +177,84 @@ def test_corrupted_files_only_raise_oserror(tmp_path, fmt, name):
                 call(p)
             except OSError:
                 pass
+
+
+@pytest.fixture
+def fresh_heif_cache():
+    images._heif_decodes.cache_clear()
+    yield
+    images._heif_decodes.cache_clear()
+
+
+def _crashing(tmp_path):
+    p = tmp_path / "crash.heic"
+    p.write_bytes(_CRASHING_HEIC)
+    return p
+
+
+def test_crashing_heic_is_oserror_and_this_process_lives(tmp_path, fresh_heif_cache):
+    """전에는 이 파일에서 파이썬 프로세스가 신호 11로 죽었다. 이 시험이 끝나면 살아 있는 것이다"""
+    p = _crashing(tmp_path)
+    for call in (images.open_upright, images.upright_size, lambda f: images.upright_file(f, tmp_path)):
+        with pytest.raises(OSError):
+            call(p)
+
+
+def test_child_killed_by_signal_is_oserror(heic, monkeypatch, fresh_heif_cache):
+    monkeypatch.setattr(images, "_HEIF_CHECK", "import os, signal; os.kill(os.getpid(), signal.SIGSEGV)")
+    with pytest.raises(OSError):
+        images.open_upright(heic)
+
+
+def test_child_over_time_limit_is_oserror(heic, monkeypatch, fresh_heif_cache):
+    monkeypatch.setattr(images, "_HEIF_CHECK", "import time; time.sleep(30)")
+    monkeypatch.setattr(images, "load_yaml", lambda _: {"image": {"heif_check_timeout_s": 0.2}})
+    with pytest.raises(OSError, match="heif_check_timeout"):
+        images.upright_size(heic)
+
+
+def test_heic_checked_once_until_file_changes_and_others_never(heic, plain, monkeypatch, fresh_heif_cache):
+    calls = []
+    real = subprocess.run
+    monkeypatch.setattr(images.subprocess, "run", lambda *a, **k: (calls.append(a), real(*a, **k))[1])
+    assert _is_upright(images.open_upright(plain)) and not calls        # JPEG는 자식을 만들지 않는다
+    images.open_upright(heic); images.upright_size(heic); images.upright_file(heic, heic.parent)
+    assert len(calls) == 1
+    os.utime(heic, ns=(1, 1))
+    images.upright_size(heic)
+    assert len(calls) == 2
+
+
+def test_failed_check_is_not_remembered(heic, monkeypatch, fresh_heif_cache):
+    """일시적인 실패(메모리 부족, 시간 초과)가 재시도까지 막으면 안 된다"""
+    monkeypatch.setattr(images, "_HEIF_CHECK", "raise SystemExit(1)")
+    with pytest.raises(OSError):
+        images.upright_size(heic)
+    monkeypatch.setattr(images, "_HEIF_CHECK", "pass")
+    assert images.upright_size(heic)
+
+
+def test_worker_lives_through_crashing_heic_and_next_jpeg_succeeds(env, m1, tmp_path, fresh_heif_cache):
+    """한 작품의 입력이 워커와 다른 작업을 멈추지 않는다(마스터플랜 3-4). 진짜 Worker와 진짜 M1 어댑터 코드로 본다"""
+    from tests.test_stage_job_contract import make_worker
+
+    def with_original(data):
+        a = env.artwork()
+        key = env.one("SELECT so.object_key FROM artwork_original ao JOIN stored_object so ON so.object_id = ao.object_id WHERE ao.artwork_id = %s", a)["object_key"]
+        (env.store / key).write_bytes(data)
+        return env.job(a, "split")
+
+    bad, good = with_original(_CRASHING_HEIC), None
+    b = tmp_path / "ok.jpg"
+    _picture().save(b, quality=95)
+    good = with_original(b.read_bytes())
+    w = make_worker(extra={"M1": m1})
+    first = w.run_once()
+    assert first == "retry_wait"                                          # 파일 오류로 기록되고 프로세스는 살아 있다
+    row = env.job_row(bad)
+    assert (row["status"], row["error_class"]) == ("retry_wait", "storage")
+    assert w.run_once() == "done"
+    assert env.job_row(good)["status"] == "done"
 
 
 def test_upright_size_without_decoding(exif6, plain, heic):
