@@ -24,7 +24,7 @@ const emit = defineEmits<{ close: []; backup: [] }>();
       <p>기기를 바꾸거나 브라우저 자료를 지우면 작품이 사라져요. 설정의 [백업 내보내기]로 받은 파일에는 사진과 이야기가 그대로 들어 있으니, 보호자가 안전한 곳에 보관해 주세요.</p>
       <h3>공개 소프트웨어</h3>
       <p>이 앱이 쓰는 공개 소프트웨어의 라이선스 원문: <a href="/licenses/THIRD_PARTY.txt" target="_blank" rel="noopener">THIRD_PARTY.txt</a></p>
-      <p>자체 모델 학습에 쓴 공개 자료의 출처: <a href="/licenses/MODEL_DATA.txt" target="_blank" rel="noopener">MODEL_DATA.txt</a></p>
+      <p>그림을 입체로 만드는 기능을 배울 때 쓴 공개 자료의 출처: <a href="/licenses/MODEL_DATA.txt" target="_blank" rel="noopener">MODEL_DATA.txt</a></p>
       <div class="row">
         <button class="g-btn g-btn--primary" type="button" @click="emit('backup')">백업하러 가기</button>
         <button class="g-btn" type="button" @click="emit('close')">닫기</button>
