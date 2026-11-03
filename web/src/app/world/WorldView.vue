@@ -454,7 +454,7 @@ async function submitWorldDecision(id: string, decision: Decision) {
   try {
     const out=await decide(id,decision);
     if (!alive) return;
-    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    if(decision==='retake'){if(recentSaved.value===id)recentSaved.value=null;selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
     else {if(out.artwork)setDetail(out.artwork);artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
     decisionOpenId.value=null;
   } catch(e) {
@@ -529,6 +529,7 @@ async function onDelete(id: string) {
   try {
     await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
     if (SERVER_WORLD) artWatch.forget(id);
+    if (recentSaved.value === id) recentSaved.value = null;
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');

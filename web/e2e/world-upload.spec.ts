@@ -109,3 +109,17 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
   await expect(settings.getByText('우리 미술관에 저장돼요')).toBeVisible();
   for (const name of ['백업 내보내기', '백업 가져오기', '이 기기의 자료 모두 지우기', '견본 다시 걸기', '견본 치우기']) await expect(settings.getByRole('button', { name })).toHaveCount(0);
 });
+
+test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)', async ({ page }) => {
+  await openUpload(page);
+  await album(page).setInputFiles(photo());
+  await expect(page.locator('.w-saved-thumb')).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: '더보기' }).click();
+  await page.getByRole('button', { name: '보관함', exact: true }).click();
+  const archive = page.getByRole('dialog', { name: '입체 보관함' });
+  await archive.getByRole('button', { name: '지우기' }).click();
+  await archive.getByRole('button', { name: '지우기', exact: true }).last().click();
+  await expect.poll(() => works(page)).toBe(0);
+  await archive.getByRole('button', { name: '닫기' }).click();
+  await expect(page.locator('.w-saved')).toHaveCount(0);
+});
