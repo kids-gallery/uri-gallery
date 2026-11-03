@@ -445,7 +445,7 @@ async function submitWorldDecision(id: string, decision: Decision) {
   decisionBusy.value=true; decisionError.value=null;
   try {
     const out=await decide(id,decision);
-    if(decision==='retake'){if(out.retake?.childId) selectedChild.value=out.retake.childId;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? decisionPrompt.value?.childId ?? selectedChild.value;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
     else {artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
     decisionOpenId.value=null;
   } catch(e) {
