@@ -109,7 +109,12 @@ export async function activateDevModels(conn: mysql.Connection, real: Record<str
           WHERE model_id = ? AND release_state = 'active' FOR UPDATE`, [modelId]);
       const active = (rows as { version_id: number; version_label: string; weights_sha256: string; config_hash: string; runtime: string }[])[0];
       if (active) {
-        if (!active.version_label.startsWith('dev-')) continue;
+        if (!active.version_label.startsWith('dev-')) {
+          if (active.weights_sha256 !== want.weights || active.config_hash !== want.config) {
+            console.warn(`${modelId}: 사람이 등록한 활성 행 ${active.version_label}이 지금 설정과 다르다. 작업 기록은 이 행으로 남는다`);
+          }
+          continue;
+        }
         if (active.weights_sha256 === want.weights && active.config_hash === want.config && active.runtime === want.runtime) continue;
         await conn.query(`UPDATE model_version SET release_state = 'retired' WHERE version_id = ?`, [active.version_id]);
       }

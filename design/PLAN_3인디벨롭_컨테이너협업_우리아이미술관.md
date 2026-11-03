@@ -164,7 +164,9 @@
    - **실제 모델 이력(#42, 2026-11-03).** 가짜 행에 실제 어댑터가 붙으면 작업 기록이 실제 모델 결과를 `fake`로 남긴다. `compose.real.yaml`은 db-migrate에 `DEV_REAL_MODELS=M1,M2,M5`를 준다. 이 목록의 모델은 `MODEL_MANIFEST`의 `weights_sha256`, `config_hash`, `runtime`으로 활성 행을 만든다. 컨테이너에는 CPU 워커만 있으므로(`GPU_ENABLED=false`) `exec_device`는 `cpu`이고, 맥에서 잰 `runtime`의 `-mps`는 `-cpu`로 기록한다. M3는 가짜 어댑터이므로 `fake` 행을 유지한다.
      - 켜고 끌 때 활성 행도 따라간다. 활성 행이 개발용(`dev-` 이름)이고 지금 설정과 값이 다르면 `retired`로 내리고 새 행을 넣는다. 그래서 같은 볼륨에서 가짜↔실제, BiRefNet↔자체 모델로 바꿔도 활성 행과 어댑터가 어긋나지 않는다. 사람이 등록한 활성 행은 건드리지 않는다.
      - 매니페스트에 모델이나 해시가 없거나 `license_confirmed`가 참이 아니면 이유를 찍고 db-migrate가 실패한다. 가짜로 조용히 넘어가지 않으며, 그 경우 worker가 시작되지 않는다(BR-MDL-07).
-     - [한계] 이미 만들어진 작업 기록의 `model_version_id`는 바꾸지 않는다. 전환 전 작업은 전환 전 행을 가리킨다.
+     - 전환 전에 대기하던 작업은 워커가 가져갈 때 그때의 활성 행으로 기록된다(`serving/workers/runner.py` `claim`의 `COALESCE`, `test_claim_records_current_active_version`). 그래서 대기 작업은 실제로 돈 어댑터와 일치한다. 끝난 작업의 기록은 바꾸지 않으므로 전환 전 작업은 전환 전 행을 가리킨다.
+     - 사람이 등록한 활성 행이 지금 설정과 다르면 행은 그대로 두고 경고를 찍는다. 작업 기록은 그 행으로 남는다. 이 경우는 팀 서버에서 켜지 않는 개발 경로에서 드물게 생긴다.
+     - 켜는 명령에 `--build`를 붙인다. 이미지 태그가 남아 있으면 compose가 다시 빌드하지 않아, 옛 db-migrate가 `DEV_REAL_MODELS`를 조용히 무시하고 옛 워커가 돈다.
 2. **이미지.**
    - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
    - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
@@ -206,7 +208,7 @@
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [확인] 이미지가 비루트(UID 1000)이므로 새 볼륨이 쓸 폴더를 이미지에 미리 만들어야 한다. 없으면 볼륨이 root 소유가 되어 M1이 `PermissionError: '/hf-cache/modules'`로 뜨지 않는다(M2·M5는 뜸). `serving/Dockerfile`이 `/data/hf-cache`를 만든다. 네트워크를 끈 컨테이너에서 세 모델이 `HF_HUB_OFFLINE=1`로 올라오는 것도 확인했다. [미검증] compose에서 `models[].load.state`가 `ready`인지는 #42에서 본다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
-   - **실제 모델 켜기:** 기본 `compose.yaml`은 가짜 모델 그대로 두고 `compose.real.yaml`을 겹친다(`docker compose -f compose.yaml -f compose.real.yaml up -d`, #42). worker-cpu만 모델 묶음 이미지를 쓰고 가중치·캐시를 붙이며, model-api는 가벼운 이미지를 유지한다. 메모리 한도는 10GiB다. [확인] 맥에서 사진 올리기 → 분리·판정 → 부조 → 승인까지 돌렸을 때 worker 최대 7781~7899MiB였다(`memory.peak`, 파일 캐시 포함, 640×480 합성 그림). 8GiB는 여유가 없다. 최종 값은 #43에서 정한다.
+   - **실제 모델 켜기:** 기본 `compose.yaml`은 가짜 모델 그대로 두고 `compose.real.yaml`을 겹친다(`docker compose -f compose.yaml -f compose.real.yaml up -d --build`, #42). worker-cpu만 모델 묶음 이미지를 쓰고 가중치·캐시를 붙이며, model-api는 가벼운 이미지를 유지한다. 메모리 한도는 10GiB다. [확인] 맥에서 사진 올리기 → 분리·판정 → 부조 → 승인까지 돌렸을 때 worker 최대 7781~7899MiB였다(`memory.peak`, 파일 캐시 포함, 640×480 합성 그림). 8GiB는 여유가 없다. 최종 값은 #43에서 정한다.
    - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
 5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
    - **필수 동작(C 연결 층, 계약 근거):**

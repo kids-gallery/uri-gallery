@@ -1,5 +1,5 @@
 // #33: 개발용 최초 활성은 기존 버전을 보존하고 재실행해도 중복하지 않는다.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Pool, PoolConnection } from 'mysql2/promise';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import os from 'node:os';
@@ -65,8 +65,11 @@ describe('개발용 모델 최초 활성', () => {
     await conn.query(`INSERT INTO model_version
       (model_id, version_label, weights_sha256, config_hash, runtime, license_confirmed, release_state, exec_device)
       VALUES ('M1', 'v1', REPEAT('e', 64), REPEAT('e', 64), 'hand', TRUE, 'active', 'cpu')`);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     await activateDevModels(conn, realVersions(['M1'], manifest(`models:\n${ok('M1', 'a', 'torch-2.4.1-cpu')}`)));
     expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ runtime: 'hand' });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('M1: 사람이 등록한 활성 행 v1'));
+    warn.mockRestore();
   });
 
   it.each([
