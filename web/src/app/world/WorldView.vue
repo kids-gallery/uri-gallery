@@ -440,13 +440,14 @@ const confirmOpenId = ref<string | null>(null);
 const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
 const decisionOpenId = ref<string | null>(null), decisionBusy = ref(false), decisionError = ref<Failure | null>(null);
 const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
+const decisionDetail = computed(() => decisionOpenId.value ? artWatch.details.value.get(decisionOpenId.value) ?? null : null);
 async function submitWorldDecision(id: string, decision: Decision) {
   if (decisionBusy.value) return;
   decisionBusy.value=true; decisionError.value=null;
   try {
     const out=await decide(id,decision);
-    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? decisionPrompt.value?.childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
-    else {artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
+    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? decisionDetail.value?.childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    else {const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
     decisionOpenId.value=null;
   } catch(e) {
     decisionError.value=failureOf(e);
@@ -454,6 +455,7 @@ async function submitWorldDecision(id: string, decision: Decision) {
     catch(retryError){decisionError.value=failureOf(retryError);}
   } finally {decisionBusy.value=false;}
 }
+const confirmDetail = computed(() => confirmOpenId.value ? artWatch.details.value.get(confirmOpenId.value) ?? null : null);
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
@@ -748,7 +750,7 @@ function openSettings() {
       <span>{{ decisionPrompt.story?.title || '새 작품' }}의 결과를 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="decisionOpenId=decisionPrompt.id">결과 확인</button>
     </section>
-    <WorldDecision v-if="decisionOpenId && decisionPrompt?.id===decisionOpenId" :detail="decisionPrompt" :busy="decisionBusy" :error="decisionError" @close="decisionOpenId=null" @decide="(choice: Decision)=>submitWorldDecision(decisionOpenId!,choice)" />
+    <WorldDecision v-if="decisionOpenId && decisionDetail" :detail="decisionDetail" :busy="decisionBusy" :error="decisionError" @close="decisionOpenId=null" @decide="(choice: Decision)=>submitWorldDecision(decisionOpenId!,choice)" />
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
     <!-- 시작 화면(§2-17): 이 가족의 미술관을 배경으로 제목과 [시작하기]. 아래 세 갈래(v-if, v-else-if, v-else)는 붙여 둔다 -->
@@ -1073,7 +1075,7 @@ function openSettings() {
         @close="closePanel"
       />
 
-      <WorldConfirm v-if="confirmOpenId && confirmPrompt?.id === confirmOpenId" :detail="confirmPrompt" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind) { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
+      <WorldConfirm v-if="confirmOpenId && confirmDetail" :detail="confirmDetail" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind || d.state === 'awaiting_review' || d.state === 'failed') { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>
