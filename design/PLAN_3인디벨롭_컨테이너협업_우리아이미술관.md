@@ -253,6 +253,7 @@ M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 �
 - **켜는 법.** `docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d`. 가중치는 저장소에 없고 `models/own3/own3.ts`에 둔다. 값은 `serving/config/own3.yaml`에 둔다.
 - **구조.** `UAM_OWN_MODEL=M1,M5`이면 `serving/adapters/registry.py`가 own3 어댑터를 고른다. 출력 형식(마스크, 컷아웃, 깊이 PNG16)과 실패 처리(`quality_below`)는 M1·M5와 같다. 매니페스트는 `models/manifest.own3.yaml`을 쓴다.
 - **3D 화면의 깊이(`VITE_RELIEF_DEPTH=1`로 빌드할 때만).** 지금 3D 화면은 컷아웃으로 두께판을 만들고 결과 깊이(`primaryUrl`)를 읽지 않는다. 켜면 걸린 부조의 깊이를 받아 둥근 입체를 만든다(`cutout.ts`의 `buildRelief`). 앞면과 뒷면이 가장자리에서 만나고, 윤곽은 마스크로 자른다. 값은 `RELIEF_SURFACE`에 둔다. 끄면 지금과 같다. 켜고 끄는 값은 웹 이미지 빌드 인자이며 `compose.own3.yaml`이 켠다.
+- **출처 표기.** own3는 Quick, Draw!(CC BY 4.0) 획을 고쳐 만든 그림으로 학습했다. `web/public/licenses/MODEL_DATA.txt`에 출처와 변경 사실을 적고, 개인정보·이용 안내에 링크한다. 활성에는 DB 제약상 `license_confirmed`가 필요하며(`chk_mv_license_active`), 이 값은 팀이 확인한 뒤 켠다.
 - **10절과의 관계.** "서비스 기능 바꾸기"에 걸린다. 그래서 기본값, DB, API 계약을 바꾸지 않는 선택 실행으로 넣는다. 끈 상태의 한 바퀴는 지금과 같다.
 - **확인한 것(2026-11-03, 맥 arm64, 공개 그림과 견본).** 어댑터로 22장을 처리해 분리 평균 0.84초, 깊이 평균 0.59초, 파이썬 프로세스 최대 메모리 0.88GB다. #77, #80, #84와 합친 별도 compose에서 가입부터 결과 결정까지 3장이 돌았다. 깊이 처리는 장당 0.49~0.71초, M2를 실제로 올린 worker 메모리는 1.8GB, 워커 오류 로그는 0건이다. 네트워크를 끈 시험, Windows, 휴대폰은 재지 않았다.
 - **한계.** 시험 판이다. 떨어져 있어야 할 곳을 메우는 그림이 남았다. 앞면 깊이만 쓰고 뒷면과 부위는 쓰지 않는다. Quick, Draw! 출처 표기와 상업 조건의 전문가 확인이 남았다.
