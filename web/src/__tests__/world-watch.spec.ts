@@ -294,6 +294,54 @@ describe('늦게 도착한 옛 응답', () => {
       await p;
       expect(w.failure.value).toBeNull();
     });
+    it('로그아웃 뒤 도착한 목록은 성공이든 실패든 버린다', async () => {
+      const f = server(() => art('old', 'running'));
+      let ok!: (ids: string[]) => void;
+      const w = start();
+      const p = w.resume(() => new Promise((res) => { ok = res; }));
+      w.clear();
+      ok(['old']);
+      await p;
+      await flush(3_000);
+      expect(f).not.toHaveBeenCalled();
+      let no!: (e: Error) => void;
+      const q = w.resume(() => new Promise((_, rej) => { no = rej; }));
+      w.clear();
+      no(new TypeError('network'));
+      await q;
+      expect(w.failure.value).toBeNull();
+      await w.retry();
+      expect(f).not.toHaveBeenCalled();
+    });
+    it('목록을 기다리는 동안 묻기가 한 번 돌아도 목록을 버리지 않는다', async () => {
+      server((u) => art(u.split('/').pop()!, 'running'));
+      let ok!: (ids: string[]) => void;
+      const w = start();
+      const p = w.resume(() => new Promise((res) => { ok = res; }));
+      w.add(['m1']);
+      await flush(3_000);
+      ok(['a1']);
+      await p;
+      await flush(6_000);
+      expect(w.details.value.get('a1')).toBeTruthy();
+    });
+    it('지운 작품은 상세에서 빠지고, 삭제 전에 출발한 응답이 되살리지 못한다', async () => {
+      let answer!: (r: Response) => void;
+      const f = server((u) => (u.endsWith('/gone') && f.mock.calls.length > 1 ? new Promise((res) => { answer = res; }) : art(u.split('/').pop()!, 'running')));
+      const w = start();
+      w.add(['gone']);
+      await flush(3_000);
+      expect(w.details.value.has('gone')).toBe(true);
+      await flush(6_000);
+      w.forget('gone');
+      expect(w.details.value.has('gone')).toBe(false);
+      answer(art('gone', 'running'));
+      await flush(0);
+      expect(w.details.value.has('gone')).toBe(false);
+      const n = f.mock.calls.length;
+      await flush(20_000);
+      expect(f.mock.calls.length).toBe(n);
+    });
     it('로그아웃하면 못 읽은 목록을 잊는다', async () => {
       server(() => art('x', 'running'));
       const list = vi.fn<() => Promise<string[]>>(down);
