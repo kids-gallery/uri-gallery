@@ -285,11 +285,20 @@ describe('다른 가족·다른 아이의 작품이 남지 않는다', () => {
 });
 
 describe('새로 고침 뒤 이어 묻기', () => {
-  it('진행 중인 단계가 있는 작품만 고르고, 못 읽으면 빈 목록이다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json(200, [{ id: 'a1', currentStage: 'split' }, { id: 'a2', currentStage: null }])));
+  const list = [{ id: 'a1', childId: 'c1', currentStage: 'split' }, { id: 'a2', childId: 'c1', currentStage: null, state: 'exhibited' }, { id: 'b1', childId: 'c2', currentStage: null, state: 'awaiting_review' }];
+  it('확정·결정을 기다리는 작품도 다시 읽는다(진행 중인 단계가 없어도)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(200, list)));
     const { g } = await load();
-    expect(await g.movingIds()).toEqual(['a1']);
+    expect(await g.watchIds(null)).toEqual(['a1', 'a2', 'b1']);
+  });
+  it('고른 아이의 작품만 읽는다', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(200, list)));
+    const { g } = await load();
+    expect(await g.watchIds('c2')).toEqual(['b1']);
+  });
+  it('못 읽으면 빈 목록이다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('x'); }));
-    expect(await g.movingIds()).toEqual([]);
+    const { g } = await load();
+    expect(await g.watchIds(null)).toEqual([]);
   });
 });
