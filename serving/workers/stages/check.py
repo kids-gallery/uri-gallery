@@ -138,7 +138,10 @@ class CheckRunner:
         if job["model_id"] == "M5":
             from common.images import open_upright
             p = tmp / "check_cutout.png"
-            open_upright(src).convert("RGBA").save(p)          # 알파 전부 불투명 = 그림 전체를 컷아웃으로
+            try:
+                open_upright(src).convert("RGBA").save(p)      # 알파 전부 불투명 = 그림 전체를 컷아웃으로
+            except OSError as e:
+                raise StorageError("check input unreadable") from e   # 머리만 멀쩡하고 끝이 잘린 파일
             return {"cutout": p}, size
         return {"original": src}, size
 

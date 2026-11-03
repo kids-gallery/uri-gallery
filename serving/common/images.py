@@ -15,6 +15,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from common.config import load_yaml
+from common.logging import get_logger
 
 ORIENTATION = 0x0112
 SWAPS_SIDES = {5, 6, 7, 8}   # 가로와 세로가 바뀌는 EXIF 방향
@@ -26,7 +27,6 @@ from PIL import Image
 pillow_heif.register_heif_opener()
 with Image.open(sys.argv[1]) as im:
     im.load()
-    im.getexif()
 """
 
 
@@ -47,14 +47,17 @@ def _is_heif(path) -> bool:
 
 @lru_cache(maxsize=256)
 def _heif_decodes(path: str, size: int, mtime_ns: int) -> None:
-    """자식 프로세스에서 끝까지 디코드해 본다. 죽거나 실패하거나 시간을 넘기면 OSError. 통과만 기억한다(예외는 캐시되지 않는다)."""
+    """자식 프로세스에서 픽셀을 끝까지 디코드해 본다. EXIF는 보지 않는다(깨진 EXIF는 부모가 방향 없음으로 다룬다).
+    죽거나 실패하거나 시간을 넘기면 OSError. 통과만 기억한다(예외는 캐시되지 않는다)."""
     try:
         p = subprocess.run([sys.executable, "-I", "-c", _HEIF_CHECK, path], capture_output=True,
                            timeout=load_yaml("limits")["image"]["heif_check_timeout_s"])
     except subprocess.TimeoutExpired as e:
+        get_logger().warning("heif_check", diagnostic="timeout")
         raise OSError("heif_check_timeout") from e
     if p.returncode != 0:
-        raise OSError("image_unreadable")
+        get_logger().warning("heif_check", diagnostic=f"rc_{p.returncode}")   # 경로는 남기지 않는다
+        raise OSError(f"heif_check_rc_{p.returncode}")
 
 
 @contextmanager

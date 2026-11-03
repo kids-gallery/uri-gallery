@@ -122,13 +122,19 @@ def _broken_exif_png(tmp_path):
     return p
 
 
-@pytest.mark.parametrize("make", [_broken_exif_jpeg, _broken_exif_png], ids=["JPEG", "PNG"])
+def _broken_exif_heic(tmp_path):
+    p = tmp_path / "broken_exif.heic"
+    _picture().save(p, "HEIF", quality=90, exif=b"Exif\x00\x00garbage!")
+    return p
+
+
+@pytest.mark.parametrize("make", [_broken_exif_jpeg, _broken_exif_png, _broken_exif_heic], ids=["JPEG", "PNG", "HEIC"])
 def test_broken_exif_is_a_photo_without_direction(make, tmp_path):
-    """픽셀이 멀쩡하면 전처럼 처리한다"""
+    """픽셀이 멀쩡하면 전처럼 처리한다. HEIC도 자식 검사에서 떨어지지 않는다"""
     p = make(tmp_path)
     assert _is_upright(images.open_upright(p))
     assert images.upright_size(p) == (W, H)
-    assert images.upright_file(p, tmp_path) == p
+    assert _is_upright(Image.open(images.upright_file(p, tmp_path)))     # HEIC는 사본, 나머지는 원본 경로
 
 
 def _truncated_png(tmp_path):
@@ -202,7 +208,7 @@ def test_crashing_heic_is_oserror_and_this_process_lives(tmp_path, fresh_heif_ca
 
 def test_child_killed_by_signal_is_oserror(heic, monkeypatch, fresh_heif_cache):
     monkeypatch.setattr(images, "_HEIF_CHECK", "import os, signal; os.kill(os.getpid(), signal.SIGSEGV)")
-    with pytest.raises(OSError):
+    with pytest.raises(OSError, match=f"heif_check_rc_{-signal.SIGSEGV}"):
         images.open_upright(heic)
 
 
@@ -314,7 +320,7 @@ def test_m1_mask_and_cutout_follow_display_direction(m1, exif6, tmp_path):
 
 
 def test_m1_finishes_with_broken_exif_and_check_reads_its_size(m1, tmp_path):
-    """전에는 engine_down이 되어 재시도만 되풀이했다"""
+    """전에는 engine_down으로 기록되었다"""
     p = _broken_exif_jpeg(tmp_path)
     r = m1.run(_job(p, tmp_path))
     assert r.outcome == "ok"
@@ -372,6 +378,37 @@ def test_m2_gets_display_direction(exif6, tmp_path):
     with pytest.raises(Stop):
         a.run(_job(exif6, tmp_path, "judge"))
     assert seen["size"] == (W, H)
+
+
+def _m3_render(tmp_path):
+    """렌더 프로세스만 대역이다. AD는 파일 경로를 받으므로 넘긴 경로를 본다"""
+    from adapters import m3_render
+
+    a = m3_render.AnimatedDrawingsAdapter.__new__(m3_render.AnimatedDrawingsAdapter)
+    a.ad_python, a.ad_root, a.runner, a.ts = "python", str(tmp_path), "runner.py", "http://unused"
+    a.load, a._render_env = (lambda: None), (lambda: {})
+    seen = []
+
+    def run_proc(args, _job, cwd, env=None):
+        seen.append(args[2])
+        return 1
+    a._run_proc = run_proc
+    return a, seen
+
+
+def test_m3_render_gets_display_direction_file(exif6, tmp_path):
+    a, seen = _m3_render(tmp_path)
+    r = a.render(_job(exif6, tmp_path, "animate_render"))
+    assert r.outcome == "quality_below"                                   # 대역 프로세스가 실패로 끝난다
+    assert len(seen) == 1 and _is_upright(Image.open(seen[0]))
+
+
+def test_m3_render_unreadable_is_storage_without_process(tmp_path):
+    a, seen = _m3_render(tmp_path)
+    p = tmp_path / "broken.jpg"
+    p.write_bytes(b"not an image")
+    r = a.render(_job(p, tmp_path, "animate_render"))
+    assert r.outcome == "storage" and seen == []
 
 
 def test_m3_joints_get_display_direction(exif6, tmp_path, monkeypatch):
