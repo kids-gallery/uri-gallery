@@ -65,6 +65,8 @@
 
 - **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `proxy_connect_timeout 3s`(앱을 끈 직후 사라진 IP에 연결을 기다리면 14초 동안 응답이 없어 끊김 안내가 늦다. 같은 망이라 정상 연결은 3초 안에 끝난다), `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
+- **#32 compose 구현:** 빌드 이미지는 web·api·serving 3개를 재사용하고, 상시 7개와 db-migrate 일회성 서비스를 둔다. web·app-api·model-api만 연결하는 입구 망은 `172.30.88.0/24`로 고정하고 app-api의 TRUST_PROXY도 그 대역으로 제한한다. 대역 충돌 시 둘을 함께 바꾼다. 비밀은 파일 기반 compose secrets, 설정은 `.env.example` 뒤 선택적인 `.env` 순서로 주입한다. 가짜 모델 기본이며 실제 모델 의존성·가중치 마운트는 #42에서 추가한다. 모델 캐시는 #76에서 정한 `/data/hf-cache`를 따르되 해당 이미지 반영 전에는 사용하지 않는다. db-migrate의 이미지 경로와 모델 첫 활성은 #33 선행 미완료로 실제 기동은 막힐 수 있다.
+
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
 `store.ts`(기기 저장) 옆에 서버를 쓰는 층을 하나 두고, 작품 관련 부분만 서버로 바꾼다.
@@ -155,6 +157,7 @@
 **입력 사진의 방향과 HEIC.** API는 받은 바이트를 그대로 저장하므로(FR-22) 휴대폰 사진은 저장 방향과 표시 방향이 다를 수 있다. 지금 모델은 저장 방향으로 읽어 마스크, 컷아웃, 깊이가 저장 방향으로 나오고, 3D 화면은 표시 방향으로 그려 윤곽이 어긋난다. 자체 모델 어댑터로 합성 그림에서 잰 값으로, EXIF 방향 6일 때 어댑터는 `ok`를 돌려주지만 표시 방향 정답과의 IoU가 0.288이었다(방향을 맞추면 0.915). 어댑터가 저장 방향으로 읽는 것은 M1, M2, M3 코드도 같다. HEIC는 API가 받지만 워커가 열지 못해 `storage`로 끝났다. 그래서 `serving/common/images.py` 한 곳에서 표시 방향으로 열고 HEIC도 연다. M1, M2, M3 관절과 품질 검사가 이 함수를 쓰고, 파일 경로를 넘기는 M3 렌더에는 돌린 사본을 준다. M5는 표시 방향 컷아웃을 읽으므로 따라온다. HEIC는 pillow_heif가 열 때 회전 정보(irot)를 적용하고 EXIF를 1로 되돌리므로 두 번 돌지 않는다(irot이 든 합성 HEIC로 확인, 실제 아이폰 사진은 재지 않았다). irot 없이 EXIF 방향만 있는 HEIC는 돌지 않는다. 저장된 원본은 바꾸지 않는다. 이미 처리한 작품의 결과는 그대로이고, 다시 처리해야 맞는다.
 
 **깨진 입력 사진.** EXIF가 깨져도 픽셀이 멀쩡하면 방향 없는 사진으로 처리한다. 방향 정보 때문에 전에는 되던 사진이 실패하면 안 된다. 읽지 못하는 파일은 형식과 상관없이 `OSError`로 모아 `storage`로 끝낸다. PIL은 형식에 따라 `ValueError`, `SyntaxError`, `RuntimeError` 같은 다른 예외를 내고, 그대로 두면 인프라 실패로 잡혀 재시도만 되풀이한다. [한계] 머리가 깨진 HEIC 일부는 libheif 안에서 프로세스가 죽어 파이썬에서 잡을 수 없다. 합성 HEIC 593바이트의 머리 바이트를 뒤집은 시험에서 약 100건 중 1건이 신호 11로 끝났고, 그 파일은 API 업로드 검사(`heic-decode`)를 통과했다. 워커가 재시작되고 시도 상한까지 되풀이될 것으로 본다(추정, 실제 흐름에서 재지 않음). 실제 휴대폰 사진에서 나온 적은 없다(사례 없음).
+**컷아웃의 숨은 배경.** M1 컷아웃은 원본 크기에 알파만 더해 투명한 곳의 색이 파일에 남는다. 같은 가족은 원본도 볼 수 있으므로 추가 노출이 아니지만, 이웃 방문(`GET /v1/visit/children/:id/gallery`)은 부조 작품에 컷아웃만 주고 원본은 주지 않는다. 이 경로에서는 알파를 지우면 원본에서 가린 배경이 보인다. 이번 3D 배포본 화면에는 이웃 기능이 없어 API를 직접 부를 때만 해당한다. 또 투명한 곳의 색 때문에 컷아웃이 커져 합성 12MP 사진에서 24.63MB였다(잡음을 넣은 그림 기준). 그래서 `serving/common/cutout.py`에서 알파가 정확히 0인 화소의 RGB를 0으로 쓴다(같은 그림 5.37MB, 실제 사진의 감소폭은 재지 않았다). 보이는 화소와 부드러운 경계의 색은 그대로이고, 저장된 원본은 바꾸지 않는다. 컷아웃의 색을 읽는 M5, M7, 3D 화면은 투명한 곳의 색을 쓰지 않는다. API, DB, 모델 규칙은 바꾸지 않는다. 이미 만든 컷아웃은 그대로이고, 다시 처리해야 지워진다.
 
 ### 3-5. 설계 PR의 답(#20, 2026-10-30, 검토 반영)
 
@@ -162,6 +165,7 @@
 
 1. **서비스 나누기.** 상시 서비스 7개(`restart: unless-stopped`)와 한 번 돌고 끝나는 db-migrate(`restart: "no"`)를 둔다. 같은 코드를 쓰는 둘은 이미지를 나눠 쓴다(app-api·sweeper·db-migrate = api 이미지, model-api·worker-cpu = serving 이미지). 직접 빌드하는 이미지는 web·api·serving 3개, 공식 이미지는 db(`mariadb:12.0`)·mailpit(`axllent/mailpit`).
    - **개발 환경 모델 첫 활성.** [확인] 새 DB에는 활성 모델 버전이 없다(마이그레이션에 `model_version` 시드 없음). 워커는 활성 버전이 있는 모델만 올리고(`serving/workers/runner.py` `refresh_enabled`), 앱 서버는 M1·M2·M3이 모두 활성일 때만 분리·판정 작업을 만든다(`api/src/modules/artworks/models.ts` `JUDGE_MODELS`). 그래서 db-migrate가 개발 환경일 때(`DEV_ACTIVATE_MODELS=1`) 스키마 다음에 M1·M2·M3·M5를 `active`·`license_confirmed`로 만든다. 조건은 SD_04 9-4의 D27 예외와 같고, 팀 서버·운영 DB에서는 켜지 않는다. 기존 도구(`scripts/dev_activate_models.py`)는 `DB_HOST`가 127.0.0.1이 아니면 멈추고 127.0.0.1 API를 불러 compose에 그대로 쓸 수 없다. 담당은 #33.
+   - **#33 초기화 상세:** db-migrate에만 `DEV_ACTIVATE_MODELS=1`을 전달하고 마이그레이션 성공 뒤 M1·M2·M3·M5 각각에 활성 버전이 없을 때만 개발용 행을 넣는다. 기존 활성·이전 버전은 수정하지 않는다. 개발용 행은 `runtime=fake`, CPU, 라이선스 확인, 두 해시 64자리 0으로 식별하며 실제 가중치 검증 결과가 아니다. 처리 실패 시 db-migrate도 실패하여 worker가 시작되지 않는다. 재실행해도 활성 행을 중복 생성하지 않는다. 실제 모델 운영 전에는 올바른 모델 버전·해시·라이선스를 별도로 등록해야 한다.
 2. **이미지.**
    - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
    - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
