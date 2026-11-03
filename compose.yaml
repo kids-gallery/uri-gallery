@@ -1,0 +1,149 @@
+name: uri-gallery
+x-config: &config
+  env_file:
+    - path: .env.example
+    - path: .env
+      required: false
+x-api: &api
+  <<: *config
+  image: uri-gallery-api:local
+  build:
+    context: .
+    dockerfile: api/Dockerfile
+  init: true
+  environment:
+    DB_PASSWORD_FILE: /run/secrets/db_password
+    SESSION_SECRET_FILE: /run/secrets/session_secret
+    AUTH_HMAC_SECRET_FILE: /run/secrets/auth_hmac_secret
+    TRUST_PROXY: 172.30.88.0/24
+  secrets: [db_password, session_secret, auth_hmac_secret]
+  networks: [internal]
+x-serving: &serving
+  <<: *config
+  image: uri-gallery-serving:local
+  build:
+    context: .
+    dockerfile: serving/Dockerfile
+    args:
+      INSTALL_MODELS: "0"
+  init: true
+  environment:
+    DB_PASSWORD_FILE: /run/secrets/db_password
+    MODEL_API_HOST: 0.0.0.0
+    UAM_FAKE_MODELS: "1"
+    GPU_ENABLED: "false"
+  secrets: [db_password]
+  networks: [internal]
+services:
+  db:
+    image: mariadb:12.0
+    init: true
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: uam
+      MARIADB_USER: uam
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [db-data:/var/lib/mysql]
+    networks: [internal]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  db-migrate:
+    <<: *api
+    restart: "no"
+    command: [node, dist/scripts/migrate.js]
+    depends_on:
+      db:
+        condition: service_healthy
+  app-api:
+    <<: *api
+    networks: [internal, edge]
+    restart: unless-stopped
+    volumes: [artworks:/data/store]
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:9521/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  sweeper:
+    <<: *api
+    restart: unless-stopped
+    command: [node, dist/src/sweeper/main.js]
+    volumes: [artworks:/data/store]
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+  model-api:
+    <<: *serving
+    networks: [internal, edge]
+    restart: unless-stopped
+    volumes: [artworks:/data/store, worker-state:/data/run]
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9541/internal/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  worker-cpu:
+    <<: *serving
+    restart: unless-stopped
+    command: [python, -m, workers.main, --group, cpu_vision]
+    volumes: [artworks:/data/store, worker-state:/data/run]
+    mem_limit: 2g
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import glob,json,time; files=glob.glob('/data/run/model_state/*.json'); assert any(time.time()-json.load(open(f)).get('updated_at',0)<60 for f in files)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+  mailpit:
+    image: axllent/mailpit:v1.27.8
+    init: true
+    restart: unless-stopped
+    ports: ["8025:8025"]
+    networks: [internal]
+  web:
+    image: uri-gallery-web:local
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    init: true
+    restart: unless-stopped
+    ports: ["9501:80"]
+    networks: [edge]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      app-api:
+        condition: service_healthy
+networks:
+  internal:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.88.0/24
+volumes:
+  db-data:
+  artworks:
+  worker-state:
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  session_secret:
+    file: ./secrets/session_secret
+  auth_hmac_secret:
+    file: ./secrets/auth_hmac_secret

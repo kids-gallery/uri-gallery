@@ -65,6 +65,8 @@
 
 - **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `proxy_connect_timeout 3s`(앱을 끈 직후 사라진 IP에 연결을 기다리면 14초 동안 응답이 없어 끊김 안내가 늦다. 같은 망이라 정상 연결은 3초 안에 끝난다), `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
+- **#32 compose 구현:** 빌드 이미지는 web·api·serving 3개를 재사용하고, 상시 7개와 db-migrate 일회성 서비스를 둔다. web·app-api·model-api만 연결하는 입구 망은 `172.30.88.0/24`로 고정하고 app-api의 TRUST_PROXY도 그 대역으로 제한한다. 대역 충돌 시 둘을 함께 바꾼다. 비밀은 파일 기반 compose secrets, 설정은 `.env.example` 뒤 선택적인 `.env` 순서로 주입한다. 가짜 모델 기본이며 실제 모델 의존성·가중치 마운트는 #42에서 추가한다. 모델 캐시는 #76에서 정한 `/data/hf-cache`를 따르되 해당 이미지 반영 전에는 사용하지 않는다. db-migrate의 이미지 경로와 모델 첫 활성은 #33 선행 미완료로 실제 기동은 막힐 수 있다.
+
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
 `store.ts`(기기 저장) 옆에 서버를 쓰는 층을 하나 두고, 작품 관련 부분만 서버로 바꾼다.
