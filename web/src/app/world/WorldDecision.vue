@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { failureReason, type ArtworkDetail, type Decision, type Failure } from './server';
 import { DECISION_ORDER, resultImage } from '../artwork';
 import { ko } from '@/copy/ko';
 const props=defineProps<{detail:ArtworkDetail;busy:boolean;error:Failure|null}>();
 const emit=defineEmits<{close:[];decide:[choice:Decision]}>();
 const asking=ref(false);
+const root=ref<HTMLElement|null>(null);
+onMounted(()=>root.value?.querySelector<HTMLElement>('button:not(:disabled)')?.focus());
 const image=computed(()=>resultImage(props.detail));
 const choices=computed(()=>{const off=new Map((props.detail.unavailableChoices??[]).map(x=>[x.choice,x.reason]));return DECISION_ORDER.filter(x=>props.detail.choices.includes(x)||off.has(x)).map(code=>({code,available:props.detail.choices.includes(code),reason:off.get(code)}));});
 function choose(c:Decision){if(c==='retake'){asking.value=true;return;} emit('decide',c);}
 </script>
 <template>
-<section class="shade" role="dialog" aria-modal="true" aria-labelledby="decision-title">
+<section ref="root" class="shade" role="dialog" aria-modal="true" aria-labelledby="decision-title">
  <div class="card">
   <h2 id="decision-title">{{ detail.state==='failed' ? '작품을 처리하지 못했어요' : '결과를 확인해 주세요' }}</h2>
   <div class="preview"><img v-if="detail.originalUrl" :src="detail.originalUrl" alt="올린 작품"><video v-if="image.video" :src="image.video" :poster="image.still || undefined" controls aria-label="만들어진 움직이는 결과"/><img v-else-if="image.still && image.still!==detail.originalUrl" :src="image.still" alt="만들어진 결과"></div>
