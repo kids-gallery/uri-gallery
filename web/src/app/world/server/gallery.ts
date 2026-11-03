@@ -1,6 +1,8 @@
 // 3D 화면 전시 목록(마스터플랜 3-3, #40). 서버 판은 GET /v1/gallery에 있는 작품만 건다.
 // - 컷아웃은 승인되어 걸린 부조(kind가 relief)의 auxUrl만 쓴다. 판정 중에도 오는 상세의 cutoutUrl은 쓰지 않는다.
 // - 파일은 작품마다 메모리에 두고, 결과 종류가 바뀔 때만 다시 받는다.
+// - 깊이는 VITE_RELIEF_DEPTH=1로 빌드했을 때만 받는다(마스터플랜 3-6).
+// - 사진을 받으면 작품은 사라지지 않는다. 깊이를 못 받으면 두께판, 컷아웃을 못 받으면 액자로 건다(마스터플랜 3-3).
 import { ref } from 'vue';
 import { exhibitBlob } from '../exhibit';
 import * as store from '../store';
@@ -8,6 +10,9 @@ import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, typ
 
 type Item = Gallery['groups'][number]['items'][number];
 
+const RELIEF_DEPTH_ON = import.meta.env.VITE_RELIEF_DEPTH === '1';
+/** 만들기는 받침대의 동상이므로 빌드 값과 상관없이 깊이로 둥근 입체를 만든다(#133) */
+const wantsDepth = (item: Item) => item.kind === 'relief' && (RELIEF_DEPTH_ON || item.making);
 const shown = new Map<string, { work: store.Artwork; kind: string; childId: string }>();
 /** 로그아웃하면 늘어난다. 그 전에 시작한 요청의 결과는 버린다 */
 let epoch = 0;
@@ -34,23 +39,31 @@ async function photoWork(id: string, photoUrl: string, making = false): Promise<
 async function workOf(item: Item, no: number): Promise<store.Artwork> {
   const had = shown.get(item.id);
   const base = had?.work ?? await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
-  const cutout = had?.kind === item.kind ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await file(item.auxUrl) : null;
+  const same = had?.kind === item.kind;
+  const orNull = (url: string) => file(url).catch(() => null); // 못 받으면 낮춰 걸고 load가 다시 받게 한다(마스터플랜 3-3)
+  const cutout = same ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await orNull(item.auxUrl) : null;
+  const depth = (same ? had.work.depth : null) ?? (wantsDepth(item) && cutout && item.primaryUrl ? await orNull(item.primaryUrl) : null);
   // 걸린 부조는 벽에 전시용 판을 건다. 못 만들면 자른 사진 그대로 둔다
-  const display = cutout && had?.kind !== item.kind ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
+  const display = cutout && !same ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
   return {
     ...base, display, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
-    madeOn: item.madeOn, words: item.childWords ?? '', cutout, cutoutState: cutout ? 'done' : undefined,
+    madeOn: item.madeOn, words: item.childWords ?? '', cutout, depth, cutoutState: cutout ? 'done' : undefined,
   };
 }
 
-/** 받지 못한 작품 수를 돌려준다 */
+/** 받지 못한 파일이 있는 작품 수를 돌려준다 */
 async function load(entries: { item: Item; childId: string }[], mine: number): Promise<number> {
   let missed = 0;
   for (const [i, { item, childId }] of entries.entries()) {
     try {
       const work = await workOf(item, i + 1);
       if (mine !== epoch) return 0;
-      shown.set(item.id, { work, kind: item.kind, childId });
+      const relief = item.kind === 'relief';
+      const noCutout = relief && !!item.auxUrl && !work.cutout;
+      const noDepth = wantsDepth(item) && !!work.cutout && !!item.primaryUrl && !work.depth;
+      // 컷아웃이 없으면 보이는 것은 액자다. 걸린 결과와 달라 상태 묻기가 목록을 다시 읽는다
+      shown.set(item.id, { work, kind: noCutout ? 'frame' : item.kind, childId });
+      if (noCutout || noDepth) missed++; // 걸어 둔 채 새 주소로 한 번 더 받는다
     } catch {
       missed++; // 한 장 때문에 전시 전체가 비지 않게 한다(열 수 없는 사진 등)
     }

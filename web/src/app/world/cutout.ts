@@ -5,7 +5,7 @@ import * as THREE from 'three';
 export const WORK_SIDE = 384; // 배경 지우기 계산 해상도(긴 변)
 export const DISPLAY_SIDE = 1024; // 화면 질감 해상도(긴 변)
 
-export interface Mask { w: number; h: number; data: Uint8Array; ok: boolean; ratio: number }
+export interface Mask { w: number; h: number; data: Uint8Array; ok: boolean; ratio: number; surface?: Surface }
 
 export async function blobToImage(blob: Blob): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(blob);
@@ -352,6 +352,96 @@ export function canvasToBlob(c: HTMLCanvasElement, type = 'image/png', q?: numbe
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob'))), type, q));
 }
 
+/** 서버 깊이로 만드는 둥근 입체(마스터플랜 3-6). 값은 여기 한 곳에만 둔다 */
+export const RELIEF_SURFACE = {
+  /** 격자의 긴 변(칸). 작품 하나의 삼각형 수를 정한다 */
+  grid: 128,
+  /** 앞면 최대 높이(작품 높이 대비) */
+  thickness: 0.2,
+  /** 깊이가 가장 먼 곳의 앞면 높이 비율. 0이면 먼 곳이 납작해진다 */
+  base: 0.35,
+  /** 가장자리에서 둥글어지는 폭(긴 변 대비) */
+  taper: 0.07,
+  /** 뒷면 두께(앞면 대비) */
+  back: 0.6,
+} as const;
+
+export interface Surface { w: number; h: number; data: Float32Array }
+
+/** 깊이 그림 → 격자 크기의 0~1 값. 화면에서는 8비트면 충분하다 */
+export async function surfaceFromBlob(blob: Blob, side: number = RELIEF_SURFACE.grid): Promise<Surface> {
+  const bmp = await createImageBitmap(blob, { colorSpaceConversion: 'none' });
+  const { w, h } = fit(bmp.width, bmp.height, side);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  const px = ctx.getImageData(0, 0, w, h).data, data = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) data[i] = px[i * 4]! / 255;
+  return { w, h, data };
+}
+
+/** 안쪽 칸마다 바깥까지의 거리(칸). 앞뒤 두 번 훑는 근사다 */
+function insideDistance(inside: Uint8Array, w: number, h: number): Float32Array {
+  const d = new Float32Array(w * h), far = w + h, D = Math.SQRT2;
+  for (let i = 0; i < w * h; i++) d[i] = inside[i] ? far : 0;
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : d[y * w + x]!);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (inside[y * w + x]) d[y * w + x] = Math.min(d[y * w + x]!, at(x - 1, y) + 1, at(x, y - 1) + 1, at(x - 1, y - 1) + D, at(x + 1, y - 1) + D);
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) if (inside[y * w + x]) d[y * w + x] = Math.min(d[y * w + x]!, at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + D, at(x - 1, y + 1) + D);
+  return d;
+}
+
+/** 앞뒤 두 장을 만든다. 가장자리에서 높이가 0이 되어 두 장이 만나고, 실제 윤곽은 마스크가 자른다 */
+export function surfaceGeometry(mask: Mask, s: Surface, W: number, H: number): { geo: THREE.BufferGeometry; depth: number } {
+  const { w, h, data } = s, R = RELIEF_SURFACE, inside = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) inside[y * w + x] = mask.data[Math.floor((y + 0.5) / h * mask.h) * mask.w + Math.floor((x + 0.5) / w * mask.w)]!;
+  const dist = insideDistance(inside, w, h), taper = Math.max(1, R.taper * Math.max(w, h)), on = new Uint8Array(w * h), z = new Float32Array(w * h);
+  let top = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!inside[i]) continue;
+    for (let b = Math.max(0, y - 1); b <= Math.min(h - 1, y + 1); b++) for (let a = Math.max(0, x - 1); a <= Math.min(w - 1, x + 1); a++) on[b * w + a] = 1;
+    const t = Math.min(1, Math.max(0, dist[i]! - 1) / taper), round = Math.sqrt(1 - (1 - t) ** 2);
+    z[i] = H * R.thickness * (R.base + (1 - R.base) * data[i]!) * round;
+    top = Math.max(top, z[i]!);
+  }
+  const index = new Int32Array(w * h).fill(-1), pos: number[] = [], uv: number[] = [];
+  const mid = top * (1 - R.back) / 2;
+  for (let sheet = 0; sheet < 2; sheet++) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!on[i]) continue;
+    if (!sheet) index[i] = pos.length / 3;
+    pos.push(((x + 0.5) / w - 0.5) * W, (0.5 - (y + 0.5) / h) * H, (sheet ? -R.back * z[i]! : z[i]!) - mid);
+    uv.push((x + 0.5) / w, 1 - (y + 0.5) / h);
+  }
+  const n = pos.length / 6, faces: number[] = [];
+  for (let y = 0; y < h - 1; y++) for (let x = 0; x < w - 1; x++) {
+    const a = index[y * w + x]!, b = index[y * w + x + 1]!, c = index[(y + 1) * w + x]!, d = index[(y + 1) * w + x + 1]!;
+    if (a < 0 || b < 0 || c < 0 || d < 0) continue;
+    faces.push(a, c, b, b, c, d, a + n, b + n, c + n, b + n, d + n, c + n);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(faces);
+  geo.computeVertexNormals();
+  return { geo, depth: top * (1 + R.back) };
+}
+
+/** 마스크를 윤곽을 자르는 알파 지도로 바꾼다. 행 0이 v=0이므로 위아래를 뒤집는다 */
+function maskAlpha(mask: Mask): THREE.DataTexture {
+  const px = new Uint8Array(mask.w * mask.h * 4);
+  for (let y = 0; y < mask.h; y++) for (let x = 0; x < mask.w; x++) {
+    const v = mask.data[(mask.h - 1 - y) * mask.w + x] ? 255 : 0, o = (y * mask.w + x) * 4;
+    px[o] = px[o + 1] = px[o + 2] = v; px[o + 3] = 255;
+  }
+  const t = new THREE.DataTexture(px, mask.w, mask.h);
+  t.magFilter = t.minFilter = THREE.LinearFilter;
+  t.needsUpdate = true;
+  return t;
+}
+
 export interface ReliefOptions { height: number; depth?: number }
 
 /**
@@ -361,6 +451,14 @@ export interface ReliefOptions { height: number; depth?: number }
 export function buildRelief(texture: THREE.Texture, mask: Mask | null, aspect: number, opts: ReliefOptions): THREE.Mesh {
   const H = opts.height;
   const W = H * aspect;
+  if (mask?.surface) {
+    const { geo, depth } = surfaceGeometry(mask, mask.surface, W, H), alphaMap = maskAlpha(mask);
+    const mat = new THREE.MeshStandardMaterial({ map: texture, alphaMap, alphaTest: 0.5, roughness: 0.75, metalness: 0, emissive: new THREE.Color(0xffffff), emissiveMap: texture, emissiveIntensity: 0.18 });
+    mat.addEventListener('dispose', () => alphaMap.dispose());
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.userData.size = { w: W, h: H, d: depth };
+    return mesh;
+  }
   const depth = opts.depth ?? Math.max(0.03, H * 0.045);
   const shapes: THREE.Shape[] = [];
   const cs = mask ? contours(mask) : [];
@@ -395,6 +493,26 @@ export function buildRelief(texture: THREE.Texture, mask: Mask | null, aspect: n
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.size = { w: W, h: H, d: depth };
   return mesh;
+}
+
+/** 컷아웃과 깊이 파일 → 입체 윤곽. 깊이를 읽지 못하면 두께판, 컷아웃을 읽지 못하면 null(사각 판)로 낮춘다. 한 장 때문에 전시가 멈추지 않게 한다(마스터플랜 3-3) */
+export async function reliefMask(cutout?: Blob | null, depth?: Blob | null): Promise<Mask | null> {
+  if (!cutout) return null;
+  let mask: Mask;
+  try {
+    const cb = await createImageBitmap(cutout);
+    const cc = document.createElement('canvas');
+    cc.width = cb.width; cc.height = cb.height;
+    cc.getContext('2d')!.drawImage(cb, 0, 0);
+    cb.close?.();
+    mask = maskFromCutout(cc);
+  } catch {
+    return null;
+  }
+  if (!mask.ok) return null;
+  const surface = depth ? await surfaceFromBlob(depth).catch(() => null) : null;
+  if (surface) mask.surface = surface;
+  return mask;
 }
 
 /** 마스크 → 원본 비율의 사본(저장용 · 다시 만들 때 같은 결과) */
