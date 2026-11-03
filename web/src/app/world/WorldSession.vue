@@ -15,6 +15,7 @@ const logoutPending = ref(false);
 const providers = ref({ kakao: false, emailSignup: true }); // 확인 전·실패 때는 지금 이메일 화면(마스터플랜 3-3 #88)
 const showEmail = ref(false);
 const PROVIDERS_WAIT_MS = 3000;
+let providersAsk = 0;
 const canRetry = ref(false);
 const route = useRoute();
 const router = useRouter();
@@ -38,8 +39,9 @@ function expired() {
   notice.value = '로그인이 만료됐어요. 다시 로그인해 주세요';
 }
 async function loadProviders() {
+  const mine = ++providersAsk;
   const value = await authProviders().catch(() => null);
-  if (!value || !alive) return;
+  if (!value || !alive || mine !== providersAsk) return; // 겹치면 가장 나중 요청의 응답만 쓴다
   if (value.kakao && (email.value || password.value)) showEmail.value = true; // 입력 중인 칸을 접지 않는다
   providers.value = value;
 }

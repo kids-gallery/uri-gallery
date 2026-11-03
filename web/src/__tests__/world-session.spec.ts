@@ -123,6 +123,34 @@ describe('켜짐 확인이 멈출 때(#93 리뷰)', () => {
     expect(w.find('.kakao').exists()).toBe(true);
     expect(w.find('form').exists()).toBe(true);
   });
+  it.each([['성공', (done: { ok: (v: object) => void; no: (e: Error) => void }) => done.ok({ kakao: false, emailSignup: true })], ['실패', (done: { ok: (v: object) => void; no: (e: Error) => void }) => done.no(new Error('late'))]])('먼저 보낸 요청이 나중에 %s해도 새 응답을 덮지 않는다', async (_n, finish) => {
+    loggedOut();
+    let first!: { ok: (v: object) => void; no: (e: Error) => void };
+    s.authProviders.mockImplementationOnce(() => new Promise((ok, no) => { first = { ok, no }; })).mockResolvedValue({ kakao: true, emailSignup: true });
+    const w = open();
+    await vi.advanceTimersByTimeAsync(3_100);
+    await w.findAll('button').find((b) => b.text() === '로그인 상태 다시 확인')!.trigger('click');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.find('.kakao').exists()).toBe(true);
+    finish(first);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.find('.kakao').exists()).toBe(true);
+  });
+  it('로그아웃 뒤 늦게 온 응답이 입력 칸을 망가뜨리지 않는다', async () => {
+    s.me.mockResolvedValue({ hasFamily: true }); s.logout.mockResolvedValue(undefined);
+    let late!: (v: object) => void;
+    s.authProviders.mockImplementation(() => new Promise((r) => { late = r; }));
+    const w = open();
+    await vi.advanceTimersByTimeAsync(0);
+    await w.find('.logout').trigger('click');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.text()).toContain('로그아웃했어요');
+    await w.find('input[type=email]').setValue('a@example.test');
+    late({ kakao: true, emailSignup: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.find('.kakao').exists()).toBe(true);
+    expect(w.find('form').exists()).toBe(true);
+  });
   it('켜짐 확인이 멈춘 채 로그아웃이 거절돼도 다시 시도를 보인다', async () => {
     s.me.mockResolvedValue({ hasFamily: true });
     s.authProviders.mockImplementation(() => new Promise(() => undefined));
