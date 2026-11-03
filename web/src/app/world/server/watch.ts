@@ -17,7 +17,9 @@ export function useArtworkWatch() {
   const retrying = ref(false);
   const watching = new Set<string>();
   let round = 0;
+  let session = 0; // clear로 올린다. ask의 round와 나눈다(묻기가 한 번 돌았다고 목록 응답을 버리면 안 된다)
   let left = false; // 화면을 벗어나면 다시 묻지 않는다
+  let unread: { list: () => Promise<string[]>; failure: Failure } | null = null; // 못 읽은 서버 목록. 다시 시도 때 또 읽는다
 
   async function ask(): Promise<boolean> {
     const mine = ++round;
@@ -25,7 +27,7 @@ export function useArtworkWatch() {
     const res = await Promise.allSettled(ids.map(getArtwork));
     if (mine !== round) return watching.size > 0; // 다시 시도·로그아웃 뒤에 도착한 옛 응답은 버린다
     const next = new Map(details.value);
-    const fails: Failure[] = [];
+    const fails: Failure[] = unread ? [unread.failure] : [];
     res.forEach((r, i) => {
       const id = ids[i]!;
       if (r.status === 'fulfilled') {
@@ -50,28 +52,56 @@ export function useArtworkWatch() {
     if (watching.size) poll.start();
   }
 
+  /** 새로 고침(#40): 서버 목록의 작품을 묻기에 더한다. 못 읽으면 안내를 띄운다 */
+  async function resume(list: () => Promise<string[]>) {
+    const mine = session;
+    try {
+      const ids = await list();
+      if (mine !== session) return;
+      unread = null;
+      add(ids);
+    } catch (e) {
+      if (left || mine !== session) return;
+      unread = { list, failure: failureOf(e) };
+      failure.value = unread.failure;
+    }
+  }
+
   /** 버튼: 기다리지 않고 바로 묻는다. 물을 작품이 없으면 안내만 닫는다 */
   async function retry() {
     if (retrying.value) return;
     retrying.value = true;
     poll.stop();
     try {
+      if (unread) await resume(unread.list);
       if (await ask()) poll.start();
     } finally {
       retrying.value = false;
     }
   }
 
+  /** 지운 작품: 묻기와 받은 상세에서 뺀다. round를 올려 삭제 전에 출발한 응답이 되살리지 못하게 한다 */
+  function forget(id: string) {
+    round++;
+    watching.delete(id);
+    if (!details.value.has(id)) return;
+    const next = new Map(details.value);
+    next.delete(id);
+    details.value = next;
+  }
+
   /** 로그아웃(#30): 다른 가족의 작품이 남지 않게 모두 지운다 */
   function clear() {
+    session++;
     round++;
     poll.stop();
     watching.clear();
+    unread = null;
     details.value = new Map();
     failure.value = null;
   }
 
   // usePolling은 타이머만 멈춘다. 다시 시도를 기다리는 중에 화면을 벗어나면 그 뒤의 poll.start()까지 막아야 한다(watching이 비어 ask가 false를 돌려준다)
   if (getCurrentScope()) onScopeDispose(() => { left = true; clear(); });
-  return { details, failure, retrying, add, retry, clear };
+  return { details, failure, retrying, add, resume, retry, clear, forget };
 }

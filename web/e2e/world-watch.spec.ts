@@ -54,3 +54,24 @@ test('app-api가 멈추면 알리고, 켠 뒤 다시 시도로 이어지며, 끝
   await db.query(`UPDATE stage_job SET status = 'done' WHERE artwork_id = ?`, [id]);
   await expect.poll(async () => { const n = asks.length; await page.waitForTimeout(11_000); return asks.length - n; }, { timeout: 60_000, intervals: [0] }).toBe(0);
 });
+
+test('새로 고침 때 작품 목록을 못 읽어도 복구 뒤 다시 시도로 대기 작품을 읽는다(#85 리뷰)', async ({ page }) => {
+  await openWorldUpload(page, tag('w85'));
+  const posted = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
+  await album(page).setInputFiles(photo());
+  const id = String((await (await posted).json() as { id: string }).id);
+
+  const list = /\/v1\/artworks$/;
+  await page.route(list, (route) => (route.request().method() === 'GET' ? route.abort() : route.continue()));
+  await page.reload();
+  await page.getByRole('button', { name: '시작하기' }).click();
+  const retryBtn = page.getByRole('button', { name: '다시 시도' });
+  await expect(page.getByText('미술관에 연결되지 않아요')).toBeVisible({ timeout: 60_000 });
+  await expect(retryBtn).toBeVisible();
+
+  await page.unroute(list);
+  const asked = page.waitForResponse((r) => r.url().endsWith(`/v1/artworks/${id}`) && r.request().method() === 'GET', { timeout: 15_000 });
+  await retryBtn.click();
+  expect((await asked).status()).toBe(200);
+  await expect(page.getByText('미술관에 연결되지 않아요')).toHaveCount(0, { timeout: 15_000 });
+});
