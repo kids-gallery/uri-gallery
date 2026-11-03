@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import * as THREE from 'three';
 import { updateArtworkInfo,type Artwork } from './store';
 import { SUBJECTS } from './subjects';
+import { SERVER_WORLD } from './server/upload';
 import { plaqueOf, curatorNote, defaultTitle } from './curation';
 import { reliefOf, exportGlb, download, safeName, extOf } from './relief3d';
 
@@ -160,7 +161,7 @@ onBeforeUnmount(() => {
             <div class="row"><button class="g-btn g-btn--primary" type="submit" :disabled="!!busy">{{busy==='info'?'저장 중…':'추억 저장'}}</button><button class="g-btn" type="button" :disabled="!!busy" @click="editing=false">취소</button></div>
           </form>
           <div class="row">
-            <button class="g-btn" type="button" :disabled="!!busy" @click="editInfo">제목·추억 고치기</button>
+            <button v-if="!SERVER_WORLD" class="g-btn" type="button" :disabled="!!busy" @click="editInfo">제목·추억 고치기</button>
             <button class="g-btn g-btn--primary" type="button" :disabled="!!busy" @click="glb">{{ busy === 'glb' ? '만드는 중…' : '입체 내려받기' }}</button>
             <button class="g-btn" type="button" @click="original">원본 내려받기</button>
             <button class="g-btn" type="button" @click="emit('goto', current.id)">미술관에서 보기</button>

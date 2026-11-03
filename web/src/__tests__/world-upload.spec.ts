@@ -31,6 +31,10 @@ function fakeServer(children: { id: string; alias: string }[] = [{ id: 'c1', ali
       const id = works.get(key)!;
       return json(202, { id, childId: 'c1', state: 'exhibited', choices: [], stages: [], photoUrl: `/v1/files/${id}`, story: { title: '제목 없는 그림 1' } });
     }
+    if (url.startsWith('/v1/gallery')) {
+      const items = [...works.values()].map((id) => ({ id, kind: 'frame', photoUrl: `/v1/files/${id}`, originalUrl: `/v1/files/${id}`, title: '제목 없는 그림 1', madeOn: '2026-11-02', ageAtMaking: null, making: false }));
+      return json(200, { childId: 'c1', groups: items.length ? [{ ageAtMaking: null, items }] : [] });
+    }
     if (url.startsWith('/v1/files/')) return new Response('img', { headers: { 'content-type': 'image/jpeg' } });
     throw new Error(`예상 못 한 요청 ${url}`);
   });
@@ -181,7 +185,7 @@ describe('올리기 창', () => {
 
   it('보관됐지만 화면이 못 그리면 실패가 아니고, 걸지 못했다고 알린다', async () => {
     const { upload, WorldUpload } = await load();
-    vi.mocked((await import('@/app/world/store')).processImage).mockRejectedValueOnce(new Error('decode'));
+    vi.mocked((await import('@/app/world/store')).processImage).mockRejectedValue(new Error('decode')); // 열 수 없는 사진은 목록을 다시 읽어도 열리지 않는다
     fakeServer();
     const w = mountWith(WorldUpload, [PHOTO()]);
     await vi.waitFor(() => expect(w.text()).toContain('걸지 못했어요'));
