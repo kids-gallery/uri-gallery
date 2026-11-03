@@ -76,13 +76,41 @@ export async function migrate(conn: mysql.Connection, dir = MIGRATIONS_DIR): Pro
   return applied;
 }
 
+// 개발 전용: 활성 버전이 이미 있으면 그대로 보존한다. 0 해시는 실제 가중치의 검증값이 아니다.
+export async function activateDevModels(conn: mysql.Connection): Promise<void> {
+  await conn.beginTransaction();
+  try {
+    for (const modelId of ['M1', 'M2', 'M3', 'M5']) {
+      await conn.query(
+        `INSERT INTO model_version
+           (model_id, version_label, weights_sha256, config_hash, runtime, license_confirmed, release_state, exec_device)
+         SELECT ?, CONCAT('dev-', REPLACE(UUID(), '-', '')), REPEAT('0', 64), REPEAT('0', 64),
+                'fake', TRUE, 'active', 'cpu'
+         WHERE NOT EXISTS (SELECT 1 FROM model_version WHERE model_id = ? AND release_state = 'active')`,
+        [modelId, modelId],
+      );
+    }
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  }
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const c = loadConfig().db;
   const conn = await mysql.createConnection({
     host: c.socketPath ? undefined : c.host, port: c.socketPath ? undefined : c.port, socketPath: c.socketPath,
     user: c.user, password: c.password, database: c.database, multipleStatements: false,
   });
-  const done = await migrate(conn);
-  console.log(done.length ? `applied: ${done.join(', ')}` : 'up to date');
-  await conn.end();
+  try {
+    const done = await migrate(conn);
+    console.log(done.length ? `applied: ${done.join(', ')}` : 'up to date');
+    if (process.env.DEV_ACTIVATE_MODELS === '1') {
+      await activateDevModels(conn);
+      console.log('development models initialized');
+    }
+  } finally {
+    await conn.end();
+  }
 }
