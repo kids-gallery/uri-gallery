@@ -60,9 +60,9 @@ describe('개발용 모델 최초 활성', () => {
     expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ weights_sha256: 'd'.repeat(64) });
   });
 
-  const human = (w: string, c: string, runtime: string) => conn.query(`INSERT INTO model_version
+  const human = (w: string, c: string, runtime: string, id = 'M1', label = 'v1') => conn.query(`INSERT INTO model_version
       (model_id, version_label, weights_sha256, config_hash, runtime, license_confirmed, release_state, exec_device)
-      VALUES ('M1', 'v1', REPEAT(?, 64), REPEAT(?, 64), ?, TRUE, 'active', 'cpu')`, [w, c, runtime]);
+      VALUES (?, ?, REPEAT(?, 64), REPEAT(?, 64), ?, TRUE, 'active', 'cpu')`, [id, label, w, c, runtime]);
   const want = { weights: 'a'.repeat(64), config: 'b'.repeat(64), runtime: 'torch-2.4.1-cpu' };
   it.each([
     ['해시', 'e', 'b', 'torch-2.4.1-cpu'],
@@ -73,7 +73,20 @@ describe('개발용 모델 최초 활성', () => {
     await human(w, c, runtime);
     await expect(activateDevModels(conn, { M1: want })).rejects.toThrow(/M1: 사람이 등록한 활성 행 v1/);
     expect(await active()).toMatchObject([{ model_id: 'M1', runtime, weights_sha256: w.repeat(64) }]);
-    expect(await active()).toHaveLength(1); // 앞서 처리한 모델도 되돌린다
+    expect(await active()).toHaveLength(1);
+  });
+  it('뒤 모델에서 멈추면 앞서 넣은 모델도 되돌린다', async () => {
+    await conn.query('DELETE FROM model_version');
+    await human('e', 'e', 'hand', 'M5');
+    await expect(activateDevModels(conn, { M5: want })).rejects.toThrow(/M5: 사람이 등록한 활성 행 v1/);
+    expect(await active()).toMatchObject([{ model_id: 'M5', runtime: 'hand' }]);
+    expect(await active()).toHaveLength(1);
+  });
+  it('사람이 dev-로 시작하게 등록한 행도 사람 행으로 본다', async () => {
+    await conn.query('DELETE FROM model_version');
+    await human('e', 'e', 'hand', 'M1', 'dev-canary');
+    await expect(activateDevModels(conn, { M1: want })).rejects.toThrow(/M1: 사람이 등록한 활성 행 dev-canary/);
+    expect((await active()).find((v) => v.model_id === 'M1')).toMatchObject({ runtime: 'hand' });
   });
   it('실제로 켤 때 사람이 등록한 행이 같은 값이면 통과한다', async () => {
     await conn.query('DELETE FROM model_version');

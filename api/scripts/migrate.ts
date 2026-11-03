@@ -81,6 +81,7 @@ export async function migrate(conn: mysql.Connection, dir = MIGRATIONS_DIR): Pro
 type DevVersion = { weights: string; config: string; runtime: string };
 const FAKE_VERSION: DevVersion = { weights: '0'.repeat(64), config: '0'.repeat(64), runtime: 'fake' };
 const HEX64 = /^[0-9a-f]{64}$/;
+const DEV_LABEL = /^dev-[0-9a-f]{32}$/; // 아래 INSERT가 만드는 이름. 사람이 dev-로 시작하게 등록한 행은 건드리지 않는다
 
 /** 실제 어댑터로 돌릴 모델의 활성 행 값(마스터플랜 3-5 1번). 매니페스트로 설명할 수 없으면 이유를 찍고 멈춘다. */
 export function realVersions(models: string[], manifestPath: string): Record<string, DevVersion> {
@@ -110,7 +111,7 @@ export async function activateDevModels(conn: mysql.Connection, real: Record<str
       const active = (rows as { version_id: number; version_label: string; weights_sha256: string; config_hash: string; runtime: string }[])[0];
       if (active) {
         const same = active.weights_sha256 === want.weights && active.config_hash === want.config && active.runtime === want.runtime;
-        if (!active.version_label.startsWith('dev-')) {
+        if (!DEV_LABEL.test(active.version_label)) {
           if (!same) {
             const why = `${modelId}: 사람이 등록한 활성 행 ${active.version_label}이 지금 설정과 다르다`;
             if (real[modelId]) throw new Error(`${why}. 다른 모델의 결과가 이 행으로 기록되므로 켜지 않는다`);
