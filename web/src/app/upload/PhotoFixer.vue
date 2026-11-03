@@ -6,7 +6,7 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { ko } from '@/copy/ko';
 import { warpQuad } from './autocrop';
 
-const props = defineProps<{ src: string; initial?: [number, number][] | null; startBox?: (w: number, h: number) => [number, number][]; hint?: string; closeLabel?: string }>();
+const props = defineProps<{ src: string; initial?: [number, number][] | null; boxOptions?: { label: string; box: (w: number, h: number) => [number, number][] }[]; boxAsk?: string; hint?: string; closeLabel?: string }>();
 const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number]; unreadable: [] }>();
 type P = [number, number];
 const img = ref<HTMLImageElement | null>(null);
@@ -16,6 +16,9 @@ const rot = ref(0); // 0 · 90 · 180 · 270
 const sel = ref(0);
 const busy = ref(false); const msg = ref('');
 const preview = ref<HTMLCanvasElement | null>(null);
+const boxPick = ref(-1); // boxOptions 중 고른 것. 고르기 전에는 쓸 수 없다
+const unanswered = computed(() => !!props.boxOptions?.length && boxPick.value < 0);
+function pickBox(i: number) { boxPick.value = i; quad.value = props.boxOptions![i]!.box(W.value, H.value); draw(); }
 const box = ref<HTMLElement | null>(null);
 const dialog = ref<HTMLElement | null>(null);
 
@@ -28,7 +31,6 @@ onMounted(async () => {
   W.value = im.naturalWidth; H.value = im.naturalHeight;
   // 자동 펴기가 찾은 네 모서리가 있으면 그것부터, 없으면 사진 전체(추정 사각형으로 시작하면 그대로 저장했을 때 그림이 잘린다)
   quad.value = props.initial ? props.initial.map((p) => [p[0], p[1]] as P) : [[0, 0], [W.value, 0], [W.value, H.value], [0, H.value]];
-  if (props.startBox && !props.initial) quad.value = props.startBox(W.value, H.value);
   await nextTick(); draw(); dialog.value?.querySelector<HTMLElement>('button')?.focus();
   } catch { msg.value = ko.up2.fixFail; emit('unreadable'); } // 브라우저가 못 여는 사진(HEIC 등)
 });
@@ -79,6 +81,10 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
     <div ref="dialog" class="fx" role="dialog" aria-modal="true" aria-labelledby="fx-t" @keydown="trap">
       <h2 id="fx-t" class="fx-t">{{ ko.up2.fix }}</h2>
       <p class="fx-hint">{{ hint ?? ko.up2.fixHint }}</p>
+      <div v-if="boxOptions?.length" class="fx-ask" role="group" :aria-label="boxAsk">
+        <span>{{ boxAsk }}</span>
+        <button v-for="(o, i) in boxOptions" :key="o.label" class="btn" :class="boxPick === i ? 'btn-primary' : 'btn-secondary'" type="button" :aria-pressed="boxPick === i" :disabled="!img" @click="pickBox(i)">{{ o.label }}</button>
+      </div>
       <div class="fx-body">
         <div v-if="img" ref="box" class="fx-photo" :style="{ aspectRatio: `${W} / ${H}`, '--fx-ar': `${W / H}` }" @pointermove="move" @pointerup="up" @pointercancel="up">
           <img :src="img.src" alt="" draggable="false">
@@ -98,7 +104,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         <button class="btn btn-tertiary" type="button" @click="reset">{{ ko.fix.reset }}</button>
         <span class="sp"></span>
         <button class="btn btn-secondary" type="button" @click="emit('close')">{{ closeLabel ?? ko.walk.close }}</button>
-        <button class="btn btn-primary" type="button" :disabled="busy || !img" @click="save">{{ busy ? ko.save.busy : ko.up2.fixUse }}</button>
+        <button class="btn btn-primary" type="button" :disabled="busy || !img || unanswered" @click="save">{{ busy ? ko.save.busy : ko.up2.fixUse }}</button>
       </div>
       <p class="fx-msg" role="status" aria-live="polite">{{ msg }}</p>
     </div>
@@ -107,6 +113,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 </template>
 
 <style scoped>
+.fx-ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:700}
+.fx-acts .btn-primary:disabled{opacity:.45;cursor:not-allowed}
 .fx-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
 @keyframes fx-in{from{opacity:0}}
 .fx{width:min(1040px,100%);max-height:calc(100dvh - 24px);overflow:auto;background:linear-gradient(#fffaf0,#fbf4e6);border:2px solid #c9a24a;border-radius:20px;padding:clamp(14px,3vw,28px);display:grid;gap:12px;

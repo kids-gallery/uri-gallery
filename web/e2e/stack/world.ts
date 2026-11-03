@@ -18,7 +18,10 @@ export async function openWorldUpload(page: Page, who: string) {
   await expect(page.getByText('JPEG·PNG·HEIC')).toBeVisible();
 }
 
-/** 작품 자르기(#118): 고른 사진마다 네 모서리를 그대로 두고 쓴다 */
+/** 작품 자르기(#118): 고른 사진마다 작품만 찍었다고 답하고 네 모서리를 그대로 두고 쓴다 */
 export async function useCrop(page: Page, times = 1) {
-  for (let i = 0; i < times; i++) await page.getByRole('button', { name: '이대로 쓰기' }).click({ timeout: 30_000 });
+  for (let i = 0; i < times; i++) {
+    await page.getByRole('button', { name: '작품만 찍었어요' }).click({ timeout: 30_000 });
+    await page.getByRole('button', { name: '이대로 쓰기' }).click();
+  }
 }
