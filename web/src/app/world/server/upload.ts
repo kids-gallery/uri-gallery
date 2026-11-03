@@ -1,11 +1,11 @@
 // 3D 화면 사진 올리기(마스터플랜 3-3, #31). 사진을 서버로 보내고 받은 원본 액자를 화면에 건다.
 // - 한 빌드는 한 저장소만 쓴다: VITE_WORLD_SERVER=1이면 서버 판, 아니면 기기 판. 서버에 닿지 않아도 기기 저장으로 바꾸지 않는다.
-// - 걸린 작품은 이 화면의 메모리에만 둔다. 서버 목록으로 다시 읽는 일은 #40.
 import { ref } from 'vue';
 import { ApiError } from '@/api/client';
 import { problemCopy } from '@/copy/ko';
 import * as store from '../store';
 import { failureOf, failureReason, listChildren, uploadArtwork, type ArtworkDetail } from './index';
+import { galleryWorks, hangUploaded, clearGallery } from './gallery';
 
 export const SERVER_WORLD = import.meta.env.VITE_WORLD_SERVER === '1';
 
@@ -34,12 +34,15 @@ export function checkPhoto(f: File): string | null {
 export type SendResult = { ok: true; id: string; hung: boolean } | { ok: false; reason: string; retryable: boolean };
 
 const hung = new Map<string, store.Artwork>();
-
+let generation = 0;
+/** 로그아웃·만료 시 이전 가족의 작품과 선택을 버린다. 진행 중 응답도 무효다. */
+export function clearWorldWorks() { generation++; hung.clear(); clearGallery(); selectedChild.value = null; }
 /** 3D 화면에 그릴 작품. 서버 판은 기기 저장소의 작품을 섞지 않는다 */
-export const worldWorks = async (): Promise<store.Artwork[]> => (SERVER_WORLD ? [...hung.values()] : store.listArtworks());
+export const worldWorks = async (): Promise<store.Artwork[]> => (SERVER_WORLD ? galleryWorks(selectedChild.value) : store.listArtworks());
 
 /** key는 사진마다 하나다. 다시 시도할 때 같은 key를 넘겨야 작품이 두 번 생기지 않는다 */
 export async function sendPhoto(file: File, key: string): Promise<SendResult> {
+  const current = generation;
   let detail: ArtworkDetail;
   try {
     const list = await listChildren();
@@ -50,25 +53,6 @@ export async function sendPhoto(file: File, key: string): Promise<SendResult> {
     const f = failureOf(e);
     return { ok: false, reason: failureReason(f), retryable: f.kind !== 'refused' || (e instanceof ApiError && e.code === 'not_saved') };
   }
-  return { ok: true, id: detail.id, hung: await hang(detail) };
-}
-
-/** 서버에 보관된 사진으로 원본 액자를 건다. 배경 분리는 서버 몫이라 cutoutState를 두지 않는다. 화면이 그리지 못해도 보관은 끝났으므로 실패로 돌려주지 않는다 */
-async function hang(d: ArtworkDetail): Promise<boolean> {
-  if (hung.has(d.id)) return true;
-  try {
-    const res = await fetch(d.photoUrl ?? '', { credentials: 'same-origin' });
-    if (!res.ok) return false;
-    const original = await res.blob();
-    const { display } = await store.processImage(original, false);
-    await store.saveRooms([...await store.getRooms(), store.UNSORTED_AGE]);
-    hung.set(d.id, {
-      id: d.id, no: hung.size + 1, title: d.story?.title ?? '', kind: d.making ? 'making' : 'drawing', subject: 'etc', material: '',
-      age: store.UNSORTED_AGE, madeOn: d.story?.madeOn ?? '', words: '', original, display, cutout: null,
-      sample: false, createdAt: Date.now(), rotation: 0,
-    });
-    return true;
-  } catch {
-    return false;
-  }
+  if (current !== generation) return { ok: false, reason: '로그인이 바뀌었어요. 다시 로그인해 주세요', retryable: true };
+  return { ok: true, id: detail.id, hung: await hangUploaded(detail) };
 }

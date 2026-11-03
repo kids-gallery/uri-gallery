@@ -36,7 +36,7 @@
    3D 미술관 ◀── 작품 상태·컷아웃·결과 파일 ── app-api ◀── DB
 ```
 
-- 사진을 올리면 원본 액자가 먼저 걸린다(서버 규칙). 서버가 M1 컷아웃을 만들면 3D 화면이 그 그림으로 입체를 다시 만든다.
+- 사진을 올리면 원본 액자가 먼저 걸린다(서버 규칙). 보호자가 부조 결과를 승인해 걸리면 3D 화면이 컷아웃으로 입체를 다시 만든다(3-3 "전시 목록", #40).
 - 권유 확정과 결과 결정은 3D 화면 안의 작은 창 두 개로 한다.
 - 모델은 CPU로 돈다(`GPU_ENABLED=false`). 움직이는 그림(M3)·3D 조각(M7)은 가짜 어댑터(`UAM_FAKE_MODELS=M3,M7`). 설명(M6)은 끈다. 메모리가 작은 PC는 전부 가짜(`UAM_FAKE_MODELS=1`)로 같은 흐름을 돈다.
 - 3D 화면의 방 배치·캐릭터·놀이·백업은 지금처럼 기기에 둔다(이번 범위 밖).
@@ -63,7 +63,7 @@
 
 - **#26 입구 이미지:** 저장소 루트에서 `docker build -f web/Dockerfile .`. 의존성 파일을 먼저 복사하고 `npm ci`한 뒤 웹 소스를 복사한다. `VITE_WORLD_SERVER=1`을 빌드 단계에서 고정한다. 실행 이미지는 `dist-world` 전체(생성된 `/licenses/THIRD_PARTY.txt` 포함)를 정적 루트에 담고 80번에서 받는다. API 라우팅과 SPA 대체는 #27에서 설정한다. 루트 `.dockerignore`를 재사용하며 `web/.dockerignore`는 만들지 않는다.
 
-- **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
+- **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `proxy_connect_timeout 3s`(앱을 끈 직후 사라진 IP에 연결을 기다리면 14초 동안 응답이 없어 끊김 안내가 늦다. 같은 망이라 정상 연결은 3초 안에 끝난다), `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
 - **#32 compose 구현:** 빌드 이미지는 web·api·serving 3개를 재사용하고, 상시 7개와 db-migrate 일회성 서비스를 둔다. web·app-api·model-api만 연결하는 입구 망은 `172.30.88.0/24`로 고정하고 app-api의 TRUST_PROXY도 그 대역으로 제한한다. 대역 충돌 시 둘을 함께 바꾼다. 비밀은 파일 기반 compose secrets, 설정은 `.env.example` 뒤 선택적인 `.env` 순서로 주입한다. 가짜 모델 기본이며 실제 모델 의존성·가중치 마운트는 #42에서 추가한다. 모델 캐시는 #76에서 정한 `/data/hf-cache`를 따르되 해당 이미지 반영 전에는 사용하지 않는다. db-migrate의 이미지 경로와 모델 첫 활성은 #33 선행 미완료로 실제 기동은 막힐 수 있다.
 
@@ -75,7 +75,7 @@
 |---|---|
 | 가족·아이를 기기 안 계정으로 만든다(`Account`) | 이메일 가입·로그인(`/v1/auth/signup`·`/v1/auth/login`, 확인 메일은 Mailpit), 아이 등록·선택(`/v1/children`) |
 | 사진을 기기에서 처리한다(`processImage` → 브라우저 배경 지우기) | `POST /v1/artworks`로 올린다. 원본 액자가 바로 걸린다 |
-| 입체를 바로 만든다 | `GET /v1/artworks/{id}`로 상태를 본다. 컷아웃(`cutoutUrl`)이 오면 그 그림으로 입체를 다시 만든다(`buildRelief`는 그대로) |
+| 입체를 바로 만든다 | `GET /v1/artworks/{id}`로 상태를 본다. 승인되어 걸린 결과가 부조면 `/v1/gallery`의 컷아웃(`auxUrl`)으로 입체를 다시 만든다(`buildRelief`는 그대로) |
 | (없음) | 권유 확정 `POST /v1/artworks/{id}/confirm`, 결과 결정 `POST /v1/artworks/{id}/decision`: 3D 화면 안의 작은 창 두 개 |
 | 작품 목록(`listArtworks`) | `GET /v1/gallery`·`GET /v1/artworks`, 파일은 `/v1/files/{token}` |
 | 방 배치·설정·캐릭터·놀이·백업 | 그대로 기기에 |
@@ -87,7 +87,7 @@
 
 **서버 연결 층(`web/src/app/world/server/`, #28).** 3D 화면의 창들은 서버를 이 층으로만 부른다.
 
-- 새 HTTP 코드를 만들지 않는다. `/app` 화면이 쓰는 `web/src/api/client.ts`(같은 출처·쿠키 세션·Problem Details → `ApiError`)와 `web/src/app/artwork.ts`의 작품 타입을 그대로 쓴다. `loadArtwork`는 `noRedirect` 없이 부르는 `/app` 화면용이라 쓰지 않는다. 이 층에는 #19 대응표 한 줄에 함수 하나만 둔다: `signup`·`verifyEmail`·`resendVerify`·`login`·`logout`·`me`·`listChildren`·`addChild`·`uploadArtwork`·`getArtwork`·`confirmKind`·`decide`·`gallery`.
+- 새 HTTP 코드를 만들지 않는다. `/app` 화면이 쓰는 `web/src/api/client.ts`(같은 출처·쿠키 세션·Problem Details → `ApiError`)와 `web/src/app/artwork.ts`의 작품 타입을 그대로 쓴다. `loadArtwork`는 `noRedirect` 없이 부르는 `/app` 화면용이라 쓰지 않는다. 이 층에는 #19 대응표 한 줄에 함수 하나만 둔다: `signup`·`verifyEmail`·`resendVerify`·`login`·`logout`·`me`·`listChildren`·`addChild`·`uploadArtwork`·`listArtworks`·`getArtwork`·`deleteArtwork`·`confirmKind`·`decide`·`gallery`.
 - 모든 호출은 `noRedirect`로 부른다. 401이나 409 `no_family`가 와도 `/app/login` 등으로 화면을 옮기지 않고, 3D 화면 안에서 처리한다(401은 로그인 창 #30).
 - 오류는 `failureOf(e)` 하나로 세 가지로 나눠 창에 넘긴다.
 
@@ -107,7 +107,11 @@
 - **다시 시도:** `offline`·`login`과 503 `not_saved`만 다시 시도할 수 있다. 그 밖의 `refused`는 같은 사진으로 다시 해도 안 되므로 버튼을 두지 않는다. `login`은 #30의 로그인 창이 생기기 전까지 안내 문장만 보인다.
 - **어느 아이의 작품인가:** `selectedChild`(#36이 정함)를 먼저 쓰고, 없으면 아이가 1명일 때 그 아이로 한다. 0명이거나 여러 명인데 고르지 않았으면 올리지 않고 안내한다. 다른 아이 작품으로 들어가는 일을 막기 위해서다.
 - **원본 액자 걸기:** 202의 `photoUrl`을 받아 화면용 사본을 만들고(`processImage`, 배경 지우기 없음) 3D 화면에 건다. 서버 판은 기기 저장소의 작품을 섞지 않는다. 올린 뒤 나이·주제 질문과 돌리기 버튼도 두지 않는다(서버가 이야기를 채우고 올린 작품은 고칠 수 없다, D46). 기기에 저장한다는 안내 띠와 브라우저 배경 지우기 결과 문구도 보이지 않는다. 화면이 그리지 못하는 사진(HEIC를 못 여는 브라우저)은 서버에는 보관됐으므로 실패로 치지 않고 안내만 한다.
-- [한계] 걸린 작품은 이 화면의 메모리에만 있어 새로 고침하면 사라져 보이고, 정보 고치기·지우기도 아직 서버로 가지 않는다. 서버 목록과 함께 #40에서 바꾼다. 설정·개인정보 창의 "이 기기에만 저장" 문구는 #44에서 바꾼다.
+- [한계] 설정·개인정보 창의 "이 기기에만 저장" 문구는 #44에서 바꾼다.
+
+**#29 가입·메일 확인 화면(2026-11-02).** #19 제안대로 미술관 입장 전 첫 화면에서 `/app/signup`으로 가입한다. 단독 배포 라우터에 `/app/verify`를 명시해 토큰이 사라지지 않게 한다. 링크 토큰은 화면에 표시·저장하지 않고 확인 직후 주소에서 제거한다. 확인 실패는 잘못되었거나 만료된 링크라는 안내와 이메일 재발송을 제공하며, 통신 실패는 성공으로 처리하지 않고 다시 시도한다. 가입은 이메일·비밀번호·비밀번호 확인을 기존 연결 층으로 전달한다. 성공 후에는 확인 메일 안내만 보이고 로그인 성공으로 간주하지 않는다. 390px에서는 한 열 카드, 1440px에서는 가운데 카드다. 로그인·세션은 #30이 담당한다. 메일 확인 성공은 세션 생성 완료이므로 미술관으로 들어가기를 안내한다. 토큰 없는 확인 화면은 me()로 세션을 확인해 성공하면 /app/world로 이동한다. 통신 장애는 failureReason으로 안내하고 같은 동작을 다시 시도하며, 401일 때만 확인 링크 재발급을 안내한다.
+
+**#30 로그인 경계(2026-11-02).** 서버 판 `/app/world`는 `WorldSession`에서 `me()` 확인 후에만 미술관을 생성한다. 로그인 입력은 기존 `login`을 쓰며 성공 뒤 `me()`로 다시 확인한다. 새로고침·탭 복귀 시 세션을 확인하고 통신 실패는 다시 시도를 제공한다. failureOf는 부작용 없이 오류만 분류한다. me와 인증된 작품·아이 호출의 401만 만료 이벤트를 보내며 잘못된 로그인 비밀번호는 이벤트를 보내지 않는다. 복원 실패가 login일 때만 작품을 지운다. 로그인한 상태의 offline은 같은 미술관·작품을 유지하고 상태 묻기의 안내에 맡긴다. 로그아웃 버튼은 더보기 메뉴 안에 두어 기존 메뉴를 가리지 않는다. 로그아웃·만료 시 `WorldView`를 제거해 작품·선택·엔진 상태를 버리고, 메모리 작품 목록과 `selectedChild`를 지운다. 지연된 업로드가 로그아웃 뒤 작품을 다시 넣지 못하도록 세대 번호로 차단한다. 로그아웃 통신 실패도 사적인 화면은 비우되 완료로 표시하지 않고 다시 로그아웃 버튼을 둔다. 기기 판은 기존대로 동작한다. 가입 링크는 #29의 `/app/signup`으로 연결하며 두 PR 병합 후 함께 사용할 수 있다. 아이 등록·선택은 #36에서 연결한다.
 
 **상태 묻기(`web/src/app/world/server/watch.ts`, #37).** 올린 작품의 처리 상태를 묻고, 통신 실패를 알린다.
 
@@ -120,8 +124,20 @@
 | `login` | 멈춘다. 다시 시도하면 이어서 묻는다 | 안내와 다시 시도 버튼(#30 뒤에는 로그인 창) |
 | `refused` | 그 작품만 묻기를 그만둔다(지워진 작품 등) | 이유 문장과 닫기 버튼 |
 
-- **늦게 도착한 응답:** 묻기마다 번호를 매겨, 다시 시도·로그아웃·화면 이탈 뒤에 도착한 옛 응답은 버린다. 다시 시도를 기다리는 중에 화면을 벗어나도 묻기가 되살아나지 않는다.
-- [한계] 묻는 작품 목록은 이 화면의 메모리에만 있어 새로 고침하면 사라진다. 서버 목록과 함께 #40에서 바꾼다. 받은 상세는 `details`에 두며, 창(#38·#39)과 입체 교체(#40)가 이 값을 쓴다.
+- **늦게 도착한 응답:** 묻기마다 번호를 매겨, 다시 시도·로그아웃·화면 이탈 뒤에 도착한 옛 응답은 버린다. 다시 시도를 기다리는 중에 화면을 벗어나도 묻기가 되살아나지 않고, 벗어난 뒤에는 작품을 더해도 묻지 않는다.
+- 받은 상세는 `details`에 두며, 창(#38·#39)과 입체 교체(#40)가 이 값을 쓴다. 새로 고침하면 `GET /v1/artworks`의 `currentStage`로 진행 중인 작품을 다시 묻는다(#40).
+
+**전시 목록(`web/src/app/world/server/gallery.ts`, #40).** 서버 판의 3D 화면은 `GET /v1/gallery`에 있는 작품만 건다.
+
+- **컷아웃은 승인 뒤에만 쓴다.** 상세의 `cutoutUrl`은 판정 중에도 오지만 쓰지 않는다. `/v1/gallery`는 걸린 결과만 보여 주므로 `kind`가 `relief`일 때의 `auxUrl`만 입체에 쓴다. 고른 이유: 보호자 승인 없이 전시 모습이 바뀌지 않아야 하고, 새로 고침해도 같은 화면이어야 한다. 3-1·3-3의 옛 문장("컷아웃이 오면 입체")과 #40의 끝나는 조건("승인 뒤 교체, 미승인 비전시")이 어긋나 #40을 따랐다.
+- **어느 아이:** `selectedChild`(#36)가 있으면 그 아이, 없으면 가족의 모든 아이. `/v1/gallery`는 `child`가 필수다.
+- **받은 파일:** 작품마다 메모리에 두고, 결과 종류가 바뀔 때만 컷아웃을 받는다. 파일 주소는 5분 뒤 만료되므로(`api/src/modules/files/token.ts`) 받지 못하면 목록을 한 번 다시 읽어 새 주소로 받는다.
+- **교체 시점:** 상태 묻기의 `hungResultKind`가 보이는 결과와 다르면 목록을 다시 읽는다.
+- **실패:** 목록을 못 읽으면 보던 작품을 그대로 두고 상태 묻기와 같은 안내와 다시 시도를 보인다. 고른 아이가 있으면 그 아이의 작품만 남긴다. 다른 아이의 작품을 대신 보이지 않는다.
+- **로그아웃(#30):** `clearGallery()`로 지운다. 그 전에 시작한 요청은 어느 단계에서 끝나든(파일, 방 읽기·저장) 옛 가족의 작품을 캐시·방·반환값에 남기지 않는다.
+- **방 저장 실패:** 전시와 따로 다룬다. 기기 저장소 문제를 연결 실패로 알리지 않는다.
+- **고치기와 지우기:** 올린 작품은 고칠 수 없으므로(D46) 서버 판에서 돌리기·제목과 추억 고치기·이야기 남기기를 보이지 않는다. 지우기는 `DELETE /v1/artworks/{id}`로 보낸다.
+- [한계] 움직임(`animated`) 결과는 3D 화면에 재생 경로가 없어 사진으로 보인다. 놀이에서 그린 그림은 기기에 저장되어 서버 판 목록에 나오지 않는다. 방 배치는 지금처럼 기기에 둔다.
 
 ### 3-4. 컨테이너로 옮기며 고칠 코드(작게, 설계서 먼저)
 
@@ -133,7 +149,7 @@
 | 모델 묶음 잠금을 CPU 종류에 따라 고르는 빌드 인자 | 맥(arm64)과 Windows(x86_64)가 같은 Dockerfile을 쓴다 | 최호준 |
 | `.gitattributes`(줄바꿈 LF) | Windows에서 셸 스크립트가 CRLF가 되면 컨테이너에서 깨진다 | 신지현 |
 | app-api 시작 명령을 빌드 결과에 맞게(`package.json` `start` → `node dist/src/server.js`) | 지금 값(`dist/server.js`)은 빌드 결과에 없다(3-5 2번) | 이제민 |
-| 마이그레이션 폴더를 설정 값으로(`MIGRATIONS_DIR`, 기본값은 지금 경로) | 빌드된 이미지에서 경로가 어긋난다(3-5 판정) | 최호준 |
+| 마이그레이션 폴더를 설정 값으로(`MIGRATIONS_DIR`, 기본값은 지금 경로) | 빌드된 이미지에서 경로가 어긋난다(3-5 판정). #22의 끝나는 조건이라 #22에서 고쳤다 | 이제민 |
 | 개발 환경 모델 첫 활성(db-migrate, `DEV_ACTIVATE_MODELS=1`일 때만) | 새 DB에 활성 모델 버전이 없어 처리 작업이 생기지 않는다(3-5 1번) | 최호준(이제민 지원) |
 | serving이 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE`) | compose `secrets:`. 지금 `serving/common/config.py`는 환경 변수만 읽는다 | 최호준 |
 | app-api가 비밀 값을 파일에서도 읽게(`DB_PASSWORD_FILE` 등, 없으면 지금처럼 환경 변수) | compose `secrets:`(3-2)는 값을 파일로 넣는다. 지금 `api/src/config.ts`는 환경 변수만 읽는다 | 이제민 |
@@ -155,7 +171,7 @@
      |---|---|
      | app-api | `node dist/src/server.js`(지금 `package.json` `start`의 `dist/server.js`는 틀려서 고친다, #22) |
      | sweeper | `node dist/src/sweeper/main.js` |
-     | db-migrate | `node dist/scripts/migrate.js`(`MIGRATIONS_DIR` 필요, #33) |
+     | db-migrate | `node dist/scripts/migrate.js`(`MIGRATIONS_DIR`은 이미지에 있음, #22) |
 
    - 이미지 안 경로는 저장소 구조를 따른다.
 
@@ -166,10 +182,10 @@
      | API 계약 | `/app/contracts` | `CONTRACTS_DIR` |
      | 모델 매니페스트 | `/app/models/manifest.yaml` | `MODEL_MANIFEST` |
 
-3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 컨테이너 안에서 실제 모델을 돌리는 일은 [미검증]이다(#42·#43).
+3. **CPU 종류와 메모리.** 모델 묶음 잠금 파일은 빌드 인자로 고른다(arm64 `requirements-models.lock`, amd64 `requirements-models-linux-x86_64.lock`, #24). 기본은 전부 가짜 모델(`UAM_FAKE_MODELS=1`). 맥 arm64 컨테이너에서 세 모델을 한 프로세스로 돌렸다(아래). compose 안에서 도는 것은 [미검증]이다(#42·#43).
    - [확인] 워커 하나가 M1·M2·M5를 한 프로세스에 함께 올린다(`preload_all`). `limits.yaml`에 M1 CPU 추론 RSS 8.5GB가 적혀 있다. 이번 재측정에서는 재현되지 않았다. 최호준 PC의 Ubuntu 가상환경은 3284.7MiB(스왑 사용), 이제민 맥의 CPU 2스레드는 4827.1MiB다(#16, PR #64, 각 1회). 차이의 원인은 [미확인]이므로 8.5GB를 버리지 않고 #43에서 다시 잰다. 이제민 맥의 colima 가상 머신은 CPU 6개·메모리 14GiB다. 같은 PC에서 db·api·web도 메모리를 쓰므로, 할당량만으로 실행 가능하다고 보지 않는다.
    - [확인] 최호준 PC는 메모리 7.73 GiB, WSL 3.8 GiB다(#15, 2026-10-30). 이 PC에서 M1은 돌아가지만 추론이 109.678초로 `limits.yaml`의 split 제한 60초를 넘고, 그 값도 스왑을 쓴 1회 측정이다(#16). 신지현 PC도 메모리 7.70 GiB, WSL 3.7 GiB(사용 가능 2.4 GiB)로 비슷하다(#15). 그래서 Windows 두 대는 가짜 모델로 개발하고, 실제 M1·M2·M5 실행과 실측은 맥(이제민 PC)에서 이제민이 맡는다(2026-11-02 결정, #42·#43). Windows에서 M1 컨테이너 측정은 하지 않는다. [미검증] 가짜 모델 compose 전체도 WSL 사용 가능 메모리 2~3 GiB 안에 들어가는지는 #41에서 잰다. 모자라면 `%UserProfile%\.wslconfig`의 `memory`를 늘린다(PC 전체의 절반 이상).
-   - #41(Windows WSL: 가짜 모델 compose의 메모리)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다. [추정] #16에서 M2·M5에 쓴 3GiB 제한이면 M1은 메모리 부족으로 죽을 수 있다(맥 4827.1MiB 기준).
+   - #41(Windows WSL: 가짜 모델 compose의 메모리)과 #43(맥: M1·M2·M5)에서 `docker stats` 최대치를 재서 worker 메모리 한도를 정한다. [확인] 맥 컨테이너(CPU 6개, 2026-11-02, 800×600 합성 그림, 2회)에서 M1 추론 32.18·35.7초, M2 0.08·0.14초, M5 1.93·2.25초, 세 모델을 함께 올린 컨테이너 최대 메모리 6471.3·6547.9MiB다. 다른 작업이 돌던 때의 값이라 #43에서 다시 잰다. 메모리 3GiB 제한(CPU 2개)에서는 M1 단계에서 메모리 부족으로 죽었다(종료 코드 137). 그래서 worker 한도는 7GiB 아래로 두지 않는다. 최종 값은 #43에서 정한다.
    - [추론] 메모리가 모자라 worker가 죽으면 재시작되고, 맡던 작업은 점유 60초가 지난 뒤 다시 시도된다. 3번 실패하면 "결과 미도달"이다(`limits.yaml` `claim.seconds 60`, `retry.max_attempts 3`).
 4. **데이터와 비밀 값.**
 
@@ -179,11 +195,11 @@
    | 작품 파일 | 이름 있는 볼륨 | app-api · sweeper · worker-cpu · model-api(외부 요청 사진 `ext/`) | | `STORAGE_ROOT` |
    | 작업자 상태 | 이름 있는 볼륨 | worker-cpu(상태 파일) · model-api(지금 불러오기 요청 `warmup/`) | model-api(워커 상태) | `UAM_RUN_DIR` |
    | 모델 가중치 | 호스트 `models/hf` → `/models/hf` 읽기 전용 | 없음 | worker-cpu | `MODEL_ROOT=/models` |
-   | 모델 쓰기 캐시 | worker-cpu만 쓰는 이름 있는 볼륨 | worker-cpu | | `HF_HOME` |
+   | 모델 쓰기 캐시 | worker-cpu만 쓰는 이름 있는 볼륨 → `/data/hf-cache` | worker-cpu | | `HF_HOME=/data/hf-cache` |
 
    - [확인] model-api는 모델을 올리지 않는다(어댑터·`from_pretrained`를 부르지 않음). 그래서 가중치와 쓰기 캐시를 붙이지 않는다. 대신 외부 요청 사진을 `STORAGE_ROOT/ext/`에 쓰고(`serving/model_api/external.py` 295행), 지금 불러오기 요청을 `UAM_RUN_DIR/warmup/`에 쓴다(`internal.py` 144행). 작품 파일·작업자 상태 볼륨은 model-api에도 쓰기로 붙인다. [미검증] 작업자 상태 볼륨의 쓰기는 #34에서 지금 불러오기 요청이 202로 응답하고, 워커가 요청을 처리해 파일을 지우는지로 확인한다.
 
-   - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [미검증] #42에서 네트워크를 끈 상태로 세 모델이 `ready`가 되는지 확인한다.
+   - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [확인] 이미지가 비루트(UID 1000)이므로 새 볼륨이 쓸 폴더를 이미지에 미리 만들어야 한다. 없으면 볼륨이 root 소유가 되어 M1이 `PermissionError: '/hf-cache/modules'`로 뜨지 않는다(M2·M5는 뜸). `serving/Dockerfile`이 `/data/hf-cache`를 만든다. 네트워크를 끈 컨테이너에서 세 모델이 `HF_HUB_OFFLINE=1`로 올라오는 것도 확인했다. [미검증] compose에서 `models[].load.state`가 `ready`인지는 #42에서 본다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
    - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
 5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
@@ -227,7 +243,7 @@
 
 | 이슈 | 판정 | 근거 |
 |---|---|---|
-| #33 DB 초기화 | **고친다.** 마이그레이션 폴더를 설정 값(`MIGRATIONS_DIR`)으로 받고(1줄), 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
+| #33 DB 초기화 | **고친다.** 마이그레이션 폴더 설정 값(`MIGRATIONS_DIR`)은 #22에서 고쳤다. 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
 | #34 워커 준비 상태 | 코드는 고치지 않는다. 상태 검사 기준만 위 표대로 | [확인] 상태 파일이 60초 넘게 멈추면 이미 멈춤으로 본다(`STALE_AFTER_S = 60`) |
 | #35 sweeper 종료 | 지금은 코드를 고치지 않는다. `init: true`는 신호 전달용으로만 쓴다. #35에서 종료 시간·종료 결과를 기록하고, 정리가 안 되는 문제가 드러나면 그때 종료 처리 코드를 더한다 | [확인] 한 번 다 돈 뒤 다음 차례를 잡아 겹치지 않는다(`setTimeout`). 빠른 종료와 작업·DB·파일의 정상 정리는 다르므로, 작업 중단 뒤 재시작·이어받기는 #41에서 따로 확인한다 |
 
