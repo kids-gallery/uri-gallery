@@ -63,6 +63,29 @@ def test_open_upright_leaves_plain_and_opens_heic(plain, heic):
     assert _is_upright(images.open_upright(heic))
 
 
+@pytest.fixture
+def heic_exif6(tmp_path):
+    """저장은 가로, 회전 정보(irot)와 EXIF 방향 6이 함께 있다. 휴대폰 HEIC와 같은 구조로 만든다.
+    EXIF를 바이트로 줘야 pillow_heif가 irot을 쓴다. 열 때 irot을 적용하고 EXIF를 1로 되돌린다."""
+    images._register_heif()
+    p = tmp_path / "exif6.heic"
+    ex = Image.Exif()
+    ex[images.ORIENTATION] = 6
+    _picture().rotate(90, expand=True).save(p, quality=95, exif=ex.tobytes())
+    assert b"irot" in p.read_bytes()
+    return p
+
+
+def test_heic_with_exif_orientation_is_not_turned_twice(heic_exif6, tmp_path):
+    with Image.open(heic_exif6) as im:
+        assert im.getexif().get(images.ORIENTATION, 1) == 1   # 플러그인이 이미 적용하고 되돌렸다
+        assert im.info.get("original_orientation") == 6
+    assert _is_upright(images.open_upright(heic_exif6))
+    assert images.upright_size(heic_exif6) == (W, H)
+    with Image.open(images.upright_file(heic_exif6, tmp_path)) as im:
+        assert _is_upright(im)
+
+
 def test_unreadable_is_oserror(tmp_path):
     p = tmp_path / "broken.jpg"
     p.write_bytes(b"not an image")
