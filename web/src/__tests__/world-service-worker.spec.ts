@@ -31,11 +31,39 @@ describe('world service worker privacy', () => {
     expect(cache.match).not.toHaveBeenCalled();
   });
   it('does not pre-cache private URLs supplied by a page', async () => {
-    const { handlers, cache } = setup();
+    const { handlers, cache, fetch } = setup();
+    fetch.mockResolvedValue(new Response('asset') as never);
     let pending!: Promise<unknown>;
     handlers.message!({ data: { type: 'cache-urls', urls: ['/v1/me', '/_files/photo', '/assets/app.js', 'http://['] }, waitUntil: (p: Promise<unknown>) => { pending = p; } });
     await pending;
-    expect(cache.add).toHaveBeenCalledTimes(1);
-    expect(cache.add).toHaveBeenCalledWith('/assets/app.js');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith('/assets/app.js');
+    expect(cache.put).toHaveBeenCalledTimes(1);
+  });
+  it.each(['private', 'no-store'])('does not pre-cache a %s response', async (control) => {
+    const { handlers, cache, fetch } = setup();
+    fetch.mockResolvedValue(new Response('private data', { headers: { 'cache-control': control } }) as never);
+    let pending!: Promise<unknown>;
+    handlers.message!({ data: { type: 'cache-urls', urls: ['/assets/app.js'] }, waitUntil: (p: Promise<unknown>) => { pending = p; } });
+    await pending;
+    expect(cache.put).not.toHaveBeenCalled();
+  });
+  it.each(['/audio/bgm.mp3', '/icons/icon-512.png', '/favicon.svg'])('pre-caches deployed public asset %s', async (path) => {
+    const { handlers, cache, fetch } = setup();
+    fetch.mockResolvedValue(new Response('asset') as never);
+    let pending!: Promise<unknown>;
+    handlers.message!({ data: { type: 'cache-urls', urls: [path] }, waitUntil: (p: Promise<unknown>) => { pending = p; } });
+    await pending;
+    expect(cache.put).toHaveBeenCalledWith(path, expect.any(Response));
+  });
+  it('does not pre-cache a static URL redirected to an authenticated endpoint', async () => {
+    const { handlers, cache, fetch } = setup();
+    const response = new Response('private data');
+    Object.defineProperty(response, 'redirected', { value: true });
+    fetch.mockResolvedValue(response as never);
+    let pending!: Promise<unknown>;
+    handlers.message!({ data: { type: 'cache-urls', urls: ['/assets/app.js'] }, waitUntil: (p: Promise<unknown>) => { pending = p; } });
+    await pending;
+    expect(cache.put).not.toHaveBeenCalled();
   });
 });

@@ -6,8 +6,13 @@ function cacheable(url) {
   if (url.origin !== self.location.origin) return false;
   const path = url.pathname;
   return path.startsWith('/assets/') || path.startsWith('/museum/') ||
+    path.startsWith('/audio/') || path.startsWith('/icons/') || path === '/favicon.svg' ||
     path.startsWith('/licenses/') || path === '/favicon.ico' ||
     path === '/manifest.webmanifest' || path === '/app/world' || path === '/';
+}
+
+function storable(res) {
+  return res.ok && !res.redirected && !/\b(no-store|private)\b/i.test(res.headers.get('cache-control') || '');
 }
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -23,7 +28,7 @@ self.addEventListener('message', (e) => {
     if (typeof u !== 'string') return false;
     try { return cacheable(new URL(u, self.location.origin)); } catch { return false; }
   });
-  e.waitUntil(caches.open(CACHE).then((c) => Promise.all(urls.map((u) => c.add(u).catch(() => undefined)))));
+  e.waitUntil(caches.open(CACHE).then((c) => Promise.all(urls.map((u) => fetch(u).then((res) => storable(res) ? c.put(u, res) : undefined).catch(() => undefined)))));
 });
 
 self.addEventListener('fetch', (e) => {
@@ -32,8 +37,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || !cacheable(url)) return;
   e.respondWith(
     fetch(req).then((res) => {
-      const control = res.headers.get('cache-control') || '';
-      if (res.ok && !res.redirected && !/\b(no-store|private)\b/i.test(control)) {
+      if (storable(res)) {
         const copy = res.clone();
         e.waitUntil(caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => undefined));
       }
