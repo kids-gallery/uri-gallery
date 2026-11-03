@@ -97,6 +97,8 @@
 | `login` | 401 | 로그인 창을 연다 |
 | `refused` | 서버가 거절(그 밖의 4xx, `not_saved`) | 이유 문장(`problemCopy`의 `reason`, `/app`과 같은 사전)과 칸별 이유(`fields`) |
 
+**아이 고르기(`WorldChildren.vue`, #36).** 서버 판에서는 `/v1/children` 목록·등록을 쓰고 별칭 외 개인정보는 입력하지 않는다. 아이가 없으면 등록을 먼저 요구하고, 한 명이면 자동 선택, 여러 명이면 고른 아이만 전시한다. `selectedChild`를 업로드와 `GET /v1/gallery?child=`에 함께 전달한다. 아이를 바꾸면 전시 메모리를 비우고 새 목록을 읽어 이전 아이 작품이 남지 않게 한다. 아이 바꾸기로 들어오면 1명이어도 자동으로 고르지 않고 창을 유지한다. 화면의 아이 이름은 모두 고른 아이의 별칭을 쓴다. 세션을 지우면 아이 변경 모드도 초기화한다.
+
 **사진 올리기(`web/src/app/world/server/upload.ts`, #31).** 올리기 창(`WorldUpload.vue`)이 서버로 사진을 보내고, 받은 원본 액자를 바로 건다.
 
 - **켜는 값: 빌드 설정 `VITE_WORLD_SERVER=1`.** 값이 없으면 지금처럼 기기 판이다. compose의 web 이미지는 이 값으로 빌드한다(#26), 개발 서버는 `VITE_WORLD_SERVER=1 npm run dev`.
