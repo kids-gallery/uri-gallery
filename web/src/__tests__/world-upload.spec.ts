@@ -10,13 +10,13 @@ vi.mock('@/app/world/store', async (real) => ({
 }));
 
 // 자르기 창(#118)은 브라우저 캔버스가 필요하니 결과만 흉내 낸다
-const crop = vi.hoisted(() => ({ mode: 'done' as 'done' | 'skip' | 'unreadable', opened: [] as string[] }));
+const crop = vi.hoisted(() => ({ mode: 'done' as 'done' | 'skip' | 'unreadable', opened: [] as string[], kind: 'drawing' }));
 vi.mock('@/app/upload/PhotoFixer.vue', () => ({ default: {
-  props: ['src', 'boxOptions', 'boxAsk', 'hint', 'closeLabel'],
+  props: ['src', 'boxOptions', 'boxAsk', 'kindOptions', 'kindAsk', 'hint', 'closeLabel'],
   emits: ['done', 'close', 'unreadable'],
   mounted(this: { src: string; $emit: (e: string, ...a: unknown[]) => void }) {
     crop.opened.push(this.src);
-    if (crop.mode === 'done') this.$emit('done', new Blob(['cropped'], { type: 'image/jpeg' }));
+    if (crop.mode === 'done') this.$emit('done', new Blob(['cropped'], { type: 'image/jpeg' }), [], 0, crop.kind);
     else if (crop.mode === 'skip') this.$emit('close');
     else this.$emit('unreadable');
   },
@@ -65,7 +65,7 @@ async function load() {
   };
 }
 
-beforeEach(() => { vi.unstubAllEnvs(); crop.mode = 'done'; crop.opened.length = 0; let n = 0; URL.createObjectURL = () => `blob:${++n}`; URL.revokeObjectURL = () => undefined; });
+beforeEach(() => { vi.unstubAllEnvs(); crop.mode = 'done'; crop.kind = 'drawing'; crop.opened.length = 0; let n = 0; URL.createObjectURL = () => `blob:${++n}`; URL.revokeObjectURL = () => undefined; });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 const mountWith = (W: unknown, files: File[]) => mount(W as never, { props: { initialFiles: files } as never });
@@ -230,6 +230,20 @@ describe('작품 자르기(#118)', () => {
     expect(sent!.name).toBe('a.jpg');
     expect(sent!.size).toBe('cropped'.length);
     expect(sent!.size).not.toBe(PHOTO().size);
+  });
+  it('자르기 창의 답을 making으로 보낸다: 만들기는 true, 그림은 false', async () => {
+    const { upload, WorldUpload } = await load();
+    upload.selectedChild.value = 'c1';
+    const f = fakeServer();
+    crop.kind = 'making';
+    mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(sentBodies(f)).toHaveLength(1));
+    const forms = () => f.fetchStub.mock.calls.filter(([u]) => u === '/v1/artworks').map(([, i]) => (i as RequestInit).body as FormData);
+    expect(forms()[0]!.get('making')).toBe('true');
+    crop.kind = 'drawing';
+    mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(forms().length).toBeGreaterThan(1));
+    expect(forms()[1]!.get('making')).toBe('false');
   });
   it('여러 장은 차례로 고르고, 모두 고른 뒤에 보낸다', async () => {
     const { upload, WorldUpload } = await load();

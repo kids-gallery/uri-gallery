@@ -85,3 +85,18 @@ test('로그인이 풀렸으면 알리고, 다시 로그인한 뒤 같은 사진
   await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden();
   expect(await works(page)).toBe(1);
 });
+
+test('만들기로 답하면 서버에 만들기로 저장되고, 답하기 전에는 보낼 수 없다(D45)', async ({ page }) => {
+  await openUpload(page);
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
+  await album(page).setInputFiles(photo());
+  await page.getByRole('button', { name: '작품만 찍었어요' }).click({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: '이대로 쓰기' })).toBeDisabled();
+  await page.getByRole('button', { name: '만들기예요' }).click();
+  await page.getByRole('button', { name: '이대로 쓰기' }).click();
+  const r = await res;
+  expect(r.status()).toBe(202);
+  const { id } = await r.json() as { id: string };
+  const detail = await (await page.request.get(`/v1/artworks/${id}`)).json() as { making?: boolean };
+  expect(detail.making).toBe(true);
+});

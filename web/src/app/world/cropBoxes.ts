@@ -7,3 +7,9 @@ export const CROP_BOXES = [
   { label: '아이가 같이 찍혔어요', box: (w: number, h: number) => (h > w * 1.1 ? rect(w, h, 0.08, 0.38, 0.92, 0.96) : rect(w, h, 0.04, 0.38, 0.96, 0.96)) },
   { label: '작품만 찍었어요', box: (w: number, h: number) => rect(w, h, 0.04, 0.04, 0.96, 0.96) },
 ];
+
+// 그림은 벽 액자에, 만들기는 받침대에 선다(D45, D46). 보호자가 답한다.
+export const WORK_KINDS = [
+  { label: '그림이에요', value: 'drawing' },
+  { label: '만들기예요', value: 'making' },
+];
