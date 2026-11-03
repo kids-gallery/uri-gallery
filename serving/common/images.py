@@ -5,10 +5,13 @@ API는 받은 바이트를 그대로 저장한다(FR-22). 그래서 휴대폰 �
 """
 from __future__ import annotations
 
+import struct
+from contextlib import contextmanager
 from pathlib import Path
 
 ORIENTATION = 0x0112
 SWAPS_SIDES = {5, 6, 7, 8}   # 가로와 세로가 바뀌는 EXIF 방향
+_EXIF_BROKEN = (SyntaxError, ValueError, TypeError, struct.error)   # PIL이 깨진 EXIF에서 내는 예외
 _heif_registered = False
 
 
@@ -22,34 +25,51 @@ def _register_heif() -> None:
         _heif_registered = True
 
 
-def open_upright(path):
-    """표시 방향의 PIL 그림. 읽지 못하면 OSError(형식 불명 포함)."""
-    from PIL import Image, ImageOps
+@contextmanager
+def _opened(path):
+    """PIL 그림을 연다. 깨진 파일은 형식에 따라 다른 예외를 내므로(잘린 PNG·HEIC는 ValueError, 큰 HEIC는 RuntimeError) OSError로 모은다."""
+    from PIL import Image
 
     _register_heif()
-    with Image.open(path) as im:
+    try:
+        with Image.open(path) as im:
+            yield im
+    except (SyntaxError, ValueError, RuntimeError, struct.error, Image.DecompressionBombError) as e:
+        raise OSError("image_unreadable") from e
+
+
+def _orientation(im) -> int:
+    """EXIF 방향. 깨진 EXIF는 방향 없음(1)으로 본다. 픽셀이 멀쩡한 사진을 EXIF 때문에 실패시키지 않는다."""
+    try:
+        return im.getexif().get(ORIENTATION, 1)
+    except _EXIF_BROKEN:
+        return 1
+
+
+def open_upright(path):
+    """표시 방향의 PIL 그림. 읽지 못하면 OSError(형식 불명 포함). 깨진 EXIF는 돌리지 않는다."""
+    from PIL import ImageOps
+
+    with _opened(path) as im:
         im.load()
-        return ImageOps.exif_transpose(im)
+        try:
+            return ImageOps.exif_transpose(im)
+        except _EXIF_BROKEN:
+            return im.copy()
 
 
 def upright_size(path) -> tuple[int, int]:
     """표시 방향의 (가로, 세로). 픽셀을 풀지 않는다. 읽지 못하면 OSError."""
-    from PIL import Image
-
-    _register_heif()
-    with Image.open(path) as im:
+    with _opened(path) as im:
         w, h = im.size
-        return (h, w) if im.getexif().get(ORIENTATION) in SWAPS_SIDES else (w, h)
+        return (h, w) if _orientation(im) in SWAPS_SIDES else (w, h)
 
 
 def upright_file(path, tmp_dir) -> Path:
     """표시 방향의 파일 경로. 경로를 넘겨야 하는 외부 프로세스용이다.
     그대로 써도 되면 원본 경로를 돌려주고, 돌려야 하거나 HEIC면 tmp_dir에 PNG 사본을 만든다."""
-    from PIL import Image
-
-    _register_heif()
-    with Image.open(path) as im:
-        same = im.format != "HEIF" and im.getexif().get(ORIENTATION, 1) == 1
+    with _opened(path) as im:
+        same = im.format != "HEIF" and _orientation(im) == 1
     if same:
         return Path(path)
     out = Path(tmp_dir) / "upright.png"

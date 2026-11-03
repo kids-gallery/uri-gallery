@@ -1,5 +1,7 @@
 """입력 사진 방향과 HEIC(마스터플랜 3-4) — 모델 없이 본다. 합성 그림만 쓴다.
 세로 그림을 가로로 저장하고 EXIF 방향 6을 준다. 위쪽 절반만 빨간 그림이라 돌렸는지 픽셀로 알 수 있다."""
+import random
+import struct
 import threading
 from types import SimpleNamespace
 
@@ -93,6 +95,76 @@ def test_unreadable_is_oserror(tmp_path):
         images.open_upright(p)
 
 
+def _broken_exif_jpeg(tmp_path):
+    """JFIF dpi가 있으면 PIL이 열 때 EXIF를 읽지 않아, 깨진 EXIF가 getexif에서 드러난다"""
+    p = tmp_path / "broken_exif.jpg"
+    _picture().save(p, quality=95, dpi=(72, 72), exif=b"Exif\x00\x00garbage!")
+    return p
+
+
+def _broken_exif_png(tmp_path):
+    p = tmp_path / "broken_exif.png"
+    _picture().save(p, exif=b"garbage!")
+    return p
+
+
+@pytest.mark.parametrize("make", [_broken_exif_jpeg, _broken_exif_png], ids=["JPEG", "PNG"])
+def test_broken_exif_is_a_photo_without_direction(make, tmp_path):
+    """픽셀이 멀쩡하면 전처럼 처리한다"""
+    p = make(tmp_path)
+    assert _is_upright(images.open_upright(p))
+    assert images.upright_size(p) == (W, H)
+    assert images.upright_file(p, tmp_path) == p
+
+
+def _truncated_png(tmp_path):
+    """PIL이 Image.open에서 ValueError를 내는 파일(IHDR이 13바이트보다 짧다)"""
+    p = tmp_path / "cut.png"
+    p.write_bytes(b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 5) + b"IHDR" + bytes(9))
+    return p
+
+
+def test_truncated_png_header_is_oserror(tmp_path):
+    p = _truncated_png(tmp_path)
+    for call in (images.open_upright, images.upright_size, lambda f: images.upright_file(f, tmp_path)):
+        with pytest.raises(OSError):
+            call(p)
+
+
+@pytest.mark.parametrize("error", [ValueError("Invalid input"), RuntimeError("Security limit exceeded"), SyntaxError("broken PNG file")],
+                         ids=["잘린 HEIC", "큰 HEIC", "깨진 PNG"])
+def test_decode_failure_is_oserror(plain, monkeypatch, error):
+    def fail(_self):
+        raise error
+    monkeypatch.setattr(type(Image.open(plain)), "load", fail)
+    with pytest.raises(OSError):
+        images.open_upright(plain)
+
+
+@pytest.mark.parametrize("fmt, name", [("JPEG", "x.jpg"), ("PNG", "x.png")])
+def test_corrupted_files_only_raise_oserror(tmp_path, fmt, name):
+    """정한 씨앗으로 바이트를 망가뜨려도 OSError나 정상 결과만 나온다. 다른 예외는 인프라 실패가 된다.
+    HEIC는 뺀다. 망가진 HEIC 일부는 libheif 안에서 프로세스가 죽어 시험을 함께 끝낸다(마스터플랜 3-4)."""
+    ex = Image.Exif()
+    ex[images.ORIENTATION] = 6
+    src = tmp_path / ("src." + name.split(".")[1])
+    _picture().save(src, fmt, exif=ex, dpi=(72, 72))
+    data, rng, p = src.read_bytes(), random.Random(7), tmp_path / name
+    for _ in range(300):
+        b = bytearray(data)
+        if rng.random() < 0.3:
+            b = b[:rng.randrange(1, len(b))]
+        else:
+            for _ in range(rng.randrange(1, 8)):
+                b[rng.randrange(min(len(b), 400))] = rng.randrange(256)
+        p.write_bytes(bytes(b))
+        for call in (images.open_upright, images.upright_size, lambda f: images.upright_file(f, tmp_path)):
+            try:
+                call(p)
+            except OSError:
+                pass
+
+
 def test_upright_size_without_decoding(exif6, plain, heic):
     assert images.upright_size(exif6) == (W, H)
     assert images.upright_size(plain) == (W, H)
@@ -147,6 +219,21 @@ def test_m1_mask_and_cutout_follow_display_direction(m1, exif6, tmp_path):
     assert Image.open(r.outputs["mask"]).size == (W, H)
     assert Image.open(r.outputs["cutout"]).size == (W, H)
     assert check.output_ok("M1", r, images.upright_size(exif6))
+
+
+def test_m1_finishes_with_broken_exif_and_check_reads_its_size(m1, tmp_path):
+    """전에는 engine_down이 되어 재시도만 되풀이했다"""
+    p = _broken_exif_jpeg(tmp_path)
+    r = m1.run(_job(p, tmp_path))
+    assert r.outcome == "ok"
+    assert check._image_size(p) == (W, H)
+
+
+def test_m1_unreadable_ends_as_storage(m1, tmp_path):
+    p = _truncated_png(tmp_path)
+    r = m1.run(_job(p, tmp_path))
+    assert r.outcome == "storage" and r.diagnostic == "input_unreadable"
+    assert check._image_size(p) is None
 
 
 def test_m1_reads_heic(m1, heic, tmp_path):
