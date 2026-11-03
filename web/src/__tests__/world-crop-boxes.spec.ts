@@ -2,7 +2,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PhotoFixer from '@/app/upload/PhotoFixer.vue';
-import { CROP_BOXES } from '@/app/world/cropBoxes';
+import { CROP_BOXES, WORK_KINDS } from '@/app/world/cropBoxes';
 
 vi.mock('@/app/upload/autocrop', () => ({ warpQuad: () => { const c = document.createElement('canvas'); c.width = 10; c.height = 10; return c; } }));
 
@@ -20,7 +20,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); });
 
 async function open() {
-  const w = mount(PhotoFixer, { props: { src: 'blob:1', boxOptions: CROP_BOXES, boxAsk: '사진에 아이가 같이 찍혔나요?' }, global: { stubs: { Teleport: true } } });
+  const w = mount(PhotoFixer, { props: { src: 'blob:1', boxOptions: CROP_BOXES, boxAsk: '사진에 아이가 같이 찍혔나요?', kindOptions: WORK_KINDS, kindAsk: '어떤 작품인가요?' }, global: { stubs: { Teleport: true } } });
   await flushPromises(); await flushPromises();
   return w;
 }
@@ -32,10 +32,12 @@ describe('자르기 창의 질문', () => {
     const w = await open();
     expect(button(w, '이대로 쓰기').attributes('disabled')).toBeDefined();
     await button(w, '작품만 찍었어요').trigger('click');
+    expect(button(w, '이대로 쓰기').attributes('disabled')).toBeDefined(); // 종류도 답해야 한다
+    await button(w, '만들기예요').trigger('click');
     expect(button(w, '이대로 쓰기').attributes('disabled')).toBeUndefined();
     await button(w, '이대로 쓰기').trigger('click');
     await flushPromises();
-    expect(w.emitted('done')).toHaveLength(1);
+    expect(w.emitted('done')![0]![3]).toBe('making');
   });
 
   it('작품만 찍었으면 세로 그림의 윗부분을 자르지 않는다', async () => {

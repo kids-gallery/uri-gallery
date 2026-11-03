@@ -928,8 +928,8 @@ function openSettings() {
       <div v-if="panel === 'view' && viewWork" class="sheet w-view" role="dialog" aria-modal="true" :aria-label="`${viewWork.title || '작품'} 가까이 보기`">
         <div class="g-panel sheet-card w-view-card">
           <figure class="w-view-figure">
-            <img :src="viewUrl" :alt="viewWork.title || '아이 작품 원본'" />
-            <figcaption>{{ visiting ? `${visiting.child}의 작품` : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
+            <img :src="viewUrl" :alt="viewWork.title || '아이 작품 사진'" />
+            <figcaption>{{ visiting ? `${visiting.child}의 작품` : SERVER_WORLD ? '화면에 맞춰 줄인 사진이에요. 올린 사진은 보관함에 있어요' : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
           </figure>
           <div class="w-view-side">
             <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: serverChildName }).title) || '새 작품' }}</h2>
