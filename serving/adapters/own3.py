@@ -6,25 +6,41 @@
 """
 from __future__ import annotations
 
+import hashlib
+import io
 import threading
 from pathlib import Path
 
-from common.config import load_settings, load_yaml
+from common.config import load_manifest, load_settings, load_yaml
+from common.logging import get_logger
 
 from .base import Adapter, AdapterResult, JobInput
 
 _lock = threading.Lock()
 _model = None
+_sha = None
 
 
-def shared_model(path: Path):
-    """M1과 M5가 같은 가중치를 두 번 올리지 않게 한다."""
-    global _model
+def _check_sha(sha: str, want: str) -> None:
+    """이력에는 매니페스트 해시가 남는다. 파일이 다르면 결과가 다른 모델의 이력이 되므로 올리지 않는다."""
+    if sha != want:
+        get_logger().warning("model_load", load_state="failed", diagnostic="weights_sha_mismatch")
+        raise RuntimeError("weights_sha_mismatch")
+
+
+def shared_model(path: Path, want: str):
+    """M1과 M5가 같은 가중치를 두 번 올리지 않게 한다. 읽은 내용을 비교하고 그 내용을 그대로 올린다."""
+    global _model, _sha
     with _lock:
         if _model is None:
             import torch
 
-            _model = torch.jit.load(str(path), map_location="cpu").eval()
+            data = path.read_bytes()
+            sha = hashlib.sha256(data).hexdigest()
+            _check_sha(sha, want)
+            _model, _sha = torch.jit.load(io.BytesIO(data), map_location="cpu").eval(), sha
+        else:
+            _check_sha(_sha, want)
         return _model
 
 
@@ -79,7 +95,10 @@ class _Own3(Adapter):
     def load(self) -> None:
         if not self.path.exists():
             raise RuntimeError("weights_missing")
-        self.model = shared_model(self.path)
+        want = ((load_manifest().get("models") or {}).get(self.model_id) or {}).get("weights_sha256")
+        if not want:
+            raise RuntimeError("weights_sha_missing")
+        self.model = shared_model(self.path, want)
 
 
 class Own3SplitAdapter(_Own3):

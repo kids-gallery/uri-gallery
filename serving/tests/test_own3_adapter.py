@@ -1,8 +1,11 @@
 """자체 모델 own3 어댑터(마스터플랜 3-6) — 실제 가중치 없이 작은 TorchScript로 계약을 본다.
 numpy·scipy·torch는 모델 묶음에만 있다. 가짜 모델용 기본 잠금만 깐 환경(CI 포함)에서는 건너뛴다."""
+import hashlib
 import threading
+from pathlib import Path
 
 import pytest
+import yaml
 
 np = pytest.importorskip("numpy")
 pytest.importorskip("scipy")
@@ -28,13 +31,29 @@ class _Box(torch.nn.Module):
         return out
 
 
+def _manifest(tmp_path, monkeypatch, **shas):
+    """M1=해시 꼴로 받아 시험용 매니페스트를 쓴다. 값이 None이면 자리만 있고 해시가 없다"""
+    p = tmp_path / "manifest.yaml"
+    p.write_text(yaml.safe_dump({"models": {m: {"weights_sha256": s} for m, s in shas.items()}}))
+    monkeypatch.setenv("MODEL_MANIFEST", str(p))
+
+
 @pytest.fixture
-def weights(tmp_path, monkeypatch):
+def weight_file(tmp_path, monkeypatch):
+    """작은 합성 TorchScript 파일. 매니페스트는 시험이 정한다"""
     p = tmp_path / CFG["weights"]
     p.parent.mkdir(parents=True)
     torch.jit.trace(_Box(), torch.zeros(1, 3, CFG["input"], CFG["input"])).save(str(p))
     monkeypatch.setenv("MODEL_ROOT", str(tmp_path))
     monkeypatch.setattr(own3, "_model", None)
+    monkeypatch.setattr(own3, "_sha", None)
+    return p
+
+
+@pytest.fixture
+def weights(tmp_path, monkeypatch, weight_file):
+    sha = hashlib.sha256(weight_file.read_bytes()).hexdigest()
+    _manifest(tmp_path, monkeypatch, M1=sha, M5=sha)
     return tmp_path
 
 
@@ -110,6 +129,64 @@ def test_missing_weights_is_load_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(own3, "_model", None)
     with pytest.raises(RuntimeError, match="weights_missing"):
         own3.Own3SplitAdapter().load()
+
+
+def test_matching_sha_loads_and_both_stages_share_one_model(weights):
+    a, b = own3.Own3SplitAdapter(), own3.Own3DepthAdapter()
+    a.ensure_loaded()
+    b.ensure_loaded()
+    assert a.model is b.model
+
+
+def test_different_file_with_manifest_sha_is_not_loaded(tmp_path, monkeypatch, weight_file):
+    """같은 경로에 다른 가중치가 있으면 올리지 않는다"""
+    _manifest(tmp_path, monkeypatch, M1="0" * 64, M5="0" * 64)
+    a = own3.Own3SplitAdapter()
+    with pytest.raises(RuntimeError, match="weights_sha_mismatch"):
+        a.ensure_loaded()
+    assert not a.loaded and own3._model is None
+
+
+def test_file_is_never_deserialized_on_mismatch(tmp_path, monkeypatch, weight_file):
+    _manifest(tmp_path, monkeypatch, M1="0" * 64)
+    monkeypatch.setattr(torch.jit, "load", lambda *_, **__: pytest.fail("해시가 다른데 올렸다"))
+    with pytest.raises(RuntimeError, match="weights_sha_mismatch"):
+        own3.Own3SplitAdapter().load()
+
+
+def test_second_stage_with_other_sha_is_refused_even_when_model_is_up(tmp_path, monkeypatch, weight_file):
+    """M1이 올린 모델을 M5가 다른 해시로 기록하면 안 된다"""
+    sha = hashlib.sha256(weight_file.read_bytes()).hexdigest()
+    _manifest(tmp_path, monkeypatch, M1=sha, M5="0" * 64)
+    own3.Own3SplitAdapter().ensure_loaded()
+    with pytest.raises(RuntimeError, match="weights_sha_mismatch"):
+        own3.Own3DepthAdapter().ensure_loaded()
+
+
+@pytest.mark.parametrize("shas", [{}, {"M1": None}], ids=["자리 없음", "해시 없음"])
+def test_manifest_without_sha_is_load_failure(tmp_path, monkeypatch, weight_file, shas):
+    _manifest(tmp_path, monkeypatch, **shas)
+    with pytest.raises(RuntimeError, match="weights_sha_missing"):
+        own3.Own3SplitAdapter().ensure_loaded()
+
+
+def test_load_recovers_after_right_file_is_restored(tmp_path, monkeypatch, weight_file):
+    """실패를 기억하지 않는다. 파일을 바로잡으면 다음 적재가 된다(워커는 failed면 다시 시도한다)"""
+    good = weight_file.read_bytes()
+    _manifest(tmp_path, monkeypatch, M1=hashlib.sha256(good).hexdigest())
+    weight_file.write_bytes(good + b"x")
+    a = own3.Own3SplitAdapter()
+    with pytest.raises(RuntimeError, match="weights_sha_mismatch"):
+        a.ensure_loaded()
+    weight_file.write_bytes(good)
+    a.ensure_loaded()
+    assert a.loaded
+
+
+def test_real_manifest_points_both_stages_at_one_file():
+    """두 단계가 모델 하나를 나눠 쓰므로 해시가 다르면 M5가 올라오지 못한다"""
+    m = yaml.safe_load(open(Path(__file__).parents[2] / "models" / "manifest.own3.yaml", encoding="utf-8"))["models"]
+    assert m["M1"]["weights_sha256"] == m["M5"]["weights_sha256"]
 
 
 def test_registry_uses_own_model_only_when_switched_on(monkeypatch):
