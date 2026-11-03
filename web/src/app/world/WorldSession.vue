@@ -22,6 +22,7 @@ function clear() {
   epoch++;
   guardian.value = null;
   childReady.value = false;
+  changingChild.value = false;
   childName.value = '';
   selectedChild.value = null;
   clearWorldWorks();

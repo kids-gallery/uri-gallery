@@ -86,7 +86,7 @@ const startBtn=ref<HTMLButtonElement|null>(null),firstPick=ref<HTMLInputElement|
 const pendingReveal=ref<string|null>(null);
 const realCount=computed(()=>artworks.value.filter(a=>!a.sample).length);
 /** 시작 화면 한 줄: 가족이 없으면 가치, 있으면 이 미술관 이름과 작품 수 */
-const startLead=computed(()=>{const a=account.value;if(!a)return '아이 작품을 사진으로 남기면 우리 미술관에 걸려요.';const n=realCount.value;return `${a.child}의 미술관 · ${n?`작품 ${n}점`:artworks.value.length?'견본 작품으로 둘러보는 중':'첫 작품을 기다리고 있어요'}`;});
+const startLead=computed(()=>{const a=account.value;if(!a)return '아이 작품을 사진으로 남기면 우리 미술관에 걸려요.';const n=realCount.value;return `${serverChildName.value}의 미술관 · ${n?`작품 ${n}점`:artworks.value.length?'견본 작품으로 둘러보는 중':'첫 작품을 기다리고 있어요'}`;});
 let arriveTimers:number[]=[];
 const nearId = ref<string | null>(null);
 const selection = ref<Selection>(null);
@@ -252,7 +252,7 @@ const shownPlaque = computed(() => {
   const acc = account.value;
   if (!a || !acc) return null;
   if(visiting.value)return {plaque:{title:a.title||'새 작품',byline:`${visiting.value.child}의 작품`,detail:'',number:''},note:{lines:[],quote:null},guide:a.title||'새 작품'};
-  const input = { no: a.no, title: a.title, kind: a.kind, subject: a.subject, material: a.material, age: a.age, madeOn: a.madeOn, words: a.words, child: acc.child };
+  const input = { no: a.no, title: a.title, kind: a.kind, subject: a.subject, material: a.material, age: a.age, madeOn: a.madeOn, words: a.words, child: serverChildName.value };
   return { plaque: plaqueOf(input), note: curatorNote(input), guide: guideText(input) };
 });
 const masterpiece = computed(() => {
@@ -308,7 +308,7 @@ async function boot(title = true) {
   if(!engine.value){try{engine.value=new MuseumEngine(stage.value,{onView:id=>{const a=byId.value.get(id);if(a)void openView(a);},onPrompt:p=>interaction.value=p,onInteractBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;void visitSelected();},onSelect:s=>selection.value=s,onNear:id=>nearId.value=id,onPlace:label=>place.value=label,onAction:a=>{if(a==='addRoom')void addRoom();else if(a==='firstWork')pickFirst();},onSpace:s=>{space.value=s;},onBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;},onStart:onStartStage,onRevealed,onPlay:()=>countUse(u=>bump(u,'plays'))});}catch{webglFailed.value=true;await startWithoutWebgl();return;}}
   const e=engine.value;
   // 시작 화면은 도착할 모드·건물·캐릭터로 그린다. 가족이 없으면 새 가족이 받을 값으로 그린다
-  e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
+  e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
   e.setFeaturedId(prefs.value.featured??null);e.setDecor(prefs.value.decor??[]);
   if(showTitle){e.showTitle();e.start();} // 작품을 불러오는 동안에도 시작 화면 배경을 그린다
   await e.setAvatar(prefs.value.avatar,prefs.value.avatarImage);await e.setWorld(SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,artworks.value,rooms.value);
@@ -345,7 +345,7 @@ function showHud(intro:boolean){
 function arrived(){
   phase.value='ready';startWaiting.value=false;showHud(true);
   const acc=account.value,p=prefs.value;
-  if(acc&&p)engine.value?.setBuilding(p.building??'column_temple',acc.child,acc.id);
+  if(acc&&p)engine.value?.setBuilding(p.building??'column_temple',serverChildName.value,acc.id);
   firstPrompt.value=!!acc&&artworks.value.length===0;
   setAmbience(p?.theme??'classic');
   if(acc){noteVisit();runCutouts();}
@@ -362,7 +362,7 @@ async function showTown(focus?:string){if(!account.value)return;panel.value=null
 async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
 async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
-async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,account.value?.child??'');}catch{say('미술관 모양을 저장하지 못했어요');}}
+async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
 function enterMuseum(){engine.value?.enterMuseum();setAmbience(prefs.value?.theme??'classic');}
 
 /** 개발용 테스트 입구(§2-15): 시작 연출 없이 광장으로 간다(기존 검사용) */
@@ -609,7 +609,7 @@ async function shareWork(){
   const a=viewWork.value;if(!a||visiting.value||cardBusy.value)return;
   cardBusy.value=true;cardMsg.value='';resend.value=null;
   try{
-    const t=cardText(a,account.value?.child??'',cardPick.value,SHARE_URL);
+    const t=cardText(a,serverChildName.value,cardPick.value,SHARE_URL);
     const font=(worldRoot.value?getComputedStyle(worldRoot.value).getPropertyValue('--g-serif').trim():'')||'serif';
     await document.fonts?.ready;
     const {result,file}=await saveFile(await drawCard(a.display,t,font),`우리아이미술관_${safeName(t.title)}.png`,t.title,coarse);
@@ -757,7 +757,7 @@ function openSettings() {
 
       <header class="hud-top" :class="{ 'w-menu-open': moreTools }">
         <div v-if="!webglFailed" class="where g-panel">
-          <strong>{{ visiting?.child ?? account?.child }}의 미술관</strong>
+          <strong>{{ visiting?.child ?? serverChildName }}의 미술관</strong>
           <span aria-live="polite">{{ place }}</span>
           <button v-if="!webglFailed" class="w-mode-chip" type="button" :aria-label="`지금 ${themeLabel} 모드. 모드 바꾸기`" @click="openPanel('theme')">{{ themeLabel }} 모드 · 바꾸기</button>
         </div>
@@ -887,9 +887,9 @@ function openSettings() {
             <figcaption>{{ visiting ? `${visiting.child}의 작품` : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
           </figure>
           <div class="w-view-side">
-            <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: account?.child ?? '' }).title) || '새 작품' }}</h2>
+            <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: serverChildName }).title) || '새 작품' }}</h2>
             <template v-if="!visiting">
-              <p class="by">{{ plaqueOf({ ...viewWork, child: account?.child ?? '' }).byline }}</p>
+              <p class="by">{{ plaqueOf({ ...viewWork, child: serverChildName }).byline }}</p>
               <label class="w-field w-story">아이가 한 말, 그때 이야기
                 <textarea v-model="storyDraft" class="w-input" maxlength="200" rows="4" :readonly="SERVER_WORLD" :placeholder="SERVER_WORLD ? '' : '아이에게 이 그림 이야기를 들려 달라고 해 보세요'" />
               </label>
