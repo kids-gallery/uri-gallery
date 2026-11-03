@@ -124,6 +124,70 @@ def test_depth_without_cutout_lets_chain_downgrade(weights, tmp_path):
     assert r.outcome == "quality_below" and r.diagnostic == "no_cutout"
 
 
+def _turned_photo(tmp_path):
+    """표시 방향은 세로 400×600이고 위쪽 절반이 빨갛다. 저장은 가로이고 EXIF 방향 6이다"""
+    im = Image.new("RGB", (400, 600), (240, 240, 235))
+    im.paste((220, 30, 30), (0, 0, 400, 300))
+    p = tmp_path / "turned.jpg"
+    ex = Image.Exif()
+    ex[0x0112] = 6
+    im.rotate(90, expand=True).save(p, quality=95, exif=ex)
+    assert Image.open(p).size == (600, 400)
+    return p
+
+
+def test_split_follows_display_direction(weights, tmp_path):
+    """휴대폰 사진은 저장 방향과 표시 방향이 다르다. 3D 화면은 표시 방향으로 그린다"""
+    a = own3.Own3SplitAdapter()
+    a.ensure_loaded()
+    r = a.run(_job(tmp_path, "split", original=_turned_photo(tmp_path)))
+    assert r.outcome == "ok"
+    assert Image.open(r.outputs["mask"]).size == (400, 600)
+    cut = np.asarray(Image.open(r.outputs["cutout"]).convert("RGBA")).astype(int)
+    assert cut.shape[:2] == (600, 400)
+    assert cut[200, 200, 0] > 180 and cut[200, 200, 1] < 90              # 안쪽 위는 빨강
+    assert cut[400, 200, 1] > 200                                        # 안쪽 아래는 바탕색
+
+
+def test_depth_reads_original_in_display_direction(weights, tmp_path, monkeypatch):
+    """저장 방향으로 읽으면 크기가 달라 흰 바탕 컷아웃으로 넘어간다"""
+    a = own3.Own3SplitAdapter()
+    a.ensure_loaded()
+    photo = _turned_photo(tmp_path)
+    cut = a.run(_job(tmp_path, "split", original=photo)).outputs["cutout"]
+    seen = []
+    real = own3.predict
+    monkeypatch.setattr(own3, "predict", lambda m, rgb, cfg: (seen.append(rgb), real(m, rgb, cfg))[1])
+    b = own3.Own3DepthAdapter()
+    b.ensure_loaded()
+    r = b.run(_job(tmp_path, "depth_relief", cutout=cut, original=photo))
+    assert r.outcome == "ok"
+    assert Image.open(r.outputs["result_relief"]).size == (400, 600)
+    corner = np.asarray(seen[0])[590, 5].astype(int)
+    assert seen[0].size == (400, 600) and corner[2] < 245 and corner[0] > 225   # 원본 바탕색이다(흰 바탕이 아니다)
+
+
+def test_cutout_keeps_no_background_under_transparent_pixels(weights, tmp_path):
+    """컷아웃은 이웃 화면으로도 나간다. 알파를 지워도 배경이 복원되면 안 된다"""
+    a = own3.Own3SplitAdapter()
+    a.ensure_loaded()
+    r = a.run(_job(tmp_path, "split", original=_photo(tmp_path)))
+    cut = np.asarray(Image.open(r.outputs["cutout"]).convert("RGBA"))
+    alpha = cut[..., 3]
+    assert (alpha == 0).any() and (alpha > 0).any()
+    assert cut[alpha == 0][:, :3].max() == 0
+    assert tuple(cut[240, 320, :3]) == (240, 240, 235)                   # 보이는 곳의 색은 그대로다
+
+
+def test_unreadable_photo_is_storage(weights, tmp_path):
+    p = tmp_path / "broken.png"
+    p.write_bytes(b"not an image")
+    a = own3.Own3SplitAdapter()
+    a.ensure_loaded()
+    r = a.run(_job(tmp_path, "split", original=p))
+    assert r.outcome == "storage" and r.diagnostic == "input_unreadable"
+
+
 def test_missing_weights_is_load_failure(tmp_path, monkeypatch):
     monkeypatch.setenv("MODEL_ROOT", str(tmp_path))
     monkeypatch.setattr(own3, "_model", None)
