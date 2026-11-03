@@ -128,7 +128,7 @@
 - 카카오 키도 메일 발송도 없으면(`MAIL_ENABLED=false`) 가입 링크 대신 새로 가입할 수 없다고 알린다.
 - 키는 Git에 넣지 않는다. PC마다 저장소 폴더의 `.env`(Git 제외)에 `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`을 넣는다. compose가 이 파일을 읽는다. 3-2의 비밀 파일 규칙에서 이 키만 동결 전 예외로 둔다.
 - Redirect URI는 `APP_BASE_URL` + `/v1/auth/kakao/callback`이고 카카오 콘솔 등록값과 글자까지 같아야 한다. 화면을 여는 주소도 `APP_BASE_URL`과 같아야 한다. 다른 주소로 열면 위조 방지 쿠키가 돌아오지 않아 실패 안내가 뜬다. 그래서 다른 PC에서 IP로 접속할 때는 그 주소를 등록하고 `APP_BASE_URL`을 맞추거나 이메일 로그인을 쓴다.
-- [한계] 시험은 가짜 카카오(`web/e2e/stack/kakao-fake.ts`)로 한다. 실제 카카오 로그인은 키와 등록 주소를 넣은 뒤 사람이 확인한다.
+- 시험은 가짜 카카오(`web/e2e/stack/kakao-fake.ts`)로 한다. 실제 카카오 로그인은 2026-11-03 맥에서 `http://localhost:19501`로 이제민이 직접 확인했다. [한계] 시연 주소 `http://localhost:9501`과 다른 PC·IP 접속은 재지 않았다. 콘솔 등록값이 다르면 `KOE006`, 시크릿이 다르면 `KOE010`이 나오고 서버 로그에는 `kakao_token`으로 남는다.
 
 **상태 묻기(`web/src/app/world/server/watch.ts`, #37).** 올린 작품의 처리 상태를 묻고, 통신 실패를 알린다.
 
