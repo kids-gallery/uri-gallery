@@ -445,7 +445,7 @@ async function submitWorldDecision(id: string, decision: Decision) {
   decisionBusy.value=true; decisionError.value=null;
   try {
     const out=await decide(id,decision);
-    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? decisionPrompt.value?.childId ?? selectedChild.value;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? decisionPrompt.value?.childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
     else {artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
     decisionOpenId.value=null;
   } catch(e) {
@@ -744,7 +744,7 @@ function openSettings() {
       <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
     </section>
-    <section v-if="SERVER_WORLD && decisionPrompt && phase==='ready' && !panel && !decisionOpenId" class="w-nudge g-panel" role="status" aria-label="작품 결과 확인">
+    <section v-if="SERVER_WORLD && decisionPrompt && !worldFailure && phase==='ready' && !panel && !decisionOpenId" class="w-nudge g-panel" role="status" aria-label="작품 결과 확인">
       <span>{{ decisionPrompt.story?.title || '새 작품' }}의 결과를 골라 주세요.</span>
       <button class="g-btn g-btn--primary" type="button" @click="decisionOpenId=decisionPrompt.id">결과 확인</button>
     </section>
