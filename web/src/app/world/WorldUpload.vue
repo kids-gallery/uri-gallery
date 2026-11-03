@@ -154,7 +154,7 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
 
       <template v-if="step === 'pick'">
-        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>
+        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요.<template v-if="!SERVER_WORLD"> 제목과 이야기는 나중에 적어도 돼요.</template></p>
         <div class="row"><button class="g-btn g-btn--primary g-btn--big" type="button" @click="album?.click()">앨범에서 고르기</button><button class="g-btn g-btn--big" type="button" @click="camera?.click()">사진 찍기</button></div>
         <p v-if="SERVER_WORLD" class="small">한 번에 10장까지, JPEG·PNG·HEIC 사진을 한 장 20MB까지 골라요. 사진은 우리 미술관으로 보내 원본 그대로 보관해요.</p>
         <p v-else class="small">한 번에 10장까지, 한 장 20MB까지 골라요. 원본 사진은 그대로 보관하고 이 기기에 저장돼요.</p>
