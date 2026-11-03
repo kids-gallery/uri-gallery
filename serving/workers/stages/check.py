@@ -36,10 +36,9 @@ AD_SKELETON = ("root", "hip", "torso", "neck", "right_shoulder", "right_elbow", 
 
 
 def _image_size(path) -> tuple[int, int] | None:
-    from PIL import Image
+    from common.images import upright_size
     try:
-        with Image.open(path) as im:
-            return im.size
+        return upright_size(path)
     except (OSError, TypeError):
         return None
 
@@ -137,10 +136,9 @@ class CheckRunner:
         if size is None:
             raise StorageError("check input unreadable")
         if job["model_id"] == "M5":
-            from PIL import Image
+            from common.images import open_upright
             p = tmp / "check_cutout.png"
-            with Image.open(src) as im:
-                im.convert("RGBA").save(p)          # 알파 전부 불투명 = 그림 전체를 컷아웃으로
+            open_upright(src).convert("RGBA").save(p)          # 알파 전부 불투명 = 그림 전체를 컷아웃으로
             return {"cutout": p}, size
         return {"original": src}, size
 
