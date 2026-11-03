@@ -54,6 +54,12 @@ services:
       retries: 30
   db-migrate:
     <<: *api
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      AUTH_HMAC_SECRET_FILE: /run/secrets/auth_hmac_secret
+      TRUST_PROXY: 172.30.88.0/24
+      DEV_ACTIVATE_MODELS: "1"
     restart: "no"
     command: [node, dist/scripts/migrate.js]
     depends_on:
