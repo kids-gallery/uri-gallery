@@ -3,13 +3,14 @@ import {computed,nextTick,onBeforeUnmount,onMounted,ref,watch} from 'vue';
 import * as store from './store';
 import {isSolved,sameTable,shuffleTiles,tileSignatures} from './play';
 import type {Artwork} from './store';
+import {SERVER_WORLD,newUploadKey,sendPhoto} from './server/upload';
 const props=defineProps<{artworks:Artwork[];childAge:number}>();
 const emit=defineEmits<{close:[];saved:[id:string]}>();
 type Game='menu'|'draw'|'pairs'|'puzzle';
 const game=ref<Game>('menu'),msg=ref(''),busy=ref(false),confirmLeave=ref(false),celebrate=ref(false);
 const canvas=ref<HTMLCanvasElement|null>(null),color=ref('#3c80d1'),width=ref(10),turn=ref(1);
 type Stroke={color:string;width:number;points:Array<[number,number]>};
-const strokes=ref<Stroke[]>([]);let drawing=false;let saveId=store.newId();
+const strokes=ref<Stroke[]>([]);let drawing=false;let saveId=store.newId();const uploadKey=newUploadKey(); // 다시 시도해도 작품이 두 번 생기지 않게 같은 값을 쓴다
 // 그리기 초안(§2-11): 획을 끝낼 때·되돌릴 때·차례를 넘길 때 가족별로 기기에 남긴다. 쓰기는 순서대로 이어 붙여 보관 직전에 모두 끝낸다.
 const restored=ref(false),draftWarn=ref(false);let pendingDraft:Promise<void>=Promise.resolve(),saved=false;
 function persistDraft(){const snap={id:saveId,strokes:strokes.value,turn:turn.value,updatedAt:Date.now()};pendingDraft=pendingDraft.then(async()=>{if(saved)return;try{if(snap.strokes.length)await store.saveDraft(snap);else await store.deleteDraft();draftWarn.value=false;}catch{draftWarn.value=true;}});return pendingDraft;}
@@ -29,7 +30,7 @@ function leave(){if(busy.value)return;if(strokes.value.length){confirmLeave.valu
 defineExpose({requestClose:leave});
 function choose(g:Game){game.value=g;msg.value='';celebrate.value=false;confirmLeave.value=false;clearTimeout(timer);if(g==='pairs')resetPairs();if(g==='puzzle')resetPuzzle();}
 watch(game,async g=>{if(g==='draw'){await nextTick();redraw();}});
-async function saveDrawing(){if(!strokes.value.length||busy.value)return;busy.value=true;msg.value='';try{await pendingDraft;const blob=await new Promise<Blob>((resolve,reject)=>canvas.value!.toBlob(b=>b?resolve(b):reject(new Error('canvas')),'image/png'));const p=await store.processImage(blob,false),all=await store.listArtworks();await store.saveArtworkAndRoom({id:saveId,no:all.reduce((n,a)=>Math.max(n,a.no),0)+1,title:'함께 그린 그림',kind:'drawing',subject:'etc',material:'디지털 그림',age:props.childAge,madeOn:'',words:'',original:blob,display:p.display,cutout:null,cutoutState:'pending',sample:false,createdAt:Date.now()},{clearDraft:true});saved=true;emit('saved',saveId);}catch{msg.value='저장하지 못했어요. 그림은 남아 있어요. 다시 눌러 주세요';}finally{busy.value=false;}}
+async function saveDrawing(){if(!strokes.value.length||busy.value)return;busy.value=true;msg.value='';try{await pendingDraft;const blob=await new Promise<Blob>((resolve,reject)=>canvas.value!.toBlob(b=>b?resolve(b):reject(new Error('canvas')),'image/png'));if(SERVER_WORLD){const r=await sendPhoto(new File([blob],'함께 그린 그림.png',{type:'image/png'}),uploadKey);if(!r.ok){msg.value=r.reason;return;}saved=true;try{await store.deleteDraft();}catch{/* 지우지 못한 초안은 다음에 다시 열린다 */}emit('saved',r.id);return;}const p=await store.processImage(blob,false),all=await store.listArtworks();await store.saveArtworkAndRoom({id:saveId,no:all.reduce((n,a)=>Math.max(n,a.no),0)+1,title:'함께 그린 그림',kind:'drawing',subject:'etc',material:'디지털 그림',age:props.childAge,madeOn:'',words:'',original:blob,display:p.display,cutout:null,cutoutState:'pending',sample:false,createdAt:Date.now()},{clearDraft:true});saved=true;emit('saved',saveId);}catch{msg.value='저장하지 못했어요. 그림은 남아 있어요. 다시 눌러 주세요';}finally{busy.value=false;}}
 function shuffled<T>(a:T[]){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j]!,b[i]!];}return b;}
 const pairCount=ref(4),cards=ref<Array<{id:string;art:Artwork}>>([]),flipped=ref<number[]>([]),matched=ref<string[]>([]),pairTurn=ref(1);let timer:ReturnType<typeof setTimeout>;
 const enough=computed(()=>props.artworks.length>=pairCount.value);

@@ -84,3 +84,26 @@ test('로그인이 풀렸으면 알리고, 다시 로그인한 뒤 같은 사진
   await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden();
   expect(await works(page)).toBe(1);
 });
+
+test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기기 전용 메뉴가 없다(#124)', async ({ page }) => {
+  await openUpload(page);
+  await page.getByRole('dialog', { name: '작품 올리기' }).getByRole('button', { name: '닫기' }).click();
+  await page.getByRole('button', { name: '함께 놀기', exact: true }).first().click();
+  await page.getByRole('button', { name: /함께 그리기/ }).first().click();
+  const box = (await page.getByRole('img', { name: '함께 그리는 도화지' }).or(page.locator('canvas.w-draw-canvas')).first().boundingBox())!;
+  await page.mouse.move(box.x + 40, box.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 160, box.y + 120, { steps: 6 });
+  await page.mouse.up();
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: '우리 그림 보관하기' }).click();
+  expect((await res).status()).toBe(202);
+  await expect.poll(() => works(page)).toBe(1);
+
+  await page.getByRole('button', { name: '계속 둘러보기' }).click({ timeout: 30_000 });
+  await page.locator('.w-more-tools').click();
+  await page.getByRole('button', { name: '설정', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: '설정' });
+  await expect(settings.getByText('우리 미술관에 저장돼요')).toBeVisible();
+  for (const name of ['백업 내보내기', '백업 가져오기', '이 기기의 자료 모두 지우기', '견본 다시 걸기', '견본 치우기']) await expect(settings.getByRole('button', { name })).toHaveCount(0);
+});
