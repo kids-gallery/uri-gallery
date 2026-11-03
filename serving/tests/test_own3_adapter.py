@@ -253,6 +253,13 @@ def test_real_manifest_points_both_stages_at_one_file():
     assert m["M1"]["weights_sha256"] == m["M5"]["weights_sha256"]
 
 
+def test_repository_manifest_cannot_activate_own_model():
+    """활성화 코드는 용도를 구분하지 못한다. 저장소 값이 true면 겹침 파일만으로 범위 밖에서 켜진다"""
+    m = yaml.safe_load(open(Path(__file__).parents[2] / "models" / "manifest.own3.yaml", encoding="utf-8"))["models"]
+    assert m["M1"]["license_confirmed"] is False
+    assert m["M5"]["license_confirmed"] is False
+
+
 def test_registry_uses_own_model_only_when_switched_on(monkeypatch):
     monkeypatch.setenv("UAM_OWN_MODEL", "M1,M5")
     assert type(registry.build_adapter("M1", fake=False)).__name__ == "Own3SplitAdapter"

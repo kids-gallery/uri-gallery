@@ -58,7 +58,7 @@
 - 메일을 끄면 이메일 가입도 꺼지므로(`api/src/modules/auth/routes.ts` 66행) Mailpit을 둔다.
 - 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4).
 - **#66 리뷰 반영:** 컨테이너 예시는 APP_HOST=0.0.0.0, MAIL_ENABLED=true를 각각 한 번 둔다. TRUST_PROXY의 compose망 CIDR과 고정 subnet은 #32에서 함께 정하며, 예시의 loopback은 그 전까지 기본값으로 명시한다. 호스트 pm2 배포 문서에는 주소·저장 경로·쿠키 값을 호스트 기준으로 설정하는 절차를 분리한다.
-- **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
+- **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. 저장소 폴더에 `.env`가 있으면 `.env.example` 값을 덮어쓴다. pm2용으로 만든 옛 `.env`는 옮겨 두고 필요한 값만 넣는다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
 
 - **#26 입구 이미지:** 저장소 루트에서 `docker build -f web/Dockerfile .`. 의존성 파일을 먼저 복사하고 `npm ci`한 뒤 웹 소스를 복사한다. `VITE_WORLD_SERVER=1`을 빌드 단계에서 고정한다. 실행 이미지는 `dist-world` 전체(생성된 `/licenses/THIRD_PARTY.txt` 포함)를 정적 루트에 담고 80번에서 받는다. API 라우팅과 SPA 대체는 #27에서 설정한다. 루트 `.dockerignore`를 재사용하며 `web/.dockerignore`는 만들지 않는다.
@@ -66,6 +66,9 @@
 - **#27 nginx 계약:** 컨테이너 80번. `/v1/models/`는 `model-api:9541`, `/v1/`·정확한 `/live`·`/ready`는 `app-api:9521`로 원래 URI를 전달한다. `/internal`과 하위 경로는 404. `proxy_connect_timeout 3s`(앱을 끈 직후 사라진 IP에 연결을 기다리면 14초 동안 응답이 없어 끊김 안내가 늦다. 같은 망이라 정상 연결은 3초 안에 끝난다), `client_max_body_size 21m`, 개인 파일은 프록시·브라우저 캐시를 모두 금지한다. `Host`와 실제 직접 접속 주소 `$remote_addr`를 `X-Forwarded-For`로 전달하여 임의 전달 헤더 위조를 막는다. SPA는 `try_files`로 처리한다. #32는 web 9501:80과 #60의 신뢰할 프록시 CIDR을 함께 설정한다. Docker DNS를 요청 때 다시 조회하도록 server 안에 resolver 127.0.0.11 valid=5s ipv6=off와 app/model 주소 변수를 둔다. proxy_pass는 URI 접미사 없이 변수를 써 경로·쿼리를 보존한다. 앱 재생성으로 IP가 바뀌어도 5초 캐시 뒤 복구하고, 상류 이름이 아직 없어도 nginx 자체는 기동한다.
 
 - **#32 compose 구현:** 빌드 이미지는 web·api·serving 3개를 재사용하고, 상시 7개와 db-migrate 일회성 서비스를 둔다. web·app-api·model-api만 연결하는 입구 망은 `172.30.88.0/24`로 고정하고 app-api의 TRUST_PROXY도 그 대역으로 제한한다. 대역 충돌 시 둘을 함께 바꾼다. 비밀은 파일 기반 compose secrets, 설정은 `.env.example` 뒤 선택적인 `.env` 순서로 주입한다. 가짜 모델 기본이며 실제 모델 의존성·가중치 마운트는 #42에서 추가한다. 모델 캐시는 #76에서 정한 `/data/hf-cache`를 따르되 해당 이미지 반영 전에는 사용하지 않는다. db-migrate의 이미지 경로와 모델 첫 활성은 #33 선행 미완료로 실제 기동은 막힐 수 있다.
+
+**권유 확정 창(#38).** 상태 묻기가 받은 상세에서 `state`가 `awaiting_review`·`failed`가 아니고 `confirmedKind`가 null이며 `choices`가 있으면 화면 아래 알림에 연다. 보호자가 눌러야 창이 뜨며 자동으로 선택하지 않는다. `choices`만 활성 버튼으로, `unavailableChoices`는 이유와 함께 비활성으로 보인다. `confirmKind`로 확정하고 성공 후 `artWatch.add([id])`로 상태 묻기를 잇는다. 409는 상세를 다시 읽어 선택지를 갱신하고, 이미 확정된 작품이면 창을 닫고 안내한다. 확정과 409로 받은 상세는 바로 `details`에 넣어 옛 알림이 남지 않게 한다. 끊김 안내가 있으면 확정 알림을 숨긴다. 창을 연 작품이 더는 확정 대상이 아니면 창을 닫고 다음 작품의 알림을 보인다. 고른 선택지는 테두리와 굵기로 구분하고 상태 묻기로 받은 상세도 열린 창에 반영한다. M3이 가짜인 동안 3D 화면은 움직임을 권하지도 고르게 하지도 않는다.
+**결과 결정 창(#39).** `state`가 `awaiting_review` 또는 `failed`인 상세는 화면 아래 알림에 둔다. 보호자가 눌러야 창을 열며, 결정 선택지는 API `choices`와 `unavailableChoices`를 따른다. 원본과 결과를 미리 보고 낮춤 안내를 표시한다. `retake`는 확인을 한 번 더 받고 응답의 `retake.childId`를 `selectedChild`에 보존한다. 결정 중 중복 제출을 막고 실패하면 상세를 새로 읽는다. `retake`로 지워진 작품은 `details`에서 빼고 전시를 다시 읽는다. 결정 응답의 상세는 바로 `details`에 넣는다. 알림은 끊김 안내, 결정, 확정 순으로 하나만 보인다. 창을 연 작품이 더는 결정 대상이 아니면 창을 닫고 다음 작품의 알림을 보인다. 미술관 화면을 떠난 뒤 도착한 결정 응답은 선택 아이·작품 목록·알림을 바꾸지 않는다.
 
 ### 3-3. 3D 화면 ↔ API 연결(이번 작업의 개발 몫, 대응표는 #19)
 
@@ -97,6 +100,8 @@
 | `login` | 401 | 로그인 창을 연다 |
 | `refused` | 서버가 거절(그 밖의 4xx, `not_saved`) | 이유 문장(`problemCopy`의 `reason`, `/app`과 같은 사전)과 칸별 이유(`fields`) |
 
+**아이 고르기(`WorldChildren.vue`, #36).** 서버 판에서는 `/v1/children` 목록·등록을 쓰고 별칭 외 개인정보는 입력하지 않는다. 아이가 없으면 등록을 먼저 요구하고, 한 명이면 자동 선택, 여러 명이면 고른 아이만 전시한다. `selectedChild`를 업로드와 `GET /v1/gallery?child=`에 함께 전달한다. 아이를 바꾸면 전시 메모리를 비우고 새 목록을 읽어 이전 아이 작품이 남지 않게 한다. 아이 바꾸기로 들어오면 1명이어도 자동으로 고르지 않고 창을 유지한다. 화면의 아이 이름은 모두 고른 아이의 별칭을 쓴다. 세션을 지우면 아이 변경 모드도 초기화한다.
+
 **사진 올리기(`web/src/app/world/server/upload.ts`, #31).** 올리기 창(`WorldUpload.vue`)이 서버로 사진을 보내고, 받은 원본 액자를 바로 건다.
 
 - **켜는 값: 빌드 설정 `VITE_WORLD_SERVER=1`.** 값이 없으면 지금처럼 기기 판이다. compose의 web 이미지는 이 값으로 빌드한다(#26), 개발 서버는 `VITE_WORLD_SERVER=1 npm run dev`.
@@ -125,7 +130,7 @@
 | `refused` | 그 작품만 묻기를 그만둔다(지워진 작품 등) | 이유 문장과 닫기 버튼 |
 
 - **늦게 도착한 응답:** 묻기마다 번호를 매겨, 다시 시도·로그아웃·화면 이탈 뒤에 도착한 옛 응답은 버린다. 다시 시도를 기다리는 중에 화면을 벗어나도 묻기가 되살아나지 않고, 벗어난 뒤에는 작품을 더해도 묻지 않는다.
-- 받은 상세는 `details`에 두며, 창(#38·#39)과 입체 교체(#40)가 이 값을 쓴다. 새로 고침하면 `GET /v1/artworks`의 `currentStage`로 진행 중인 작품을 다시 묻는다(#40).
+- 받은 상세는 `details`에 두며, 창(#38·#39)과 입체 교체(#40)가 이 값을 쓴다. 새로 고침하면 `GET /v1/artworks`의 작품을 한 번씩 다시 읽는다. 고른 아이가 있으면 그 아이의 작품만 읽는다. 진행 중인 작품만 고르면 확정·결정을 기다리는 작품의 창이 다시 뜨지 않기 때문이다. 진행 중이 아닌 작품은 한 번 읽고 묻기에서 빠진다. 목록을 못 읽으면 빈 목록으로 넘기지 않는다. 통신 실패 안내를 띄우고, 다시 시도할 때 목록부터 다시 읽는다(#85 리뷰). 목록은 첫 전시를 읽은 뒤 읽는다(먼저 읽으면 전시 재구성과 겹쳐 사진을 두 번 받는다). 로그아웃 뒤 도착한 목록 응답은 성공·실패 모두 버린다. 지운 작품은 묻기와 `details`에서 뺀다. 지운 작품이 남으면 알림이 사라지지 않고 전시 재구성이 되풀이된다. 전시가 달라졌을 때의 다시 읽기는 같은 차이에 대해 되풀이하지 않는다(못 여는 사진이 있으면 차이가 영구히 남기 때문이다).
 
 **전시 목록(`web/src/app/world/server/gallery.ts`, #40).** 서버 판의 3D 화면은 `GET /v1/gallery`에 있는 작품만 건다.
 
@@ -167,7 +172,13 @@
 
 1. **서비스 나누기.** 상시 서비스 7개(`restart: unless-stopped`)와 한 번 돌고 끝나는 db-migrate(`restart: "no"`)를 둔다. 같은 코드를 쓰는 둘은 이미지를 나눠 쓴다(app-api·sweeper·db-migrate = api 이미지, model-api·worker-cpu = serving 이미지). 직접 빌드하는 이미지는 web·api·serving 3개, 공식 이미지는 db(`mariadb:12.0`)·mailpit(`axllent/mailpit`).
    - **개발 환경 모델 첫 활성.** [확인] 새 DB에는 활성 모델 버전이 없다(마이그레이션에 `model_version` 시드 없음). 워커는 활성 버전이 있는 모델만 올리고(`serving/workers/runner.py` `refresh_enabled`), 앱 서버는 M1·M2·M3이 모두 활성일 때만 분리·판정 작업을 만든다(`api/src/modules/artworks/models.ts` `JUDGE_MODELS`). 그래서 db-migrate가 개발 환경일 때(`DEV_ACTIVATE_MODELS=1`) 스키마 다음에 M1·M2·M3·M5를 `active`·`license_confirmed`로 만든다. 조건은 SD_04 9-4의 D27 예외와 같고, 팀 서버·운영 DB에서는 켜지 않는다. 기존 도구(`scripts/dev_activate_models.py`)는 `DB_HOST`가 127.0.0.1이 아니면 멈추고 127.0.0.1 API를 불러 compose에 그대로 쓸 수 없다. 담당은 #33.
-   - **#33 초기화 상세:** db-migrate에만 `DEV_ACTIVATE_MODELS=1`을 전달하고 마이그레이션 성공 뒤 M1·M2·M3·M5 각각에 활성 버전이 없을 때만 개발용 행을 넣는다. 기존 활성·이전 버전은 수정하지 않는다. 개발용 행은 `runtime=fake`, CPU, 라이선스 확인, 두 해시 64자리 0으로 식별하며 실제 가중치 검증 결과가 아니다. 처리 실패 시 db-migrate도 실패하여 worker가 시작되지 않는다. 재실행해도 활성 행을 중복 생성하지 않는다. 실제 모델 운영 전에는 올바른 모델 버전·해시·라이선스를 별도로 등록해야 한다.
+   - **#33 초기화 상세:** db-migrate에만 `DEV_ACTIVATE_MODELS=1`을 전달하고 마이그레이션 성공 뒤 M1·M2·M3·M5 각각에 활성 버전이 없으면 개발용 행을 넣는다. 있으면 아래 #42 규칙을 따른다. 개발용 행은 `dev-`와 32자 16진수 이름으로 식별하고, 가짜일 때 `runtime=fake`, CPU, 라이선스 확인, 두 해시 64자리 0이며 실제 가중치 검증 결과가 아니다. 처리 실패 시 db-migrate도 실패하여 worker가 시작되지 않는다. 재실행해도 활성 행을 중복 생성하지 않는다. 팀 서버·운영 DB에서는 켜지 않고 모델 버전·해시·라이선스를 별도로 등록한다.
+   - **실제 모델 이력(#42, 2026-11-03).** 가짜 행에 실제 어댑터가 붙으면 작업 기록이 실제 모델 결과를 `fake`로 남긴다. `compose.real.yaml`은 db-migrate에 `DEV_REAL_MODELS=M1,M2,M5`를 준다. 이 목록의 모델은 `MODEL_MANIFEST`의 `weights_sha256`, `config_hash`, `runtime`으로 활성 행을 만든다. 컨테이너에는 CPU 워커만 있으므로(`GPU_ENABLED=false`) `exec_device`는 `cpu`이고, 맥에서 잰 `runtime`의 `-mps`는 `-cpu`로 기록한다. M3는 가짜 어댑터이므로 `fake` 행을 유지한다.
+     - 켜고 끌 때 활성 행도 따라간다. 활성 행이 개발용(`dev-` 이름)이고 지금 설정과 값이 다르면 `retired`로 내리고 새 행을 넣는다. 그래서 같은 볼륨에서 가짜↔실제, BiRefNet↔자체 모델로 바꿔도 활성 행과 어댑터가 어긋나지 않는다.
+     - 매니페스트에 모델이나 해시가 없거나 `license_confirmed`가 참이 아니면 이유를 찍고 db-migrate가 실패한다. 가짜로 조용히 넘어가지 않으며, 그 경우 worker가 시작되지 않는다(BR-MDL-07).
+     - 전환 전에 대기하던 작업은 워커가 가져갈 때 그때의 활성 행으로 기록된다(`serving/workers/runner.py` `claim`의 `COALESCE`, `test_claim_records_current_active_version`). 그래서 대기 작업은 실제로 돈 어댑터와 일치한다. 끝난 작업의 기록은 바꾸지 않으므로 전환 전 작업은 전환 전 행을 가리킨다. 전환은 `docker compose stop worker-cpu` 뒤에 한다. 옛 워커가 살아 있는 초 단위 창에서는 기록이 어긋날 수 있다(재지 않음).
+     - 사람이 등록한 활성 행은 바꾸지 않는다. 실제 모델로 켤 때 그 행의 해시, config, runtime 중 하나라도 지금 설정과 다르면 이유를 찍고 db-migrate가 실패한다. 그대로 돌면 다른 모델의 결과가 그 행으로 기록되기 때문이다. 이 판단은 모델 단위다. 가짜 어댑터로 남는 모델(`compose.real.yaml`의 M3 포함)과 가짜 모델로 켤 때는 #84 원칙대로 행을 두고 경고만 찍는다. 가짜 결과는 시연용이고 그 경로를 막으면 사람이 등록한 행이 있는 DB에서 가짜 기동이 막힌다.
+     - 켜는 명령에 `--build`를 붙인다. 이미지 태그가 남아 있으면 compose가 다시 빌드하지 않아, 옛 db-migrate가 `DEV_REAL_MODELS`를 조용히 무시하고 옛 워커가 돈다.
 2. **이미지.**
    - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
    - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
@@ -209,6 +220,7 @@
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [확인] 이미지가 비루트(UID 1000)이므로 새 볼륨이 쓸 폴더를 이미지에 미리 만들어야 한다. 없으면 볼륨이 root 소유가 되어 M1이 `PermissionError: '/hf-cache/modules'`로 뜨지 않는다(M2·M5는 뜸). `serving/Dockerfile`이 `/data/hf-cache`를 만든다. 네트워크를 끈 컨테이너에서 세 모델이 `HF_HUB_OFFLINE=1`로 올라오는 것도 확인했다. [미검증] compose에서 `models[].load.state`가 `ready`인지는 #42에서 본다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
+   - **실제 모델 켜기:** 기본 `compose.yaml`은 가짜 모델 그대로 두고 `compose.real.yaml`을 겹친다(`docker compose -f compose.yaml -f compose.real.yaml up -d --build`, #42). worker-cpu만 모델 묶음 이미지를 쓰고 가중치·캐시를 붙이며, model-api는 가벼운 이미지를 유지한다. 메모리 한도는 10GiB다. [확인] 맥에서 사진 올리기 → 분리·판정 → 부조 → 승인까지 돌렸을 때 worker 최대 7781~7899MiB였다(`memory.peak`, 파일 캐시 포함, 640×480 합성 그림). 12MP 합성 그림까지 돌리면 8.35GiB였다. 8GiB는 부족하다. 최종 값은 #43에서 정한다.
    - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
 5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
    - **필수 동작(C 연결 층, 계약 근거):**
@@ -257,18 +269,22 @@
 
 ### 3-6. 자체 모델 선택 실행(기본 꺼짐)
 
-M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 한다. 끄면 지금과 같다. 저장소 기본값은 BiRefNet·Depth Anything이다. 이번 발표 시연은 own3로 한다(2026-11-03 이제민 결정). `license_confirmed`는 발표 범위 판단으로 `true`이고, 상업 판단이 아니다. 학습 자료는 합성 그림과 Quick, Draw!(CC BY 4.0)이고 시작 가중치는 없다. 후처리 값을 고를 때 연구 동의 자료를 썼고, 상업 조건의 전문가 확인 전이다.
+M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 한다. 끄면 지금과 같다. 저장소 기본값은 BiRefNet·Depth Anything이다. 이번 발표 시연은 own3로 한다(2026-11-03 이제민 결정). 저장소의 `license_confirmed`는 `false`이고, 발표용 사본에서만 `true`로 둔다(아래 켜는 조건). 학습 자료는 합성 그림과 Quick, Draw!(CC BY 4.0)이고 시작 가중치는 없다. 후처리 값을 고를 때 연구 동의 자료를 썼고, 상업 조건의 전문가 확인 전이다.
 
 - **이유.** CPU 한 번 실행 0.55~0.81초, 파이썬 프로세스 최대 메모리 0.82GB(맥, 임의 입력 448px)로 가볍다. M1이 60초 제한을 넘던 PC에서도 돌 수 있는지 볼 수 있다(그 PC에서는 아직 재지 않음). 합성 그림과 Quick, Draw!(CC BY 4.0)로 시작 가중치 없이 학습했다.
-- **켜는 법과 시연 절차.** ① 가중치를 `models/own3/own3.ts`에 둔다. 저장소에 없는 파일이고, SHA-256이 `models/manifest.own3.yaml`의 `weights_sha256`과 같아야 올라간다. ② 포트나 망이 겹치는 다른 스택을 내린다. ③ `docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d --build`. `--build`가 없으면 옛 이미지가 쓰여 3D 화면의 깊이가 꺼진 채로 남는다. ④ 시연 사진은 JPEG, 긴 변 1500 이하로 쓰고 그림이 화면을 가득 채우게 찍는다. own3는 그림이 작은 사진에 약하다. ⑤ 전시 방식은 입체 그림을 고른다. 약점은 3-6-1에 있다. 값은 `serving/config/own3.yaml`에 둔다.
-- **구조.** `UAM_OWN_MODEL=M1,M5`이면 `serving/adapters/registry.py`가 own3 어댑터를 고른다. 출력 형식(마스크, 컷아웃, 깊이 PNG16)과 실패 처리(`quality_below`)는 M1·M5와 같다. 입력과 출력도 M1·M5와 같은 함수를 쓴다. 원본은 `open_upright`로 표시 방향에 맞춰 열고(3-4 입력 사진의 방향, 깨진 HEIC 처리 포함), 컷아웃은 `cutout_image`로 만들어 투명한 곳에 원본 배경을 남기지 않는다(3-4 컷아웃의 숨은 배경). 매니페스트는 `models/manifest.own3.yaml`을 쓴다.
+- **켜는 법과 시연 절차.** ① 가중치를 `models/own3/own3.ts`에 둔다. 저장소에 없는 파일이고, SHA-256이 `models/manifest.own3.yaml`의 `weights_sha256`과 같아야 올라간다. ② 포트나 망이 겹치는 다른 스택을 내린다. ③ 발표용 사본을 만든다(아래 켜는 조건). ④ `OWN3_MANIFEST=./models/own3/manifest.demo.yaml docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d --build`. `--build`가 없으면 옛 이미지가 쓰여 3D 화면의 깊이가 꺼진 채로 남는다. ⑤ 시연 사진은 JPEG, 긴 변 1500 이하로 쓰고 그림이 화면을 가득 채우게 찍는다. own3는 그림이 작은 사진에 약하다. ⑥ 전시 방식은 입체 그림을 고른다. 약점은 3-6-1에 있다. 값은 `serving/config/own3.yaml`에 둔다.
+- **구조.** `UAM_OWN_MODEL=M1,M5`이면 `serving/adapters/registry.py`가 own3 어댑터를 고른다. 출력 형식(마스크, 컷아웃, 깊이 PNG16)과 실패 처리(`quality_below`)는 M1·M5와 같다. 입력과 출력도 M1·M5와 같은 함수를 쓴다. 원본은 `open_upright`로 표시 방향에 맞춰 열고(3-4 입력 사진의 방향, 깨진 HEIC 처리 포함), 컷아웃은 `cutout_image`로 만들어 투명한 곳에 원본 배경을 남기지 않는다(3-4 컷아웃의 숨은 배경). 매니페스트는 `OWN3_MANIFEST`로 준 파일을 쓰고, 값이 없으면 `models/manifest.own3.yaml`을 쓴다.
 - **가중치 확인(BR-MDL-01).** 적재할 때 파일 내용의 SHA-256을 `MODEL_MANIFEST`에 적힌 자기 자리(M1, M5)의 `weights_sha256`과 비교한다. 값이 다르거나 비어 있으면 적재 실패로 처리하고 모델을 올리지 않는다. 그 단계는 다른 모델의 적재 실패와 같이 `model_not_ready`로 닫힌다. 고른 이유: `model_version`에는 매니페스트 해시가 기록되므로, 파일이 바뀐 채 올라가면 결과가 다른 모델의 이력으로 남는다. 읽은 내용을 비교하고 그 내용을 그대로 올리므로 비교한 것과 실행하는 것이 같다. M1과 M5가 같은 파일을 쓰므로 프로세스에서 한 번만 읽는다. 23.3MB를 읽고 해시하는 데 맥 arm64에서 14~20ms, 컨테이너에서 첫 회 258ms와 이후 20ms 걸린다(각 5회). 실제 가중치로 M1 적재는 torch 불러오기를 포함해 1.72초, 이어지는 M5 적재는 0.007초다.
-- **켜는 조건(BR-MDL-07).** `models/manifest.own3.yaml`의 M1·M5 `license_confirmed`는 발표 범위 판단으로 `true`다. 이 파일은 `compose.own3.yaml`을 겹칠 때만 읽으므로 저장소 기본값은 그대로다. 실제 모델 활성화 경로(#80)는 이 값이 `false`면 `db-migrate`를 멈춘다(`compose.real.yaml`과 활성화 경로는 #80에 있다). 발표 뒤 서비스에 쓰려면 ① 상업 조건의 전문가 확인을 받고 ② 그 결과를 PR에 적어 팀이 검토한 뒤 ③ 결과에 맞게 값을 다시 정한다. 이 판단을 상업 이용 허가로 읽지 않는다.
+- **켜는 조건(BR-MDL-07).** 저장소의 `models/manifest.own3.yaml`은 M1·M5 `license_confirmed`가 `false`다. 활성화 코드는 용도를 구분하지 못하므로, 저장소에 `true`를 두면 발표 범위라는 제한을 코드가 지키지 못한다(#91 리뷰). 그래서 겹침 파일만으로는 켜지지 않는다. `db-migrate`가 종료 코드 1로 멈춘다. 발표 때만 가중치가 있는 PC에서 커밋되지 않는 사본을 만들어 경로를 명시한다.
+  ```bash
+  awk '/source: own3/{o=1} /license_confirmed:/{if(o){sub(/false/,"true");o=0}} 1' models/manifest.own3.yaml > models/own3/manifest.demo.yaml
+  ```
+  `models/own3/`는 `.gitignore`에 있다. 사본의 `true`는 2026-11-03 이제민의 발표 범위 판단이고, 상업 판단이 아니다. 발표가 끝나면 사본을 지운다. 지우지 않아도 `OWN3_MANIFEST`를 주지 않으면 읽지 않는다. 팀 서버와 운영 DB에는 사본을 쓰지 않는다. 이미 활성화한 DB의 행은 사본을 지워도 남으므로, 시연 DB를 내려 지운다. 서비스에 쓰려면 ① 상업 조건의 전문가 확인을 받고 ② 그 결과를 PR에 적어 팀이 검토한 뒤 ③ 저장소 값을 바꾼다. 대안인 `true` 유지와 수동 되돌리기는 병합된 값의 범위 밖 사용을 막지 못해 버렸고, 활성화 코드에 용도 검사를 넣는 안은 발표 하나를 위해 BR-MDL-07 경로를 넓혀 버렸다.
 - **3D 화면의 깊이(`VITE_RELIEF_DEPTH=1`로 빌드할 때만).** 지금 3D 화면은 컷아웃으로 두께판을 만들고 결과 깊이(`primaryUrl`)를 읽지 않는다. 켜면 걸린 부조의 깊이를 받아 둥근 입체를 만든다(`cutout.ts`의 `buildRelief`). 앞면과 뒷면이 가장자리에서 만나고, 윤곽은 마스크로 자른다. 값은 `RELIEF_SURFACE`에 둔다. 깊이를 받거나 읽지 못하면 3-3의 "파일을 받지 못할 때"대로 낮추고 다음 목록 읽기에서 다시 받는다. 깊이를 켠 합친 판에서 파일 응답을 망가뜨려 확인했다(1440, 서비스 워커를 끈 상태, 깊이 503, 깊이 손상, 컷아웃 503, 컷아웃 손상). 작품 3점이 모두 남았고 깊이 실패는 두께판, 컷아웃 실패는 사각 판으로 보였으며, 응답을 되돌리면 둥근 입체로 돌아왔고 페이지 오류는 0건이다. 서비스 워커를 켠 상태의 실패는 시험 도구가 응답을 바꾸지 못해 보지 못했다. 끄면 깊이를 받지 않고 지금과 같다. 컷아웃을 받거나 읽지 못할 때 액자로 낮추는 것은 끈 빌드에도 같이 적용한다. 켜고 끄는 값은 웹 이미지 빌드 인자이며 `compose.own3.yaml`이 켠다.
-- **출처 표기.** own3는 Quick, Draw!(CC BY 4.0) 획을 고쳐 만든 그림으로 학습했다. `web/public/licenses/MODEL_DATA.txt`에 출처와 변경 사실을 적고, 개인정보·이용 안내에 링크한다. 링크는 깊이를 켠 빌드(`VITE_RELIEF_DEPTH=1`)에서만 보인다. 기본 빌드의 기능은 own3로 배우지 않았으므로 안내하면 사실과 다르다. 활성에는 DB 제약상 `license_confirmed`가 필요하며(`chk_mv_license_active`), 이 값은 위 켜는 조건대로 발표 범위 판단이다.
+- **출처 표기.** own3는 Quick, Draw!(CC BY 4.0) 획을 고쳐 만든 그림으로 학습했다. `web/public/licenses/MODEL_DATA.txt`에 출처와 변경 사실을 적고, 개인정보·이용 안내에 링크한다. 링크는 깊이를 켠 빌드(`VITE_RELIEF_DEPTH=1`)에서만 보인다. 기본 빌드의 기능은 own3로 배우지 않았으므로 안내하면 사실과 다르다. 활성에는 DB 제약상 `license_confirmed`가 필요하므로(`chk_mv_license_active`), 위 켜는 조건의 발표용 사본으로 켠다.
 - **10절과의 관계.** "서비스 기능 바꾸기"에 걸린다. 그래서 기본값, DB, API 계약을 바꾸지 않는 선택 실행으로 넣는다. 끈 상태의 한 바퀴는 지금과 같다.
 - **확인한 것(2026-11-03, 맥 arm64, 공개 그림과 견본).** 어댑터로 22장을 처리해 분리 평균 0.84초, 깊이 평균 0.59초, 파이썬 프로세스 최대 메모리 0.88GB다. #77, #84와 라이선스 검사가 들어가기 전 판의 #80을 합친 별도 compose에서 가입부터 결과 결정까지 3장이 돌았다. 라이선스 검사가 들어간 판의 흐름은 아래 문단에 있다. 깊이 처리는 장당 0.49~0.71초, M2를 실제로 올린 worker 메모리는 1.8GB, 워커 오류 로그는 0건이다. 네트워크를 끈 시험, Windows, 휴대폰은 재지 않았다.
-- **합친 판의 흐름(2026-11-03, 맥 arm64, 견본 2장과 세로 EXIF 합성 사진).** #77, #84, #80(92beb1e), #97, #99, #81, #82, #83, #85, #93과 임시 폴더에서 합친 별도 compose다. 이 시험 때 own3의 표시 방향 열기와 컷아웃 함수는 시험 전용 패치로 넣었고, 지금은 어댑터 코드에 들어 있다. 어댑터 코드로 바꾼 뒤 이 흐름을 다시 돌리지는 않았고, 회전 사진과 투명 배경은 어댑터 시험으로 본다. 그때 저장소 값은 `false`여서 `db-migrate`가 종료 코드 1로 멈추는 것을 확인했고, 저장소 밖 사본의 값만 바꿔 기동했다. DB에는 M1·M5가 own3 해시로, M2가 실제 값으로, M3가 `fake`로 기록된다. 390과 1440에서 가입, 아이 등록, 3장 업로드, 입체 확정, 결정, 전시, 보관함, 전시실, 움직이기가 화면으로 통과했고 페이지 오류는 0건이다. 25장에서 첫 분리 0.93초, 다음 0.57초, 분리 중앙값 0.64초, 깊이 중앙값 0.69초, worker `memory.peak` 2.39GiB, 오류 로그 0건이다. 바깥 연결은 worker만 막혔다. app-api와 model-api는 입구 망에 있어 바깥에 닿는다. #82의 확정 알림 결함을 고치기 전 판이고, 시험은 누른 뒤 11초씩 기다려 그 결함을 피했다. 휴대폰과 Windows는 재지 않았다.
+- **합친 판의 흐름(2026-11-03, 맥 arm64, 견본 2장과 세로 EXIF 합성 사진).** #77, #84, #80(92beb1e), #97, #99, #81, #82, #83, #85, #93과 임시 폴더에서 합친 별도 compose다. 이 시험 때 own3의 표시 방향 열기와 컷아웃 함수는 시험 전용 패치로 넣었고, 지금은 어댑터 코드에 들어 있다. 어댑터 코드로 바꾼 뒤 이 흐름을 다시 돌리지는 않았고, 회전 사진과 투명 배경은 어댑터 시험으로 본다. 저장소 값이 `false`일 때 `db-migrate`가 종료 코드 1로 멈추는 것을 확인했고, 저장소 밖 사본의 값만 바꿔 기동했다. DB에는 M1·M5가 own3 해시로, M2가 실제 값으로, M3가 `fake`로 기록된다. 390과 1440에서 가입, 아이 등록, 3장 업로드, 입체 확정, 결정, 전시, 보관함, 전시실, 움직이기가 화면으로 통과했고 페이지 오류는 0건이다. 25장에서 첫 분리 0.93초, 다음 0.57초, 분리 중앙값 0.64초, 깊이 중앙값 0.69초, worker `memory.peak` 2.39GiB, 오류 로그 0건이다. 바깥 연결은 worker만 막혔다. app-api와 model-api는 입구 망에 있어 바깥에 닿는다. #82의 확정 알림 결함을 고치기 전 판이고, 시험은 누른 뒤 11초씩 기다려 그 결함을 피했다. 휴대폰과 Windows는 재지 않았다.
 - **한계.** 시험 판이다. 떨어져 있어야 할 곳을 메우는 그림이 남았다. 앞면 깊이만 쓰고 뒷면과 부위는 쓰지 않는다. Quick, Draw! 출처 안내는 #92의 켠 빌드에 있다. 상업 조건의 전문가 확인이 남았다.
 
 #### 3-6-1. own3와 기존 모델의 비교 결과(2026-11-03)
@@ -367,6 +383,13 @@ M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 �
 | 3 구현 | 각자 만든 부분, 고친 코드, 잰 수치 | 각자 |
 | 4 시연 | `docker compose up -d` → 3D 미술관에서 가입 → 사진 → 확정 → 입체 전시 | 이제민 진행, 신지현·최호준 화면 |
 | 5 한계와 다음 | GPU, 메모리, 배포(Vercel 같은 정적 호스팅 + 서버 따로) | 최호준 |
+
+**시연 준비(2026-11-03 측정 반영).**
+
+- 사진은 JPEG로, 긴 변 1500 이하로, 그림이 화면을 대부분 채우게 찍는다. 3D 화면 업로드에는 자르기가 없고, 전경이 작을수록 분리 품질이 낮다(M1·own3 공통, 공개 그림 원본 60장에서 전경 비율 0.1 미만은 IoU 중앙값 0.65 이하까지 떨어짐, 그림이 작을수록 더 낮다). 12MP 사진은 작품 하나에 수십 MB를 받을 수 있다(합성 그림 계산값, 휴대폰 미측정).
+- 입체를 보여 줄 작품은 '입체 그림'을 고른다. M3이 가짜라 '움직이는 그림'은 재생되지 않는다.
+- 시연 직전 사진 한 장을 올려 모델을 데운다. 다른 시험 스택은 내린다. 메모리가 빠듯하면 split이 60초 제한에 걸려 액자로 낮아진다(측정한 첫 split 24초, 맥 한 대에서 다른 작업이 겹칠 때 그림 하나가 100초를 넘은 적이 있다).
+- 켜는 명령에 `--build`를 붙여 새 이미지로 띄운다.
 
 ## 7. 각자 남길 작업 기록
 

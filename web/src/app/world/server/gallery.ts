@@ -116,8 +116,8 @@ export function isStale(d: ArtworkDetail): boolean {
   return now !== hung && !(hung === 'sculpture' && now === 'frame');
 }
 
-/** 새로 고침 뒤 이어서 물을 작품. 못 읽으면 묻지 않을 뿐 전시는 그대로다 */
-export const movingIds = () => listArtworks().then((list) => list.filter((a) => a.currentStage).map((a) => a.id), () => []);
+/** 새로 고침 뒤 다시 읽을 작품. 확정·결정을 기다리는 작품은 진행 중이 아니어도 창을 열어야 한다. 끝난 작품은 한 번 읽고 묻기에서 빠진다. 못 읽으면 묻지 않을 뿐 전시는 그대로다 */
+export const watchIds = (childId: string | null) => listArtworks().then((list) => list.filter((a) => !childId || a.childId === childId).map((a) => a.id));
 
 /** 로그아웃(#30): 다른 가족의 작품이 남지 않게 지운다 */
 export function clearGallery() {

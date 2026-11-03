@@ -10,13 +10,13 @@ models:
     config_hash: f2e8bc776bfcc9fed27cc5d428a21f81c0c07790cd0dee309b74ae89de2fe31b
     runtime: torch-2.4.1-cpu
     exec_device: cpu
-    license_confirmed: true
+    license_confirmed: false
     size_mb: 23
     load:
       expected_seconds: 0.39
       measured_on: jmui-MacBookAir.local
       measured_at: '2026-11-03'
-    note: 자체 학습 own3. 합성 그림과 Quick, Draw!(CC BY 4.0), 시작 가중치 없음. license_confirmed는 2026-11-03 이제민의 발표 범위 판단이고 상업 판단이 아니다. 후처리 값 선택에 연구 동의 자료를 썼고 전문가 확인 전이다(마스터플랜 3-6).
+    note: 자체 학습 own3. 합성 그림과 Quick, Draw!(CC BY 4.0), 시작 가중치 없음. 후처리 값 선택에 연구 동의 자료를 썼고 상업 조건의 전문가 확인 전이라 false다. 발표 때는 커밋되지 않는 사본에서만 true로 둔다(마스터플랜 3-6).
     image_digest: sha256:89e72385b60ee5cbe697c15fc9952f5beda234f5cb94ce67bda83576d8165840
   M2:
     source: laion/CLIP-ViT-B-32-laion2B-s34B-b79K
@@ -67,13 +67,13 @@ models:
     config_hash: f2e8bc776bfcc9fed27cc5d428a21f81c0c07790cd0dee309b74ae89de2fe31b
     runtime: torch-2.4.1-cpu
     exec_device: cpu
-    license_confirmed: true
+    license_confirmed: false
     size_mb: 23
     load:
       expected_seconds: 0.37
       measured_on: jmui-MacBookAir.local
       measured_at: '2026-11-03'
-    note: 자체 학습 own3. 합성 그림과 Quick, Draw!(CC BY 4.0), 시작 가중치 없음. license_confirmed는 2026-11-03 이제민의 발표 범위 판단이고 상업 판단이 아니다. 후처리 값 선택에 연구 동의 자료를 썼고 전문가 확인 전이다(마스터플랜 3-6).
+    note: 자체 학습 own3. 합성 그림과 Quick, Draw!(CC BY 4.0), 시작 가중치 없음. 후처리 값 선택에 연구 동의 자료를 썼고 상업 조건의 전문가 확인 전이라 false다. 발표 때는 커밋되지 않는 사본에서만 true로 둔다(마스터플랜 3-6).
     image_digest: sha256:89e72385b60ee5cbe697c15fc9952f5beda234f5cb94ce67bda83576d8165840
   M6:
     source: Qwen/Qwen3-4B-Instruct-2507

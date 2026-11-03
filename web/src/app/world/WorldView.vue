@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const emit = defineEmits<{ logout: [] }>();
+const props = defineProps<{ selectedChildName?: string }>();
+const emit = defineEmits<{ logout: []; changeChild: [] }>();
 // 3D 가족 미술관 로컬 판(3D미술관_재설계 §2, 기초 설계 v2 §5). 경로 /app/world. 서버 호출 없음.
 import '@/styles/game.css';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
@@ -13,11 +14,15 @@ import { DECOR_KINDS, SPOT_LABEL, type DecorItem, type DecorKind, type DecorSpot
 import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
-import { SERVER_WORLD, worldWorks } from './server/upload';
-import { deleteArtwork, failureOf, failureReason } from './server';
-import { galleryFailure, isStale, movingIds } from './server/gallery';
+import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
+import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
+import { galleryFailure, isStale, watchIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
+import WorldConfirm from './WorldConfirm.vue';
+import WorldDecision from './WorldDecision.vue';
+import { ko } from '@/copy/ko';
+import type { ArtworkDetail } from './server';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
 import WorldPrivacy from './WorldPrivacy.vue';
@@ -64,6 +69,7 @@ let socialChannel:BroadcastChannel|null=null;
 const phase = ref<Phase>('checking');
 const progress = ref({ done: 0, total: store.SAMPLES.length });
 const account = ref<Account | null>(null);
+const serverChildName = computed(() => props.selectedChildName || account.value?.child || '아이');
 const artworks = shallowRef<Artwork[]>([]);
 const rooms = ref<number[]>([]);
 const prefs = ref<Prefs | null>(null);
@@ -84,7 +90,7 @@ const startBtn=ref<HTMLButtonElement|null>(null),firstPick=ref<HTMLInputElement|
 const pendingReveal=ref<string|null>(null);
 const realCount=computed(()=>artworks.value.filter(a=>!a.sample).length);
 /** 시작 화면 한 줄: 가족이 없으면 가치, 있으면 이 미술관 이름과 작품 수 */
-const startLead=computed(()=>{const a=account.value;if(!a)return '아이 작품을 사진으로 남기면 우리 미술관에 걸려요.';const n=realCount.value;return `${a.child}의 미술관 · ${n?`작품 ${n}점`:artworks.value.length?'견본 작품으로 둘러보는 중':'첫 작품을 기다리고 있어요'}`;});
+const startLead=computed(()=>{const a=account.value;if(!a)return '아이 작품을 사진으로 남기면 우리 미술관에 걸려요.';const n=realCount.value;return `${serverChildName.value}의 미술관 · ${n?`작품 ${n}점`:artworks.value.length?'견본 작품으로 둘러보는 중':'첫 작품을 기다리고 있어요'}`;});
 let arriveTimers:number[]=[];
 const nearId = ref<string | null>(null);
 const selection = ref<Selection>(null);
@@ -250,7 +256,7 @@ const shownPlaque = computed(() => {
   const acc = account.value;
   if (!a || !acc) return null;
   if(visiting.value)return {plaque:{title:a.title||'새 작품',byline:`${visiting.value.child}의 작품`,detail:'',number:''},note:{lines:[],quote:null},guide:a.title||'새 작품'};
-  const input = { no: a.no, title: a.title, kind: a.kind, subject: a.subject, material: a.material, age: a.age, madeOn: a.madeOn, words: a.words, child: acc.child };
+  const input = { no: a.no, title: a.title, kind: a.kind, subject: a.subject, material: a.material, age: a.age, madeOn: a.madeOn, words: a.words, child: serverChildName.value };
   return { plaque: plaqueOf(input), note: curatorNote(input), guide: guideText(input) };
 });
 const masterpiece = computed(() => {
@@ -287,7 +293,7 @@ function reload():Promise<void>{
   const run=async()=>{
     artworks.value = await worldWorks();
     rooms.value = await store.getRooms();
-    if (engine.value && account.value) await engine.value.setWorld(account.value.child, artworks.value, rooms.value);
+    if (engine.value && account.value) await engine.value.setWorld(SERVER_WORLD ? serverChildName.value : account.value.child, artworks.value, rooms.value);
   };
   reloading=reloading.then(run,run);
   return reloading;
@@ -306,10 +312,10 @@ async function boot(title = true) {
   if(!engine.value){try{engine.value=new MuseumEngine(stage.value,{onView:id=>{const a=byId.value.get(id);if(a)void openView(a);},onPrompt:p=>interaction.value=p,onInteractBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;void visitSelected();},onSelect:s=>selection.value=s,onNear:id=>nearId.value=id,onPlace:label=>place.value=label,onAction:a=>{if(a==='addRoom')void addRoom();else if(a==='firstWork')pickFirst();},onSpace:s=>{space.value=s;},onBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;},onStart:onStartStage,onRevealed,onPlay:()=>countUse(u=>bump(u,'plays'))});}catch{webglFailed.value=true;await startWithoutWebgl();return;}}
   const e=engine.value;
   // 시작 화면은 도착할 모드·건물·캐릭터로 그린다. 가족이 없으면 새 가족이 받을 값으로 그린다
-  e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
+  e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
   e.setFeaturedId(prefs.value.featured??null);e.setDecor(prefs.value.decor??[]);
   if(showTitle){e.showTitle();e.start();} // 작품을 불러오는 동안에도 시작 화면 배경을 그린다
-  await e.setAvatar(prefs.value.avatar,prefs.value.avatarImage);await e.setWorld(account.value?.child??store.NEW_FAMILY_CHILD,artworks.value,rooms.value);
+  await e.setAvatar(prefs.value.avatar,prefs.value.avatarImage);await e.setWorld(SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,artworks.value,rooms.value);
   if(showTitle){phase.value='title';measure('start-ready');await nextTick();startBtn.value?.focus({preventScroll:true});}
   else{e.showPlaza(false);phase.value='ready';showHud(false);if(inviteToken.value)panel.value='social';runCutouts();}
   e.start();if(account.value){void e.loadDecor();noteVisit();void checkBackup();}
@@ -343,7 +349,7 @@ function showHud(intro:boolean){
 function arrived(){
   phase.value='ready';startWaiting.value=false;showHud(true);
   const acc=account.value,p=prefs.value;
-  if(acc&&p)engine.value?.setBuilding(p.building??'column_temple',acc.child,acc.id);
+  if(acc&&p)engine.value?.setBuilding(p.building??'column_temple',serverChildName.value,acc.id);
   firstPrompt.value=!!acc&&artworks.value.length===0;
   setAmbience(p?.theme??'classic');
   if(acc){noteVisit();runCutouts();}
@@ -356,11 +362,11 @@ function pickFirst(){if(visiting.value||panel.value)return;beforeUpload(()=>firs
 function onFirstPicked(e:Event){const input=e.target as HTMLInputElement,files=Array.from(input.files??[]);input.value='';if(!files.length)return;firstPrompt.value=false;pendingFiles.value=files;openPanel('upload');}
 function onRevealed(id:string){if(pendingReveal.value!==id)return;pendingReveal.value=null;recentSaved.value=id;}
 async function familyChanged(){visiting.value=null;selectedBuilding.value=null;panel.value=null;selection.value=null;nearId.value=null;await boot(false);}
-async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',account.value.child,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
+async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',serverChildName.value,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
 async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
 async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
-async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,account.value?.child??'');}catch{say('미술관 모양을 저장하지 못했어요');}}
+async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
 function enterMuseum(){engine.value?.enterMuseum();setAmbience(prefs.value?.theme??'classic');}
 
 /** 개발용 테스트 입구(§2-15): 시작 연출 없이 광장으로 간다(기존 검사용) */
@@ -434,11 +440,41 @@ function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = cl
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
 const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는다(#37). 기기 판은 add를 부르지 않아 요청이 없다
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
+const setDetail = (d: ArtworkDetail) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); };
+const confirmOpenId = ref<string | null>(null);
+const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
+const decisionOpenId = ref<string | null>(null), decisionBusy = ref(false), decisionError = ref<Failure | null>(null);
+const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
+const decisionDetail = computed(() => decisionOpenId.value ? artWatch.details.value.get(decisionOpenId.value) ?? null : null);
+watch(decisionDetail, (d) => { if (decisionOpenId.value && (!d || !d.choices.length || (d.state !== 'awaiting_review' && d.state !== 'failed'))) decisionOpenId.value = null; });
+async function submitWorldDecision(id: string, decision: Decision) {
+  if (!alive || decisionBusy.value) return;
+  const childId = artWatch.details.value.get(id)?.childId;
+  decisionBusy.value=true; decisionError.value=null;
+  try {
+    const out=await decide(id,decision);
+    if (!alive) return;
+    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    else {if(out.artwork)setDetail(out.artwork);artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
+    decisionOpenId.value=null;
+  } catch(e) {
+    if (!alive) return;
+    decisionError.value=failureOf(e);
+    try {const fresh=await getArtwork(id);if(alive)setDetail(fresh);}
+    catch(retryError){if(alive)decisionError.value=failureOf(retryError);}
+  } finally {decisionBusy.value=false;}
+}
+const confirmDetail = computed(() => confirmOpenId.value ? artWatch.details.value.get(confirmOpenId.value) ?? null : null);
+watch(confirmDetail, (d) => { if (confirmOpenId.value && (!d || d.confirmedKind || !d.choices.length || d.state === 'awaiting_review' || d.state === 'failed')) confirmOpenId.value = null; });
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
-  void movingIds().then(artWatch.add); // 새로 고침해도 진행 중인 작품을 이어서 묻는다
-  watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
+  let staleSeen = ''; // 같은 차이로 되풀이해 읽지 않는다. 못 여는 사진은 차이가 영구히 남는다(마스터플랜 3-3)
+  watch(artWatch.details, (d) => { // 승인되어 걸린 결과가 바뀌면 다시 그린다
+    const stale = [...d.values()].filter(isStale).map((x) => `${x.id}:${x.hungResultKind}`).sort().join();
+    if (stale && stale !== staleSeen) void reload();
+    staleSeen = stale;
+  });
 }
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {
   if (SERVER_WORLD && from === 'upload') artWatch.add(ids);
@@ -492,6 +528,7 @@ async function rotateSaved(dir: 1 | -1) {
 async function onDelete(id: string) {
   try {
     await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
+    if (SERVER_WORLD) artWatch.forget(id);
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');
@@ -607,7 +644,7 @@ async function shareWork(){
   const a=viewWork.value;if(!a||visiting.value||cardBusy.value)return;
   cardBusy.value=true;cardMsg.value='';resend.value=null;
   try{
-    const t=cardText(a,account.value?.child??'',cardPick.value,SHARE_URL);
+    const t=cardText(a,serverChildName.value,cardPick.value,SHARE_URL);
     const font=(worldRoot.value?getComputedStyle(worldRoot.value).getPropertyValue('--g-serif').trim():'')||'serif';
     await document.fonts?.ready;
     const {result,file}=await saveFile(await drawCard(a.display,t,font),`우리아이미술관_${safeName(t.title)}.png`,t.title,coarse);
@@ -659,9 +696,10 @@ function joyUp(e: PointerEvent) {
 }
 
 function onKey(e: KeyboardEvent) {
+  if(e.key==='Escape'&&!panel.value&&(confirmOpenId.value||decisionOpenId.value)){e.preventDefault();if(decisionBusy.value)return;confirmOpenId.value=null;decisionOpenId.value=null;return;}
   // [더보기]는 Escape로 접고 초점을 [더보기]로 돌린다(§2-17)
   if(e.key==='Escape'&&moreTools.value&&!panel.value){e.preventDefault();moreTools.value=false;worldRoot.value?.querySelector<HTMLElement>('.w-more-tools')?.focus();return;}
-  if(!panel.value)return;
+  if(!panel.value&&!confirmOpenId.value&&!decisionOpenId.value)return;
   if(e.key==='Escape'&&editing.value&&!panel.value){e.preventDefault();cancelDecor();return;}
   if(e.key==='Escape'){e.preventDefault();if(panel.value==='play')playPanel.value?.requestClose();else if(panel.value==='upload')uploadPanel.value?.requestClose();else void closePanel();return;}
   if(e.key!=='Tab')return;
@@ -686,6 +724,7 @@ onMounted(async () => {
   if (!(await store.storageWorks())) { phase.value = 'nostorage'; return; }
   void store.keepStorage().then((v) => { persisted.value = v; }); // §2-19 기준 1: 브라우저가 저장 공간을 비울 때 이 미술관은 남기도록 요청
   await boot();
+  if (SERVER_WORLD) void artWatch.resume(() => watchIds(selectedChild.value)); // 새로 고침해도 진행 중인 작품과 확정·결정을 기다리는 작품을 이어서 본다
 });
 onBeforeUnmount(() => {
   alive=false;
@@ -720,6 +759,15 @@ function openSettings() {
       <span>{{ failureReason(worldFailure) }}</span>
       <button class="g-btn g-btn--primary" type="button" :disabled="watchRetrying" @click="retryWorld">{{ worldFailure.kind === 'refused' ? '닫기' : '다시 시도' }}</button>
     </section>
+    <section v-if="SERVER_WORLD && confirmPrompt && !decisionPrompt && !decisionOpenId && !worldFailure && phase==='ready' && !panel && !confirmOpenId" class="w-nudge g-panel" role="status" aria-label="전시 방식을 골라 주세요">
+      <span>{{ confirmPrompt.story?.title || '새 작품' }}의 전시 방식을 골라 주세요.</span>
+      <button class="g-btn g-btn--primary" type="button" @click="confirmOpenId=confirmPrompt!.id">결과 고르기</button>
+    </section>
+    <section v-if="SERVER_WORLD && decisionPrompt && !confirmOpenId && !worldFailure && phase==='ready' && !panel && !decisionOpenId" class="w-nudge g-panel" role="status" aria-label="작품 결과 확인">
+      <span>{{ decisionPrompt.story?.title || '새 작품' }}의 결과를 골라 주세요.</span>
+      <button class="g-btn g-btn--primary" type="button" @click="decisionOpenId=decisionPrompt.id">결과 확인</button>
+    </section>
+    <WorldDecision v-if="decisionOpenId && decisionDetail" :detail="decisionDetail" :busy="decisionBusy" :error="decisionError" @close="decisionOpenId=null" @decide="(choice: Decision)=>submitWorldDecision(decisionOpenId!,choice)" />
     <p v-if="phase === 'starting' && startWaiting" class="w-start-status" role="status">{{ progress.total ? `작품을 거는 중이에요 (${progress.done}/${progress.total})` : '미술관을 준비하고 있어요' }}</p>
 
     <!-- 시작 화면(§2-17): 이 가족의 미술관을 배경으로 제목과 [시작하기]. 아래 세 갈래(v-if, v-else-if, v-else)는 붙여 둔다 -->
@@ -750,12 +798,12 @@ function openSettings() {
       <!-- §2-19 기준 5: 3D를 못 그리는 기기는 한눈에 보기로 작품을 보고 올린다 -->
       <section v-if="webglFailed" class="fallback">
         <p class="g-note">이 기기에서는 3D 미술관을 열 수 없어 작품을 한눈에 보여 드려요.</p>
-        <WorldOverview v-if="account" inline :artworks="artworks" :child="visiting?.child ?? account.child" @upload="beforeUpload(() => openPanel('upload'))" />
+        <WorldOverview v-if="account" inline :artworks="artworks" :child="visiting?.child ?? serverChildName" @upload="beforeUpload(() => openPanel('upload'))" />
       </section>
 
       <header class="hud-top" :class="{ 'w-menu-open': moreTools }">
         <div v-if="!webglFailed" class="where g-panel">
-          <strong>{{ visiting?.child ?? account?.child }}의 미술관</strong>
+          <strong>{{ visiting?.child ?? serverChildName }}의 미술관</strong>
           <span aria-live="polite">{{ place }}</span>
           <button v-if="!webglFailed" class="w-mode-chip" type="button" :aria-label="`지금 ${themeLabel} 모드. 모드 바꾸기`" @click="openPanel('theme')">{{ themeLabel }} 모드 · 바꾸기</button>
         </div>
@@ -885,9 +933,9 @@ function openSettings() {
             <figcaption>{{ visiting ? `${visiting.child}의 작품` : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
           </figure>
           <div class="w-view-side">
-            <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: account?.child ?? '' }).title) || '새 작품' }}</h2>
+            <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: serverChildName }).title) || '새 작품' }}</h2>
             <template v-if="!visiting">
-              <p class="by">{{ plaqueOf({ ...viewWork, child: account?.child ?? '' }).byline }}</p>
+              <p class="by">{{ plaqueOf({ ...viewWork, child: serverChildName }).byline }}</p>
               <label class="w-field w-story">아이가 한 말, 그때 이야기
                 <textarea v-model="storyDraft" class="w-input" maxlength="200" rows="4" :readonly="SERVER_WORLD" :placeholder="SERVER_WORLD ? '' : '아이에게 이 그림 이야기를 들려 달라고 해 보세요'" />
               </label>
@@ -980,11 +1028,17 @@ function openSettings() {
           <div v-if="resend?.kind === 'backup'" class="row"><button class="g-btn g-btn--primary" type="button" @click="sendAgain">파일 보내기</button></div>
           <hr />
           <component :is="TestFamilies" v-if="TestFamilies" @change="familyChanged" />
-          <label class="w-field">아이 이름<input v-model="childName" class="w-input" maxlength="20" /></label>
-          <label class="w-field">지금 나이
-            <select v-model.number="childAge" class="w-input"><option :value="0">모름</option><option v-for="n in MAX_AGE" :key="n" :value="n">{{ n }}세</option></select>
-          </label>
-          <div class="row"><button class="g-btn g-btn--primary" type="button" @click="saveChild(childName, childAge)">저장</button></div>
+          <div v-if="SERVER_WORLD" class="row">
+            <span>{{ serverChildName }}의 작품을 보고 있어요.</span>
+            <button class="g-btn g-btn--primary" type="button" @click="emit('changeChild')">아이 바꾸기</button>
+          </div>
+          <template v-else>
+            <label class="w-field">아이 이름<input v-model="childName" class="w-input" maxlength="20" /></label>
+            <label class="w-field">지금 나이
+              <select v-model.number="childAge" class="w-input"><option :value="0">모름</option><option v-for="n in MAX_AGE" :key="n" :value="n">{{ n }}세</option></select>
+            </label>
+            <div class="row"><button class="g-btn g-btn--primary" type="button" @click="saveChild(childName, childAge)">저장</button></div>
+          </template>
           <label class="w-field"><span>미술관 모양</span><select aria-label="미술관 모양" class="w-input" :value="prefs?.building" @change="setBuilding(($event.target as HTMLSelectElement).value as MuseumStyle)"><option v-for="id in STYLES" :key="id" :value="id">{{ STYLE_NAME[id] }}</option></select></label>
           <hr />
           <div class="row">
@@ -1016,7 +1070,7 @@ function openSettings() {
       <WorldArchive
         v-if="panel === 'archive' && account"
         :artworks="artworks"
-        :child="account.child"
+        :child="serverChildName"
         :focus="archiveFocus"
         @close="closePanel"
         @delete="onDelete"
@@ -1029,7 +1083,7 @@ function openSettings() {
       <WorldOverview
         v-if="panel === 'overview' && account"
         :artworks="artworks"
-        :child="account.child"
+        :child="serverChildName"
         @close="closePanel"
         @goto="gotoWork"
         @edit="(id: string) => openArchive(id)"
@@ -1045,6 +1099,7 @@ function openSettings() {
         @close="closePanel"
       />
 
+      <WorldConfirm v-if="confirmOpenId && confirmDetail" :detail="confirmDetail" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; setDetail(d); artWatch.add([d.id]); }" @refreshed="(d) => { setDetail(d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind || d.state === 'awaiting_review' || d.state === 'failed') { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>
