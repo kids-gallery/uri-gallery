@@ -48,7 +48,7 @@ async function restore() {
     if (alive && current === epoch) {
       guardian.value = value;
       notice.value = '';
-      childReady.value = !!selectedChild.value;
+      if (!wasAuthenticated) childReady.value = false;
     }
   } catch (e) {
     if (!alive || current !== epoch) return;
