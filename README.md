@@ -161,10 +161,13 @@ flowchart LR
 ```bash
 git clone https://github.com/kids-gallery/uri-gallery.git
 cd uri-gallery
-# 실제 비밀 값은 예시 파일을 복사하지 않고 각각 새로 만듭니다.
+# 처음 실행할 때만 없는 비밀 파일을 만듭니다. 재실행해도 기존 값을 보존합니다.
 umask 077
 for name in db_password session_secret auth_hmac_secret; do
-  openssl rand -hex 32 > "secrets/$name"
+  if [ ! -e "secrets/$name" ]; then
+    (set -C; openssl rand -hex 32 > "secrets/$name") || exit 1
+  fi
+  test -s "secrets/$name" || { echo "비밀 파일이 비어 있습니다: $name" >&2; exit 1; }
 done
 docker compose config -q
 docker compose up -d --build
