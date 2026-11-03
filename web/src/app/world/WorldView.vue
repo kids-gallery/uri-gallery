@@ -436,6 +436,7 @@ const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는�
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const confirmOpenId = ref<string | null>(null);
 const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
+const confirmDetail = computed(() => confirmOpenId.value ? artWatch.details.value.get(confirmOpenId.value) ?? null : null);
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
@@ -1050,7 +1051,7 @@ function openSettings() {
         @close="closePanel"
       />
 
-      <WorldConfirm v-if="confirmOpenId && confirmPrompt?.id === confirmOpenId" :detail="confirmPrompt" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind) { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
+      <WorldConfirm v-if="confirmOpenId && confirmDetail" :detail="confirmDetail" @close="confirmOpenId=null" @confirmed="(d) => { confirmOpenId=null; artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); }" @refreshed="(d) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); artWatch.add([d.id]); if (!d.choices.length || d.confirmedKind || d.state === 'awaiting_review' || d.state === 'failed') { confirmOpenId=null; say('이미 정해진 작품이에요'); } }" />
       <p v-if="toast" class="toast" role="status">{{ toast }}</p>
     </template>
   </div>
