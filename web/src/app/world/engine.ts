@@ -14,7 +14,7 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { ThemeManager, type ThemeId } from './themes';
 import { buildAvatar, animateAvatar, type AvatarConfig, type AvatarRig } from './avatar';
 import { Performance, Particles } from './behaviors';
-import { maskFromCutout, drawToCanvas, blobToImage, removeBackground, cutoutCanvas, type Mask } from './cutout';
+import { maskFromCutout, drawToCanvas, blobToImage, removeBackground, cutoutCanvas, surfaceFromBlob, type Mask } from './cutout';
 import { subjectOf } from './subjects';
 import { plaqueOf, roomSubtitle, roomTitle } from './curation';
 import { play as playSound } from './sound';
@@ -280,7 +280,7 @@ export class MuseumEngine {
 
   // ───────── 데이터 ─────────
   private async load(a: Artwork): Promise<Loaded> {
-    const key = `${a.display.size}:${a.rotation ?? 0}:${a.cutout?.size ?? 0}`, hit = this.loaded.get(a.id);
+    const key = `${a.display.size}:${a.rotation ?? 0}:${a.cutout?.size ?? 0}:${a.depth?.size ?? 0}`, hit = this.loaded.get(a.id);
     if (hit && hit.key === key) return hit;
     if (hit) { hit.texture.dispose(); this.loaded.delete(a.id); }
     const bmp = await createImageBitmap(a.display);
@@ -299,6 +299,7 @@ export class MuseumEngine {
       cb.close?.();
       const m = maskFromCutout(cc);
       mask = m.ok ? m : null;
+      if (mask && a.depth) mask.surface = await surfaceFromBlob(a.depth);
     }
     const l = { texture, mask, aspect: canvas.width / canvas.height, key };
     this.loaded.set(a.id, l);

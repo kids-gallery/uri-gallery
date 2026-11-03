@@ -1,9 +1,9 @@
 // 보관함용: 저장된 작품(축소본 + 배경 지운 그림)에서 입체를 다시 만들고, GLB로 내보낸다(유스케이스 UC-08).
 import * as THREE from 'three';
-import { buildRelief, maskFromCutout } from './cutout';
+import { buildRelief, maskFromCutout, surfaceFromBlob } from './cutout';
 import type { Artwork } from './store';
 
-export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout'>, height = 1): Promise<{ mesh: THREE.Mesh; dispose(): void }> {
+export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout' | 'depth'>, height = 1): Promise<{ mesh: THREE.Mesh; dispose(): void }> {
   const bmp = await createImageBitmap(a.display);
   const c = document.createElement('canvas');
   c.width = bmp.width; c.height = bmp.height;
@@ -20,6 +20,7 @@ export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout'>, height = 
     cb.close?.();
     const m = maskFromCutout(cc);
     mask = m.ok ? m : null;
+    if (mask && a.depth) mask.surface = await surfaceFromBlob(a.depth);
   }
   const mesh = buildRelief(texture, mask, c.width / c.height, { height });
   return {
@@ -32,7 +33,7 @@ export async function reliefOf(a: Pick<Artwork, 'display' | 'cutout'>, height = 
   };
 }
 
-export async function exportGlb(a: Pick<Artwork, 'display' | 'cutout' | 'title'>): Promise<Blob> {
+export async function exportGlb(a: Pick<Artwork, 'display' | 'cutout' | 'depth' | 'title'>): Promise<Blob> {
   const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter.js');
   const { mesh, dispose } = await reliefOf(a, 0.3); // 실물 크기에 가깝게 30cm
   mesh.name = a.title || 'artwork';

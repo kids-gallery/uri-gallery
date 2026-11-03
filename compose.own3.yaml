@@ -2,6 +2,10 @@
 #   docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d
 # 가중치는 저장소에 없다. models/own3/own3.ts에 둔다.
 services:
+  web:
+    build:
+      args:
+        VITE_RELIEF_DEPTH: "1"
   db-migrate:
     environment:
       MODEL_MANIFEST: /app/models/manifest.own3.yaml

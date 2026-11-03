@@ -1,12 +1,14 @@
 // 3D 화면 전시 목록(마스터플랜 3-3, #40). 서버 판은 GET /v1/gallery에 있는 작품만 건다.
 // - 컷아웃은 승인되어 걸린 부조(kind가 relief)의 auxUrl만 쓴다. 판정 중에도 오는 상세의 cutoutUrl은 쓰지 않는다.
 // - 파일은 작품마다 메모리에 두고, 결과 종류가 바뀔 때만 다시 받는다.
+// - 깊이는 VITE_RELIEF_DEPTH=1로 빌드했을 때만 받는다(마스터플랜 3-6).
 import { ref } from 'vue';
 import * as store from '../store';
 import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, type Failure, type Gallery } from './index';
 
 type Item = Gallery['groups'][number]['items'][number];
 
+const RELIEF_DEPTH_ON = import.meta.env.VITE_RELIEF_DEPTH === '1';
 const shown = new Map<string, { work: store.Artwork; kind: string; childId: string }>();
 /** 로그아웃하면 늘어난다. 그 전에 시작한 요청의 결과는 버린다 */
 let epoch = 0;
@@ -34,9 +36,10 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   const had = shown.get(item.id);
   const base = had?.work ?? await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const cutout = had?.kind === item.kind ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await file(item.auxUrl) : null;
+  const depth = had?.kind === item.kind ? had.work.depth ?? null : RELIEF_DEPTH_ON && item.kind === 'relief' && item.primaryUrl ? await file(item.primaryUrl) : null;
   return {
     ...base, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
-    madeOn: item.madeOn, words: item.childWords ?? '', cutout, cutoutState: cutout ? 'done' : undefined,
+    madeOn: item.madeOn, words: item.childWords ?? '', cutout, depth, cutoutState: cutout ? 'done' : undefined,
   };
 }
 
