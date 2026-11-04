@@ -10,6 +10,42 @@ const ACTIVE = new Set<string>(['waiting', 'running', 'retrying']);
 /** state가 아니라 stages로 본다. 원본 액자가 걸린 작품은 판정 중에도 state가 exhibited이고, choices가 있어도 컷아웃은 아직 오는 중일 수 있다 */
 export const isMoving = (a: Pick<ArtworkDetail, 'stages'>) => a.stages.some((s) => ACTIVE.has(s.status));
 
+/** 체험 서버(마스터플랜 3-3 #137): 묻지 않고 작품만 따서 건다. 다음에 보낼 것을 돌려준다. 입체를 고를 수 없으면 사람에게 넘긴다 */
+export function autoStep(d: Pick<ArtworkDetail, 'state' | 'confirmedKind' | 'choices'>): { confirm: 'relief' } | { decide: 'like' } | null {
+  if (d.state === 'awaiting_review') return d.choices.includes('like') ? { decide: 'like' } : null;
+  if (d.state !== 'failed' && !d.confirmedKind && d.choices.includes('relief')) return { confirm: 'relief' };
+  return null;
+}
+
+/** 체험 서버 자동 전시 실행. 실패하면 다음 상태 묻기에서 다시 보내고, 세 번째 실패에 사람에게 넘긴다(지금의 창이 뜬다) */
+export function autoExhibitor(io: {
+  confirm: (id: string, kind: 'relief') => Promise<ArtworkDetail>;
+  decide: (id: string, decision: 'like') => Promise<{ artwork?: ArtworkDetail | null }>;
+  setDetail: (d: ArtworkDetail) => void;
+  again: (id: string) => void;
+}) {
+  const tries = new Map<string, number>(), busy = new Set<string>();
+  const gaveUp = ref(new Set<string>());
+  const handles = (d: ArtworkDetail) => !gaveUp.value.has(d.id) && !!autoStep(d);
+  async function run(d: ArtworkDetail) {
+    const step = autoStep(d);
+    if (!step || gaveUp.value.has(d.id) || busy.has(d.id)) return;
+    busy.add(d.id);
+    try {
+      if ('confirm' in step) io.setDetail(await io.confirm(d.id, step.confirm));
+      else { const out = await io.decide(d.id, step.decide); if (out.artwork) io.setDetail(out.artwork); }
+      tries.delete(d.id);
+      io.again(d.id);
+    } catch {
+      const n = (tries.get(d.id) ?? 0) + 1;
+      tries.set(d.id, n);
+      if (n >= 3) gaveUp.value = new Set(gaveUp.value).add(d.id);
+      else io.again(d.id);
+    } finally { busy.delete(d.id); }
+  }
+  return { handles, run, gaveUp };
+}
+
 export function useArtworkWatch() {
   /** 받은 상세. 창(#38·#39)과 입체 교체(#40)가 쓴다 */
   const details = shallowRef(new Map<string, ArtworkDetail>());

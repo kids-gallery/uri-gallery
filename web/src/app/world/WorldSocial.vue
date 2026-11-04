@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {onMounted,ref} from 'vue';
-import {LocalSocialStore,SocialError,type PublicBuilding} from './social';
+import {SocialError,type PublicBuilding} from './social';
+import {socialStore} from './server/social';
 import {neighbor} from '../town/copy';
 const props=defineProps<{family:string;token?:string}>();const emit=defineEmits<{close:[];town:[focus?:string]}>();
-const social=new LocalSocialStore(),friends=ref<PublicBuilding[]>([]),pending=ref<Array<{id:string;expiresAt:string}>>([]),link=ref(''),message=ref(''),busy=ref(false),confirm=ref('');
+const social=socialStore(),friends=ref<PublicBuilding[]>([]),pending=ref<Array<{id:string;expiresAt:string}>>([]),link=ref(''),message=ref(''),busy=ref(false),confirm=ref('');
 const copy=neighbor;
 async function refresh(){friends.value=await social.neighbors(props.family);pending.value=await social.invites(props.family);}
 function explain(e:unknown){message.value=e instanceof SocialError?e.reason==='own_family'?copy.ownFamily:e.reason==='neighbor_full'?copy.fullAccept:copy.tokenInvalid:copy.tryLater;}
