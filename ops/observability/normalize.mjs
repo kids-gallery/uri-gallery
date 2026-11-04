@@ -13,7 +13,7 @@ export function normalize(record, {service, environment}, now = Date.now()) {
   const candidate = record.time ?? record.ts;
   const parsed = typeof candidate === 'number' || typeof candidate === 'string' ? new Date(candidate).getTime() : NaN;
   const out = {timestamp:new Date(Number.isFinite(parsed) ? parsed : now).toISOString(),level,service,environment,event:'service_log'};
-  if (typeof record.requestId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(record.requestId)) out.requestId = record.requestId;
+  if (typeof record.requestId === 'string' && (/^rid_[a-f0-9]{64}$/.test(record.requestId) || /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(record.requestId))) out.requestId = record.requestId;
   if (Number.isSafeInteger(record.job_id) && record.job_id > 0) out.jobId = record.job_id;
   const errorClass=record.error_class??record.errorClass;
   if (['engine_down','timeout','storage','db','model_not_ready'].includes(errorClass)) out.errorClass=errorClass;

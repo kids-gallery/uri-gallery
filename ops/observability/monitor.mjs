@@ -6,6 +6,10 @@ export function transition(previous, failures, threshold=2){
  const state=count>=threshold?'firing':count===0?'healthy':previous.state;
  return {state,failures:count,event:state!==previous.state?(state==='firing'?'alert':'recovered'):null};
 }
+export function singleFlight(work) {
+ let running=false;
+ return async()=>{if(running)return false;running=true;try{await work();return true;}finally{running=false;}};
+}
 export function staleHeartbeat(record, now=Date.now()) {
  const time=Date.parse(record?.timestamp);
  return record?.event!=='collector_heartbeat'||!Number.isFinite(time)||time>now+5000||now-time>30000;
@@ -18,7 +22,7 @@ export function stackChecks(project, threshold=60) {
   const state=JSON.parse(docker(['inspect','--format','{{json .State}}',`${project}-${service}-1`]));checks[check]=!state.Running||state.Health?.Status!=='healthy';
  }catch{}
  try{
-  const metrics=docker(['exec',`${project}-app-api-1`,'node','-e',"fetch('http://127.0.0.1:9521/metrics').then(async r=>{if(!r.ok)process.exit(1);process.stdout.write(await r.text())}).catch(()=>process.exit(1))"]);
+  const metrics=docker(['exec',`${project}-app-api-1`,'node','-e',"fetch('http://127.0.0.1:9521/metrics',{signal:AbortSignal.timeout(3000)}).then(async r=>{if(!r.ok)process.exit(1);process.stdout.write(await r.text())}).catch(()=>process.exit(1))"]);
   const values=[...metrics.matchAll(/^uam_queue_oldest_wait_seconds\{[^}]*\} (\S+)/gm)].map(m=>Number(m[1]));
   checks.queue=!values.length||values.some(v=>!Number.isFinite(v)||v>threshold);
  }catch{}
@@ -37,5 +41,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   }
   }
  }
- await poll();setInterval(poll,10000);
+ const tick=singleFlight(poll);
+ const safeTick=()=>tick().catch(()=>{appendFileSync(output,JSON.stringify({timestamp:new Date().toISOString(),event:'monitor_failed'})+'\n');});
+ await safeTick();setInterval(safeTick,10000);
 }

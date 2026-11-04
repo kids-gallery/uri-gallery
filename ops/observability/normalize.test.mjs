@@ -24,3 +24,7 @@ test('preserves classified errors and stages without copying arbitrary metadata'
  const bad=normalize({level:'__proto__',error_class:'child@example.test',stage_kind:'아이별칭',model_id:'bearer-secret'},source);
  assert.equal(bad.level,'unknown');assert.equal(bad.errorClass,undefined);assert.equal(bad.modelId,undefined);
 });
+test('keeps a hashed trace ID in the body',()=>{
+ const requestId='rid_'+'b'.repeat(64);
+ assert.equal(normalize({level:30,requestId},source).requestId,requestId);
+});

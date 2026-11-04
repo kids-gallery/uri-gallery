@@ -16,7 +16,7 @@ node ops/observability/collect.mjs uri-gallery-ops-app1104 ops/observability/col
 
 collector는 별도 터미널에서 실행한다. 지정 프로젝트 네 서비스 stdout JSON만 읽어 정제하며 stderr·nginx·DB·메일 원문은 제외한다. Docker socket을 컨테이너에 연결하지 않는다. `collected/`에 원문을 직접 넣으면 안 된다. Grafana는 `http://127.0.0.1:13001`, 계정 admin과 위 파일 암호로 연다. Loki/Alloy는 호스트 포트가 없다. 시험 앱은 loopback 19501, Mailpit은 loopback 18025다.
 
-정제기는 timestamp/level/service/environment/event/durationMs/httpStatus와 검증된 추적 ID만 남긴다. 요청/작업 ID는 인덱스 라벨로 쓰지 않는다. UUID가 아닌 요청 ID는 현재 수집기에서 버린다. 정제 파일은 서비스별 약 5MB×3이다. Docker 원시 로그는 10MB×3이다. 합계가 호스트 디스크 하드 한도라는 뜻은 아니다.
+정제기는 timestamp/level/service/environment/event/durationMs/httpStatus와 검증된 추적 ID만 남긴다. 요청/작업 ID는 인덱스 라벨로 쓰지 않는다. API가 해시한 요청 ID와 UUID 형식만 수집한다. 정제 파일은 서비스별 약 5MB×3이다. Docker 원시 로그는 10MB×3이다. 합계가 호스트 디스크 하드 한도라는 뜻은 아니다.
 
 ## 시험 순서
 
@@ -65,7 +65,7 @@ node ops/observability/retention-check.mjs
 
 monitor는 DB/워커 Docker health, 큐 최장 대기(기본 60초), collector heartbeat를 10초 간격으로 보고 2회 연속 실패 때 1회 경보, 복구 때 1회 통지를 남긴다. 큐 scrape 불가도 장애다. OPS_ALERT_WEBHOOK이 있으면 JSON을 전송하고 전송 실패는 로컬에 남긴다. 실제 채널 정보는 사용자 전달을 기다린다. downstream Loki 전체 전달·디스크 부족·호스트 밖 생존 감시는 후속 검증이다.
 
-Loki 본 시험은 보관 7일 초안이고 compactor 상태는 영속화한다. 별도 retention 시험은 최소 24시간에 25시간 전 합성 로그를 넣는다. 삭제와 조회 캐시 전파는 별개이며 재시작이 필요하면 보고서에 표시한다. 24시간 유입량과 운영 저장 공간·비용은 아직 측정하지 않았다.
+Loki 본 시험은 보관과 조회 상한을 7일 초안으로 설정하고 compactor 상태는 영속화한다. 별도 retention 시험은 48시간 조회 상한에서 25시간 전 합성 로그를 저장한 뒤 24시간으로 낮춘다. 오래된 로그의 API 조회 차단과 청크 삭제를 각각 확인하며, 최신 로그가 남는지도 확인한다. TSDB head 회전과 삭제에는 최대 20분을 기다린다. 24시간 유입량과 운영 저장 공간·비용은 아직 측정하지 않았다.
 
 collector의 파일 쓰기와 cursor 갱신 사이 중단은 중복 가능성이 있다. 원시 로그 회전 전에 못 읽으면 유실될 수 있다. 8MiB를 넘는 밀린 stdout 처리와 정확히 한 번 전달을 보장하지 않는다. Alloy 재시도/버퍼 한도 밖 장애도 유실될 수 있다.
 
