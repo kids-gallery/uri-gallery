@@ -24,7 +24,7 @@ models:
     pretrained: laion2b_s34b_b79k
     revision: 1a25a446712ba5ee05982a381eed697ef9b435cf
     weights_sha256: ac4f8c4b88af6d963118cbf40ad93176d092abbedfcb752601ae1866352656e6
-    config_hash: a99f0ae6049b25fedadb120c179eec0764fdc3bebd44d7547cf8efd5f3b2db18
+    config_hash: eda188b762ce65d96d31afc7b490cd71af3bc467b3ab3bf9438ab03d2793ab97
     runtime: open_clip-2.26.1-mps
     exec_device: gpu
     license_confirmed: true

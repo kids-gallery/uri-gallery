@@ -18,6 +18,8 @@ export interface Artwork {
   title: string;
   kind: 'drawing' | 'making';
   subject: string;
+  /** M2가 정한 움직임 주제. 움직임에만 쓰고 명패와 해설에는 쓰지 않는다(마스터플랜 3-3) */
+  motion?: string;
   material: string;
   age: number;
   madeOn: string;

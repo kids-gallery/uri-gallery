@@ -1478,7 +1478,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 방문 전용 그림 파일 (D40) — 받을 때마다 이웃 관계를 다시 확인, 끊으면 바로 404 */
+        /**
+         * 방문 전용 그림 파일 (D40) — 받을 때마다 이웃 관계를 다시 확인, 끊으면 바로 404
+         * @description `삭제 중` 작품의 파일은 토큰이 유효해도 404. 응답은 `Cache-Control: private, no-store`.
+         */
         get: {
             parameters: {
                 query?: never;
@@ -2416,7 +2419,7 @@ export interface paths {
         };
         /**
          * 가족 파일 내려받기 — 짧게 유효한 서명 토큰 (research R-06)
-         * @description 토큰은 작품 상세·전시 응답에만 실리고 5분 뒤 만료 [추론]. 가족 세션과 토큰의 가족이 같아야 한다. nginx X-Accel-Redirect로 전달.
+         * @description 토큰은 작품 상세·전시 응답에만 실리고 5분 뒤 만료 [추론]. 가족 세션과 토큰의 가족이 같아야 한다. `삭제 중` 작품의 파일은 토큰이 유효해도 404. 응답은 `Cache-Control: private, no-store`. nginx X-Accel-Redirect로 전달.
          */
         get: {
             parameters: {
@@ -3856,6 +3859,8 @@ export interface components {
             photoUrl?: string | null;
             /** @description (D46) 만들기 → 미술관 받침대(D45) */
             making?: boolean;
+            /** @description M2 태그, 확률 순. 3D 화면의 움직임을 정하는 데만 쓴다. 화면에 글로 보이지 않는다 */
+            motionTags?: string[];
             title: string;
             /** @description (D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다 */
             titleAuto?: boolean;
