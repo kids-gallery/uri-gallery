@@ -3,6 +3,10 @@
 # 저장소 매니페스트는 라이선스 확인 전(false)이라 OWN3_MANIFEST 없이는 db-migrate가 멈춘다. 사본 만드는 법은 3-6 켜는 조건.
 # 가중치는 저장소에 없다. models/own3/own3.ts에 둔다.
 services:
+  web:
+    build:
+      args:
+        VITE_RELIEF_DEPTH: "1"
   db-migrate:
     environment:
       MODEL_MANIFEST: /app/models/manifest.own3.yaml

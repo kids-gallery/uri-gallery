@@ -7,6 +7,8 @@ import { SERVER_WORLD } from './server/upload';
 /** persisted: 브라우저가 이 미술관 자료를 지우지 않기로 했는가(null = 이 브라우저는 알려 주지 않음) */
 defineProps<{ persisted: boolean | null; lastBackup: number | null; mode: StorageMode }>();
 const emit = defineEmits<{ close: []; backup: [] }>();
+/** 기본 빌드의 기능은 자체 모델로 배우지 않았다. 켠 빌드에서만 출처를 안내한다(마스터플랜 3-6) */
+const modelData = import.meta.env.VITE_RELIEF_DEPTH === '1';
 </script>
 
 <template>
@@ -28,6 +30,7 @@ const emit = defineEmits<{ close: []; backup: [] }>();
       <p v-if="!SERVER_WORLD">기기를 바꾸거나 브라우저 자료를 지우면 작품이 사라져요. 설정의 [백업 내보내기]로 받은 파일에는 사진과 이야기가 그대로 들어 있으니, 보호자가 안전한 곳에 보관해 주세요.</p>
       <h3>공개 소프트웨어</h3>
       <p>이 앱이 쓰는 공개 소프트웨어의 라이선스 원문: <a href="/licenses/THIRD_PARTY.txt" target="_blank" rel="noopener">THIRD_PARTY.txt</a></p>
+      <p v-if="modelData">그림을 입체로 만드는 기능을 배울 때 쓴 공개 자료의 출처: <a href="/licenses/MODEL_DATA.txt" target="_blank" rel="noopener">MODEL_DATA.txt</a></p>
       <div class="row">
         <button v-if="!SERVER_WORLD" class="g-btn g-btn--primary" type="button" @click="emit('backup')">백업하러 가기</button>
         <button class="g-btn" type="button" @click="emit('close')">닫기</button>
