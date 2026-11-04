@@ -9,6 +9,9 @@ export const STAFF_COOKIE = 'uam_ops_sid';
 /** 쓰지 않아도 유지되는 분. 쓸 때마다 늘어난다(R-08). 보호자는 휴대폰에서 매번 로그인하지 않게 14일, 팀원은 운영 권한이라 30분 */
 export const IDLE_MINUTES = { guardian: 14 * 24 * 60, staff: 30 } as const;
 
+/** 보호자 세션 쿠키. 쓸 때마다 다시 보내 브라우저 만료도 DB와 함께 늘린다 */
+export const guardianCookieOpts = (secure: boolean) => ({ httpOnly: true, sameSite: 'lax' as const, secure, path: '/', maxAge: IDLE_MINUTES.guardian * 60 * 1000 });
+
 export const hashSid = (sid: string) => createHash('sha256').update(sid).digest('hex');
 
 export async function createSession(db: Pool, kind: 'guardian' | 'staff', subjectId: number): Promise<string> {
