@@ -29,7 +29,7 @@ export class MotionStage {
     const { relief } = source;
     const size = relief.userData.size as { w?: number; h: number };
     const span = Math.max(size.h, size.w ?? size.h);
-    this.stage = { cx: 0, cz: 0, halfX: span * 0.9, halfZ: span * 0.6, ceiling: span * 1.8 };
+    this.stage = { cx: 0, cz: 0, halfX: span * 0.8, halfZ: span * 0.5, ceiling: span * 1.5 };
     this.home = new THREE.Mesh(relief.geometry, relief.material);
     this.home.userData = relief.userData;
     relief.getWorldScale(this.home.scale);
@@ -59,8 +59,8 @@ export class MotionStage {
     const tan = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
     const { halfX, ceiling } = this.stage;
     const dist = Math.max((ceiling * 1.1) / (2 * tan), (halfX * 2.2) / (2 * tan * this.camera.aspect));
-    this.camera.position.set(0, ceiling * 0.55, dist);
-    this.camera.lookAt(0, ceiling * 0.46, 0);
+    this.camera.position.set(0, ceiling * 0.5, dist);
+    this.camera.lookAt(0, ceiling * 0.4, 0);
     this.camera.updateProjectionMatrix();
   }
 

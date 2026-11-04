@@ -578,8 +578,8 @@ export class MuseumEngine {
   setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
-  /** 천장이 있는 모드의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
-  private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
+  /** 대성당 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
+  private get zoomFar(): number { return this.space === 'inside' && this.theme.current === 'classic' ? ZOOM.lift : ZOOM.far; }
   /** 움직여 보기 창이 도는 동안 뒤쪽 장면을 멈춘다. 휴대폰에서 3D 두 개를 함께 그리지 않기 위해서다 */
   setRenderHeld(on: boolean) { this.renderHeld = on; }
   /** 결과 카드가 떠 있는 동안 캐릭터가 작품을 가리지 않게 한다(마스터플랜 3-3 #137) */
@@ -728,7 +728,11 @@ export class MuseumEngine {
     const off = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(dist);
     let want = target.clone().add(off);
     const direction=off.clone().normalize();
-    const allowed=occlusionDistance(target,direction,dist,this.space==='inside'?this.museum.cameraSolids:this.outdoor.cameraSolids,this.camera.aspect,this.camera.near,this.camera.getEffectiveFOV());
+    // 많이 줄이면 천장을 숨겨 전시실을 내려다본다. 숨긴 천장은 카메라를 막지 않는다
+    const ceiling=this.theme.mats.ceiling,open=this.space==='inside'&&lift>.02;
+    if(ceiling.visible===open)ceiling.visible=!open;
+    const solids=this.space==='inside'?(open?this.museum.cameraSolids.filter(o=>(o as THREE.Mesh).material!==ceiling):this.museum.cameraSolids):this.outdoor.cameraSolids;
+    const allowed=occlusionDistance(target,direction,dist,solids,this.camera.aspect,this.camera.near,this.camera.getEffectiveFOV());
     this.cameraDistance=recoverDistance(this.cameraDistance,allowed,dt);
     want=target.clone().addScaledVector(direction,this.cameraDistance);
     if(this.space==='inside')want.y=Math.min(want.y,6.6+lift*34);

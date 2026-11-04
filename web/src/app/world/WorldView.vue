@@ -547,7 +547,10 @@ async function changeScene(kind:'theme'|'interior',id:ThemeId|'gallery'|'cathedr
   if(!prefs.value||changingScene.value)return;
   const before=prefs.value,next={...before,[kind]:id};changingScene.value=true;
   try{
+    // 모드를 바꿔도 보던 작품 앞에 그대로 선다(마스터플랜 3-3 #137)
+    const here=space.value==='inside'?(shownWork.value?.id??null):null;
     if(kind==='theme')engine.value?.setTheme(id as ThemeId);else engine.value?.setInterior(id as 'gallery'|'cathedral');
+    if(here)engine.value?.jumpTo(here);
     await store.savePrefs(next);prefs.value=next;
     if(kind==='theme'){setAmbience(id as ThemeId);if(space.value==='town')void engine.value?.setResidents(townBuildings.value);}
   }catch{
@@ -627,7 +630,7 @@ async function startWithoutWebgl() {
   if (account.value) { noteVisit(); void checkBackup(); runCutouts(); }
 }
 /** 보관함·한눈에 보기의 [미술관에서 보기](§2-18): 창을 닫고 걸어가는 동안 [더보기]를 다시 펼치지 않는다 */
-function gotoWork(id: string) { panelTrigger = null; void closePanel(); engine.value?.jumpTo(id); } // §2-23 C: 걷지 않고 흰빛 전환
+function gotoWork(id: string) { panelTrigger = null; void closePanel(); engine.value?.jumpTo(id); selection.value = { type: 'work', id }; plaqueClosed.value = null; } // §2-23 C: 걷지 않고 흰빛 전환
 
 // 가까이 보기(§2-14): 화면용 원본을 크게 보고, 아이가 한 말을 그 자리에서 적는다. 저장은 기존 words 칸만 쓴다
 const viewWork=shallowRef<Artwork|null>(null),viewUrl=ref(''),storyDraft=ref(''),storyBusy=ref(false),storyMsg=ref('');
@@ -904,6 +907,7 @@ function openSettings() {
 
       <div v-if="panel === 'view' && viewWork" class="sheet w-view" role="dialog" aria-modal="true" :aria-label="`${viewWork.title || '작품'} 가까이 보기`">
         <div class="g-panel sheet-card w-view-card">
+          <button class="w-view-x" type="button" aria-label="닫기" @click="closePanel">✕</button>
           <figure class="w-view-figure">
             <img :src="viewUrl" :alt="viewWork.title || '아이 작품 사진'" />
             <figcaption>{{ visiting ? `${visiting.child}의 작품` : SERVER_WORLD ? '화면에 맞춰 줄인 사진이에요. 올린 사진은 보관함에 있어요' : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
@@ -1296,7 +1300,9 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
 .w-plaque-x:hover{background:rgba(60,40,30,.2)}.w-plaque-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .w-gestures{z-index:13}
-.w-emotes{position:absolute;right:0;bottom:calc(100% + 6px);display:grid;gap:6px;width:max-content;max-height:52dvh;overflow:auto;padding:0;background:none;border:0;box-shadow:none}
+.w-view-x{grid-column:1/-1;justify-self:end;position:sticky;top:0;z-index:3;width:40px;height:40px;margin-bottom:-40px;border:0;border-radius:50%;background:rgba(60,40,30,.72);color:#fff;font:600 17px var(--font-sans,system-ui);cursor:pointer}
+.w-view-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
+.w-emotes{position:absolute;right:0;bottom:calc(100% + 6px);display:grid;grid-template-columns:repeat(2,auto);gap:6px;width:max-content;max-height:52dvh;overflow:auto;padding:0;background:none;border:0;box-shadow:none}
 .w-emotes .g-btn{white-space:nowrap;justify-content:center;min-width:96px}
 .w-hud-intro .w-bar{animation:w-hud-in-center .3s cubic-bezier(.2,.8,.2,1) .16s both}
 @media(max-width:600px){

@@ -80,7 +80,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 <template>
   <Teleport to="body"><!-- 화면 틀(움직임 · 변형)의 쌓임 맥락 밖 — 고정 메뉴 줄 위에 뜬다 -->
   <div class="fx-scrim" @click.self="emit('close')">
-    <div ref="dialog" class="fx" role="dialog" aria-modal="true" aria-labelledby="fx-t" @keydown="trap">
+    <div ref="dialog" class="fx" :class="{ 'fx-asking': !!kindOptions?.length }" role="dialog" aria-modal="true" aria-labelledby="fx-t" @keydown="trap">
       <h2 id="fx-t" class="fx-t">{{ ko.up2.fix }}</h2>
       <p class="fx-hint">{{ hint ?? ko.up2.fixHint }}</p>
       <div v-if="boxOptions?.length" class="fx-ask" role="group" :aria-label="boxAsk">
@@ -101,7 +101,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         </div>
         <div v-else class="fx-photo fx-load">{{ ko.save.busy }}</div>
         <div class="fx-side">
-          <p class="fx-cap">{{ ko.fix.preview }}</p>
+          <p class="fx-cap">{{ kindPick === 'making' ? '단상에 올릴 모습' : ko.fix.preview }}</p>
           <canvas ref="preview" class="fx-prev" role="img" :aria-label="ko.fix.preview"></canvas>
         </div>
       </div>
@@ -153,5 +153,9 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
   .fx-acts{position:sticky;bottom:calc(-1 * clamp(14px,3vw,28px));margin:0 calc(-1 * clamp(14px,3vw,28px));padding:10px clamp(14px,3vw,28px);background:#fbf6ee;box-shadow:0 -8px 16px -12px rgba(0,0,0,.35)}
   .fx-acts .sp{display:none}.fx-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.fx-acts .btn{white-space:nowrap;padding-inline:8px;font-size:14px}
   .fx-acts .btn:last-child{grid-column:span 2}.fx-long{display:none}}
+/* 물음이 있는 창은 작은 휴대폰에서 사진이 보이게 답을 한 줄씩 둔다(마스터플랜 3-3 #137) */
+@media (max-width:760px){.fx-ask{display:grid;grid-template-columns:1fr 1fr;gap:4px 6px;font-size:14px}.fx-ask span{grid-column:1/-1}.fx-ask .btn{min-height:40px;padding:4px 6px;font-size:13px;white-space:nowrap}
+  .fx-title{font-size:14px}.fx-title input{min-height:40px}.fx-hint{font-size:13px;line-height:1.35}.fx-t{font-size:18px}.fx-asking .fx-side{display:none}}
+@media (max-width:760px) and (max-height:760px){.fx-asking .fx-photo{--fx-h:32vh}.fx-asking .fx-t{display:none}}
 .fx-msg{margin:0;min-height:1.3em;font:500 14px/1.3 var(--font-sans);color:#8a2b2b}
 </style>

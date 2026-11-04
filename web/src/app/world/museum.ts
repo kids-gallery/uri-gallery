@@ -49,8 +49,9 @@ export function planRooms(ages: number[], works: PlanWork[]): { rooms: PlanRoom[
     for (const w of list) {
       let placed = false;
       while (!placed) {
+        // 만들기는 언제나 단상에 선다. 차면 벽에 걸지 않고 다음 전시실로 넘긴다(마스터플랜 3-3 #137)
         if (w.kind === 'making' && ped < PEDESTAL_SLOTS) { slots.set(w.id, { room, type: 'pedestal', index: ped++ }); placed = true; }
-        else if (wall < WALL_SLOTS) { slots.set(w.id, { room, type: 'wall', index: wall++ }); placed = true; }
+        else if (w.kind !== 'making' && wall < WALL_SLOTS) { slots.set(w.id, { room, type: 'wall', index: wall++ }); placed = true; }
         else { part += 1; room = rooms.push({ age, part }) - 1; wall = 0; ped = 0; }
       }
     }
@@ -378,6 +379,9 @@ export class Museum {
     const tex = signTexture(`${child}의 미술관`, '전시실은 이쪽이에요');
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 1.44), new THREE.MeshBasicMaterial({ map: tex }));
     mesh.position.set(0, COR_H - 0.85, Z0 + 0.3); // 회랑 입구 위쪽에 매단다
+    // 벽 없는 모드에서 하늘에 떠 보이지 않게 기둥을 세운다(마스터플랜 3-3 #137)
+    const post = new THREE.MeshStandardMaterial({ color: '#8a6a48', roughness: 0.8 });
+    for (const x of [-2.1, 2.1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, COR_H - 0.85, 0.16), post); p.position.set(x, -(COR_H - 0.85) / 2, -0.05); mesh.add(p); }
     this.lobbySignMesh = mesh;
     this.root.add(mesh);
   }
