@@ -176,6 +176,7 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
     retry: g('uam_model_retry_rate', '모델별 재시도율', ['model_id', 'model_version', 'serving_group']),
     p95: g('uam_model_duration_p95_ms', '모델별 처리 시간 p95', ['model_id', 'model_version', 'serving_group']),
     queue: g('uam_queue_waiting', '서빙군별 큐 적체', ['serving_group']),
+    queueOldest: g('uam_queue_oldest_wait_seconds', '처리 가능한 가장 오래된 대기 작업의 대기 시간(초)', ['serving_group']),
   };
   r.get('/metrics', async (_req, res, next) => {
     try {
@@ -193,7 +194,10 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
         if (x.retryRate !== null) gauges.retry.set(l, x.retryRate);
         if (x.p95Ms !== null) gauges.p95.set(l, x.p95Ms);
       }
-      for (const q of m.queues) gauges.queue.set({ serving_group: q.servingGroup }, q.waiting);
+      for (const q of m.queues) {
+        gauges.queue.set({ serving_group: q.servingGroup }, q.waiting);
+        gauges.queueOldest.set({ serving_group: q.servingGroup }, q.oldestWaitSeconds ?? 0);
+      }
       res.type(reg.contentType).send(await reg.metrics());
     } catch (e) { next(e); }
   });

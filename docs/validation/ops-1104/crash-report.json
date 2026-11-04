@@ -1,0 +1,8 @@
+{
+  "fixture": "fake split delayed 20s, worker SIGKILL after running observed",
+  "attempts": 2,
+  "originalChecksumUnchanged": true,
+  "artworkCount": 1,
+  "seconds": 72.32,
+  "limits": "one crash point; not result-file-before-commit, disk failure, real model or DB write failure coverage"
+}

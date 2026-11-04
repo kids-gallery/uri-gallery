@@ -1,0 +1,123 @@
+{
+  "panels": [
+    {
+      "id": 1,
+      "targets": [
+        {
+          "expr": "{environment=\"test\",service=~\"$service\",level=~\"$level\"}",
+          "refId": "A"
+        }
+      ],
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 0,
+        "h": 8
+      },
+      "title": "최근 로그"
+    },
+    {
+      "id": 2,
+      "targets": [
+        {
+          "expr": "{environment=\"test\",service=~\"$service\"} | json | httpStatus >= 500",
+          "refId": "A"
+        }
+      ],
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 8,
+        "h": 8
+      },
+      "title": "HTTP 5xx (심각도와 별도)"
+    },
+    {
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({environment=\"test\",service=~\"$service\"}[1m]))",
+          "refId": "A"
+        }
+      ],
+      "type": "timeseries",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 16,
+        "h": 8
+      },
+      "title": "수준별 건수"
+    },
+    {
+      "id": 4,
+      "targets": [
+        {
+          "expr": "{environment=\"test\",service=\"collector\"} | json | event=\"collector_heartbeat\"",
+          "refId": "A"
+        }
+      ],
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 24,
+        "h": 8
+      },
+      "title": "수집 heartbeat (없으면 수집 중단 확인)"
+    }
+  ],
+  "uid": "operations-logs",
+  "refresh": "5s",
+  "templating": {
+    "list": [
+      {
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": "label_values(service)",
+        "name": "service",
+        "multi": true,
+        "type": "query",
+        "includeAll": true,
+        "current": {
+          "value": "$__all",
+          "text": "All"
+        }
+      },
+      {
+        "query": "info,warn,error,unknown",
+        "name": "level",
+        "multi": true,
+        "type": "custom",
+        "includeAll": true,
+        "current": {
+          "value": "$__all",
+          "text": "All"
+        }
+      }
+    ]
+  },
+  "title": "운영 로그와 수집 상태",
+  "timezone": "Asia/Seoul",
+  "schemaVersion": 39
+}

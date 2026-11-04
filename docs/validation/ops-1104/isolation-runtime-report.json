@@ -1,0 +1,9 @@
+{
+  "appGlobalPrivileges": 0,
+  "rootAppSecretsDifferent": true,
+  "publishedPorts": {
+    "web": "127.0.0.1:19501",
+    "mailpit": "127.0.0.1:18025"
+  },
+  "limits": "test stack only; no production password rotation"
+}

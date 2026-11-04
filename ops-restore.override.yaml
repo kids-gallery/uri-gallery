@@ -1,0 +1,17 @@
+services:
+  web:
+    ports: !reset []
+  mailpit:
+    ports: !reset []
+  app-api:
+    environment:
+      TRUST_PROXY: 172.30.97.0/24
+      MAIL_ENABLED: 'false'
+  sweeper:
+    environment:
+      MAIL_ENABLED: 'false'
+networks:
+  edge:
+    ipam:
+      config: !override
+        - subnet: 172.30.97.0/24
