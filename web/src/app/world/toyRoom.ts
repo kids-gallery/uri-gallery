@@ -5,7 +5,7 @@ import * as THREE from 'three';
 export interface TableBounds { minX: number; maxX: number; minZ: number; maxZ: number }
 const FLOOR_Y = -7, ROOM_MARGIN = 55, ROOM_H = 80;
 
-function paint(w: number, h: number, draw: (g: CanvasRenderingContext2D) => void): THREE.Texture {
+export function paint(w: number, h: number, draw: (g: CanvasRenderingContext2D) => void): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const g = c.getContext('2d');

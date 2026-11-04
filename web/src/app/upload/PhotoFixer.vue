@@ -6,8 +6,8 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { ko } from '@/copy/ko';
 import { warpQuad } from './autocrop';
 
-const props = defineProps<{ src: string; initial?: [number, number][] | null; boxOptions?: { label: string; box: (w: number, h: number) => [number, number][] }[]; boxAsk?: string; kindOptions?: { label: string; value: string }[]; kindAsk?: string; hint?: string; closeLabel?: string }>();
-const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number, kind: string]; unreadable: [] }>();
+const props = defineProps<{ src: string; initial?: [number, number][] | null; boxOptions?: { label: string; box: (w: number, h: number) => [number, number][] }[]; boxAsk?: string; kindOptions?: { label: string; value: string }[]; kindAsk?: string; titleLabel?: string; titleHint?: string; hint?: string; closeLabel?: string }>();
+const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number, kind: string, title: string]; unreadable: [] }>();
 type P = [number, number];
 const img = ref<HTMLImageElement | null>(null);
 const W = ref(0); const H = ref(0);
@@ -18,6 +18,7 @@ const busy = ref(false); const msg = ref('');
 const preview = ref<HTMLCanvasElement | null>(null);
 const boxPick = ref(-1); // boxOptions 중 고른 것. 고르기 전에는 쓸 수 없다
 const kindPick = ref('');
+const title = ref('');
 const unanswered = computed(() => (!!props.boxOptions?.length && boxPick.value < 0) || (!!props.kindOptions?.length && !kindPick.value));
 function pickBox(i: number) { boxPick.value = i; quad.value = props.boxOptions![i]!.box(W.value, H.value); draw(); }
 const box = ref<HTMLElement | null>(null);
@@ -69,7 +70,7 @@ async function save() {
     c.width = t ? flat.height : flat.width; c.height = t ? flat.width : flat.height;
     const g = c.getContext('2d')!; g.translate(c.width / 2, c.height / 2); g.rotate((rot.value * Math.PI) / 180); g.drawImage(flat, -flat.width / 2, -flat.height / 2);
     const blob = await new Promise<Blob>((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error('blob'))), 'image/jpeg', 0.92));
-    emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value, kindPick.value);
+    emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value, kindPick.value, title.value.trim());
   } catch { msg.value = ko.up2.fixFail; }
   busy.value = false;
 }
@@ -90,6 +91,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         <span>{{ kindAsk }}</span>
         <button v-for="o in kindOptions" :key="o.value" class="btn" :class="kindPick === o.value ? 'btn-primary' : 'btn-secondary'" type="button" :aria-pressed="kindPick === o.value" :disabled="!img" @click="kindPick = o.value">{{ o.label }}</button>
       </div>
+      <label v-if="titleLabel" class="fx-title">{{ titleLabel }}<input v-model="title" type="text" maxlength="100" :placeholder="titleHint" :disabled="!img" enterkeyhint="done" /></label>
       <div class="fx-body">
         <div v-if="img" ref="box" class="fx-photo" :style="{ aspectRatio: `${W} / ${H}`, '--fx-ar': `${W / H}` }" @pointermove="move" @pointerup="up" @pointercancel="up">
           <img :src="img.src" alt="" draggable="false">
@@ -119,6 +121,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 
 <style scoped>
 .fx-ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:700}
+.fx-title{display:flex;align-items:center;gap:8px;font-weight:700}
+.fx-title input{flex:1;min-width:0;min-height:44px;padding:6px 10px;border:1.5px solid #cdbda0;border-radius:10px;background:#fff;color:inherit;font:400 16px inherit}
 .fx-acts .btn-primary:disabled{opacity:.45;cursor:not-allowed}
 .fx-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
 @keyframes fx-in{from{opacity:0}}

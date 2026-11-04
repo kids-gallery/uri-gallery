@@ -1,7 +1,7 @@
 // #37 시험: 3D 화면 상태 묻기(마스터플랜 3-3, 3-5 5번) — 진행 중일 때만 3→6→10초, 숨긴 탭, 실패 세 종류, 다시 시도, 늦게 온 옛 응답.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
-import { isMoving, useArtworkWatch } from '@/app/world/server/watch';
+import { autoStep, isMoving, useArtworkWatch } from '@/app/world/server/watch';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': status >= 400 ? 'application/problem+json' : 'application/json' } });
@@ -366,5 +366,25 @@ describe('늦게 도착한 옛 응답', () => {
     expect(w.details.value.size).toBe(0);
     expect(w.failure.value).toBeNull();
     expect(f).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('체험 서버 자동 전시(마스터플랜 3-3 #137)', () => {
+  const at = (state: string, confirmedKind: string | null, choices: string[]) => ({ state, confirmedKind, choices }) as never;
+  it('확정 전이면 입체로 확정한다', () => {
+    expect(autoStep(at('exhibited', null, ['animated', 'relief', 'frame']))).toEqual({ confirm: 'relief' });
+    expect(autoStep(at('awaiting_confirm', null, ['relief', 'frame']))).toEqual({ confirm: 'relief' });
+  });
+  it('결과가 나오면 좋아요를 보낸다', () => {
+    expect(autoStep(at('awaiting_review', 'relief', ['like', 'frame', 'retake']))).toEqual({ decide: 'like' });
+  });
+  it('입체를 고를 수 없거나 실패했으면 사람에게 넘긴다', () => {
+    expect(autoStep(at('awaiting_confirm', null, ['frame']))).toBeNull();
+    expect(autoStep(at('failed', 'relief', ['frame', 'retake']))).toBeNull();
+    expect(autoStep(at('awaiting_review', 'relief', ['frame', 'retake']))).toBeNull();
+  });
+  it('이미 확정했거나 걸린 작품은 다시 보내지 않는다', () => {
+    expect(autoStep(at('processing', 'relief', []))).toBeNull();
+    expect(autoStep(at('exhibited', 'relief', []))).toBeNull();
   });
 });

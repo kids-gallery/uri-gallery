@@ -14,9 +14,9 @@ import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
-import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
+import { confirmKind, deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
 import { galleryFailure, isStale, watchIds } from './server/gallery';
-import { useArtworkWatch } from './server/watch';
+import { autoStep, isMoving, useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
 import WorldDecision from './WorldDecision.vue';
@@ -405,9 +405,37 @@ const artWatch = useArtworkWatch(); // 서버 판에서 올린 작품만 묻는�
 const { failure: watchFailure, retrying: watchRetrying } = artWatch;
 const setDetail = (d: ArtworkDetail) => { artWatch.details.value = new Map(artWatch.details.value).set(d.id, d); };
 const confirmOpenId = ref<string | null>(null);
-const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
+// 체험 서버는 묻지 않고 작품만 따서 건다(마스터플랜 3-3 #137). 세 번 실패한 작품만 지금의 창으로 사람에게 넘긴다
+const AUTO_EXHIBIT = SERVER_WORLD && import.meta.env.VITE_TRIAL === '1';
+const autoTries = new Map<string, number>(), autoBusy = new Set<string>();
+const autoGaveUp = ref(new Set<string>());
+const autoHandles = (d: ArtworkDetail) => AUTO_EXHIBIT && !autoGaveUp.value.has(d.id) && !!autoStep(d);
+async function runAuto(d: ArtworkDetail) {
+  const step = autoStep(d);
+  if (!step || autoBusy.has(d.id)) return;
+  autoBusy.add(d.id);
+  try {
+    if ('confirm' in step) setDetail(await confirmKind(d.id, step.confirm));
+    else { const out = await decide(d.id, step.decide); if (out.artwork) setDetail(out.artwork); }
+    artWatch.add([d.id]);
+    autoTries.delete(d.id);
+  } catch {
+    const tries = (autoTries.get(d.id) ?? 0) + 1;
+    autoTries.set(d.id, tries);
+    if (tries >= 3) autoGaveUp.value = new Set(autoGaveUp.value).add(d.id);
+    else artWatch.add([d.id]);
+  } finally { autoBusy.delete(d.id); }
+}
+if (AUTO_EXHIBIT) watch(artWatch.details, (all) => { for (const d of all.values()) if (autoHandles(d)) void runAuto(d); });
+/** 결과 카드의 작품을 아직 만드는 중인가. 그동안 움직이면 네모 사진이 움직인다 */
+const savedMaking = computed(() => {
+  if (!AUTO_EXHIBIT || !recentSaved.value) return false;
+  const d = artWatch.details.value.get(recentSaved.value);
+  return !d || (!autoGaveUp.value.has(d.id) && (isMoving(d) || !!autoStep(d) || isStale(d)));
+});
+const confirmPrompt = computed(() => [...artWatch.details.value.values()].find((d) => !autoHandles(d) && d.state !== 'awaiting_review' && d.state !== 'failed' && !d.confirmedKind && d.choices.length > 0) ?? null);
 const decisionOpenId = ref<string | null>(null), decisionBusy = ref(false), decisionError = ref<Failure | null>(null);
-const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
+const decisionPrompt = computed(() => [...artWatch.details.value.values()].find(d => !autoHandles(d) && (d.state === 'awaiting_review' || d.state === 'failed') && d.choices.length > 0) ?? null);
 const decisionDetail = computed(() => decisionOpenId.value ? artWatch.details.value.get(decisionOpenId.value) ?? null : null);
 watch(decisionDetail, (d) => { if (decisionOpenId.value && (!d || !d.choices.length || (d.state !== 'awaiting_review' && d.state !== 'failed'))) decisionOpenId.value = null; });
 async function submitWorldDecision(id: string, decision: Decision) {
@@ -480,7 +508,8 @@ function playSaved() { if (recentSaved.value) openMotion(recentSaved.value); }
 const motionSource=shallowRef<MotionSource|null>(null);let motionId:string|null=null;
 function openMotion(id:string){const src=engine.value?.stageSource(id);if(!src){engine.value?.play(id);return;}motionId=id;motionSource.value=src;openPanel('motion');}
 function motionFailed(){const id=motionId;void closePanel();if(id)engine.value?.play(id);} // 창을 만들지 못하는 기기는 전시실에서 움직인다
-const plaqueMore=ref(false);
+const plaqueMore=ref(false),plaqueClosed=ref<string|null>(null);
+watch([selection,nearId],([sel,near])=>{if(!sel&&near===plaqueClosed.value)return;plaqueClosed.value=null;});
 watch(recentSaved,(id)=>engine.value?.setAvatarHidden(!!id));
 
 /** 사진 돌리기(§2-15·§2-23 B): 원본은 그대로 두고 화면용 사본만 왼쪽·오른쪽으로 90° 다시 만든다. 다시 그린 질감이 바로 보인다 */
@@ -775,12 +804,12 @@ function openSettings() {
         <div v-if="!webglFailed" class="where">
           <strong>{{ visiting?.child ?? serverChildName }}의 미술관</strong>
           <span aria-live="polite">{{ place }}</span>
+          <button class="w-mode-pick" type="button" :aria-label="`지금 ${themeLabel} 모드. 모드 바꾸기`" @click="openPanel('theme')">{{ themeLabel }} ▾</button>
         </div>
         <!-- 기본 HUD(마스터플랜 3-3 #137): 늘 보이는 것은 아래쪽 바와 이 구석의 [더보기]뿐이다 -->
         <nav class="tools" aria-label="더보기 메뉴">
           <button class="g-btn w-more-tools" type="button" aria-label="더보기" :aria-expanded="moreTools" aria-controls="w-secondary-menu" @click="moreTools=!moreTools"><span class="w-more-icon" aria-hidden="true"><i /><i /><i /></span></button>
           <span id="w-secondary-menu" class="w-secondary-tools" :class="{'w-expanded':moreTools}" @click="onMenuPick">
-          <button class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('theme')">모드</button>
           <button v-if="!visiting" class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('avatar')">캐릭터</button>
           <component :is="SocialButton" v-if="SocialButton && !visiting" action="social" @click="openPanel('social')" />
           <component :is="SocialButton" v-if="SocialButton && space!=='inside' && !visiting" action="town" @click="showTown()" />
@@ -822,7 +851,7 @@ function openSettings() {
           <img v-if="savedThumb" class="w-saved-thumb" :src="savedThumb" :alt="askStep === 'subject' && savedIds.length > 1 ? `${askIndex + 1}번째 작품 미리보기` : '걸린 작품 미리보기'" />
           <div class="w-saved-text">
             <strong>{{ savedCount > 1 ? `${savedCount}점을 전시했어요` : '전시했어요' }}</strong>
-            <span class="w-saved-sub">{{ savedLine }}</span>
+            <span class="w-saved-sub">{{ savedMaking ? '작품만 따서 입체로 만들고 있어요. 잠시만요.' : savedLine }}</span>
             <span v-if="askStatus" class="w-saved-sub w-cut-state">{{ askStatus }}</span>
           </div>
           <div v-if="!SERVER_WORLD" class="w-turn" role="group" aria-label="사진 돌리기">
@@ -843,7 +872,7 @@ function openSettings() {
         <div class="row w-saved-actions">
           <button v-if="askStep !== 'done'" class="g-btn" type="button" :disabled="askBusy" @click="askStep === 'age' ? skipAge() : nextSubject()">건너뛰기</button>
           <template v-else>
-            <button class="g-btn g-btn--primary" type="button" :disabled="webglFailed" @click="playSaved">움직여 보기</button>
+            <button class="g-btn g-btn--primary" type="button" :disabled="webglFailed || savedMaking" @click="playSaved">{{ savedMaking ? '만드는 중…' : '움직여 보기' }}</button>
             <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">{{ SERVER_WORLD ? '가까이 보기' : '이 작품 이야기' }}</button>
           </template>
           <button class="g-btn" type="button" @click="recentSaved=null">닫기</button>
@@ -851,7 +880,8 @@ function openSettings() {
       </section>
       <!-- 가까운(또는 누른) 작품 명패 -->
       <!-- 결과 카드가 떠 있거나 곧 뜰 때는 명패를 열지 않는다(카드 하나만, §2-17) -->
-      <section v-if="shownPlaque && shownWork && !plaqueFolded && !panel && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
+      <section v-if="shownPlaque && shownWork && !plaqueFolded && plaqueClosed!==shownWork.id && !panel && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
+        <button class="w-plaque-x" type="button" aria-label="명패 닫기" @click="plaqueClosed=shownWork!.id;plaqueMore=false">✕</button>
         <p class="w-no">{{ shownPlaque.plaque.number }}</p>
         <h2>{{ shownPlaque.plaque.title }}</h2>
         <p class="by">{{ shownPlaque.plaque.byline }}<template v-if="shownPlaque.plaque.detail"> · {{ shownPlaque.plaque.detail }}</template><template v-if="shownWork?.sample"> · 체험용 작품</template></p>
@@ -1257,6 +1287,11 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-saved{bottom:var(--w-bar-top)}
 .w-first-work{bottom:var(--w-bar-top)}
 .w-first-help{bottom:var(--w-bar-top)}
+.where{align-items:center}
+.w-mode-pick{flex:none;min-height:30px;padding:2px 10px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:600 12px var(--font-sans,system-ui);white-space:nowrap;cursor:pointer}
+.w-mode-pick:hover{background:rgba(255,255,255,.26)}.w-mode-pick:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
+.w-plaque-x:hover{background:rgba(60,40,30,.2)}.w-plaque-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .w-gestures{z-index:13}
 .w-emotes{position:absolute;right:0;bottom:calc(100% + 6px);display:grid;gap:6px;width:max-content;max-height:52dvh;overflow:auto;padding:0;background:none;border:0;box-shadow:none}
 .w-emotes .g-btn{white-space:nowrap;justify-content:center;min-width:96px}
