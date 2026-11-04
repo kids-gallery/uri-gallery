@@ -1,0 +1,13 @@
+# 시연 체험 주소(마스터플랜 3-5 #135). compose.real.yaml 위에 겹친다. 화면은 이 PC 안에만 열고 Tailscale Funnel이 HTTPS로 받는다.
+#   LIVE_BASE_URL=https://주소 docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml -f compose.live.yaml up -d --build
+#   tailscale funnel --bg 29600   # 열기
+#   tailscale funnel reset        # 닫기
+services:
+  app-api:
+    environment:
+      APP_BASE_URL: ${LIVE_BASE_URL:?체험 주소를 넣어 주세요}
+      SECURE_COOKIES: "true"
+  web:
+    ports: !override ["127.0.0.1:29600:80"]
+  mailpit:
+    ports: !override ["127.0.0.1:28097:8025"]
