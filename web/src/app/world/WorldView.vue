@@ -1307,7 +1307,8 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-plaque-x:hover{background:rgba(60,40,30,.2)}.w-plaque-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .w-gestures{z-index:13}
 .w-town-btn{position:absolute;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(var(--w-bar-top) + 2px)}
-.w-town-list{left:12px;right:12px;bottom:var(--w-bar-top);max-width:min(420px,calc(100% - 24px));max-height:42vh;box-sizing:border-box}
+.w-town-list{left:12px;right:12px;bottom:var(--w-bar-top);max-width:min(420px,calc(100% - 24px));max-height:38vh;box-sizing:border-box}
+@media(max-width:600px){.w-town-list{bottom:calc(var(--w-bar-top) + 96px);padding:12px}.w-town-list h2{font-size:17px}}
 .w-interaction{left:50%;transform:translateX(-50%);animation:none;white-space:nowrap}
 .w-view-x{grid-column:1/-1;justify-self:end;position:sticky;top:0;z-index:3;width:40px;height:40px;margin-bottom:-40px;border:0;border-radius:50%;background:rgba(60,40,30,.72);color:#fff;font:600 17px var(--font-sans,system-ui);cursor:pointer}
 .w-view-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
