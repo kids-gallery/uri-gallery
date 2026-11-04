@@ -56,7 +56,7 @@ const responseValidator = () => OpenApiValidator.middleware({
 export function fakeKakao() {
   const f = {
     configured: true,
-    authorizeUrl: (state: string) => `https://kauth.test/oauth/authorize?state=${encodeURIComponent(state)}`,
+    authorizeUrl: (state: string, forceLogin = false) => `https://kauth.test/oauth/authorize?state=${encodeURIComponent(state)}${forceLogin ? '&prompt=login' : ''}`,
     async memberId(code: string) { if (!/^\d+$/.test(code)) throw new Error('kakao_token'); return code; },
   };
   return f;

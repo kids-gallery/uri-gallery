@@ -60,6 +60,8 @@ export interface paths {
             parameters: {
                 query?: {
                     invite?: string;
+                    /** @description 다른 계정으로 로그인할 때 카카오 재인증을 요청한다 */
+                    account?: "switch";
                     /** @description 로그인 뒤 돌아갈 보호자 앱 주소(D47 — 로그인 전에 연 이웃 링크 등). 같은 셸 상대 경로만, 없으면 기본 도착지 */
                     next?: string;
                 };
@@ -3645,6 +3647,8 @@ export interface components {
             style?: components["schemas"]["MuseumStyle"] | null;
             /** @description mine·neighbor만 */
             children?: components["schemas"]["TownChild"][];
+            /** @description neighbor만. 그 가족 보호자의 세션에 최근 1분 안에 요청이 있었는가. 마지막 접속 시각은 싣지 않는다(마스터플랜 3-3 #167) */
+            online?: boolean;
         };
         /** @description (D46 ④) 부모 댓글 — 가족 안에서만 */
         ArtworkComment: {

@@ -62,7 +62,7 @@ test('들어가는 중에 창을 열었다 닫아도 입장이 끝나고, 다시
   await page.locator('.w-bar').getByRole('button', { name: '들어가기' }).click();
   await page.getByRole('button', { name: '더보기' }).click();
   await page.getByRole('button', { name: '사용법' }).click();
-  await page.getByRole('dialog', { name: '미술관 사용법' }).getByRole('button', { name: '닫기' }).click();
+  await page.getByRole('dialog', { name: '미술관 사용법' }).getByRole('button', { name: '닫기' }).first().click();
   await expect(outside).toBeHidden({ timeout: 30_000 });
 
   await goOut();
