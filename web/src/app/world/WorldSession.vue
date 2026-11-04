@@ -3,6 +3,7 @@ import { defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authProviders, login, logout, me, failureOf, failureReason, type Child, type GuardianMe } from './server';
 import WorldChildren from './WorldChildren.vue';
+import WorldRecovery from './WorldRecovery.vue';
 import { SERVER_WORLD, clearWorldWorks, selectedChild } from './server/upload';
 
 const WorldView = defineAsyncComponent(() => import('./WorldView.vue'));
@@ -158,6 +159,7 @@ onUnmounted(() => {
 });
 </script>
 <template>
+  <WorldRecovery v-if="!SERVER_WORLD || guardian" />
   <WorldView v-if="!SERVER_WORLD" />
   <template v-else>
     <WorldChildren v-if="guardian && !childReady" :changing="changingChild" @selected="childSelected" />
@@ -196,4 +198,4 @@ onUnmounted(() => {
     </main>
   </template>
 </template>
-<style scoped>.auth{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;box-sizing:border-box;background:#fff8ec;color:#443529}.card{width:min(440px,100%);box-sizing:border-box;padding:24px;display:grid;gap:16px;border:1px solid #c9b38f;border-radius:18px;background:#fffdf8}h1,p{margin:0}p{line-height:1.6}form,label{display:grid;gap:8px}form{gap:16px}input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid #bda881;border-radius:10px;font:inherit}button{min-height:44px;font:inherit;border:1px solid #ad557e;border-radius:10px;padding:10px 16px;background:#93405f;color:white;cursor:pointer}button:disabled{opacity:.6}.kakao{background:#fee500;color:#191600;border-color:#e3c500;font-weight:700}.email-toggle{background:none;color:#78324f;border:0;text-decoration:underline}a{color:#78324f}</style>
+<style scoped>.auth{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;box-sizing:border-box;background:#fff8ec;color:#443529}.card{width:min(440px,100%);box-sizing:border-box;padding:24px;display:grid;gap:16px;border:1px solid #c9b38f;border-radius:18px;background:#fffdf8}h1,p{margin:0}p{line-height:1.6}form,label{display:grid;gap:8px}form{gap:16px}input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid #bda881;border-radius:10px;font:inherit}button{min-height:44px;font:inherit;border:1px solid #ad557e;border-radius:10px;padding:10px 16px;background:#93405f;color:white;cursor:pointer}button:disabled{opacity:.6}.kakao{background:#fee500;color:#191600;border-color:#e3c500;font-weight:700}.email-toggle{background:none;color:#78324f;border:0;text-decoration:underline}a{color:#78324f}:deep(.hud-top){top:calc(env(safe-area-inset-top,0px) + 54px)}</style>
