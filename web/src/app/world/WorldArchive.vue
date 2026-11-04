@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 입체 보관함(유스케이스 UC-08 · UC-12): 원본 사진과 입체를 돌려 보고 내려받거나 지운다.
+// 보관함의 작품 자세히(유스케이스 UC-08 · UC-12, 마스터플랜 3-3 #137): 원본 사진과 입체를 돌려 보고 내려받거나 지운다.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import * as THREE from 'three';
 import { updateArtworkInfo,type Artwork } from './store';
@@ -123,11 +123,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="sheet" role="dialog" aria-modal="true" aria-label="입체 보관함">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="작품 자세히">
     <div class="g-panel w-card">
       <header class="w-head">
-        <h2>입체 보관함 <small>{{ artworks.length }}점</small></h2>
-        <button class="g-btn" type="button"  :disabled="busy === 'info'" @click="emit('close')">닫기</button>
+        <h2>작품 자세히</h2>
+        <button class="g-btn" type="button"  :disabled="busy === 'info'" @click="emit('close')">목록으로</button>
       </header>
 
       <p v-if="!artworks.length" class="g-note">아직 보관한 작품이 없어요. [작품 올리기]로 첫 작품을 걸어 보세요.</p>
@@ -176,15 +176,6 @@ onBeforeUnmount(() => {
           </div>
           <p v-if="msg" class="small" role="status">{{ msg }}</p>
         </div>
-
-        <ul class="w-grid" aria-label="보관한 작품">
-          <li v-for="a in [...artworks].reverse()" :key="a.id">
-            <button type="button" class="thumb" :aria-pressed="a.id === sel" @click="sel = a.id">
-              <img :src="urlOf(a.cutout ?? a.display, `t-${a.id}`)" :alt="a.title || '작품'" />
-              <span>{{ a.age ? `${a.age}세 · ` : '' }}{{ a.title || defaultTitle(a.subject, a.kind) }}<em v-if="a.sample" class="w-sample-tag"> · 체험용 작품</em></span>
-            </button>
-          </li>
-        </ul>
       </template>
     </div>
   </div>

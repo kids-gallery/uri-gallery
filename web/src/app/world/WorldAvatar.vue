@@ -153,7 +153,7 @@ onBeforeUnmount(() => { for (const u of urls) URL.revokeObjectURL(u); });
         <p v-if="msg" class="g-note" role="status">{{ msg }}</p>
       </template>
 
-      <div class="row">
+      <div class="row w-av-save">
         <button class="g-btn g-btn--primary" type="button" @click="emit('save', cfg, cfg.mode === 'image' ? original : null)">저장</button>
         <button class="g-btn" type="button" @click="emit('close')">그만두기</button>
       </div>
@@ -184,6 +184,8 @@ onBeforeUnmount(() => { for (const u of urls) URL.revokeObjectURL(u); });
 .thumb{width:100%;aspect-ratio:1;padding:4px;border-radius:10px;border:1.5px solid var(--g-gold-soft);background:#fffaf0;cursor:pointer}
 .thumb img{width:100%;height:100%;object-fit:contain}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-@media (max-width:600px){.side{top:auto;height:56vh}}
+/* 사진을 골라도 저장이 스크롤 아래로 밀리지 않게 한다(마스터플랜 3-3 #137) */
+.w-av-save{position:sticky;bottom:0;z-index:2;padding:8px 0 2px;background:#fbf6ee}
+@media (max-width:600px){.side{top:auto;height:56vh}.w-joint-canvas{width:min(100%,30vh);margin:0 auto}}
 .w-joint-canvas{position:relative;width:100%;aspect-ratio:1;touch-action:none;background:#ece7df;border-radius:12px}.w-joint-canvas img{width:100%;height:100%;object-fit:fill;pointer-events:none}.w-joint{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border:3px solid white;border-radius:50%;background:#235c8b;color:transparent;overflow:hidden;cursor:grab;box-shadow:0 0 0 1px #16384c}.w-joint:focus-visible{outline:3px solid #f29c31}.w-motion-options{display:grid;gap:8px}.w-motion-options p{font-size:14px;line-height:1.5}
 </style>

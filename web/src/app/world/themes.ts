@@ -204,7 +204,7 @@ const SPECS: Record<ThemeId, ThemeSpec> = {
   toy: {
     sky: '#a7d8ff', hemi: ['#ffffff', '#c9d3e0', 1.3], sun: ['#ffffff', 1.05],
     looks: {
-      floor: () => ({ color: '#ffffff', roughness: 0.35, metalness: 0, map: canvasTex(256, (g, s) => studs(g, s, '#dfe3ea', 8), 41) }),
+      floor: () => ({ color: '#ffffff', roughness: 0.35, metalness: 0, map: canvasTex(256, (g, s) => studs(g, s, '#a8dc8a', 8), 41) }),
       wall: () => ({ color: '#ffffff', roughness: 0.35, metalness: 0, map: canvasTex(256, (g, s) => {
         g.fillStyle = '#ffd23f'; g.fillRect(0, 0, s, s);
         g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(0, s / 2 - 2, s, 4); g.fillRect(s / 2 - 2, 0, 4, s);
