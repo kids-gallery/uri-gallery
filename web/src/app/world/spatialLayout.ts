@@ -111,6 +111,7 @@ export function createLayout(id: ThemeId, count: number, highHall: boolean): Spa
   }
   if(id==='forest')for(let i=0;i<12;i++){
     const x=(i%2?-1:1)*(10+(i%3)*2),z=-8-Math.floor(i/2)*10;
+    if(layout.rooms.some(r=>Math.hypot(r.x-r.side*5-x,r.z-z)<4))continue; // 문 앞 나무는 들어가는 길을 막는다
     box(x,2,z,.7,4,.7,'trim',true);layout.pieces.push({kind:'cone',x,y:5,z,w:5,h:6,d:5,material:'foliage'});
   }
   if(highHall){for(const x of [-9,9]){box(x,5,5,.7,10,.7,'column',true);box(x,10,5,5,.4,12,'ceiling');}box(0,10,11,19,.5,.7,'trim');}

@@ -88,6 +88,9 @@ function shadedOutputPass() {
   return pass;
 }
 
+/** 문턱까지 걷는 길. 입장 중 경로가 지워지면(창을 열 때 등) 다시 잡아 입장이 멈추지 않게 한다(#166) */
+const enterRoute=()=>[new THREE.Vector3(0,0,15),new THREE.Vector3(0,0,11.6)];
+
 export class MuseumEngine {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -427,7 +430,7 @@ export class MuseumEngine {
   showPlaza(flash=true){this.endStart();this.mode='play';this.cinematic=false;this.finishPerformances();this.afterEnter=null;this.afterReveal=null;this.faceAfterRoute=false;this.clearResidents();this.space='plaza';this.entering=false;this.route=[];this.outdoor.setBuildings([this.ownBuilding]);this.outdoor.root.visible=true;this.museum.root.visible=false;this.applyLook();this.avatarRoot.position.set(0,0,28);this.yaw=0;this.dist=9;if(flash)this.flash(this.reduced?QUICK:.35);this.ev.onSpace?.('plaza');this.ev.onSelect(null);this.ev.onNear(null);}
   showTown(buildings:BuildingData[],focus?:string){this.endStart();this.mode='play';this.cinematic=false;this.finishPerformances();this.afterReveal=null;this.faceAfterRoute=false;this.clearResidents();this.space='town';this.entering=false;this.route=[];this.outdoor.setBuildings(buildings,true);this.outdoor.root.visible=true;this.museum.root.visible=false;this.applyLook();const p=focus?this.outdoor.positions.get(focus):null;this.avatarRoot.position.copy(p??new THREE.Vector3(0,0,25));this.yaw=0;this.dist=12;this.flash(this.reduced?QUICK:.35);this.ev.onSpace?.('town');this.ev.onSelect(null);this.ev.onNear(null);}
   /** 들어가기(§2-17): 문까지 걸어가며 흰빛이 덮이고, 문턱에서 안으로 바꾼 뒤 흰빛이 걷힌다 */
-  enterMuseum(){if(this.space==='inside'||this.entering||this.mode!=='play')return;this.entering=true;this.enteringTime=0;if(this.reduced){this.setWipe(1);this.finishEnter();}else this.route=[new THREE.Vector3(0,0,15),new THREE.Vector3(0,0,11.6)];}
+  enterMuseum(){if(this.space==='inside'||this.entering||this.mode!=='play')return;this.entering=true;this.enteringTime=0;if(this.reduced){this.setWipe(1);this.finishEnter();}else this.route=enterRoute();}
   private finishEnter(){this.entering=false;this.space='inside';this.route=[];this.outdoor.suspend();this.museum.root.visible=true;this.applyLook();this.avatarRoot.position.copy(MuseumEngine.REVEAL_SPOT);this.dist=4.4;this.cameraDistance=4.4;this.snapCamera=true;this.flash(this.reduced?QUICK:.3);this.ev.onSpace?.('inside');const next=this.afterEnter;this.afterEnter=null;if(next)this.goTo(next.id,next.thenPlay);const shown=this.afterReveal;this.afterReveal=null;if(shown)this.reveal(shown);const jump=this.afterJump;this.afterJump=null;if(jump)this.jumpTo(jump);}
 
   // ───────── 시작 화면과 시작 연출(§2-17) ─────────
@@ -608,7 +611,7 @@ export class MuseumEngine {
     if(this.mode==='title'&&!this.reduced)this.titleClock+=dt;
     // 들어가기: 문턱 1.6m 앞부터 흰빛이 덮이고, 문턱에서 안으로 바꾼다
     if(this.space==='plaza'&&!this.entering&&this.outdoor.inDoorway(this.avatarRoot.position.x,this.avatarRoot.position.z))this.enterMuseum();
-    if(this.entering){this.enteringTime+=dt;this.outdoor.openDoors(Math.min(1,this.enteringTime));const z=this.avatarRoot.position.z;this.setWipe(clamp01((13.6-z)/1.6));if(z<=12)this.finishEnter();}
+    if(this.entering){if(!this.route.length)this.route=enterRoute();this.enteringTime+=dt;this.outdoor.openDoors(Math.min(1,this.enteringTime));const z=this.avatarRoot.position.z;this.setWipe(clamp01((13.6-z)/1.6));if(z<=12)this.finishEnter();}
     const rw=this.revealWatch;if(rw&&((rw.at!==null&&this.t>=rw.at)||this.t>=rw.deadline)){this.revealWatch=null;this.ev.onRevealed?.(rw.id);}
     this.moveAvatar(dt);
     if(this.space==='inside')this.museum.update(dt);
