@@ -10,9 +10,11 @@ export function intersectsSolid(x: number, y: number, z: number, b: Solid, radiu
   return (x - cx) ** 2 + (z - cz) ** 2 < radius * radius - 1e-9;
 }
 /** 앞이 막혔을 때 좌우로 찾는 거리(문틀 바깥쪽 2.075 - 지나가는 폭 1.305)와 후보 눈금, 그 자리에서 앞으로 트여야 하는 거리(문틀 두께 .55 + 몸 지름 .84), 비껴 주는 입력의 기울기 한도(약 14도. 30도로 하면 곡면 벽을 긁으며 떨린다). 설계서 2-1 문 드나들기 */
-const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .25, SLIP_GRID = .09;
+const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .25, SLIP_GRID = .09, SLIP_HOLD = 2.8;
 export class NavigationWorld {
   private grid = new Map<string, Solid[]>();
+  /** 방금 비껴 준 축과 쪽, 앞으로 더 갈 거리. 살짝 기운 입력이 막힌 쪽으로 되돌려 다시 부딪히면 떨리므로 그 거리만큼 기운 입력을 쓰지 않는다 */
+  private held: { axis: 'x' | 'z'; side: number; left: number } | null = null;
   constructor(readonly colliders: Solid[], private floor: (x: number, z: number) => boolean, readonly radius = .42) {
     for (const b of colliders) for (let x = Math.floor((b.min[0] - radius) / 4); x <= Math.floor((b.max[0] + radius) / 4); x++) {
       for (let z = Math.floor((b.min[2] - radius) / 4); z <= Math.floor((b.max[2] + radius) / 4); z++) {
@@ -28,10 +30,17 @@ export class NavigationWorld {
     if (![state.x, state.z, dx, dz].every(Number.isFinite)) throw new TypeError('Movement coordinates must be finite.');
     const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / .09)); dx /= steps; dz /= steps;
     for (let i = 0; i < steps; i++) {
-      const movedX = this.canStand(state.x + dx, state.z); if (movedX) state.x += dx;
-      const movedZ = this.canStand(state.x, state.z + dz); if (movedZ) state.z += dz;
-      if (!movedX && Math.abs(dz) <= Math.abs(dx) * SLIP_TILT) this.slip(state, dx, 0);
-      else if (!movedZ && Math.abs(dx) <= Math.abs(dz) * SLIP_TILT) this.slip(state, 0, dz);
+      const h = this.held, push = { x: dx, z: dz };
+      if (h) {
+        const other = h.axis === 'x' ? 'z' : 'x';
+        if (Math.sign(push[h.axis]) === -h.side && Math.abs(push[h.axis]) <= Math.abs(push[other]) * SLIP_TILT) push[h.axis] = 0;
+        h.left -= Math.hypot(dx, dz);
+        if (h.left <= 0) this.held = null;
+      }
+      const movedX = this.canStand(state.x + push.x, state.z); if (movedX) state.x += push.x;
+      const movedZ = this.canStand(state.x, state.z + push.z); if (movedZ) state.z += push.z;
+      if (!movedX && Math.abs(push.z) <= Math.abs(push.x) * SLIP_TILT) this.slip(state, push.x, 0);
+      else if (!movedZ && Math.abs(push.x) <= Math.abs(push.z) * SLIP_TILT) this.slip(state, 0, push.z);
     }
     return state;
   }
@@ -49,7 +58,7 @@ export class NavigationWorld {
       open[side] = open[side]! && this.canStand(p.x, p.z);
       if (!open[side] || !ahead(p)) continue;
       const next = at(now + side * Math.min(Math.abs(dx || dz), gap));
-      if (this.canStand(next.x, next.z)) { state.x = next.x; state.z = next.z; }
+      if (this.canStand(next.x, next.z)) { state.x = next.x; state.z = next.z; this.held = { axis: dx ? 'z' : 'x', side, left: SLIP_HOLD }; }
       return;
     }
   }
