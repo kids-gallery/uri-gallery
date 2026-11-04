@@ -14,12 +14,13 @@ export function filesRouter(db: Pool, cfg: Config, storage: StoragePort, accel =
       const t = verifyFileToken(cfg.sessionSecret, req.params.token);
       if (!t || t.familyId !== req.guardian!.familyId) throw new Problem('not_found');
       const [rows] = await db.query(
-        `SELECT object_key FROM stored_object WHERE object_id = ? AND family_id = ? AND owner_kind = 'family'`,
+        `SELECT so.object_key FROM stored_object so JOIN artwork a ON a.artwork_id = so.artwork_id
+         WHERE so.object_id = ? AND so.family_id = ? AND so.owner_kind = 'family' AND a.status <> 'deleting'`, // 파일은 sweeper가 지울 때까지 남으므로 접수 직후부터 막는다(BR-DEL-05)
         [t.objectId, t.familyId],
       );
       const key = (rows as { object_key: string }[])[0]?.object_key;
       if (!key) throw new Problem('not_found');
-      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.setHeader('Cache-Control', 'private, no-store');
       if (accel) {
         res.setHeader('X-Accel-Redirect', `/_files/${key}`);
         res.end();

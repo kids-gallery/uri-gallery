@@ -197,9 +197,10 @@ export function neighborsRouter(db: Pool, cfg: Config, storage: StoragePort, acc
       const t = verifyVisitToken(cfg.sessionSecret, req.params.token);
       if (!t || t.viewerFamilyId !== me || !(await areNeighbors(db, me, t.ownerFamilyId))) throw new Problem('not_found');
       const [o] = await rowsOf<{ object_key: string }>(db,
-        `SELECT object_key FROM stored_object WHERE object_id = ? AND family_id = ? AND owner_kind = 'family'`, [t.objectId, t.ownerFamilyId]);
+        `SELECT so.object_key FROM stored_object so JOIN artwork a ON a.artwork_id = so.artwork_id
+         WHERE so.object_id = ? AND so.family_id = ? AND so.owner_kind = 'family' AND a.status <> 'deleting'`, [t.objectId, t.ownerFamilyId]);
       if (!o) throw new Problem('not_found');
-      res.setHeader('Cache-Control', 'private, max-age=60');
+      res.setHeader('Cache-Control', 'private, no-store');
       if (accel) { res.setHeader('X-Accel-Redirect', `/_files/${o.object_key}`); res.end(); return; }
       res.sendFile(storage.absolutePath(o.object_key));
     } catch (e) { next(e); }
