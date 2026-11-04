@@ -1177,7 +1177,7 @@ function openSettings() {
 .w-story textarea{min-height:110px;resize:vertical}
 @media (max-width:700px){.w-view-card{grid-template-columns:1fr}.w-view-figure img{max-height:52vh}}
 hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
-.toast{position:absolute;z-index:40;left:50%;top:calc(env(safe-area-inset-top,0px) + 96px);transform:translateX(-50%);margin:0;padding:10px 18px;border-radius:999px;background:#4a3526;color:#fff8ec;font-size:15px;box-shadow:0 8px 20px -10px rgba(0,0,0,.5);max-width:calc(100% - 32px);text-align:center}
+.toast{position:absolute;z-index:40;left:50%;top:calc(env(safe-area-inset-top,0px) + 114px);transform:translateX(-50%);margin:0;padding:10px 18px;border-radius:999px;background:#4a3526;color:#fff8ec;font-size:15px;box-shadow:0 8px 20px -10px rgba(0,0,0,.5);max-width:calc(100% - 32px);text-align:center}
 .fallback{position:absolute;inset:0;overflow:auto;padding:120px 16px 24px;display:grid;gap:12px;align-content:start}
 /* §2-23 D 휴대폰(600px 이하): 위쪽은 위치 카드와 버튼을 한 줄로, 아래쪽 안내·걷기 막대·몸짓은 작게 해서 작품과 캐릭터를 가리지 않는다 */
 @media (max-width:600px){
@@ -1325,7 +1325,7 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-range{width:100%;height:32px}.w-control-sound{justify-self:start}
 .w-seg{justify-content:flex-start}.w-seg .g-btn[aria-pressed=true]{background:linear-gradient(#f2d48f,#c99a45);color:#22190b}
 .w-bar-btn{position:relative}.w-online{position:absolute;top:7px;right:calc(50% - 22px);width:8px;height:8px;border-radius:50%;background:#49d17f;box-shadow:0 0 0 2px rgba(20,18,16,.66)}
-.w-friend-new{position:absolute;z-index:12;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 66px);width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:14px;display:grid;gap:8px}
+.w-friend-new{position:absolute;z-index:12;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 114px);width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:14px;display:grid;gap:8px}
 @media(max-width:420px){.w-bar-btn{font-size:13px;padding:4px 2px}}
 .w-mode-pick:hover{background:rgba(255,255,255,.26)}.w-mode-pick:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
