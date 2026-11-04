@@ -454,7 +454,7 @@ async function submitWorldDecision(id: string, decision: Decision) {
   try {
     const out=await decide(id,decision);
     if (!alive) return;
-    if(decision==='retake'){selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
+    if(decision==='retake'){if(recentSaved.value===id)recentSaved.value=null;selectedChild.value=out.retake?.childId ?? childId ?? selectedChild.value; const next = new Map(artWatch.details.value); next.delete(id); artWatch.details.value = next; await reload();if (!alive) return;say('다시 찍을 준비가 됐어요. 작품 올리기에서 새 사진을 선택해 주세요.');}
     else {if(out.artwork)setDetail(out.artwork);artWatch.add([id]);say(decision==='use_lower'?ko.review.afterLower:'선택한 방식으로 작품을 전시에 반영할게요.');}
     decisionOpenId.value=null;
   } catch(e) {
@@ -529,6 +529,7 @@ async function onDelete(id: string) {
   try {
     await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
     if (SERVER_WORLD) artWatch.forget(id);
+    if (recentSaved.value === id) recentSaved.value = null;
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');
@@ -760,7 +761,7 @@ function openSettings() {
     <div v-show="!webglFailed" ref="stage" class="stage" />
     <Transition name="w-ui-fade"><p v-if="phase==='ready' && bandOn && !SERVER_WORLD" class="local-band" role="status">이 기기에 저장돼요</p></Transition>
     <!-- 백업 권유 한 줄(§2-22 7, UI 계약 10절): 앱을 열 때 한 번만, 다른 창이 없을 때 -->
-    <section v-if="nudge && phase==='ready' && !panel && !visiting && !recentSaved" class="w-nudge g-panel" role="status" aria-label="백업 권유">
+    <section v-if="!SERVER_WORLD && nudge && phase==='ready' && !panel && !visiting && !recentSaved" class="w-nudge g-panel" role="status" aria-label="백업 권유">
       <span>백업 파일에 없는 작품이 쌓였어요. 백업을 내보내 둘까요?</span>
       <span class="row"><button class="g-btn g-btn--primary" type="button" @click="backupFromNudge">백업 내보내기</button><button class="g-btn" type="button" @click="backupLater">나중에</button></span>
     </section>
@@ -786,7 +787,7 @@ function openSettings() {
         <p class="w-entry-lead">{{ startLead }}</p>
         <div v-if="phase !== 'checking'" class="w-entry-actions">
           <button ref="startBtn" class="g-btn g-btn--primary g-btn--big" type="button" :disabled="phase !== 'title'" @click="start(false)">시작하기</button>
-          <button v-if="!account" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
+          <button v-if="!account && !SERVER_WORLD" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
         </div>
         <p v-if="!account && !SERVER_WORLD" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
       </div>
@@ -908,7 +909,7 @@ function openSettings() {
           <button v-if="askStep !== 'done'" class="g-btn" type="button" :disabled="askBusy" @click="askStep === 'age' ? skipAge() : nextSubject()">건너뛰기</button>
           <template v-else>
             <button class="g-btn g-btn--primary" type="button" :disabled="webglFailed" @click="playSaved">움직여 보기</button>
-            <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">이 작품 이야기</button>
+            <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">{{ SERVER_WORLD ? '가까이 보기' : '이 작품 이야기' }}</button>
             <button class="g-btn" type="button" @click="recentSaved=null;openPanel('upload')">다른 작품 올리기</button>
           </template>
           <button class="g-btn" type="button" @click="recentSaved=null">계속 둘러보기</button>
@@ -937,14 +938,14 @@ function openSettings() {
       <div v-if="panel === 'view' && viewWork" class="sheet w-view" role="dialog" aria-modal="true" :aria-label="`${viewWork.title || '작품'} 가까이 보기`">
         <div class="g-panel sheet-card w-view-card">
           <figure class="w-view-figure">
-            <img :src="viewUrl" :alt="viewWork.title || '아이 작품 원본'" />
-            <figcaption>{{ visiting ? `${visiting.child}의 작품` : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
+            <img :src="viewUrl" :alt="viewWork.title || '아이 작품 사진'" />
+            <figcaption>{{ visiting ? `${visiting.child}의 작품` : SERVER_WORLD ? '화면에 맞춰 줄인 사진이에요. 올린 사진은 보관함에 있어요' : '화면에 맞춰 줄인 사진이에요. 원본 파일은 보관함에 그대로 있어요' }}</figcaption>
           </figure>
           <div class="w-view-side">
             <h2>{{ (visiting ? viewWork.title : plaqueOf({ ...viewWork, child: serverChildName }).title) || '새 작품' }}</h2>
             <template v-if="!visiting">
               <p class="by">{{ plaqueOf({ ...viewWork, child: serverChildName }).byline }}</p>
-              <label class="w-field w-story">아이가 한 말, 그때 이야기
+              <label v-if="!SERVER_WORLD || storyDraft" class="w-field w-story">아이가 한 말, 그때 이야기
                 <textarea v-model="storyDraft" class="w-input" maxlength="200" rows="4" :readonly="SERVER_WORLD" :placeholder="SERVER_WORLD ? '' : '아이에게 이 그림 이야기를 들려 달라고 해 보세요'" />
               </label>
               <p v-if="storyMsg" class="g-note" aria-live="polite">{{ storyMsg }}</p>
@@ -1024,17 +1025,19 @@ function openSettings() {
       <div v-if="panel === 'settings'" class="sheet" role="dialog" aria-modal="true" aria-label="설정">
         <div class="g-panel sheet-card">
           <h2>설정</h2>
-          <h3 class="w-sub">백업</h3>
           <p v-if="SERVER_WORLD" class="small">작품은 우리 미술관에 저장돼요. 캐릭터와 화면 설정은 이 기기에 남아요.</p>
-          <p v-else class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
-          <WorldStorageState v-if="!SERVER_WORLD" :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
-          <div class="row">
-            <button class="g-btn g-btn--primary" type="button" :disabled="!!backupBusy" @click="doExport">{{ backupBusy === 'export' ? '만드는 중…' : '백업 내보내기' }}</button>
-            <button class="g-btn" type="button" :disabled="!!backupBusy" @click="backupInput?.click()">{{ backupBusy === 'import' ? '가져오는 중…' : '백업 가져오기' }}</button>
-            <input ref="backupInput" class="w-hidden" type="file" accept=".zip,application/zip" aria-label="백업 파일 고르기" @change="doImport" />
-          </div>
-          <p v-if="backupMsg" ref="backupNote" class="g-note" role="status">{{ backupMsg }}</p>
-          <div v-if="resend?.kind === 'backup'" class="row"><button class="g-btn g-btn--primary" type="button" @click="sendAgain">파일 보내기</button></div>
+          <template v-else>
+            <h3 class="w-sub">백업</h3>
+            <p class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
+            <WorldStorageState :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
+            <div class="row">
+              <button class="g-btn g-btn--primary" type="button" :disabled="!!backupBusy" @click="doExport">{{ backupBusy === 'export' ? '만드는 중…' : '백업 내보내기' }}</button>
+              <button class="g-btn" type="button" :disabled="!!backupBusy" @click="backupInput?.click()">{{ backupBusy === 'import' ? '가져오는 중…' : '백업 가져오기' }}</button>
+              <input ref="backupInput" class="w-hidden" type="file" accept=".zip,application/zip" aria-label="백업 파일 고르기" @change="doImport" />
+            </div>
+            <p v-if="backupMsg" ref="backupNote" class="g-note" role="status">{{ backupMsg }}</p>
+            <div v-if="resend?.kind === 'backup'" class="row"><button class="g-btn g-btn--primary" type="button" @click="sendAgain">파일 보내기</button></div>
+          </template>
           <hr />
           <component :is="TestFamilies" v-if="TestFamilies" @change="familyChanged" />
           <div v-if="SERVER_WORLD" class="row">
@@ -1052,25 +1055,26 @@ function openSettings() {
           <hr />
           <div class="row">
             <button class="g-btn" type="button" @click="engine?.goLobby(); closePanel()">로비로 가기</button>
-            <button class="g-btn" type="button" @click="toggleSamples">{{ hasSamples ? '견본 치우기' : '견본 다시 걸기' }}</button>
+            <button v-if="!SERVER_WORLD" class="g-btn" type="button" @click="toggleSamples">{{ hasSamples ? '견본 치우기' : '견본 다시 걸기' }}</button>
           </div>
-          <hr />
-          <template v-if="!confirmReset">
-            <button class="g-btn" type="button" @click="confirmReset = true">이 기기의 자료 모두 지우기</button>
-          </template>
-          <template v-else>
-            <p v-if="SERVER_WORLD" class="g-note">이 기기에 남은 캐릭터와 화면 설정만 지워져요. 미술관의 작품은 지워지지 않아요.</p>
-            <p v-else class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
-            <div class="row">
-              <button class="g-btn g-btn--primary" type="button" @click="resetAll">모두 지우기</button>
-              <button class="g-btn" type="button" @click="confirmReset = false">그만두기</button>
-            </div>
+          <template v-if="!SERVER_WORLD">
+            <hr />
+            <template v-if="!confirmReset">
+              <button class="g-btn" type="button" @click="confirmReset = true">이 기기의 자료 모두 지우기</button>
+            </template>
+            <template v-else>
+              <p class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
+              <div class="row">
+                <button class="g-btn g-btn--primary" type="button" @click="resetAll">모두 지우기</button>
+                <button class="g-btn" type="button" @click="confirmReset = false">그만두기</button>
+              </div>
+            </template>
           </template>
           <div class="row end"><button class="g-btn" type="button" @click="closePanel">닫기</button></div>
         </div>
       </div>
 
-      <WorldPlay ref="playPanel" v-if="panel==='play' && account" :artworks="artworks" :child-age="account.childAge" @close="closePanel" @saved="(id: string) => onSaved([id], true, 'play')" />
+      <WorldPlay ref="playPanel" v-if="panel==='play' && account" :artworks="artworks" :child-age="account.childAge" @close="closePanel" @saved="(id: string) => onSaved([id], true, SERVER_WORLD ? 'upload' : 'play')" />
       <WorldUpload ref="uploadPanel"
         v-if="panel === 'upload' && account"
         :initial-files="pendingFiles"

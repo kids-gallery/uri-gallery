@@ -9,6 +9,19 @@ vi.mock('@/app/world/store', async (real) => ({
   saveRooms: vi.fn(async () => undefined),
 }));
 
+// 자르기 창(#118)은 브라우저 캔버스가 필요하니 결과만 흉내 낸다
+const crop = vi.hoisted(() => ({ mode: 'done' as 'done' | 'skip' | 'unreadable', opened: [] as string[], kind: 'drawing' }));
+vi.mock('@/app/upload/PhotoFixer.vue', () => ({ default: {
+  props: ['src', 'boxOptions', 'boxAsk', 'kindOptions', 'kindAsk', 'hint', 'closeLabel'],
+  emits: ['done', 'close', 'unreadable'],
+  mounted(this: { src: string; $emit: (e: string, ...a: unknown[]) => void }) {
+    crop.opened.push(this.src);
+    if (crop.mode === 'done') this.$emit('done', new Blob(['cropped'], { type: 'image/jpeg' }), [], 0, crop.kind);
+    else if (crop.mode === 'skip') this.$emit('close');
+    else this.$emit('unreadable');
+  },
+  render: () => null,
+} }));
 const PHOTO = () => new File(['jpeg-bytes'], 'a.jpg', { type: 'image/jpeg' });
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': status >= 400 ? 'application/problem+json' : 'application/json' } });
@@ -52,8 +65,10 @@ async function load() {
   };
 }
 
-beforeEach(() => { vi.unstubAllEnvs(); });
+beforeEach(() => { vi.unstubAllEnvs(); crop.mode = 'done'; crop.kind = 'drawing'; crop.opened.length = 0; let n = 0; URL.createObjectURL = () => `blob:${++n}`; URL.revokeObjectURL = () => undefined; });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+const mountWith = (W: unknown, files: File[]) => mount(W as never, { props: { initialFiles: files } as never });
 
 describe('요청 번호', () => {
   it('서버가 받는 UUID를, crypto.randomUUID가 없는 http 접속에서도 만든다', async () => {
@@ -127,7 +142,6 @@ describe('실패 종류', () => {
 });
 
 describe('올리기 창', () => {
-  const mountWith = (W: unknown, files: File[]) => mount(W as never, { props: { initialFiles: files } as never });
 
   it('정상: 202를 받으면 원본 액자로 걸고 보관한 작품 번호를 알린다', async () => {
     const { upload, WorldUpload } = await load();
@@ -201,5 +215,68 @@ describe('기기 판', () => {
     vi.resetModules();
     const { SERVER_WORLD } = await import('@/app/world/server/upload');
     expect(SERVER_WORLD).toBe(false);
+  });
+});
+
+describe('작품 자르기(#118)', () => {
+  const sentBodies = (f: ReturnType<typeof fakeServer>) => f.fetchStub.mock.calls.filter(([u, i]) => u === '/v1/artworks' && i?.method === 'POST').map(([, i]) => (i!.body as FormData).get('photo') as File);
+  it('자른 판만 서버로 보낸다. 원본은 보내지 않는다', async () => {
+    const { upload, WorldUpload } = await load();
+    upload.selectedChild.value = 'c1';
+    const f = fakeServer();
+    mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(sentBodies(f)).toHaveLength(1));
+    const [sent] = sentBodies(f);
+    expect(sent!.name).toBe('a.jpg');
+    expect(sent!.size).toBe('cropped'.length);
+    expect(sent!.size).not.toBe(PHOTO().size);
+  });
+  it('자르기 창의 답을 making으로 보낸다: 만들기는 true, 그림은 false', async () => {
+    const { upload, WorldUpload } = await load();
+    upload.selectedChild.value = 'c1';
+    const f = fakeServer();
+    crop.kind = 'making';
+    mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(sentBodies(f)).toHaveLength(1));
+    const forms = () => f.fetchStub.mock.calls.filter(([u]) => u === '/v1/artworks').map(([, i]) => (i as RequestInit).body as FormData);
+    expect(forms()[0]!.get('making')).toBe('true');
+    crop.kind = 'drawing';
+    mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(forms().length).toBeGreaterThan(1));
+    expect(forms()[1]!.get('making')).toBe('false');
+  });
+  it('여러 장은 차례로 고르고, 모두 고른 뒤에 보낸다', async () => {
+    const { upload, WorldUpload } = await load();
+    upload.selectedChild.value = 'c1';
+    const f = fakeServer();
+    mountWith(WorldUpload, [PHOTO(), new File(['two'], 'b.jpg', { type: 'image/jpeg' })]);
+    await vi.waitFor(() => expect(sentBodies(f)).toHaveLength(2));
+    expect(crop.opened).toEqual(['blob:1', 'blob:2']);
+  });
+  it('이 사진 올리지 않기를 고르면 서버로 가지 않는다', async () => {
+    crop.mode = 'skip';
+    const { WorldUpload } = await load();
+    const f = fakeServer();
+    const w = mountWith(WorldUpload, [PHOTO()]);
+    await vi.waitFor(() => expect(w.text()).toContain('올리지 않았어요'));
+    expect(sentBodies(f)).toHaveLength(0);
+    expect(w.emitted('saved')).toBeFalsy();
+  });
+  it('브라우저가 못 여는 사진은 보내지 않고 이유를 보인다', async () => {
+    crop.mode = 'unreadable';
+    const { WorldUpload } = await load();
+    const f = fakeServer();
+    const w = mountWith(WorldUpload, [new File(['heic'], 'a.heic', { type: 'image/heic' })]);
+    await vi.waitFor(() => expect(w.text()).toContain('HEIC 사진을 열 수 없어요'));
+    expect(sentBodies(f)).toHaveLength(0);
+  });
+  it('크기로 막힌 사진은 자르기 창을 열지 않는다', async () => {
+    const { WorldUpload } = await load();
+    fakeServer();
+    const big = PHOTO();
+    Object.defineProperty(big, 'size', { value: 20 * 1024 * 1024 + 1 });
+    const w = mountWith(WorldUpload, [big]);
+    await vi.waitFor(() => expect(w.text()).toContain('20MB'));
+    expect(crop.opened).toHaveLength(0);
   });
 });

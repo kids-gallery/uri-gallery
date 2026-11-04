@@ -4,7 +4,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { animatedJobs, e2eDb, type Connection } from './stack/db';
-import { album, openWorldUpload, photo, tag } from './stack/world';
+import { album, openWorldUpload, photo, tag, useCrop } from './stack/world';
 
 async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()!.width}.png` }); }
 
@@ -58,6 +58,7 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   await openWorldUpload(page, tag('w40'));
   const posted = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const id = String((await (await posted).json() as { id: string }).id);
   await expect(page.locator('.w-saved-thumb')).toBeVisible({ timeout: 60_000 });
   await shot(page, 'gallery-1-frame');
@@ -83,6 +84,9 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   await expect.poll(() => objects.length, { timeout: 30_000 }).toBeGreaterThan(0); // 사진은 받는다(아래 검사가 빈 목록으로 통과하지 않게)
   let archive = await openArchive();
   await expect(archive.getByRole('heading', { name: /1점/ })).toBeVisible();
+  await expect(archive.getByText('올린 사진(고른 부분만 보관)')).toBeVisible(); // 자른 판만 저장하므로 원본이라 부르지 않는다(#118)
+  await expect(archive.getByRole('button', { name: '사진 내려받기' })).toBeVisible();
+  await expect(archive.getByRole('button', { name: '원본 내려받기' })).toHaveCount(0);
   await expect(archive.getByRole('button', { name: '제목·추억 고치기' })).toHaveCount(0); // 올린 작품은 고칠 수 없다(D46)
   await shot(page, 'gallery-2-unapproved');
   expect(objects).not.toContain(cutout);

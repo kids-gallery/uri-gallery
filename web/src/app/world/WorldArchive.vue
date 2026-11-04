@@ -100,7 +100,7 @@ async function glb() {
 function original() {
   const a = current.value;
   if (!a) return;
-  download(a.original, `${safeName(a.title || info.value?.p.title || '작품')}_원본.${extOf(a.original.type)}`);
+  download(a.original, `${safeName(a.title || info.value?.p.title || '작품')}_${SERVER_WORLD ? '사진' : '원본'}.${extOf(a.original.type)}`);
 }
 
 function del() {
@@ -135,8 +135,8 @@ onBeforeUnmount(() => {
       <template v-else>
         <div v-if="current && info" class="detail">
           <figure class="orig">
-            <img :src="urlOf(current.original, `o-${current.id}`)" alt="원본 사진" />
-            <figcaption>원본 사진(그대로 보관)</figcaption>
+            <img :src="urlOf(current.original, `o-${current.id}`)" :alt="SERVER_WORLD ? '올린 사진' : '원본 사진'" />
+            <figcaption>{{ SERVER_WORLD ? '올린 사진(고른 부분만 보관)' : '원본 사진(그대로 보관)' }}</figcaption>
           </figure>
           <figure class="solid">
             <div ref="viewer" class="viewer" aria-label="입체 작품, 끌어서 돌려 보기" />
@@ -163,12 +163,12 @@ onBeforeUnmount(() => {
           <div class="row">
             <button v-if="!SERVER_WORLD" class="g-btn" type="button" :disabled="!!busy" @click="editInfo">제목·추억 고치기</button>
             <button class="g-btn g-btn--primary" type="button" :disabled="!!busy" @click="glb">{{ busy === 'glb' ? '만드는 중…' : '입체 내려받기' }}</button>
-            <button class="g-btn" type="button" @click="original">원본 내려받기</button>
+            <button class="g-btn" type="button" @click="original">{{ SERVER_WORLD ? '사진 내려받기' : '원본 내려받기' }}</button>
             <button class="g-btn" type="button" @click="emit('goto', current.id)">미술관에서 보기</button>
             <button v-if="!confirmDel" class="g-btn" type="button" @click="confirmDel = true">지우기</button>
           </div>
           <div v-if="confirmDel" class="confirm">
-            <p class="g-note">이 작품을 지울까요? 원본 사진과 입체가 함께 지워져요. 이미 내려받은 파일은 기기에 남아요.</p>
+            <p class="g-note">이 작품을 지울까요? {{ SERVER_WORLD ? '올린 사진' : '원본 사진' }}과 입체가 함께 지워져요. 이미 내려받은 파일은 기기에 남아요.</p>
             <div class="row">
               <button class="g-btn g-btn--primary" type="button" @click="del">지우기</button>
               <button class="g-btn" type="button" @click="confirmDel = false">그만두기</button>

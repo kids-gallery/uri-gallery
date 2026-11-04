@@ -4,15 +4,17 @@
 // 원본은 그대로 저장하고, 실패한 항목만 다시 시도한다. 성공한 작품은 남는다.
 // 서버 판(VITE_WORLD_SERVER=1, 마스터플랜 3-3)은 기기 저장 대신 서버로 보낸다. 형식·용량을 먼저 보고, 다시 시도해도 요청 번호는 같다.
 import { computed, onMounted, ref } from 'vue';
+import PhotoFixer from '@/app/upload/PhotoFixer.vue';
 import * as store from './store';
 import { SERVER_WORLD, checkPhoto, newUploadKey, sendPhoto } from './server/upload';
+import { CROP_BOXES, WORK_KINDS } from './cropBoxes';
 
-export type UploadStatus = 'wait' | 'check' | 'make' | 'save' | 'done' | 'fail' | 'skip';
-interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; uploadKey: string; hung: boolean }
+export type UploadStatus = 'crop' | 'wait' | 'check' | 'make' | 'save' | 'done' | 'fail' | 'skip';
+interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; uploadKey: string; hung: boolean; making?: boolean }
 
 /** 한 번에 받는 묶음(§2-15): 10장, 합계 100MB. 처리는 한 장씩 차례로 한다 */
 const MAX_BATCH = 10, MAX_BATCH_BYTES = 100 * 1024 * 1024;
-const LABEL: Record<UploadStatus, string> = { wait: '기다리는 중', check: '원본 확인 중', make: '전시용 사진 만드는 중', save: '보관하는 중', done: '전시 준비 끝', fail: '실패', skip: '건너뜀' };
+const LABEL: Record<UploadStatus, string> = { crop: '작품 고르는 중', wait: '기다리는 중', check: '원본 확인 중', make: '전시용 사진 만드는 중', save: '보관하는 중', done: '전시 준비 끝', fail: '실패', skip: '건너뜀' };
 
 const props = defineProps<{ initialFiles?: File[] }>();
 const emit = defineEmits<{ close: []; saved: [ids: string[], reveal: boolean] }>();
@@ -62,10 +64,37 @@ function accept(files: File[]) {
   for (const f of files) {
     if (taken >= room || bytes + f.size > MAX_BATCH_BYTES) { left.push(f.name); continue; }
     bytes += f.size; taken++;
-    items.value.push({ key: store.newId(), name: f.name || '사진', file: f, status: 'wait', reason: '', artworkId: store.newId(), retryable: false, uploadKey: newUploadKey(), hung: true });
+    items.value.push({ key: store.newId(), name: f.name || '사진', file: f, status: SERVER_WORLD && !checkPhoto(f) ? 'crop' : 'wait', reason: '', artworkId: store.newId(), retryable: false, uploadKey: newUploadKey(), hung: true });
   }
   if (left.length) notice.value = `한 번에 ${MAX_BATCH}장, 모두 합해 100MB까지 올릴 수 있어요. ${left.length}장은 다음에 다시 골라 주세요`;
-  void run();
+  if (SERVER_WORLD) { step.value = 'run'; nextCrop(); } else void run();
+}
+
+/** 서버 판(#118): 사진마다 작품 부분을 고른 뒤 그 판만 보낸다. 잘린 부분은 브라우저 밖으로 나가지 않는다 */
+const cropping = ref<{ it: Item; url: string } | null>(null);
+function nextCrop() {
+  if (cropping.value) URL.revokeObjectURL(cropping.value.url);
+  const it = items.value.find((i) => i.status === 'crop');
+  cropping.value = it ? { it, url: URL.createObjectURL(it.file) } : null;
+  if (!it) void run();
+}
+function cropDone(blob: Blob, _quad: [number, number][], _rot: number, kind: string) {
+  const { it } = cropping.value!;
+  it.making = kind === 'making';
+  it.file = new File([blob], it.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  it.status = 'wait';
+  nextCrop();
+}
+function cropSkip() {
+  const { it } = cropping.value!;
+  it.status = 'skip'; it.reason = '올리지 않았어요';
+  nextCrop();
+}
+function cropUnreadable() {
+  const { it } = cropping.value!;
+  it.status = 'fail'; it.retryable = false;
+  it.reason = heicLike(it.file) ? '이 브라우저는 HEIC 사진을 열 수 없어요. JPEG로 저장해 다시 골라 주세요' : '이 사진은 열 수 없어요. 다른 사진을 골라 주세요';
+  nextCrop();
 }
 
 async function knownHashes() {
@@ -112,7 +141,7 @@ async function runServerItem(it: Item) {
   const bad = checkPhoto(it.file);
   if (bad) { it.status = 'fail'; it.reason = bad; return; }
   it.status = 'save';
-  const r = await sendPhoto(it.file, it.uploadKey);
+  const r = await sendPhoto(it.file, it.uploadKey, it.making);
   if (!r.ok) { it.status = 'fail'; it.reason = r.reason; it.retryable = r.retryable; return; }
   it.status = 'done'; it.artworkId = r.id; it.hung = r.hung;
   if (!r.hung) it.reason = '보관했지만 이 브라우저가 열 수 없는 사진이라 미술관에 걸지 못했어요';
@@ -152,11 +181,12 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
 
       <input ref="album" class="hidden" type="file" :accept="SERVER_WORLD ? 'image/jpeg,image/png,image/heic,image/heif,.heic,.heif' : 'image/*'" multiple @change="onPick" />
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
+      <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" :kind-options="WORK_KINDS" kind-ask="어떤 작품인가요?" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
 
       <template v-if="step === 'pick'">
-        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>
+        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요.<template v-if="!SERVER_WORLD"> 제목과 이야기는 나중에 적어도 돼요.</template></p>
         <div class="row"><button class="g-btn g-btn--primary g-btn--big" type="button" @click="album?.click()">앨범에서 고르기</button><button class="g-btn g-btn--big" type="button" @click="camera?.click()">사진 찍기</button></div>
-        <p v-if="SERVER_WORLD" class="small">한 번에 10장까지, JPEG·PNG·HEIC 사진을 한 장 20MB까지 골라요. 사진은 우리 미술관으로 보내 원본 그대로 보관해요.</p>
+        <p v-if="SERVER_WORLD" class="small">한 번에 10장까지, JPEG·PNG·HEIC 사진을 한 장 20MB까지 골라요. 작품 부분만 골라 우리 미술관으로 보내요. 아이 얼굴이 들어가지 않게 고른 뒤 올려요.</p>
         <p v-else class="small">한 번에 10장까지, 한 장 20MB까지 골라요. 원본 사진은 그대로 보관하고 이 기기에 저장돼요.</p>
       </template>
 

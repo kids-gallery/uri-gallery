@@ -35,7 +35,7 @@
 --   4) BOOLEAN : MariaDB는 TINYINT(1)로 저장한다. 의미는 같다.
 --   5) 생성 컬럼 STORED : 표준 GENERATED ALWAYS AS (…)와 같으나 UNIQUE를 걸려고 STORED로 둔다.
 --   6) INSERT IGNORE : 상수 시드를 재실행해도 실패하지 않게 썼다(표준은 MERGE).
---   7) CHECK에 CURRENT_DATE를 쓸 수 없어(비결정적) BR-STY-02의 "제작일 ≤ 오늘"은 트리거로 옮겼다.
+--   7) CHECK에 비결정적 함수를 쓸 수 없어 BR-STY-02의 "제작일 ≤ 한국 날짜 오늘"은 트리거로 옮겼다.
 --   8) 부분 UNIQUE 인덱스(WHERE 절)가 없어, "작품당 승인 설명 1건"·"모델당 활성 버전 1건"은
 --      조건부 생성 컬럼 + UNIQUE로 구현했다(NULL은 여러 개 허용된다).
 --   9) ON DELETE SET NULL FK 컬럼은 CHECK에 쓸 수 없어(ERROR 1901, 실측) deletion_request의
@@ -937,7 +937,7 @@ DELIMITER //
 -- UC5 E7: 전시 중(승인 + 필수 이야기) 작품의 필수 항목을 비울 수 없다
 CREATE OR REPLACE TRIGGER trg_story_bi BEFORE INSERT ON story FOR EACH ROW
 BEGIN
-  IF NEW.made_on IS NOT NULL AND NEW.made_on > CURRENT_DATE THEN
+  IF NEW.made_on IS NOT NULL AND NEW.made_on > DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G11 BR-STY-02 made_on_in_future';
   END IF;
   IF (SELECT status FROM artwork WHERE artwork_id = NEW.artwork_id) = 'deleting' THEN
@@ -947,7 +947,7 @@ END//
 
 CREATE OR REPLACE TRIGGER trg_story_bu BEFORE UPDATE ON story FOR EACH ROW
 BEGIN
-  IF NEW.made_on IS NOT NULL AND NEW.made_on > CURRENT_DATE THEN
+  IF NEW.made_on IS NOT NULL AND NEW.made_on > DATE(UTC_TIMESTAMP() + INTERVAL 9 HOUR) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'G11 BR-STY-02 made_on_in_future';
   END IF;
   IF (SELECT status FROM artwork WHERE artwork_id = NEW.artwork_id) = 'deleting' THEN
