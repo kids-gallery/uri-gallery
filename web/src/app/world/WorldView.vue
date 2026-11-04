@@ -831,10 +831,10 @@ function openSettings() {
           <span id="w-secondary-menu" class="w-secondary-tools" :class="{'w-expanded':moreTools}" @click="onMenuPick">
           <button v-if="!visiting" class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('avatar')">캐릭터</button>
           <button class="g-btn" type="button" :aria-pressed="!prefs?.sound" @click="toggleSound">{{ prefs?.sound ? '소리 끄기' : '소리 켜기' }}</button>
+          <button v-if="!visiting" class="g-btn" type="button" @click="openSettings">설정</button>
           <button class="g-btn w-help-trigger" type="button" @click="openPanel('help')">사용법</button>
           <button class="g-btn" type="button" @click="openPanel('privacy')">개인정보·이용 안내</button>
           <button v-if="!SERVER_WORLD && space==='inside' && !visiting" class="g-btn" type="button" @click="addRoom">전시실 추가</button>
-          <button v-if="!visiting" class="g-btn" type="button" @click="openSettings">설정</button>
           <button v-if="!SERVER_WORLD && !visiting" class="g-btn" type="button" @click="openUsage">사용 기록</button>
           <button v-if="SERVER_WORLD" class="g-btn w-logout" type="button" @click="emit('logout')">로그아웃</button>
           </span>
