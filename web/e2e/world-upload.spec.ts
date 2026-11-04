@@ -124,6 +124,7 @@ test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)'
   await expect.poll(() => works(page)).toBe(0);
   await archive.getByRole('button', { name: '닫기' }).click();
   await expect(page.locator('.w-saved')).toHaveCount(0);
+});
 
 test('만들기로 답하면 서버에 만들기로 저장되고, 답하기 전에는 보낼 수 없다(D45)', async ({ page }) => {
   await openUpload(page);
