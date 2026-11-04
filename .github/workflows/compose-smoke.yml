@@ -1,0 +1,41 @@
+# 같은 compose가 깨끗한 리눅스에서 뜨고 한 바퀴가 도는지 PR마다 본다(마스터플랜 3-5, #140).
+name: compose-smoke
+on:
+  pull_request:
+    paths-ignore: ["**.md", "docs/**", "design/**", "제출/**"]
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "design/**", "제출/**"]
+permissions:
+  contents: read
+jobs:
+  round:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: 비밀 파일(README의 지금 명령)
+        run: |
+          id
+          umask 077
+          for name in db_password session_secret auth_hmac_secret; do
+            [ -e "secrets/$name" ] || openssl rand -hex 32 > "secrets/$name"
+          done
+          ls -la secrets
+      - name: 띄우기
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: 한 바퀴
+        run: node ops/docker/smoke.mjs
+      - name: 재시작 뒤 작품 유지
+        run: |
+          docker compose down
+          docker compose up -d --wait --wait-timeout 300
+          node ops/docker/smoke.mjs keep
+      - name: 실패 기록
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail=40
