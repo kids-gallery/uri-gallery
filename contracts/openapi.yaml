@@ -1103,7 +1103,7 @@ paths:
     get:
       tags: [보호자 앱]
       summary: 가족 파일 내려받기 — 짧게 유효한 서명 토큰 (research R-06)
-      description: 토큰은 작품 상세·전시 응답에만 실리고 5분 뒤 만료 [추론]. 가족 세션과 토큰의 가족이 같아야 한다. `삭제 중` 작품의 파일은 토큰이 유효해도 404. 응답은 `Cache-Control: private, no-store`. nginx X-Accel-Redirect로 전달.
+      description: '토큰은 작품 상세·전시 응답에만 실리고 5분 뒤 만료 [추론]. 가족 세션과 토큰의 가족이 같아야 한다. `삭제 중` 작품의 파일은 토큰이 유효해도 404. 응답은 `Cache-Control: private, no-store`. nginx X-Accel-Redirect로 전달.'
       security: [{ guardianSession: [] }]
       parameters:
         - name: token
