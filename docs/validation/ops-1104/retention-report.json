@@ -1,12 +1,20 @@
 {
-  "status": "failed",
+  "marker": "1793758991596",
+  "status": "passed",
   "retentionHours": 24,
   "oldAgeHours": 25,
+  "restarted": false,
+  "indexRotationMinutes": 15,
+  "deletionTimeoutSeconds": 1200,
+  "scope": "query cutoff and object-store chunks; not every WAL/index/filesystem copy",
   "oldBefore": 1,
-  "oldAfter": "still queryable",
-  "waitSeconds": 180,
-  "cacheRestart": true,
-  "afterRestartWaitSeconds": 60,
-  "observed": "compactor marker created; end-to-end expiry non-queryability not established",
-  "mainDraftRetentionHours": 168
+  "recentBefore": 1,
+  "oldChunksBefore": 1,
+  "recentChunksBefore": 1,
+  "queryCutoffSeconds": 1.08,
+  "deletionSeconds": 509.004,
+  "oldAfter": 0,
+  "recentAfter": 1,
+  "oldChunksAfter": 0,
+  "recentChunksAfter": 1
 }
