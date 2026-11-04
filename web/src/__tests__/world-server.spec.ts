@@ -61,6 +61,17 @@ describe('요청 경로·쿠키·응답', () => {
   });
 });
 
+describe('작품 이름(#137)', () => {
+  const sent = async (title?: string) => {
+    let form: FormData | null = null;
+    vi.stubGlobal('fetch', vi.fn(async (_u: string, init: RequestInit) => { form = init.body as FormData; return new Response('{}', { status: 202, headers: { 'content-type': 'application/json' } }); }));
+    await server.uploadArtwork('c1', new Blob(['x'], { type: 'image/png' }), 'k', false, title);
+    return form as unknown as FormData;
+  };
+  it('적은 이름을 앞뒤 빈칸 없이 보낸다', async () => { expect((await sent('  우리 집 ')).get('title')).toBe('우리 집'); });
+  it('비우면 보내지 않아 서버가 자동 제목을 붙인다', async () => { expect((await sent('   ')).has('title')).toBe(false); expect((await sent()).has('title')).toBe(false); });
+});
+
 describe('오류 전달(failureOf)', () => {
   it('401은 /app/login으로 옮기지 않고 login으로 넘긴다', async () => {
     const nav = { toLogin: vi.fn(), toNoFamily: vi.fn() };

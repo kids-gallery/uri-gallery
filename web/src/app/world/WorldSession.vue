@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pendingInvite } from './server/social';
 import { defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authProviders, login, logout, me, failureOf, failureReason, type Child, type GuardianMe } from './server';
@@ -16,6 +17,7 @@ const email = ref('');
 const password = ref('');
 const notice = ref('');
 const logoutPending = ref(false);
+pendingInvite(); // 로그인 전에 받은 초대를 카카오를 다녀와도 잃지 않게 둔다(마스터플랜 3-3 #137)
 const providers = ref({ kakao: false, emailSignup: true }); // 확인 전·실패 때는 지금 이메일 화면(마스터플랜 3-3 #88)
 const showEmail = ref(false);
 // 카카오톡 인앱 브라우저는 카카오의 prompt=login을 지원하지 않는다.

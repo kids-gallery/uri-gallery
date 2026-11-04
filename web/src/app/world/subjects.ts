@@ -36,7 +36,7 @@ export const SUBJECTS: readonly Subject[] = [
   { id: 'snowman', label: '눈사람', icon: '⛄', group: '사람', behavior: 'dance', sound: 'tune' },
   { id: 'character', label: '캐릭터', icon: '🦸', group: '사람', behavior: 'dance', sound: 'tune' },
   { id: 'house', label: '집', icon: '🏠', group: '그 밖', behavior: 'spin', sound: 'tada' },
-  { id: 'etc', label: '그 밖', icon: '✨', group: '그 밖', behavior: 'spin', sound: 'tada' },
+  { id: 'etc', label: '그 밖', icon: '✨', group: '그 밖', behavior: 'dance', sound: 'tada' },
 ];
 
 const BY_ID = new Map(SUBJECTS.map((s) => [s.id, s]));

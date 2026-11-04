@@ -103,12 +103,13 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
 
   await expect(page.getByRole('button', { name: '가까이 보기' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('button', { name: '이 작품 이야기' })).toHaveCount(0);
-  await page.getByRole('button', { name: '계속 둘러보기' }).click({ timeout: 30_000 });
+  await page.locator('.w-saved').getByRole('button', { name: '닫기' }).click({ timeout: 30_000 });
   await page.locator('.w-more-tools').click();
-  await page.getByRole('button', { name: '설정', exact: true }).click();
-  const settings = page.getByRole('dialog', { name: '설정' });
-  await expect(settings.getByText('우리 미술관에 저장돼요')).toBeVisible();
-  for (const name of ['백업 내보내기', '백업 가져오기', '이 기기의 자료 모두 지우기', '견본 다시 걸기', '견본 치우기']) await expect(settings.getByRole('button', { name })).toHaveCount(0);
+  // 서버 판에서 쓸 수 없는 것은 메뉴에 없다(#124, #137)
+  for (const name of ['설정', '공간 꾸미기', '사용 기록', '전시실 추가', '백업 내보내기']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  // 메뉴에 남은 창이 실제로 열린다(#137 합칠 때 창 줄이 빠진 적이 있다)
+  await page.getByRole('button', { name: '개인정보·이용 안내' }).click();
+  await expect(page.getByRole('dialog').first()).toBeVisible();
 });
 
 test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)', async ({ page }) => {
@@ -116,13 +117,15 @@ test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)'
   await album(page).setInputFiles(photo());
   await useCrop(page);
   await expect(page.locator('.w-saved-thumb')).toBeVisible({ timeout: 60_000 });
-  await page.getByRole('button', { name: '더보기' }).click();
   await page.getByRole('button', { name: '보관함', exact: true }).click();
-  const archive = page.getByRole('dialog', { name: '입체 보관함' });
+  const list = page.getByRole('dialog', { name: '보관함' });
+  await list.locator('.w-ov-pick').first().click();
+  await list.getByRole('button', { name: '자세히' }).click();
+  const archive = page.getByRole('dialog', { name: '작품 자세히' });
   await archive.getByRole('button', { name: '지우기' }).click();
   await archive.getByRole('button', { name: '지우기', exact: true }).last().click();
   await expect.poll(() => works(page)).toBe(0);
-  await archive.getByRole('button', { name: '닫기' }).click();
+  await list.getByRole('button', { name: '닫기' }).click();
   await expect(page.locator('.w-saved')).toHaveCount(0);
 });
 

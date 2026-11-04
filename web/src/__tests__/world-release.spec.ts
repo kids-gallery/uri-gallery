@@ -1,6 +1,6 @@
 // 3D미술관_재설계 §2-22 — 1차 출시 전 수정 묶음 중 단위 시험으로 고정할 수 있는 것.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BACKUP_NUDGE, backupDue, isIOS, storageMode } from '@/app/world/deviceStorage';
+import { BACKUP_NUDGE, backupDue, isIOS, needsTabGate, storageMode } from '@/app/world/deviceStorage';
 import { EMPTY_USAGE, bump, dayNumber, normalizeUsage, visit } from '@/app/world/usage';
 import { cardText } from '@/app/world/shareCard';
 import { SUBJECTS } from '@/app/world/subjects';
@@ -17,6 +17,12 @@ const UA = {
 };
 
 describe('홈 화면 앱 판정(§2-22 5)', () => {
+  it('서버 판은 아이폰 탭에서도 저장 안내 없이 바로 올린다. 작품이 서버에 있어 7일 삭제 대상이 아니다', () => {
+    expect(needsTabGate('ios-tab', true)).toBe(false);
+    expect(needsTabGate('ios-tab', false)).toBe(true);
+    expect(needsTabGate('browser', false)).toBe(false);
+    expect(needsTabGate('home-app', false)).toBe(false);
+  });
   it('iPhone 브라우저 탭만 7일 삭제 위험으로 본다', () => {
     expect(storageMode({ ua: UA.iphone, maxTouchPoints: 5, standalone: false })).toBe('ios-tab');
     expect(storageMode({ ua: UA.iphone, maxTouchPoints: 5, standalone: true })).toBe('home-app');

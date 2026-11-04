@@ -6,7 +6,9 @@ export interface Floor { x: number; z: number; w: number; d: number; yaw?: numbe
 export interface SpatialLayout { rooms: SpatialRoom[]; pieces: Piece[]; floors: Floor[]; nodes: Point[]; solids: Solid[]; spawn: Point }
 /** 클래식 평면의 신랑 치수(§2-20). 대성당 실내(cathedral.ts)도 이 값을 받아 쓴다 */
 // naveHalf: 신랑 벽 = 전시실 문 벽(roomX - 방 반폭 5). 전시실이 신랑 벽에 붙어 옆 예배당이 된다
-export const CLASSIC = { foyerHalf: 12, aisle: 7, naveHalf: 9, roomWall: 5.4, roomX: 14, firstRoomZ: -12, roomStep: 13 } as const;
+export const CLASSIC = { foyerHalf: 12, aisle: 7, naveHalf: 9, roomWall: 5.4, roomX: 14, firstRoomZ: -13.2, roomStep: 12 } as const;
+/** 장난감 섬은 겹치지 않는 만큼만 멀리 둔다(재설계 2-24) */
+const toyRadius=(count:number)=>Math.max(22,7.5/Math.sin(Math.PI/(2*(count+1))));
 /** 클래식 신랑 끝벽 z: 마지막 전시실(없으면 첫 전시실 자리) 뒤 7m. 평면과 대성당(museum.ts)이 같이 쓴다 */
 export function classicNaveEnd(count: number) { return CLASSIC.firstRoomZ - Math.max(0, Math.ceil(count / 2) - 1) * CLASSIC.roomStep - 7; }
 
@@ -42,9 +44,9 @@ export function createLayout(id: ThemeId, count: number, highHall: boolean): Spa
   for(let i=0;i<count;i++){
     const side: -1|1=i%2===0?-1:1, row=Math.floor(i/2);
     let x=side*CLASSIC.roomX,z=CLASSIC.firstRoomZ-row*CLASSIC.roomStep;
-    if(id==='block'){x=side*(14+(row%2)*6);z=-12-i*8;}
-    if(id==='forest'){x=side*(22+(row%2)*4);z=-17-row*19;}
-    if(id==='toy'){const a=Math.PI+(i+1)*Math.PI/(count+1),radius=Math.max(29,count*5.5);x=Math.cos(a)*radius;z=7+Math.sin(a)*radius;}
+    if(id==='block'){x=side*(12+(row%2)*6);z=-9-row*12;}
+    if(id==='forest'){x=side*(18+(row%2)*3);z=-11-row*14;}
+    if(id==='toy'){const a=Math.PI+(i+1)*Math.PI/(count+1),radius=toyRadius(count);x=Math.cos(a)*radius;z=7+Math.sin(a)*radius;}
     const actualSide: -1|1=x<0?-1:1;
     layout.rooms.push({x,z,side:actualSide});
     const door={x:x-actualSide*5,z}, outside={x:door.x-actualSide*2,z};
@@ -96,14 +98,14 @@ export function createLayout(id: ThemeId, count: number, highHall: boolean): Spa
     box(0,h/2,end,W*2,h,.32,'wall',true);
   }
   if(id==='forest'){
-    const back=-17-Math.floor(Math.max(0,count-1)/2)*19;
-    for(const x of [-15,15]){path({x,z:-2},{x,z:back},4);path({x:0,z:-2},{x,z:-2},4);}
+    const back=-11-Math.floor(Math.max(0,count-1)/2)*14;
+    for(const x of [-11,11]){path({x,z:-2},{x,z:back},4);path({x:0,z:-2},{x,z:-2},4);}
     path({x:-15,z:back},{x:15,z:back},4);
     box(0,-.6,back/2,110,.4,Math.abs(back)+65,'landscape');
   }
   if(id==='block')box(0,-.7,-20,110,.6,140,'landscape');
   if(id==='toy'){
-    const radius=Math.max(29,count*5.5),width=radius*2+20;
+    const radius=toyRadius(count),width=radius*2+20;
     box(0,-.75,-radius/2,width,.7,radius+38,'landscape');
     for(const x of [-width/2+4,width/2-4])for(const z of [-radius-12,20])box(x,-4,z,3,6,3,'landscape');
   }

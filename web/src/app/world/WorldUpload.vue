@@ -10,7 +10,7 @@ import { SERVER_WORLD, checkPhoto, newUploadKey, sendPhoto } from './server/uplo
 import { CROP_BOXES, WORK_KINDS } from './cropBoxes';
 
 export type UploadStatus = 'crop' | 'wait' | 'check' | 'make' | 'save' | 'done' | 'fail' | 'skip';
-interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; uploadKey: string; hung: boolean; making?: boolean }
+interface Item { key: string; name: string; file: File; status: UploadStatus; reason: string; artworkId: string; retryable: boolean; title?: string; uploadKey: string; hung: boolean; making?: boolean }
 
 /** 한 번에 받는 묶음(§2-15): 10장, 합계 100MB. 처리는 한 장씩 차례로 한다 */
 const MAX_BATCH = 10, MAX_BATCH_BYTES = 100 * 1024 * 1024;
@@ -78,9 +78,10 @@ function nextCrop() {
   cropping.value = it ? { it, url: URL.createObjectURL(it.file) } : null;
   if (!it) void run();
 }
-function cropDone(blob: Blob, _quad: [number, number][], _rot: number, kind: string) {
+function cropDone(blob: Blob, _quad: [number, number][], _rot: number, kind: string, title = '') {
   const { it } = cropping.value!;
   it.making = kind === 'making';
+  it.title = title;
   it.file = new File([blob], it.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
   it.status = 'wait';
   nextCrop();
@@ -141,7 +142,7 @@ async function runServerItem(it: Item) {
   const bad = checkPhoto(it.file);
   if (bad) { it.status = 'fail'; it.reason = bad; return; }
   it.status = 'save';
-  const r = await sendPhoto(it.file, it.uploadKey, it.making);
+  const r = await sendPhoto(it.file, it.uploadKey, it.making, it.title);
   if (!r.ok) { it.status = 'fail'; it.reason = r.reason; it.retryable = r.retryable; return; }
   it.status = 'done'; it.artworkId = r.id; it.hung = r.hung;
   if (!r.hung) it.reason = '보관했지만 이 브라우저가 열 수 없는 사진이라 미술관에 걸지 못했어요';
@@ -179,9 +180,9 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
         <button class="g-btn" type="button" :disabled="running" @click="requestClose">닫기</button>
       </header>
 
-      <input ref="album" class="hidden" type="file" :accept="SERVER_WORLD ? 'image/jpeg,image/png,image/heic,image/heif,.heic,.heif' : 'image/*'" multiple @change="onPick" />
+      <input ref="album" class="hidden" type="file" accept="image/*" multiple @change="onPick" />
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
-      <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" :kind-options="WORK_KINDS" kind-ask="어떤 작품인가요?" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
+      <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" :kind-options="WORK_KINDS" kind-ask="어떤 작품인가요?" title-label="작품 이름" title-hint="적지 않아도 돼요" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
 
       <template v-if="step === 'pick'">
         <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요.<template v-if="!SERVER_WORLD"> 제목과 이야기는 나중에 적어도 돼요.</template></p>

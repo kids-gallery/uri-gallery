@@ -49,8 +49,9 @@ export function planRooms(ages: number[], works: PlanWork[]): { rooms: PlanRoom[
     for (const w of list) {
       let placed = false;
       while (!placed) {
+        // 만들기는 언제나 단상에 선다. 차면 벽에 걸지 않고 다음 전시실로 넘긴다(마스터플랜 3-3 #137)
         if (w.kind === 'making' && ped < PEDESTAL_SLOTS) { slots.set(w.id, { room, type: 'pedestal', index: ped++ }); placed = true; }
-        else if (wall < WALL_SLOTS) { slots.set(w.id, { room, type: 'wall', index: wall++ }); placed = true; }
+        else if (w.kind !== 'making' && wall < WALL_SLOTS) { slots.set(w.id, { room, type: 'wall', index: wall++ }); placed = true; }
         else { part += 1; room = rooms.push({ age, part }) - 1; wall = 0; ped = 0; }
       }
     }
@@ -70,7 +71,7 @@ export function wallSlot(r: RoomSpec, i: number): { pos: THREE.Vector3; normal: 
   const s = r.side;
   const y = 1.6;
   if (i < 4) {
-    const z = r.cz + [-3.6, -1.2, 1.2, 3.6][i]!;
+    const z = r.cz + [-1.2, 1.2, -3.6, 3.6][i]!; // 첫 두 작품은 문 정면 가운데(재설계 2-24)
     return { pos: new THREE.Vector3((r.cx ?? s * 10) + s * 4.82, y, z), normal: new THREE.Vector3(-s, 0, 0) };
   }
   const xs = [6.8, 9.2, 11.6, 14.0];
@@ -225,6 +226,8 @@ export class Museum {
   interior: InteriorId = 'gallery';
   reduced = false;
   private layout!: SpatialLayout;
+  /** 미니맵이 읽는 지금 평면 */
+  get plan(): SpatialLayout { return this.layout; }
   private navigation!: NavigationWorld;
   private architecture: ReturnType<typeof buildSpatialScene> | null = null;
   private workSlots = new Map<string, PlanSlot>();
@@ -378,6 +381,9 @@ export class Museum {
     const tex = signTexture(`${child}의 미술관`, '전시실은 이쪽이에요');
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 1.44), new THREE.MeshBasicMaterial({ map: tex }));
     mesh.position.set(0, COR_H - 0.85, Z0 + 0.3); // 회랑 입구 위쪽에 매단다
+    // 벽 없는 모드에서 하늘에 떠 보이지 않게 기둥을 세운다(마스터플랜 3-3 #137)
+    const post = new THREE.MeshStandardMaterial({ color: '#8a6a48', roughness: 0.8 });
+    for (const x of [-2.1, 2.1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, COR_H - 0.85, 0.16), post); p.position.set(x, -(COR_H - 0.85) / 2, -0.05); mesh.add(p); }
     this.lobbySignMesh = mesh;
     this.root.add(mesh);
   }

@@ -1,5 +1,7 @@
 // 효과음 합성(3D미술관_재설계 §2-5). 외부 소리 파일 없이 Web Audio로 만든다 — 저작권 문제가 없고 내려받을 것이 없다.
 import type { SoundId } from './subjects';
+import { SCORES, type Note } from './music';
+import type { ThemeId } from './themes';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -19,6 +21,8 @@ function audio(): AudioContext | null {
       master = ctx.createGain();
       master.gain.value = 0.55;
       master.connect(ctx.destination);
+      // 화면을 숨기면 음악과 효과음을 멈춘다. 돌아오면 이어서 난다
+      document.addEventListener('visibilitychange', () => { if (document.hidden) void ctx?.suspend(); else if (enabled) void ctx?.resume(); });
     }
     if (ctx.state === 'suspended') void ctx.resume();
     return ctx;
@@ -163,11 +167,71 @@ export function speak(text: string): boolean {
 
 export function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* 없음 */ } }
 
-// 이용자가 들어가기·모드·소리 버튼을 누른 뒤에만 켠다.
-let ambienceNodes:OscillatorNode[]=[];
-export function stopAmbience(){for(const n of ambienceNodes){try{n.stop();n.disconnect();}catch{ /* 이미 끝남 */ }}ambienceNodes=[];}
-export function setAmbience(theme:'classic'|'block'|'forest'|'toy'){
- stopAmbience();const c=audio();if(!c||!master)return;
- const notes={classic:[130.81,196,261.63],block:[146.83,220,293.66],forest:[174.61,261.63,349.23],toy:[196,293.66,392]}[theme];
- for(const f of notes){const o=c.createOscillator(),g=c.createGain();o.type=theme==='block'?'triangle':'sine';o.frequency.value=f;g.gain.value=.012;o.connect(g).connect(master);o.onended=()=>g.disconnect();o.start();ambienceNodes.push(o);}
+// 모드별 배경 음악(마스터플랜 3-3 #137). 이용자가 들어가기·모드·소리 버튼을 누른 뒤에만 켠다.
+const LOOKAHEAD = 1.2, MUSIC_LEVEL = 0.8;
+const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
+/** 음색마다 배음[배수, 세기], 파형, 전체 세기, 올림 초, 내림 초. pluck은 누른 뒤 저절로 사라지는 소리다 */
+const VOICES: Record<Note['voice'], { parts: [number, number][]; wave: OscillatorType; level: number; attack: number; release: number; pluck?: boolean; vibrato?: boolean }> = {
+  organ: { parts: [[1, 1], [2, 0.5], [3, 0.18]], wave: 'sine', level: 0.15, attack: 0.18, release: 0.5 },
+  pad: { parts: [[1, 1], [2, 0.2]], wave: 'sine', level: 0.1, attack: 0.7, release: 0.9 },
+  flute: { parts: [[1, 1], [2, 0.12]], wave: 'triangle', level: 0.3, attack: 0.07, release: 0.18, vibrato: true },
+  marimba: { parts: [[1, 1], [4, 0.25]], wave: 'sine', level: 0.7, attack: 0.004, release: 0.45, pluck: true },
+  bell: { parts: [[1, 1], [3, 0.28], [5.04, 0.1]], wave: 'sine', level: 0.42, attack: 0.003, release: 1.1, pluck: true },
+  bass: { parts: [[1, 1]], wave: 'triangle', level: 0.3, attack: 0.008, release: 0.6, pluck: true },
+};
+
+/** 음 하나를 합성한다. OfflineAudioContext로도 돌려 소리 크기를 잴 수 있다 */
+export function playNote(c: BaseAudioContext, out: AudioNode, n: Note, t0: number, beat: number) {
+  const v = VOICES[n.voice], f = hz(n.midi), peak = v.level * n.vel;
+  const hold = v.pluck ? 0 : Math.max(0, n.len * beat - v.attack), end = t0 + v.attack + hold + v.release;
+  const g = c.createGain();
+  g.connect(out);
+  env(g, t0, v.attack, peak, hold, v.release);
+  const lfo = v.vibrato ? c.createOscillator() : null, depth = lfo ? c.createGain() : null;
+  if (lfo && depth) { lfo.frequency.value = 5; depth.gain.value = f * 0.004; lfo.connect(depth); lfo.start(t0); lfo.stop(end); }
+  v.parts.forEach(([ratio, level], i) => {
+    const o = c.createOscillator(), pg = c.createGain();
+    o.type = i === 0 ? v.wave : 'sine';
+    o.frequency.value = f * ratio;
+    if (depth) depth.connect(o.frequency);
+    pg.gain.value = level;
+    o.connect(pg).connect(g);
+    o.start(t0);
+    o.stop(end);
+    if (i === 0) o.onended = () => g.disconnect();
+  });
+}
+
+let music: { timer: ReturnType<typeof setInterval>; nodes: AudioNode[]; bus: GainNode } | null = null;
+export function stopAmbience() {
+  if (!music) return;
+  const { timer, nodes, bus } = music;
+  music = null;
+  clearInterval(timer);
+  if (ctx) bus.gain.setTargetAtTime(0, ctx.currentTime, 0.12);
+  setTimeout(() => { for (const n of nodes) { try { n.disconnect(); } catch { /* 이미 끊김 */ } } }, 800);
+}
+export function setAmbience(theme: ThemeId) {
+  stopAmbience();
+  const c = audio();
+  if (!c || !master) return;
+  const score = SCORES[theme], beat = 60 / score.bpm;
+  const bus = c.createGain(), delay = c.createDelay(1), feedback = c.createGain();
+  bus.gain.value = MUSIC_LEVEL;
+  delay.delayTime.value = score.echo.time;
+  feedback.gain.value = score.echo.feedback;
+  bus.connect(master);
+  bus.connect(delay).connect(feedback).connect(delay);
+  delay.connect(master);
+  let at = c.currentTime + 0.15, i = 0;
+  const tick = () => {
+    for (;;) {
+      const n = score.notes[i]!, when = at + n.at * beat;
+      if (when > c.currentTime + LOOKAHEAD) return;
+      if (when >= c.currentTime) playNote(c, bus, n, when, beat); // 지난 음은 건너뛴다(탭이 잠시 느려졌을 때)
+      if (++i === score.notes.length) { i = 0; at += score.beats * beat; }
+    }
+  };
+  tick();
+  music = { timer: setInterval(tick, 300), nodes: [bus, delay, feedback], bus };
 }
