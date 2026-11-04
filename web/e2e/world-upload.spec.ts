@@ -107,6 +107,9 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
   await page.locator('.w-more-tools').click();
   // 서버 판에서 쓸 수 없는 것은 메뉴에 없다(#124, #137)
   for (const name of ['설정', '공간 꾸미기', '사용 기록', '전시실 추가', '백업 내보내기']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  // 메뉴에 남은 창이 실제로 열린다(#137 합칠 때 창 줄이 빠진 적이 있다)
+  await page.getByRole('button', { name: '개인정보·이용 안내' }).click();
+  await expect(page.getByRole('dialog').first()).toBeVisible();
 });
 
 test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)', async ({ page }) => {

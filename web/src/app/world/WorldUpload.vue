@@ -180,7 +180,7 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
         <button class="g-btn" type="button" :disabled="running" @click="requestClose">닫기</button>
       </header>
 
-      <input ref="album" class="hidden" type="file" :accept="SERVER_WORLD ? 'image/jpeg,image/png,image/heic,image/heif,.heic,.heif' : 'image/*'" multiple @change="onPick" />
+      <input ref="album" class="hidden" type="file" accept="image/*" multiple @change="onPick" />
       <input ref="camera" class="hidden" type="file" accept="image/*" capture="environment" @change="onPick" />
       <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" :kind-options="WORK_KINDS" kind-ask="어떤 작품인가요?" title-label="작품 이름" title-hint="적지 않아도 돼요" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
 

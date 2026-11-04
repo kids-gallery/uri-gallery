@@ -1073,6 +1073,9 @@ function openSettings() {
         @upload="beforeUpload(() => openPanel('upload'))"
       />
       <WorldMotion v-if="panel === 'motion' && motionSource" :source="motionSource" @close="closePanel" @failed="motionFailed" />
+      <WorldPrivacy v-if="panel === 'privacy'" :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" @close="closePanel" @backup="openSettings" />
+      <WorldStorageGate v-if="panel === 'storage'" @go="gateGo" @close="closePanel" />
+      <WorldUsage v-if="panel === 'usage'" :usage="usage" :last-backup="lastBackup" @close="closePanel" @clear="clearUsage" />
       <WorldAvatar
         v-if="panel === 'avatar' && prefs"
         :config="prefs.avatar"
