@@ -1,6 +1,6 @@
 # 시연 체험 서버(마스터플랜 3-5 #135). compose.real.yaml, compose.own3.yaml 위에 겹친다. 사용자는 링크만 열고, 키와 컨테이너는 이 서버에만 있다.
 #   LIVE_HOST=주소 OWN3_MANIFEST=./models/own3/manifest.demo.yaml docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml -f compose.live.yaml up -d --build
-#   비밀 파일은 컨테이너 사용자가 읽게 둔다: chmod 444 secrets/*; chmod 700 secrets (서버 계정과 사용자 번호가 달라 600이면 EACCES)
+#   비밀 파일은 sh ops/docker/make-secrets.sh로 만든다(#140). 소유자 1000, 권한 400이라 다른 계정은 읽지 못한다.
 #   끝나면 서버째 지운다(청중 사진도 함께 지워진다). P=프로젝트:
 #     gcloud compute instances delete uam-live --project "$P" --zone asia-northeast3-a
 #     gcloud compute addresses delete uam-live-ip --project "$P" --region asia-northeast3
@@ -15,8 +15,9 @@ services:
       args:
         VITE_TRIAL: "1"
     ports: !reset []
+    volumes: ["./ops/docker/nginx-behind-caddy.conf:/etc/nginx/conf.d/00-behind-caddy.conf:ro"]
   caddy:
-    image: caddy:2.10.0-alpine
+    image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
     restart: unless-stopped
     command: caddy reverse-proxy --from ${LIVE_HOST} --to web:80
     ports: ["80:80", "443:443"]
