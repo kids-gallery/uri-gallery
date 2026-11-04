@@ -14,6 +14,8 @@ export function storageMode(d: DeviceInfo): StorageMode {
   if (d.standalone) return 'home-app';
   return isIOS(d) ? 'ios-tab' : 'browser';
 }
+/** 첫 작품 전에 저장 안내를 볼지. 서버 판의 작품은 서버에 있어 7일 삭제 대상이 아니다(마스터플랜 3-3) */
+export const needsTabGate = (mode: StorageMode, serverWorld: boolean): boolean => mode === 'ios-tab' && !serverWorld;
 /** 지금 기기. standalone은 표준 미디어 쿼리와 iOS의 navigator.standalone 둘 다 본다 */
 export function currentDevice(): DeviceInfo {
   const nav = navigator as Navigator & { standalone?: boolean };

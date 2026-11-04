@@ -37,7 +37,7 @@ import { BackupError, exportBackup, importBackup } from './backup';
 import { EMOTES } from './emotes';
 import { safeName } from './relief3d';
 import { SUBJECTS } from './subjects';
-import { backupDue, currentDevice, storageMode } from './deviceStorage';
+import { backupDue, currentDevice, needsTabGate, storageMode } from './deviceStorage';
 import { EMPTY_USAGE, bump, dayNumber, normalizeUsage, visit, type Usage } from './usage';
 import { saveFile, shareNow, type SaveResult } from './shareFile';
 import { cardText, drawCard } from './shareCard';
@@ -230,7 +230,7 @@ const gateOk=ref(false);
 try{gateOk.value=sessionStorage.getItem('uam-world-tab-ok')==='yes';}catch{/* 이번 화면에서만 기억한다 */}
 let gateNext:(()=>void)|null=null;
 function beforeUpload(go:()=>void){
-  if(saveMode==='ios-tab'&&realCount.value===0&&!gateOk.value&&!visiting.value){gateNext=go;openPanel('storage');return;}
+  if(needsTabGate(saveMode,SERVER_WORLD)&&realCount.value===0&&!gateOk.value&&!visiting.value){gateNext=go;openPanel('storage');return;}
   go();
 }
 function gateGo(){

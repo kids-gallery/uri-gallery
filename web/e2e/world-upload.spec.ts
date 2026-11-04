@@ -29,6 +29,18 @@ test('정상: 서버에 한 건 저장되고 원본 액자로 걸린다', async 
   expect(await works(page)).toBe(1);
 });
 
+test.describe('아이폰 Safari 탭(#146)', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1' });
+  test('작품 0개에서 [작품 올리기]를 누르면 저장 안내 없이 창이 열리고 사진이 올라간다', async ({ page }) => {
+    await openUpload(page); // 안에서 창이 열리는지 본다. 저장 안내가 가로막으면 여기서 실패한다
+    expect(await works(page)).toBe(0);
+    const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
+    await album(page).setInputFiles(photo());
+    await useCrop(page);
+    expect((await res).status()).toBe(202);
+  });
+});
+
 test('용량 초과: 서버로 보내지 않고 이유를 보인다', async ({ page }) => {
   await openUpload(page);
   let posted = 0;
