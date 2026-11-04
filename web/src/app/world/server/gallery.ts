@@ -11,6 +11,8 @@ import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, typ
 type Item = Gallery['groups'][number]['items'][number];
 
 const RELIEF_DEPTH_ON = import.meta.env.VITE_RELIEF_DEPTH === '1';
+/** 만들기는 받침대의 동상이므로 빌드 값과 상관없이 깊이로 둥근 입체를 만든다(#133) */
+const wantsDepth = (item: Item) => item.kind === 'relief' && (RELIEF_DEPTH_ON || item.making);
 const shown = new Map<string, { work: store.Artwork; kind: string; childId: string }>();
 /** 로그아웃하면 늘어난다. 그 전에 시작한 요청의 결과는 버린다 */
 let epoch = 0;
@@ -41,7 +43,7 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   const base = had && (same || !had.work.cutout) ? had.work : await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const orNull = (url: string) => file(url).catch(() => null); // 못 받으면 낮춰 걸고 load가 다시 받게 한다(마스터플랜 3-3)
   const cutout = same ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await orNull(item.auxUrl) : null;
-  const depth = (same ? had.work.depth : null) ?? (RELIEF_DEPTH_ON && item.kind === 'relief' && cutout && item.primaryUrl ? await orNull(item.primaryUrl) : null);
+  const depth = (same ? had.work.depth : null) ?? (wantsDepth(item) && cutout && item.primaryUrl ? await orNull(item.primaryUrl) : null);
   // 걸린 부조는 벽에 전시용 판을 건다. 못 만들면 자른 사진 그대로 둔다
   const display = cutout && !same ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
   return {
@@ -59,7 +61,7 @@ async function load(entries: { item: Item; childId: string }[], mine: number): P
       if (mine !== epoch) return 0;
       const relief = item.kind === 'relief';
       const noCutout = relief && !!item.auxUrl && !work.cutout;
-      const noDepth = RELIEF_DEPTH_ON && relief && !!work.cutout && !!item.primaryUrl && !work.depth;
+      const noDepth = wantsDepth(item) && !!work.cutout && !!item.primaryUrl && !work.depth;
       // 컷아웃이 없으면 보이는 것은 액자다. 걸린 결과와 달라 상태 묻기가 목록을 다시 읽는다
       shown.set(item.id, { work, kind: noCutout ? 'frame' : item.kind, childId });
       if (noCutout || noDepth) missed++; // 걸어 둔 채 새 주소로 한 번 더 받는다

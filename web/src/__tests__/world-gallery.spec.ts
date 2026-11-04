@@ -307,6 +307,16 @@ describe('부조 파일을 받지 못할 때(마스터플랜 3-3·3-6)', () => {
 
   afterEach(() => { vi.unstubAllEnvs(); });
 
+  it('빌드 값이 없어도 만들기는 동상이라 깊이를 받고, 그림은 받지 않는다(#133)', async () => {
+    const making = item('m1', { kind: 'relief', making: true, primaryUrl: '/v1/files/m1-depth', auxUrl: '/v1/files/m1-cut' });
+    const s = server({ c1: [making, relief('d1')] }, ok);
+    const { g } = await load();
+    const works = await g.galleryWorks(null);
+    expect(works.find((w) => w.id === 'm1')!.depth?.size).toBeGreaterThan(0);
+    expect(works.find((w) => w.id === 'd1')!.depth ?? null).toBeNull();
+    expect(asked(s, 'd1-depth')).toBe(0);
+  });
+
   describe('깊이를 켠 빌드', () => {
     beforeEach(() => { vi.stubEnv('VITE_RELIEF_DEPTH', '1'); });
 
