@@ -25,6 +25,8 @@ export interface Artwork {
   original: Blob;
   display: Blob;
   cutout: Blob | null;
+  /** 서버 판에서 걸린 부조의 깊이(마스터플랜 3-6). 없으면 컷아웃으로 두께판을 만든다 */
+  depth?: Blob | null;
   sample: boolean;
   createdAt: number;
   /** 화면용 사본만 돌리는 각도(0·90·180·270). 원본은 돌리지 않는다(§2-15) */

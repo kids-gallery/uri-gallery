@@ -31,7 +31,7 @@
 | 움직이는 그림 | 사람 그림이고 관절이 맞을 때 | M3 Animated Drawings(이번 5일은 가짜 어댑터) |
 
 - **약속: 접수된 사진(JPG·PNG·HEIC, 20MB 이하)은 바로 원본 액자로 걸립니다.** AI 결과가 품질 기준에 못 미치면 한 단계 낮춘 결과를 돌려주고, 서버 장애면 다시 시도한 뒤 단계별로 처리합니다([처리 규칙](#처리-규칙이-서비스의-핵심)).
-- 모델은 새로 학습하지 않았습니다. 아이 그림 데이터가 없고 아이 사진 학습은 개인정보 문제라, 상업 이용이 되는 공개 모델을 이어 붙였습니다.
+- 기본 구성의 모델은 새로 학습하지 않았습니다. 아이 그림 데이터가 없고 아이 사진 학습은 개인정보 문제라, 상업 이용이 되는 공개 모델을 이어 붙였습니다. 이와 별도로 합성 그림과 Quick, Draw!로 직접 학습한 own3를 분리와 깊이 자리에 선택해서 켤 수 있습니다. 기본은 꺼짐이고, 상업 조건은 확인 전이라 발표 시연 범위에서만 씁니다(마스터플랜 3-6).
 - → [자세히: 무엇을 하나](docs/공통/서비스_구조와_코드.md#what)
 
 ### 지키는 원칙
@@ -159,13 +159,39 @@ flowchart LR
 
 ### 시작하기
 
+이 Compose 구성은 개발과 시연용입니다. 가짜 모델, 개발용 모델 활성, Mailpit, HTTP 쿠키가 기본값이라 공개 서버에 그대로 올리면 안 됩니다.
+
+**준비물:** Docker Engine과 Docker Compose, Git, OpenSSL, 이 저장소에 접근 권한이 있는 GitHub 계정(`gh auth login` 또는 개인 접근 토큰). Windows에서는 WSL 안에서 저장소를 받습니다.
+
 ```bash
-git clone https://github.com/kids-gallery/uri-gallery.git   # Windows는 WSL 안에서
+git clone https://github.com/kids-gallery/uri-gallery.git
 cd uri-gallery
-cd web && npm ci && npm run dev     # 3D 미술관: http://127.0.0.1:9501/app/world
+# 처음 실행할 때만 없는 비밀 파일을 만듭니다. 재실행해도 기존 값을 보존합니다.
+umask 077
+for name in db_password session_secret auth_hmac_secret; do
+  [ -e "secrets/$name" ] || openssl rand -hex 32 > "secrets/$name"
+  [ -s "secrets/$name" ] || echo "비밀 파일이 비어 있습니다: $name"
+done
+docker compose config -q
+docker compose up -d --build
+docker compose ps
 ```
 
-`docker compose up -d`는 3일차에 compose가 생기면 여기에 적습니다. 폴더별 시험은 `api/`에서 `npm test`, `serving/`에서 `pytest`입니다.
+브라우저에서 [미술관](http://localhost:9501/app/world)을 열어 가입하고, [메일 확인 화면](http://localhost:8025)에서 인증 메일을 엽니다. 아이 별칭을 등록하고 사진을 올린 뒤 확정·결정을 마쳐 전시를 확인합니다. 처음 빌드와 준비에는 시간이 걸릴 수 있습니다. 서비스가 준비되지 않으면 `docker compose ps -a`와 `docker compose logs --tail=100`으로 해당 서비스의 상태를 확인합니다. 로그를 공유하기 전에 비밀 값과 개인정보를 지워 주세요.
+
+작품이 남는지 확인하려면 작품을 올린 뒤 다음을 실행하고 다시 로그인해 같은 아이의 미술관을 확인합니다.
+
+```bash
+docker compose down
+docker compose up -d
+docker compose ps
+```
+
+`down`은 기본적으로 이름 붙은 볼륨을 보존합니다. `docker compose down -v`는 데이터 볼륨을 지우므로 작품을 보존할 때 사용하지 마세요. 작업을 마치고 서비스를 끌 때는 `docker compose down`을 사용합니다.
+
+커밋하기 전 `git ls-files .env secrets`로 실제 비밀 파일이 추적되지 않는지 확인합니다. `secrets/README.md`와 `*.example`은 안내 파일입니다. 가중치는 `git ls-files '*.pt' '*.pth' '*.ckpt' '*.onnx' '*.safetensors'`로 점검하고, 실제 파일의 용도도 확인합니다. 비밀 값과 가중치를 PR에 넣지 마세요.
+
+**기기 저장 화면만 개발할 때:** Node.js 22에서 `cd web && npm ci && npm run dev`를 실행하고 `http://127.0.0.1:9501/app/world`을 엽니다. 이 경로는 서버 판의 Compose 한 바퀴를 대신 검증하지 않습니다. 폴더별 시험은 `api/`에서 `npm test`, `serving/`에서 `pytest`입니다.
 
 **막히면** 30분 안에 팀 채널에 명령·오류 문구·해 본 것을 붙여 묻습니다. 자주 걸리는 곳: Windows 줄바꿈 깨짐(WSL에서 받기), 컨테이너끼리 연결 안 됨(바인딩 주소), 로그인 유지 안 됨(`SECURE_COOKIES=false`). → [증상별 표](docs/공통/수행가이드.md#stuck)
 

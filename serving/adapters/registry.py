@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 
 from .base import Adapter
 from .fake import FakeAdapter
@@ -27,11 +28,18 @@ _REAL = {
     "M7": "adapters.m7_triposr:TripoSRAdapter",   # P1 — 전용 환경 하위 프로세스(research R-22)
 }
 
+# UAM_OWN_MODEL에 적은 모델만 자체 모델로 바꾼다. 없으면 지금과 같다(마스터플랜 3-6)
+_OWN = {
+    "M1": "adapters.own3:Own3SplitAdapter",
+    "M5": "adapters.own3:Own3DepthAdapter",
+}
+
 
 def build_adapter(model_id: str, fake: bool) -> Adapter:
     if fake:
         return FakeAdapter(model_id)
-    target = _REAL.get(model_id)
+    own = {x.strip() for x in os.environ.get("UAM_OWN_MODEL", "").split(",")}
+    target = _OWN.get(model_id) if model_id in own else _REAL.get(model_id)
     if not target:
         raise KeyError(model_id)
     mod, cls = target.split(":")
