@@ -44,7 +44,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
   const r = Router();
   const rl = new RateLimiter(db, cfg.authHmacSecret);
   const link = (path: string, token: string) => `${cfg.appBaseUrl}${path}?token=${encodeURIComponent(token)}`;
-  const cookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: cfg.secureCookies, path: '/', maxAge: IDLE_MINUTES * 60 * 1000 };
+  const cookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: cfg.secureCookies, path: '/', maxAge: IDLE_MINUTES.guardian * 60 * 1000 };
   const setGuardianCookie = (res: Response, sid: string) => res.cookie(GUARDIAN_COOKIE, sid, cookieOpts);
   const ip = (req: Request) => req.ip ?? 'unknown';
 
@@ -333,7 +333,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
       const m = (rows as { member_id: number; password_hash: string; roles: string | null }[])[0];
       const ok = await argon2.verify(m?.password_hash ?? (await DUMMY_HASH), b.password).catch(() => false);
       if (!m || !ok) throw new Problem('unauthorized', 'bad_credentials', 'G1');
-      res.cookie(STAFF_COOKIE, await createSession(db, 'staff', m.member_id), cookieOpts);
+      res.cookie(STAFF_COOKIE, await createSession(db, 'staff', m.member_id), { ...cookieOpts, maxAge: IDLE_MINUTES.staff * 60 * 1000 });
       res.json({ roles: (m.roles ?? '').split(',').filter(Boolean) });
     } catch (e) { next(e); }
   });

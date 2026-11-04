@@ -6,7 +6,8 @@ import type { Pool } from 'mysql2/promise';
 
 export const GUARDIAN_COOKIE = 'uam_sid';
 export const STAFF_COOKIE = 'uam_ops_sid';
-export const IDLE_MINUTES = 30; // [추론] R-08
+/** 쓰지 않아도 유지되는 분. 쓸 때마다 늘어난다(R-08). 보호자는 휴대폰에서 매번 로그인하지 않게 14일, 팀원은 운영 권한이라 30분 */
+export const IDLE_MINUTES = { guardian: 14 * 24 * 60, staff: 30 } as const;
 
 export const hashSid = (sid: string) => createHash('sha256').update(sid).digest('hex');
 
@@ -15,7 +16,7 @@ export async function createSession(db: Pool, kind: 'guardian' | 'staff', subjec
   await db.query(
     `INSERT INTO app_session (sid_hash, subject_kind, subject_id, created_at, expires_at)
      VALUES (?, ?, ?, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3) + INTERVAL ? MINUTE)`,
-    [hashSid(sid), kind, subjectId, IDLE_MINUTES],
+    [hashSid(sid), kind, subjectId, IDLE_MINUTES[kind]],
   );
   return sid;
 }
@@ -33,7 +34,7 @@ export async function loadSession(db: Pool, kind: 'guardian' | 'staff', sid: str
   );
   const r = (rows as { sid_hash: string; subject_id: number; created_at: Date }[])[0];
   if (!r) return null;
-  await db.query(`UPDATE app_session SET expires_at = UTC_TIMESTAMP(3) + INTERVAL ? MINUTE WHERE sid_hash = ?`, [IDLE_MINUTES, h]);
+  await db.query(`UPDATE app_session SET expires_at = UTC_TIMESTAMP(3) + INTERVAL ? MINUTE WHERE sid_hash = ?`, [IDLE_MINUTES[kind], h]);
   return { sidHash: r.sid_hash, subjectId: Number(r.subject_id), createdAt: r.created_at };
 }
 

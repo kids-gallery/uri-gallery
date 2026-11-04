@@ -77,6 +77,17 @@ describe('로그인·로그아웃', () => {
     await a.post('/v1/auth/logout').expect(204);
     await a.get('/v1/me').expect(401);
   });
+  it('보호자 세션은 14일 유지되고, 쓰면 다시 14일로 늘어난다(R-08)', async () => {
+    await signupAndVerify('keep@test.local');
+    const r = await request(t.app).post('/v1/auth/login').send({ email: 'keep@test.local', password: PW }).expect(204);
+    const cookie = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!;
+    expect(cookie).toContain(`Max-Age=${14 * 24 * 60 * 60}`);
+    const left = async () => Number(((await t.db.query(`SELECT MAX(TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), expires_at)) m FROM app_session WHERE subject_kind = 'guardian'`))[0] as { m: number }[])[0].m);
+    expect(await left()).toBeGreaterThanOrEqual(14 * 24 * 60 - 1);
+    await t.db.query(`UPDATE app_session SET expires_at = UTC_TIMESTAMP() + INTERVAL 1 HOUR WHERE subject_kind = 'guardian'`);
+    await request(t.app).get('/v1/me').set('Cookie', cookie.split(';')[0]!).expect(200);
+    expect(await left()).toBeGreaterThanOrEqual(14 * 24 * 60 - 1);
+  });
   it('로그인 실패 한도(같은 이메일 15분 10회) 뒤 429', async () => {
     await signupAndVerify('z@test.local');
     for (let i = 0; i < 10; i++) await request(t.app).post('/v1/auth/login').send({ email: 'z@test.local', password: 'wrong-pass' }).expect(401);
