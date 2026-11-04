@@ -21,6 +21,10 @@ jobs:
         run: |
           id
           sh ops/docker/make-secrets.sh
+          sh ops/docker/make-secrets.sh
+          stat -c '%u %a %n' secrets/db_password secrets/session_secret secrets/auth_hmac_secret
+          test "$(stat -c '%u %a' secrets/db_password)" = "1000 400"
+          ! sudo -u nobody cat secrets/db_password
       - name: 띄우기
         run: docker compose up -d --build --wait --wait-timeout 300
       - name: 한 바퀴
