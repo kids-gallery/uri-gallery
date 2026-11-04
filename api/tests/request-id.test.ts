@@ -28,11 +28,11 @@ describe('X-Request-ID', () => {
 
 describe('로그 줄의 요청 번호 — 요청 안에서 비동기로 찍는 줄(메일 발송 등)도', () => {
   it('요청 맥락 안의 비동기 로그 필드에 requestId가 붙는다', async () => {
-    const { logFields, logRequestId } = await import('../src/lib/logger.js');
+    const { logFields } = await import('../src/lib/logger.js');
     const { requestContext } = await import('../src/lib/requestContext.js');
     await requestContext.run({ requestId: 'r-async-1' }, async () => {
       await new Promise((r) => setTimeout(r, 5));
-      expect(logFields({ event: 'mail_sent', code: 'verify' })).toEqual({ requestId: logRequestId('r-async-1'), event: 'mail_sent', code: 'verify' });
+      expect(logFields({ event: 'mail_sent', code: 'verify' })).toEqual({ requestId: 'r-async-1', event: 'mail_sent', code: 'verify' });
     });
     expect(logFields({ event: 'listening' })).toEqual({ event: 'listening' }); // 요청 밖(기동·sweeper)은 번호 없음
   });

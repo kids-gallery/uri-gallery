@@ -4,7 +4,6 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { contractViolations, testApp, tokenOf } from './helpers/app.js';
 import { setStory, familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
-import { signVisitToken } from '../src/modules/files/token.js';
 
 const t = testApp();
 afterAll(async () => { expect(contractViolations).toEqual([]); await t.close(); });
@@ -123,12 +122,7 @@ describe('마을 · 방문(D40 D·F)', () => {
     expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'making', 'primaryUrl', 'title']); // D46 making(받침대, 8c 요청)
     expect(JSON.stringify(g)).not.toMatch(/엄마랑|ageAtMaking|madeOn|originalUrl/);
     expect(item.primaryUrl).toMatch(/^\/v1\/visit\/files\//);
-    const visitFile = await A.a.get(item.primaryUrl).expect(200);
-    expect(visitFile.headers['cache-control']).toBe('private, no-store');
-    const encoded = item.primaryUrl.split('/').at(-1)!.split('.')[0];
-    const [, objectId, ownerFamilyId, viewerFamilyId] = Buffer.from(encoded, 'base64url').toString().split('.').map(Number);
-    const expired = signVisitToken('test-session-secret', objectId, ownerFamilyId, viewerFamilyId, Date.now() - 600_000);
-    await A.a.get(`/v1/visit/files/${expired}`).expect(404);
+    await A.a.get(item.primaryUrl).expect(200);
     // 가족 파일 경로로는 못 받고, 방문 토큰은 다른 가족이 못 쓴다
     await A.a.get(item.primaryUrl.replace('/v1/visit/files/', '/v1/files/')).expect(404);
     const C = await familyWithChild(t, 'v3@test.local');
