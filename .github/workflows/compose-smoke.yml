@@ -35,3 +35,14 @@ jobs:
         run: |
           docker compose ps -a
           docker compose logs --tail=40
+  late-db:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: sh ops/docker/make-secrets.sh
+      - name: 늦은 DB 전후 비교
+        run: sh ops/docker/late-db-check.sh

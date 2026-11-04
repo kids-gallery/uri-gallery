@@ -28,8 +28,13 @@ echo "== 실행 중 DB를 끄고 40초 뒤 켠다"
 docker compose -p "$P" $LATE stop db >/dev/null
 sleep 40
 docker compose -p "$P" $LATE start db >/dev/null
-docker compose -p "$P" $LATE up -d --wait --wait-timeout 300 >/dev/null 2>&1
-docker compose -p "$P" $LATE ps --format '{{.Service}} {{.State}}' | grep -E '^(db|app-api) '
+# up을 다시 부르면 죽은 앱도 살려 버린다. DB만 기다려 앱이 혼자 회복하는지 본다
+for _ in $(seq 60); do
+  [ "$(docker compose -p "$P" $LATE ps db --format '{{.Health}}')" = healthy ] && break
+  sleep 5
+done
+docker compose -p "$P" $LATE ps --format '{{.Service}} {{.State}} {{.Health}}' | grep -E '^(db|app-api) '
+echo "app-api 재시작 횟수 $(docker inspect "$(docker compose -p "$P" $LATE ps -q app-api)" --format '{{.RestartCount}}')"
 node ops/docker/smoke.mjs
 code=$?
 clean
