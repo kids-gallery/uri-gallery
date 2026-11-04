@@ -191,6 +191,16 @@ docker compose ps
 
 **막히면** 30분 안에 팀 채널에 명령·오류 문구·해 본 것을 붙여 묻습니다. 자주 걸리는 곳: Windows 줄바꿈 깨짐(WSL에서 받기), 컨테이너끼리 연결 안 됨(바인딩 주소), 로그인 유지 안 됨(`SECURE_COOKIES=false`). → [증상별 표](docs/공통/수행가이드.md#stuck)
 
+### 대시보드 켜기
+
+기본 스택에 Prometheus와 Grafana를 겹칩니다. 앱은 그대로이고, 대시보드는 이 컴퓨터에서만 열립니다.
+
+```bash
+docker compose -f compose.yaml -f compose.monitoring.yaml up -d --wait
+```
+
+http://localhost:3000 을 엽니다. 처리 시간, 대기 작업, 결과 원인, 낮춤률이 보입니다. 값은 작품을 올리면 바뀌고, 수집은 15초마다 합니다.
+
 ### 실제 모델과 카카오 켜기
 
 **실제 모델(맥, 컨테이너 메모리 10GiB 이상).** 가중치를 저장소 맨 위에서 아래 명령으로 `models/hf`에 받습니다. 받을 판은 `models/manifest.yaml`의 `source`·`revision`입니다. M3·M6·M7은 받지 않습니다.

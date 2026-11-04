@@ -1,0 +1,7 @@
+# 앱의 /metrics만 모은다. 가족 사진과 이야기는 지표에 없다(SD_03 v_metrics_* 뷰).
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: app-api
+    static_configs:
+      - targets: ["app-api:9521"]
