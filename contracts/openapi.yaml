@@ -80,6 +80,7 @@ paths:
       security: []
       parameters:
         - { name: invite, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: account, in: query, required: false, schema: { type: string, enum: [switch] }, description: '다른 계정으로 로그인할 때 카카오 재인증을 요청한다' }
         - { name: next, in: query, required: false, schema: { type: string, maxLength: 500, pattern: '^/app(/[^/].*)?$' }, description: '로그인 뒤 돌아갈 보호자 앱 주소(D47 — 로그인 전에 연 이웃 링크 등). 같은 셸 상대 경로만, 없으면 기본 도착지' }
       responses:
         '302': { description: '카카오 인증 화면(https://kauth.kakao.com/oauth/authorize)으로 이동. Set-Cookie uam_kakao_state(10분, HttpOnly, SameSite=Lax)' }

@@ -74,7 +74,7 @@ export function authRouter(db: Pool, cfg: Config, mailer: Mailer, kakao: KakaoCl
       // D47: 로그인 전에 연 보호자 앱 주소(이웃 링크 등)로 돌아간다 — 같은 셸 상대 경로만(계약 pattern · 여기서 한 번 더)
       const next = typeof req.query.next === 'string' && /^\/app(\/[^/].*)?$/.test(req.query.next) && !req.query.next.includes('://') ? req.query.next : undefined;
       res.cookie(KAKAO_COOKIE, packState({ s, ...(invite ? { i: invite } : {}), ...(next ? { n: next } : {}) }), kakaoCookieOpts);
-      res.redirect(302, kakao.authorizeUrl(s));
+      res.redirect(302, kakao.authorizeUrl(s, req.query.account === 'switch'));
     } catch (e) { next(e); }
   });
 

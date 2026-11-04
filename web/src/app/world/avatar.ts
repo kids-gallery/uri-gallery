@@ -334,7 +334,8 @@ export function buildAvatar(cfg: AvatarConfig, image?: { texture: THREE.Texture;
     if(forest){body.scale.set(1, .85,1);}else if(classic){body.scale.set(1,.92,1);}
     part('spine',forest?.46:classic?.44:.38,forest?.5:.46,classic?.3:.25,shirt,-.1);
     part('neck',.13,.2,.13,skinMat,-.02);
-    part('hips',classic?.36:.32,.23,classic?.28:.25,pants,0);
+    // 블록 몸통과 골반의 앞뒤 면이 겹치지 않게 깊이를 분리한다.
+    part('hips',classic?.36:.32,.23,classic?.28:style==='block'?.24:.25,pants,0);
     const headSize=forest?.68:toy?.44:classic?.52:.42;
     const head=part('head',headSize,headSize,headSize,skinMat);
     // 얼굴은 별도 얇은 면. 모드마다 동일한 머리뼈에 붙어 움직인다.

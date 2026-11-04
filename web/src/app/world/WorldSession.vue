@@ -62,6 +62,9 @@ async function loadProviders() {
 function startKakao() {
   window.location.assign('/v1/auth/kakao/start');
 }
+function switchKakaoAccount() {
+  window.location.assign('/v1/auth/kakao/start?account=switch');
+}
 async function restore() {
   if (logoutPending.value || busy.value) return;
   const current = epoch;
@@ -173,6 +176,7 @@ onUnmounted(() => {
           </button>
           <template v-else-if="providers.kakao">
             <button class="kakao" type="button" @click="startKakao">카카오로 시작하기</button>
+            <button class="switch-account" type="button" @click="switchKakaoAccount">다른 카카오 계정으로 로그인</button>
             <button class="email-toggle" type="button" :aria-expanded="showEmail" @click="showEmail = !showEmail">
               이메일로 로그인(기존 회원)
             </button>
@@ -196,4 +200,4 @@ onUnmounted(() => {
     </main>
   </template>
 </template>
-<style scoped>.auth{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;box-sizing:border-box;background:#fff8ec;color:#443529}.card{width:min(440px,100%);box-sizing:border-box;padding:24px;display:grid;gap:16px;border:1px solid #c9b38f;border-radius:18px;background:#fffdf8}h1,p{margin:0}p{line-height:1.6}form,label{display:grid;gap:8px}form{gap:16px}input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid #bda881;border-radius:10px;font:inherit}button{min-height:44px;font:inherit;border:1px solid #ad557e;border-radius:10px;padding:10px 16px;background:#93405f;color:white;cursor:pointer}button:disabled{opacity:.6}.kakao{background:#fee500;color:#191600;border-color:#e3c500;font-weight:700}.email-toggle{background:none;color:#78324f;border:0;text-decoration:underline}a{color:#78324f}</style>
+<style scoped>.auth{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;box-sizing:border-box;background:#fff8ec;color:#443529}.card{width:min(440px,100%);box-sizing:border-box;padding:24px;display:grid;gap:16px;border:1px solid #c9b38f;border-radius:18px;background:#fffdf8}h1,p{margin:0}p{line-height:1.6}form,label{display:grid;gap:8px}form{gap:16px}input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid #bda881;border-radius:10px;font:inherit}button{min-height:44px;font:inherit;border:1px solid #ad557e;border-radius:10px;padding:10px 16px;background:#93405f;color:white;cursor:pointer}button:disabled{opacity:.6}.kakao{background:#fee500;color:#191600;border-color:#e3c500;font-weight:700}.email-toggle,.switch-account{background:none;color:#78324f;border:0;text-decoration:underline}a{color:#78324f}</style>

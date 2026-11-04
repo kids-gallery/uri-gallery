@@ -1,4 +1,4 @@
-import { describe,it,expect } from 'vitest';
+import { describe,it,expect,vi } from 'vitest';
 import * as THREE from 'three';
 import { inflatedGeometry,boundaryEdges,makeSkeleton,defaultJoints,skinGeometry,estimateJoints } from '../app/world/avatarMesh';
 import { buildAvatar,animateAvatar,DEFAULT_AVATAR } from '../app/world/avatar';
@@ -14,4 +14,16 @@ describe('whole image avatar',()=>{
  it('has no open edges on front, back and silhouette',()=>{const g=inflatedGeometry(mask(),.8);expect(boundaryEdges(g)).toBe(0);const z=Array.from(g.attributes.position!.array).filter((_,i)=>i%3===2);expect(Math.min(...z)).toBeLessThan(0);expect(Math.max(...z)).toBeGreaterThan(0);g.dispose();});
  it('never adds basic body parts and moves vertices with the bones',()=>{const cfg={...DEFAULT_AVATAR,mode:'image' as const,motion:'joints' as const,articulation:'experimental' as const,joints:defaultJoints()};const rig=buildAvatar(cfg,{texture:new THREE.Texture(),mask:mask(),aspect:.8});const names:string[]=[];rig.root.traverse(o=>names.push(o.name));expect(names.some(n=>n.startsWith('basic-'))).toBe(false);expect(rig.skin).toBeDefined();const mesh=rig.skin!,before=new THREE.Vector3(),after=new THREE.Vector3();rig.root.updateMatrixWorld(true);mesh.skeleton.update();const originals=Array.from({length:mesh.geometry.attributes.position!.count},(_,i)=>mesh.getVertexPosition(i,new THREE.Vector3()));animateAvatar(rig,.17,3.4);let moved=0;for(let i=0;i<originals.length;i++){mesh.getVertexPosition(i,after);moved=Math.max(moved,originals[i]!.distanceTo(after));}expect(moved).toBeGreaterThan(.03);rig.dispose();});
  it('normalizes four weights and estimates finite joints',()=>{const result=estimateJoints(mask());expect(result.skeletonPixels).toBeGreaterThan(0);expect(result.humanoid).toBe(true);const g=inflatedGeometry(mask(),1),s=makeSkeleton(defaultJoints(),1);skinGeometry(g,s.positions);const a=g.getAttribute('skinWeight');for(let i=0;i<a.count;i++)expect(a.getX(i)+a.getY(i)+a.getZ(i)+a.getW(i)).toBeCloseTo(1);});
+});
+
+
+it('블록 캐릭터 상의와 골반의 앞뒤 면이 같은 평면에 겹치지 않는다', () => {
+  const context = new Proxy({ createRadialGradient: () => ({ addColorStop() {} }) }, { get: (target, key) => key in target ? Reflect.get(target, key) : () => {} });
+  const mock = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as never);
+  const rig = buildAvatar(DEFAULT_AVATAR, undefined, 'block');
+  const spine = rig.root.getObjectByName('basic-spine') as THREE.Mesh;
+  const hips = rig.root.getObjectByName('basic-hips') as THREE.Mesh;
+  expect(spine.scale.z).toBeGreaterThan(hips.scale.z);
+  rig.dispose();
+  mock.mockRestore();
 });
