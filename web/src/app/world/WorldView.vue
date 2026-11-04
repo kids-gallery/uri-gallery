@@ -1016,8 +1016,9 @@ function openSettings() {
         <div class="g-panel sheet-card">
           <h2>설정</h2>
           <h3 class="w-sub">백업</h3>
-          <p class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
-          <WorldStorageState :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
+          <p v-if="SERVER_WORLD" class="small">작품은 우리 미술관에 저장돼요. 캐릭터와 화면 설정은 이 기기에 남아요.</p>
+          <p v-else class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
+          <WorldStorageState v-if="!SERVER_WORLD" :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
           <div class="row">
             <button class="g-btn g-btn--primary" type="button" :disabled="!!backupBusy" @click="doExport">{{ backupBusy === 'export' ? '만드는 중…' : '백업 내보내기' }}</button>
             <button class="g-btn" type="button" :disabled="!!backupBusy" @click="backupInput?.click()">{{ backupBusy === 'import' ? '가져오는 중…' : '백업 가져오기' }}</button>
@@ -1049,7 +1050,8 @@ function openSettings() {
             <button class="g-btn" type="button" @click="confirmReset = true">이 기기의 자료 모두 지우기</button>
           </template>
           <template v-else>
-            <p class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
+            <p v-if="SERVER_WORLD" class="g-note">이 기기에 남은 캐릭터와 화면 설정만 지워져요. 미술관의 작품은 지워지지 않아요.</p>
+            <p v-else class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
             <div class="row">
               <button class="g-btn g-btn--primary" type="button" @click="resetAll">모두 지우기</button>
               <button class="g-btn" type="button" @click="confirmReset = false">그만두기</button>
