@@ -1287,7 +1287,7 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-saved{bottom:var(--w-bar-top)}
 .w-first-work{bottom:var(--w-bar-top)}
 .w-first-help{bottom:var(--w-bar-top)}
-.where{align-items:center}
+.where{align-items:center;max-width:calc(100% - 56px)}
 .w-mode-pick{flex:none;min-height:30px;padding:2px 10px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:600 12px var(--font-sans,system-ui);white-space:nowrap;cursor:pointer}
 .w-mode-pick:hover{background:rgba(255,255,255,.26)}.w-mode-pick:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
