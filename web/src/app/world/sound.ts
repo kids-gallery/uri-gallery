@@ -5,11 +5,20 @@ import type { ThemeId } from './themes';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
+let musicOut: GainNode | null = null;
+let fxVolume = 1, musicVolume = 1;
+const OUTPUT = 0.55;
 let noiseBuf: AudioBuffer | null = null;
 let enabled = true;
 
 export function setSoundEnabled(on: boolean) { enabled = on; if(!on)stopAmbience(); }
 export function soundEnabled() { return enabled; }
+/** 효과음과 음악 크기(0~1, 설정). 출력을 나눠 따로 줄인다 */
+export function setVolumes(fx: number, music: number) {
+  fxVolume = fx; musicVolume = music;
+  if (master) master.gain.value = OUTPUT * fx;
+  if (musicOut) musicOut.gain.value = OUTPUT * music;
+}
 
 function audio(): AudioContext | null {
   if (!enabled) return null;
@@ -19,8 +28,11 @@ function audio(): AudioContext | null {
       if (!AC) return null;
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = 0.55;
+      master.gain.value = OUTPUT * fxVolume;
       master.connect(ctx.destination);
+      musicOut = ctx.createGain();
+      musicOut.gain.value = OUTPUT * musicVolume;
+      musicOut.connect(ctx.destination);
       // 화면을 숨기면 음악과 효과음을 멈춘다. 돌아오면 이어서 난다
       document.addEventListener('visibilitychange', () => { if (document.hidden) void ctx?.suspend(); else if (enabled) void ctx?.resume(); });
     }
@@ -214,15 +226,15 @@ export function stopAmbience() {
 export function setAmbience(theme: ThemeId) {
   stopAmbience();
   const c = audio();
-  if (!c || !master) return;
+  if (!c || !musicOut) return;
   const score = SCORES[theme], beat = 60 / score.bpm;
   const bus = c.createGain(), delay = c.createDelay(1), feedback = c.createGain();
   bus.gain.value = MUSIC_LEVEL;
   delay.delayTime.value = score.echo.time;
   feedback.gain.value = score.echo.feedback;
-  bus.connect(master);
+  bus.connect(musicOut);
   bus.connect(delay).connect(feedback).connect(delay);
-  delay.connect(master);
+  delay.connect(musicOut);
   let at = c.currentTime + 0.15, i = 0;
   const tick = () => {
     for (;;) {
