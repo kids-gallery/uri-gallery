@@ -27,9 +27,16 @@ export async function setup({ provide }: { provide: (k: 'DB_SOCKET', v: string) 
 }
 
 export async function teardown() {
-  proc?.kill('SIGTERM');
-  await new Promise((r) => setTimeout(r, 800));
-  if (dir) fs.rmSync(dir, { recursive: true, force: true });
+  if (proc && proc.exitCode === null && proc.signalCode === null) {
+    const exited = new Promise<void>((resolve) => proc!.once('exit', () => resolve()));
+    proc.kill('SIGTERM');
+    await Promise.race([exited, new Promise<void>((resolve) => setTimeout(resolve, 10000))]);
+    if (proc.exitCode === null && proc.signalCode === null) {
+      proc.kill('SIGKILL');
+      await exited;
+    }
+  }
+  if (dir) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 4, retryDelay: 200 });
 }
 
 declare module 'vitest' {

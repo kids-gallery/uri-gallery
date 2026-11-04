@@ -77,3 +77,8 @@ export function failureOf(e: unknown): Failure {
   const fields = (e.problem?.fields ?? []).map((f) => ({ name: f.name ?? '', reason: f.reason ?? '' }));
   return { kind: 'refused', reason: problemCopy({ gate: e.gate, reason: e.reason, code: e.code }).reason, fields };
 }
+
+// 가족 공용 전시실 설정. revision이 다르면 덮어쓰지 않고 다시 읽는다.
+export interface WorldLayout { exists: boolean; revision: number; rooms: number[]; decor: import('../decor').DecorItem[] }
+export const getWorldLayout = () => authenticated(api.get<WorldLayout>('/v1/family/world-layout', o));
+export const putWorldLayout = (body: Omit<WorldLayout, 'exists'>) => authenticated(api.put<{ revision: number }>('/v1/family/world-layout', { ...o, body }));

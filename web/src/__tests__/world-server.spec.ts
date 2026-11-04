@@ -122,3 +122,14 @@ it('잘못된 비밀번호와 failureOf는 만료를 알리지 않고 인증된 
     window.removeEventListener('world-session-expired', expired);
   }
 });
+
+
+it('가족 방 설정은 같은 출처 쿠키로 읽고 revision과 함께 저장하며 충돌을 알린다', async () => {
+  const f = stub(json(200, { exists: true, revision: 3, rooms: [4, 8], decor: [] }), problem(409, 'conflict', 'layout_changed', null));
+  const layout = await server.getWorldLayout();
+  expect(layout.rooms).toEqual([4, 8]);
+  const err = await caught(server.putWorldLayout({ revision: layout.revision, rooms: [4, 8, 9], decor: [] }));
+  expect(call(f, 0)).toMatchObject({ url: '/v1/family/world-layout', init: { method: 'GET', credentials: 'same-origin' } });
+  expect(call(f, 1)).toMatchObject({ url: '/v1/family/world-layout', init: { method: 'PUT', body: JSON.stringify({ revision: 3, rooms: [4, 8, 9], decor: [] }) } });
+  expect(server.failureOf(err).kind).not.toBe('login');
+});

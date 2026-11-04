@@ -350,6 +350,67 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
+  /v1/family/world-layout:
+    get:
+      tags: [보호자 앱]
+      summary: 현재 가족의 방과 꾸미기 설정 조회
+      security: [{ guardianSession: [] }]
+      responses:
+        '200':
+          description: 가족 설정과 revision. 설정이 없으면 exists가 false
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exists, revision, rooms, decor]
+                properties:
+                  exists: { type: boolean }
+                  revision: { type: integer, minimum: 0 }
+                  rooms: { type: array, items: { type: integer } }
+                  decor: { type: array, items: { type: object } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [보호자 앱]
+      summary: 현재 가족의 방과 꾸미기 설정 저장
+      description: 조회한 revision과 일치할 때만 저장하며 다른 기기의 수정은 409로 알린다.
+      security: [{ guardianSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, rooms, decor]
+              properties:
+                revision: { type: integer, minimum: 0 }
+                rooms: { type: array, maxItems: 14, items: { type: integer, minimum: 0, maximum: 13 } }
+                decor:
+                  type: array
+                  maxItems: 200
+                  items:
+                    type: object
+                    required: [id, work, kind, spot]
+                    properties:
+                      id: { type: string, minLength: 1, maxLength: 128 }
+                      work: { type: string, pattern: '^[1-9][0-9]{0,17}$' }
+                      kind: { type: string, enum: [plant, lamp, bench] }
+                      spot: { type: string, enum: [left, right, front] }
+      responses:
+        '200':
+          description: 저장한 revision
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revision]
+                properties:
+                  revision: { type: integer, minimum: 1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: 다른 기기에서 이미 변경함
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
   /v1/family/invites:
     get:
       tags: [보호자 앱]

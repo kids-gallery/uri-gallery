@@ -19,6 +19,20 @@ async function kakaoLogin(memberCode: string, invite?: string, a = request.agent
 }
 
 describe('카카오 로그인 — 가입·로그인', () => {
+  it('다른 계정 요청을 카카오 인가 연결부에 전달하고 state를 유지한다', async () => {
+    const original = t.kakao.authorizeUrl;
+    try {
+      t.kakao.authorizeUrl = (state: string, force?: boolean) => `https://kauth.test/oauth/authorize?state=${state}&force=${String(force)}`;
+      const agent = request.agent(t.app);
+      const start = await agent.get('/v1/auth/kakao/start?account=switch').expect(302);
+      const target = new URL(start.headers.location);
+      expect(target.searchParams.get('force')).toBe('true');
+      const state = target.searchParams.get('state');
+      await agent.get(`/v1/auth/kakao/callback?code=1020&state=${state}`).expect(302);
+      await agent.get('/v1/me').expect(200);
+    } finally { t.kakao.authorizeUrl = original; }
+  });
+
   it('설정 여부를 알리고, 키가 없으면 시작이 503 kakao_not_configured', async () => {
     expect((await request(t.app).get('/v1/auth/providers').expect(200)).body).toMatchObject({ kakao: true });
     t.kakao.configured = false;

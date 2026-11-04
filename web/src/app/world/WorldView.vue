@@ -15,8 +15,9 @@ import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
-import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
+import { deleteArtwork, decide, failureOf, failureReason, getArtwork, getWorldLayout, putWorldLayout, type Decision, type Failure } from './server';
 import { galleryFailure, isStale, watchIds } from './server/gallery';
+import { openLayout } from './server/openLayout';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
@@ -203,7 +204,9 @@ let seenDay=0;
 const noteVisit=()=>{seenDay=dayNumber(store.today());const day=seenDay;countUse(u=>visit(u,day));};
 /** §2-22 검토 9: 홈 화면 앱은 며칠 뒤 돌아와도 다시 불러오지 않는다. 화면이 다시 보일 때 날이 바뀌었으면 앱을 연 때로 본다 */
 function onResume(){
-  if(document.visibilityState!=='visible'||!account.value||visiting.value||phase.value!=='ready'||dayNumber(store.today())===seenDay)return;
+  if(document.visibilityState!=='visible'||!account.value||visiting.value||phase.value!=='ready')return;
+  if (SERVER_WORLD) void refreshServerLayout();
+  if(dayNumber(store.today())===seenDay)return;
   noteVisit();void checkBackup();
 }
 async function openUsage(){try{usage.value=normalizeUsage(await store.getUsageRecord());}catch{usage.value={...EMPTY_USAGE};}await checkBackup(false);openPanel('usage');}
@@ -292,18 +295,76 @@ let reloading:Promise<void>=Promise.resolve();
 function reload():Promise<void>{
   const run=async()=>{
     artworks.value = await worldWorks();
-    rooms.value = await store.getRooms();
+    rooms.value = SERVER_WORLD ? serverRooms(artworks.value) : await store.getRooms();
     if (engine.value && account.value) await engine.value.setWorld(SERVER_WORLD ? serverChildName.value : account.value.child, artworks.value, rooms.value);
   };
   reloading=reloading.then(run,run);
   return reloading;
 }
 
+// 서버 설정이 확인되지 않으면 이 기기의 다른 가족 설정을 서버에 보내지 않는다.
+let layoutRevision: number | null = null;
+let layoutRooms: number[] = [];
+let layoutBusy = false;
+async function loadServerLayout(local: Prefs, hasLocalAccount: boolean): Promise<Prefs> {
+  layoutRevision = null;
+  layoutRooms = [];
+  const layout = await openLayout({
+    get: getWorldLayout, put: putWorldLayout, localRooms: store.getRooms,
+    localDecor: local.decor ?? [], hasLocalAccount,
+    confirmImport: () => window.confirm('이 기기에 저장된 전시실과 꾸미기를 현재 가족 계정으로 가져올까요? 같은 가족의 다른 기기에도 표시돼요.'),
+    active: () => alive,
+  });
+  layoutRooms = layout.rooms;
+  layoutRevision = layout.revision;
+  return { ...local, decor: layout.decor };
+}
+async function saveServerLayout(rooms: number[], decor: DecorItem[]) {
+  if (!SERVER_WORLD) return;
+  if (layoutRevision === null || layoutBusy) throw new Error('layout_unavailable');
+  layoutBusy = true;
+  try {
+    const saved = await putWorldLayout({ revision: layoutRevision, rooms, decor });
+    if (!alive) throw new Error('view_closed');
+    layoutRevision = saved.revision;
+    layoutRooms = rooms;
+  } finally { layoutBusy = false; }
+}
+async function refreshServerLayout() {
+  if (layoutRevision === null || layoutBusy || editing.value || panel.value) return;
+  layoutBusy = true;
+  try {
+    const latest = await getWorldLayout();
+    if (!alive || editing.value || panel.value || !latest.exists || latest.revision <= layoutRevision) return;
+    layoutRevision = latest.revision;
+    layoutRooms = latest.rooms;
+    if (prefs.value) prefs.value = { ...prefs.value, decor: latest.decor };
+    engine.value?.setDecor(latest.decor);
+    await reload();
+  } catch { /* 기존 화면을 유지하고 다음 복귀 또는 새로고침에서 다시 확인한다. */ }
+  finally { layoutBusy = false; }
+}
+
+// 서버에서 읽은 소품을 이전 기기 저장본에 덮어쓰지 않는다.
+async function saveDevicePrefs(p: Prefs) {
+  if (!SERVER_WORLD) return store.savePrefs(p);
+  const local = await store.getPrefs();
+  return store.savePrefs({ ...p, decor: local.decor });
+}
+function serverRooms(works: Artwork[]): number[] {
+  return [...new Set([...layoutRooms, ...works.map((a) => a.age)])].sort((a, b) => a - b);
+}
+
 /** title이면 시작 화면(앱을 열 때, §2-17). 아니면 곧바로 광장(가족 전환, 마을에서 돌아오기, 개발용 입구) */
 async function boot(title = true) {
   account.value = (await store.getAccount()) ?? null;
-  prefs.value = await store.getPrefs();setSoundEnabled(prefs.value.sound);
-  artworks.value=account.value?await worldWorks():[];rooms.value=account.value?await store.getRooms():[];
+  prefs.value = await store.getPrefs();
+  if (SERVER_WORLD) {
+    try { prefs.value = await loadServerLayout(prefs.value, !!account.value); }
+    catch { layoutRevision = null; prefs.value = { ...prefs.value, decor: [] }; say('전시실 설정을 불러오지 못했어요. 새로 고침해 다시 확인해 주세요'); }
+  }
+  setSoundEnabled(prefs.value.sound);
+  artworks.value=account.value?await worldWorks():[];rooms.value=account.value ? (SERVER_WORLD ? serverRooms(artworks.value) : await store.getRooms()) : [];
   const showTitle=title||!account.value;
   // 시작 버튼은 엔진이 시작 화면을 그리고 작품을 다 불러온 뒤에 보인다(그 전에 누르면 연출이 시작되지 않고 멈췄다)
   if(showTitle)phase.value='checking';
@@ -331,8 +392,9 @@ async function start(sample=false){
     if(account.value)return;
     await store.createLocalFamily(sample,(done,total)=>{progress.value={done,total};});
     account.value=(await store.getAccount())??null;prefs.value=await store.getPrefs();
+    if (SERVER_WORLD) prefs.value = await loadServerLayout(prefs.value, false);
     if(!account.value)throw new Error('가족을 만들지 못했어요');
-    artworks.value=await worldWorks();rooms.value=await store.getRooms();
+    artworks.value=await worldWorks();rooms.value=SERVER_WORLD ? serverRooms(artworks.value) : await store.getRooms();
     await e.setWorld(account.value.child,artworks.value,rooms.value);
     void e.loadDecor(); // 가족이 생긴 뒤 명화·흉상 장식을 불러온다(가족이 있던 경우는 boot에서 부른다)
   })();
@@ -366,7 +428,7 @@ async function showTown(focus?:string){if(!account.value)return;panel.value=null
 async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
 async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
-async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
+async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await saveDevicePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
 function enterMuseum(){engine.value?.enterMuseum();setAmbience(prefs.value?.theme??'classic');}
 
 /** 개발용 테스트 입구(§2-15): 시작 연출 없이 광장으로 간다(기존 검사용) */
@@ -388,10 +450,11 @@ async function addRoom() {
   if (top >= MAX_AGE) { say(`${MAX_AGE}세관까지 열 수 있어요`); return; }
   const next = top + 1;
   try {
-    await store.saveRooms([...rooms.value, next]);
+    await saveServerLayout([...rooms.value, next], prefs.value?.decor ?? []);
+    if (!SERVER_WORLD) await store.saveRooms([...rooms.value, next]);
     await reload();
     say(`${next}세관을 열었어요`);
-  } catch { say('전시실을 열지 못했어요. 다시 해 주세요'); }
+  } catch { say('전시실을 저장하지 못했어요. 다른 기기에서 변경했으면 새로 고침해 주세요'); }
 }
 
 // ───────── 공간 꾸미기(§2-15 꾸미기 규칙): 감상과 분리된 편집 상태. [완료]만 저장한다 ─────────
@@ -425,8 +488,8 @@ async function finishDecor() {
   if (!prefs.value || decorSaving.value) return;
   decorSaving.value = true; decorMsg.value = '';
   const next = { ...prefs.value, decor: clone(decorDraft.value) };
-  try { await store.savePrefs(next); prefs.value = next; editing.value = false; selection.value = null; say('꾸민 배치를 저장했어요'); }
-  catch { decorMsg.value = '저장하지 못했어요. 배치는 그대로 있어요. 다시 [완료]를 눌러 주세요'; }
+  try { await saveServerLayout(rooms.value, next.decor ?? []); await saveDevicePrefs(next); prefs.value = next; editing.value = false; selection.value = null; say('꾸민 배치를 저장했어요'); }
+  catch { decorMsg.value = '저장하지 못했어요. 다른 기기에서 변경했으면 새로 고침해 주세요'; }
   finally { decorSaving.value = false; }
 }
 function cancelDecor() {
@@ -550,7 +613,7 @@ async function changeScene(kind:'theme'|'interior',id:ThemeId|'gallery'|'cathedr
   const before=prefs.value,next={...before,[kind]:id};changingScene.value=true;
   try{
     if(kind==='theme')engine.value?.setTheme(id as ThemeId);else engine.value?.setInterior(id as 'gallery'|'cathedral');
-    await store.savePrefs(next);prefs.value=next;
+    await saveDevicePrefs(next);prefs.value=next;
     if(kind==='theme'){setAmbience(id as ThemeId);if(space.value==='town')void engine.value?.setResidents(townBuildings.value);}
   }catch{
     try{if(kind==='theme')engine.value?.setTheme(before.theme);else engine.value?.setInterior(before.interior??'gallery');}catch{say('공간을 복구하지 못했어요. 화면을 새로 열어 주세요');return;}
@@ -564,7 +627,7 @@ async function toggleSound() {
   prefs.value = { ...prefs.value, sound: !prefs.value.sound };
   setSoundEnabled(prefs.value.sound);
   if (!prefs.value.sound) stopSpeaking();
-  try { await store.savePrefs(prefs.value); } catch { say('설정을 저장하지 못했어요'); }
+  try { await saveDevicePrefs(prefs.value); } catch { say('설정을 저장하지 못했어요'); }
 }
 
 async function previewAvatar(cfg: AvatarConfig, image: Blob | null) { await engine.value?.setAvatar(cfg, image); }
@@ -572,7 +635,7 @@ async function previewAvatar(cfg: AvatarConfig, image: Blob | null) { await engi
 async function saveAvatar(cfg: AvatarConfig, image: Blob | null) {
   if (!prefs.value) return;
   const next={ ...prefs.value, avatar: cfg, avatarImage: image };
-  try { await store.savePrefs(next);prefs.value=next;say('캐릭터를 저장했어요');closePanel(); } catch { say('캐릭터를 저장하지 못했어요'); }
+  try { await saveDevicePrefs(next);prefs.value=next;say('캐릭터를 저장했어요');closePanel(); } catch { say('캐릭터를 저장하지 못했어요'); }
 }
 
 function openPanel(p: Panel) {
@@ -629,7 +692,7 @@ function listen() {
 function openArchive(id: string | null) { archiveFocus.value = id; openPanel('archive'); }
 /** 3D를 만들지 못한 기기(§2-19 기준 5): 가족이 없으면 만들고 한눈에 보기 화면으로 바로 쓴다 */
 async function startWithoutWebgl() {
-  try { if (!account.value) { account.value = await store.createLocalFamily(false); prefs.value = await store.getPrefs(); } await reload(); }
+  try { if (!account.value) { account.value = await store.createLocalFamily(false); prefs.value = await store.getPrefs(); if (SERVER_WORLD) prefs.value = await loadServerLayout(prefs.value, false); } await reload(); }
   catch { say('이 기기에 저장할 수 없어요. 브라우저 설정을 확인해 주세요'); }
   phase.value = 'ready';
   // 3D가 없어도 앱을 열 때 하는 일은 같다: 들어온 날, 백업 권유, 처리 전 작품 이어서 하기(§2-22 검토 10)
@@ -675,7 +738,7 @@ async function saveStory(){
 async function setFeatured(id:string){
   if(!prefs.value||visiting.value)return;
   const next={...prefs.value,featured:id};
-  try{await store.savePrefs(next);prefs.value=next;engine.value?.setFeaturedId(id);say('대표작으로 걸었어요');}catch{say('대표작을 저장하지 못했어요');}
+  try{await saveDevicePrefs(next);prefs.value=next;engine.value?.setFeaturedId(id);say('대표작으로 걸었어요');}catch{say('대표작을 저장하지 못했어요');}
 }
 const featuredId=computed(()=>engine.value&&!visiting.value?(prefs.value?.featured&&byId.value.has(prefs.value.featured)?prefs.value.featured:[...artworks.value].sort((a,b)=>b.createdAt-a.createdAt)[0]?.id??null):null);
 
@@ -1025,7 +1088,7 @@ function openSettings() {
       <div v-if="panel === 'settings'" class="sheet" role="dialog" aria-modal="true" aria-label="설정">
         <div class="g-panel sheet-card">
           <h2>설정</h2>
-          <p v-if="SERVER_WORLD" class="small">작품은 우리 미술관에 저장돼요. 캐릭터와 화면 설정은 이 기기에 남아요.</p>
+          <p v-if="SERVER_WORLD" class="small">작품과 전시실·꾸미기는 가족 계정에 저장돼요. 캐릭터와 나머지 화면 설정은 이 기기에 남아요.</p>
           <template v-else>
             <h3 class="w-sub">백업</h3>
             <p class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>

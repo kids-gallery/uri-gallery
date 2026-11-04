@@ -24,6 +24,51 @@ export function familyRouter(db: Pool, cfg: Config, mailer: Mailer): Router {
     throw e;
   };
 
+  // 가족 단위로 방과 소품만 저장한다. 기기 설정과 이미지, 작품 원본은 받지 않는다.
+  const decorItem = z.object({
+    id: z.string().min(1).max(128), work: z.string().regex(/^[1-9][0-9]{0,17}$/),
+    kind: z.enum(['plant', 'lamp', 'bench']), spot: z.enum(['left', 'right', 'front']),
+  }).strict().refine((d) => d.kind === 'bench' ? d.spot === 'front' : d.spot !== 'front');
+  const layoutInput = z.object({
+    revision: z.number().int().nonnegative(),
+    rooms: z.array(z.number().int().min(0).max(13)).max(14),
+    decor: z.array(decorItem).max(200),
+  }).strict();
+
+  r.get('/v1/family/world-layout', withFamily, async (req, res, next) => {
+    try {
+      const [rows] = await db.query(`SELECT revision, rooms_json, decor_json FROM family_world_layout WHERE family_id = ?`, [req.guardian!.familyId]);
+      const row = (rows as { revision: number; rooms_json: string; decor_json: string }[])[0];
+      res.set('Cache-Control', 'private, no-store');
+      res.json(row ? { exists: true, revision: row.revision, rooms: typeof row.rooms_json === 'string' ? JSON.parse(row.rooms_json) : row.rooms_json, decor: typeof row.decor_json === 'string' ? JSON.parse(row.decor_json) : row.decor_json } : { exists: false, revision: 0, rooms: [], decor: [] });
+    } catch (e) { next(e); }
+  });
+
+  r.put('/v1/family/world-layout', withFamily, async (req, res, next) => {
+    try {
+      const parsed = layoutInput.safeParse(req.body);
+      if (!parsed.success) throw new Problem('validation_failed', 'invalid_fields', undefined, zodFields(parsed.error));
+      const data = parsed.data;
+      const revision = await withTx(db, async (conn) => {
+        const familyId = req.guardian!.familyId!;
+        await conn.query(`INSERT IGNORE INTO family_world_layout (family_id, revision, rooms_json, decor_json) VALUES (?, 0, '[]', '[]')`, [familyId]);
+        const [rows] = await conn.query(`SELECT revision FROM family_world_layout WHERE family_id = ? FOR UPDATE`, [familyId]);
+        const current = Number((rows as { revision: number }[])[0].revision);
+        if (current !== data.revision) throw new Problem('conflict', 'layout_changed');
+        const ids = [...new Set(data.decor.map((d) => d.work))];
+        if (ids.length) {
+          const [works] = await conn.query(`SELECT a.artwork_id FROM artwork a JOIN child c ON c.child_id = a.child_id WHERE c.family_id = ? AND a.artwork_id IN (?)`, [familyId, ids]);
+          if ((works as unknown[]).length !== ids.length) throw new Problem('validation_failed', 'invalid_fields');
+        }
+        const rooms = [...new Set(data.rooms)].sort((a, b) => a - b);
+        await conn.query(`UPDATE family_world_layout SET revision = revision + 1, rooms_json = ?, decor_json = ? WHERE family_id = ?`, [JSON.stringify(rooms), JSON.stringify(data.decor), familyId]);
+        return current + 1;
+      });
+      res.set('Cache-Control', 'private, no-store');
+      res.json({ revision });
+    } catch (e) { next(e); }
+  });
+
   // --- 초대 링크의 초대 이메일(S0 가입 미리 채움, UC15 A4·UC13 A4) — 로그인 없이, 토큰을 쓰지 않는 조회 ---
   r.get('/v1/family/invites/lookup', async (req, res, next) => {
     try {
