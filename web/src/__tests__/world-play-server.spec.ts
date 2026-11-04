@@ -37,7 +37,7 @@ async function drawn() {
   await stroke(w);
   return w;
 }
-const save = (w: Awaited<ReturnType<typeof drawn>>) => w.findAll('button').find((b) => b.text() === '우리 그림 보관하기')!;
+const save = (w: Awaited<ReturnType<typeof drawn>>) => w.findAll('button').find((b) => b.text() === '작품으로 올리기')!;
 
 describe('서버 판 함께 그리기', () => {
   it('서버로 보내고 받은 작품 번호를 알리며, 기기에 작품을 만들지 않는다', async () => {
@@ -69,6 +69,22 @@ describe('서버 판 함께 그리기', () => {
     expect(w.emitted('saved')).toEqual([['art-1']]);
   });
 
+  it('적은 이름으로 올리고, 비우면 함께 그린 그림이다. 작품이 모자라면 올리기 창으로 이어진다', async () => {
+    up.sendPhoto.mockResolvedValue({ ok: true, id: '7', hung: true });
+    const w = await drawn();
+    await save(w).trigger('click');
+    await flushPromises();
+    expect(up.sendPhoto.mock.calls.at(-1)!.slice(2)).toEqual([false, '함께 그린 그림']);
+    const again = await drawn();
+    await again.find('.w-draw-title input').setValue(' 우리 집 ');
+    await save(again).trigger('click');
+    await flushPromises();
+    expect(up.sendPhoto.mock.calls.at(-1)!.slice(2)).toEqual([false, '우리 집']);
+    const menu = mount(WorldPlay, { props: { artworks: [], childAge: 0 } });
+    await menu.findAll('.w-game-menu button')[2]!.trigger('click');
+    await menu.findAll('button').find((b) => b.text() === '작품 올리기')!.trigger('click');
+    expect(menu.emitted('upload')).toHaveLength(1);
+  });
   it('실패 뒤 그림을 고치면 앞선 그림이 돌아오지 않게 새 요청 번호로 보낸다', async () => {
     up.sendPhoto.mockResolvedValue({ ok: false, reason: '미술관에 연결되지 않아요', retryable: true });
     const w = await drawn();

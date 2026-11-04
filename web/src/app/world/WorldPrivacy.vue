@@ -14,7 +14,7 @@ const modelData = import.meta.env.VITE_RELIEF_DEPTH === '1';
 <template>
   <div class="sheet" role="dialog" aria-modal="true" aria-label="개인정보·이용 안내">
     <div class="g-panel sheet-card w-privacy">
-      <h2>개인정보·이용 안내</h2>
+      <header class="w-sheet-head"><h2>개인정보·이용 안내</h2><button class="g-btn" type="button" @click="emit('close')">닫기</button></header>
       <h3>어디에 저장되나요</h3>
       <p v-if="SERVER_WORLD">사진과 아이 별칭, 작품 이야기는 인터넷을 통해 우리 미술관에 저장돼요. 화면 설정 중 일부는 이 기기에 저장될 수 있어요.</p>
       <p v-else>올린 사진, 아이 이름, 작품 이야기, 캐릭터와 모드 설정은 지금 쓰는 이 기기의 브라우저에만 저장돼요. 화면에서 고른 가족처럼 잠깐 쓰는 값은 탭을 닫으면 사라지는 브라우저 저장소에 둬요.</p>
@@ -33,7 +33,6 @@ const modelData = import.meta.env.VITE_RELIEF_DEPTH === '1';
       <p v-if="modelData">그림을 입체로 만드는 기능을 배울 때 쓴 공개 자료의 출처: <a href="/licenses/MODEL_DATA.txt" target="_blank" rel="noopener">MODEL_DATA.txt</a></p>
       <div class="row">
         <button v-if="!SERVER_WORLD" class="g-btn g-btn--primary" type="button" @click="emit('backup')">백업하러 가기</button>
-        <button class="g-btn" type="button" @click="emit('close')">닫기</button>
       </div>
     </div>
   </div>

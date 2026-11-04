@@ -1796,6 +1796,7 @@ components:
         relation: { type: string, enum: [mine, neighbor, stranger], description: 'stranger는 문 잠김 — 아래 children 없음' }
         style: { oneOf: [{ $ref: '#/components/schemas/MuseumStyle' }, { type: 'null' }], description: '건물 모양 = 그 가족 첫 아이의 미술관 모양 [추론]' }
         children: { type: array, items: { $ref: '#/components/schemas/TownChild' }, description: 'mine·neighbor만' }
+        online: { type: boolean, description: 'neighbor만. 그 가족 보호자의 세션에 최근 1분 안에 요청이 있었는가. 마지막 접속 시각은 싣지 않는다(마스터플랜 3-3 #137)' }
     ArtworkComment:
       type: object
       required: [id, body, createdAt, mine, author]

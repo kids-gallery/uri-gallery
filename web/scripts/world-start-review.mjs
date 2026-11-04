@@ -38,7 +38,7 @@ try{
  ok('desktop: at most 4 buttons always visible, no joystick',await p.locator('.tools > button:visible').count()<=4&&await p.locator('.joy').count()===0,{visible:await p.locator('.tools > button:visible').allInnerTexts()});
  await p.screenshot({path:out+'/a-arrival.png'});
  await p.locator('.w-more-tools').click();const menu=await p.locator('#w-secondary-menu button:visible').allInnerTexts();
- ok('[더보기] holds every other function',['보관함','전시실 추가','공간 꾸미기','모드','캐릭터','친구 초대','소리 끄기','설정','사용법','밖으로'].every(n=>menu.includes(n)),menu);
+ ok('[더보기] holds every other function',['보관함','전시실 추가','공간 꾸미기','모드','캐릭터','소리 끄기','설정','사용법'].every(n=>menu.includes(n)),menu);
  await p.keyboard.press('Escape');ok('Escape closes [더보기] and returns focus',await p.locator('.w-more-tools').getAttribute('aria-expanded')==='false'&&await p.evaluate(()=>document.activeElement?.classList.contains('w-more-tools')));
  // 첫 작품: 걷지 않고 흰빛 전환으로 그 전시관의 작품 앞에 서고(§2-23 C), 결과 카드는 그 뒤에 작품과 겹치지 않게
  const before=await p.evaluate(()=>{const s=window.__uamWorld.debugState();return {x:s.x,z:s.z};});
@@ -51,7 +51,7 @@ try{
  await p.screenshot({path:out+'/a-first-artwork.png'});
  await p.locator('.w-saved').getByRole('button',{name:'닫기'}).click();
  // 공간 전환: 흰빛, 검은 덮개 없음
- await record(p);await tool(p,'밖으로');const out1=await seqOf(p);
+ await record(p);await p.locator('.where').getByRole('button',{name:'밖으로'}).click();const out1=await seqOf(p);
  ok('going outside flashes the light, not black',Math.max(...out1.map(s=>s.w))>=0.9&&await p.locator('.w-fade').count()===0&&out1.at(-1).space==='plaza');
  // 다시 온 가족
  await p.reload();await startButton(p).waitFor({timeout:90000});

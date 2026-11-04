@@ -10,7 +10,7 @@ import type { Account, Artwork, Prefs } from './store';
 import { THEMES, type ThemeId } from './themes';
 import { curatorNote, guideText, plaqueOf, roomTitle } from './curation';
 import { MAX_AGE } from './museum';
-import { setSoundEnabled, speak, stopSpeaking } from './sound';
+import { play as playSound, setSoundEnabled, setVolumes, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
@@ -56,7 +56,6 @@ const TestFamilies=import.meta.env.DEV||import.meta.env.MODE==='localtest'?defin
 // 친구 초대·마을·방문은 같은 기기의 시험 가족끼리만 된다(§2-22 9): 테스트 입구와 같은 빌드 조건으로 배포본에서 뺀다
 const SOCIAL_ON=SERVER_WORLD||import.meta.env.DEV||import.meta.env.MODE==='localtest';
 const WorldSocial=SOCIAL_ON?defineAsyncComponent(()=>import('./WorldSocial.vue')):null;
-const SocialButton=SOCIAL_ON?defineAsyncComponent(()=>import('./WorldSocialButton.vue')):null;
 // 휴대폰 측정 표시(§2-22 13): 개발 서버나 측정용 빌드(VITE_MEASURE=1)에서 주소에 ?measure가 있을 때만. 배포본에는 들어가지 않는다
 const MEASURE_ON=(import.meta.env.DEV||import.meta.env.VITE_MEASURE==='1')&&new URLSearchParams(location.search).has('measure');
 const Measure=MEASURE_ON?defineAsyncComponent(()=>import('./WorldMeasure.vue')):null;
@@ -67,6 +66,10 @@ function measure(name:'title-shown'|'start-ready'|'start-pressed'|'inside'|'firs
 }
 const social=socialStore();
 const visiting=ref<PublicBuilding|null>(null),townBuildings=ref<PublicBuilding[]>([]),selectedBuilding=ref<PublicBuilding|null>(null);
+// 친구 목록(마스터플랜 3-3 #137): 화면이 보이는 동안 받아 새 친구와 접속 상태를 맞춘다. 10초는 화면 갱신 상한(R-12)이다
+const FRIEND_POLL_MS=10000;
+const friends=ref<PublicBuilding[]>([]),freshFriend=ref('');let knownFriends:Set<string>|null=null,friendTimer=0;
+const onlineFriends=computed(()=>friends.value.filter(f=>f.online).length),freshBuilding=computed(()=>friends.value.find(f=>f.id===freshFriend.value)??null);
 const inviteToken=ref(SOCIAL_ON?pendingInvite():'');
 watch(inviteToken,(v)=>{if(!v)clearInvite();});
 let socialChannel:BroadcastChannel|null=null;
@@ -309,7 +312,7 @@ function reload():Promise<void>{
 /** title이면 시작 화면(앱을 열 때, §2-17). 아니면 곧바로 광장(가족 전환, 마을에서 돌아오기, 개발용 입구) */
 async function boot(title = true) {
   account.value = (await store.getAccount()) ?? null;
-  prefs.value = await store.getPrefs();setSoundEnabled(prefs.value.sound);
+  prefs.value = await store.getPrefs();setSoundEnabled(prefs.value.sound);applyControls();
   artworks.value=account.value?await worldWorks():[];rooms.value=account.value?await store.getRooms():[];
   const showTitle=title||!account.value;
   // 시작 버튼은 엔진이 시작 화면을 그리고 작품을 다 불러온 뒤에 보인다(그 전에 누르면 연출이 시작되지 않고 멈췄다)
@@ -317,7 +320,7 @@ async function boot(title = true) {
   await nextTick();
   if(!stage.value)return;
   if(!engine.value){try{engine.value=new MuseumEngine(stage.value,{onView:id=>{const a=byId.value.get(id);if(a)void openView(a);},onPrompt:p=>interaction.value=p,onInteractBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;void visitSelected();},onSelect:s=>selection.value=s,onNear:id=>nearId.value=id,onPlace:label=>place.value=label,onAction:a=>{if(a==='addRoom')void addRoom();else if(a==='firstWork')pickFirst();},onSpace:s=>{space.value=s;},onBuilding:id=>{selectedBuilding.value=townBuildings.value.find(b=>b.id===id)??null;},onStart:onStartStage,onRevealed,onPlay:()=>countUse(u=>bump(u,'plays'))});}catch{webglFailed.value=true;await startWithoutWebgl();return;}}
-  const e=engine.value;
+  const e=engine.value;applyControls();
   // 시작 화면은 도착할 모드·건물·캐릭터로 그린다. 가족이 없으면 새 가족이 받을 값으로 그린다
   e.setTheme(account.value?prefs.value.theme:store.NEW_FAMILY_THEME);e.setInterior(prefs.value.interior??'gallery');e.setBuilding(prefs.value.building??'column_temple',SERVER_WORLD ? serverChildName.value : account.value?.child??store.NEW_FAMILY_CHILD,account.value?.id??'mine');
   e.setFeaturedId(prefs.value.featured??null);e.setDecor(prefs.value.decor??[]);
@@ -371,7 +374,19 @@ function onRevealed(id:string){if(pendingReveal.value!==id)return;pendingReveal.
 async function familyChanged(){visiting.value=null;selectedBuilding.value=null;panel.value=null;selection.value=null;nearId.value=null;await boot(false);}
 async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',serverChildName.value,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
 async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,depth:w.depth??null,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
-async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
+async function syncFriends(redraw:boolean){
+  if(!account.value)return;
+  const list=await social.neighbors(account.value.id),before=knownFriends,added=before?list.find(b=>!before.has(b.id)):undefined;
+  knownFriends=new Set(list.map(b=>b.id));friends.value=list;
+  if(added)freshFriend.value=added.id;
+  if(visiting.value&&!knownFriends.has(visiting.value.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}
+  else if(space.value==='town'&&(redraw||added||before?.size!==list.length)){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}
+}
+async function recheckFriend(){if(!account.value)return;try{await syncFriends(true);}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
+function pollFriends(){if(document.visibilityState==='visible')void syncFriends(false).catch(()=>{/* 잠깐 끊겨도 방문을 끊지 않는다. 다음 차례에 다시 받는다 */});}
+async function friendsChanged(added=''){inviteToken.value='';freshFriend.value=added;await syncFriends(false).catch(()=>{});}
+function visitFriend(id:string){const b=friends.value.find(f=>f.id===id);if(!b)return;panel.value=null;freshFriend.value='';selectedBuilding.value=b;say('미술관으로 가는 중이에요');void visitSelected();}
+watch(()=>account.value?.id,()=>{knownFriends=null;friends.value=[];freshFriend.value='';if(SOCIAL_ON)pollFriends();});
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
 async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
 function enterMuseum(){engine.value?.enterMuseum();setAmbience(prefs.value?.theme??'classic');}
@@ -548,6 +563,12 @@ async function changeScene(kind:'theme'|'interior',id:ThemeId|'gallery'|'cathedr
 }
 async function setTheme(id:ThemeId){await changeScene('theme',id);}
 
+// 설정(마스터플랜 3-3 #137): 움직이는 즉시 적용하고 잠시 뒤 저장한다
+const LOOK_SPEEDS=[{label:'느리게',value:.6},{label:'보통',value:1},{label:'빠르게',value:1.6}];
+function applyControls(){const p=prefs.value;if(!p)return;setVolumes(p.fxVolume??1,p.musicVolume??1);engine.value?.setLook(!!p.lookInvert,p.lookSpeed??1);}
+let controlSave=0;
+function setControl(patch:Partial<store.Prefs>){if(!prefs.value)return;prefs.value={...prefs.value,...patch};applyControls();clearTimeout(controlSave);controlSave=window.setTimeout(()=>{if(prefs.value)void store.savePrefs(prefs.value).catch(()=>say('설정을 저장하지 못했어요'));},300);}
+const rangeValue=(e:Event)=>Number((e.target as HTMLInputElement).value)/100;
 async function toggleSound() {
   if (!prefs.value) return;
   prefs.value = { ...prefs.value, sound: !prefs.value.sound };
@@ -573,6 +594,7 @@ function openPanel(p: Panel) {
 async function closePanel() {
   if (panel.value === 'avatar' && prefs.value) await engine.value?.setAvatar(prefs.value.avatar, prefs.value.avatarImage);
   if(panel.value==='social'&&inviteToken.value){inviteToken.value='';history.replaceState(null,'','/app/world');}
+  if(panel.value==='social')freshFriend.value='';
   if(panel.value==='view')closeView();
   if(panel.value==='storage')gateNext=null;
   panel.value = null;
@@ -709,7 +731,8 @@ onMounted(async () => {
   measure('title-shown'); // 시작 화면(제목 묶음)이 그려진 때
   window.addEventListener('keydown', onKey);window.addEventListener('pointerdown',onOutside,true);
   document.addEventListener('visibilitychange',onResume);window.addEventListener('pageshow',onResume);
-  if(SOCIAL_ON){window.addEventListener('uam-world-social',recheckFriend);window.addEventListener('focus',recheckFriend);
+  window.addEventListener('offline',onOffline);window.addEventListener('online',onOnline);
+  if(SOCIAL_ON){friendTimer=window.setInterval(pollFriends,FRIEND_POLL_MS);document.addEventListener('visibilitychange',pollFriends);window.addEventListener('uam-world-social',recheckFriend);window.addEventListener('focus',recheckFriend);
     if(typeof BroadcastChannel!=='undefined'){socialChannel=new BroadcastChannel('uam-world-social');socialChannel.onmessage=()=>void recheckFriend();}}
   else if(new URLSearchParams(location.search).has('invite')){const u=new URL(location.href);u.searchParams.delete('invite');history.replaceState(null,'',u.pathname+u.search+u.hash);} // §2-22 9: 배포본은 초대 값을 무시하고 지운다
   if (!(await store.storageWorks())) { phase.value = 'nostorage'; return; }
@@ -721,7 +744,8 @@ onBeforeUnmount(() => {
   alive=false;
   window.removeEventListener('keydown', onKey);window.removeEventListener('pointerdown',onOutside,true);for(const t of arriveTimers)window.clearTimeout(t);
   document.removeEventListener('visibilitychange',onResume);window.removeEventListener('pageshow',onResume);
-  if(SOCIAL_ON){window.removeEventListener('uam-world-social',recheckFriend);window.removeEventListener('focus',recheckFriend);socialChannel?.close();}stopAmbience();
+  window.removeEventListener('offline',onOffline);window.removeEventListener('online',onOnline);clearTimeout(controlSave);
+  if(SOCIAL_ON){clearInterval(friendTimer);document.removeEventListener('visibilitychange',pollFriends);window.removeEventListener('uam-world-social',recheckFriend);window.removeEventListener('focus',recheckFriend);socialChannel?.close();}stopAmbience();
   stopSpeaking();
   closeView();
   engine.value?.dispose();
@@ -729,6 +753,8 @@ onBeforeUnmount(() => {
 
 const childName = ref('');
 const childAge = ref(6);
+const onOffline=()=>say('인터넷 연결이 끊겼어요. 연결되면 이어서 할 수 있어요');
+const onOnline=()=>say('다시 연결됐어요');
 function openSettings() {
   childName.value = account.value?.child ?? '';
   childAge.value = account.value?.childAge ?? 6;
@@ -796,23 +822,21 @@ function openSettings() {
           <strong>{{ visiting?.child ?? serverChildName }}의 미술관</strong>
           <span aria-live="polite">{{ place }}</span>
           <button class="w-mode-pick" type="button" :aria-label="`지금 ${themeLabel} 모드. 모드 바꾸기`" @click="openPanel('theme')">{{ themeLabel }} ▾</button>
+          <button v-if="space==='inside'" class="w-mode-pick" type="button" @click="outside">밖으로</button>
+          <button v-else-if="space==='town'" class="w-mode-pick" type="button" @click="familyChanged">우리 미술관으로</button>
         </div>
         <!-- 기본 HUD(마스터플랜 3-3 #137): 늘 보이는 것은 아래쪽 바와 이 구석의 [더보기]뿐이다 -->
         <nav class="tools" aria-label="더보기 메뉴">
           <button class="g-btn w-more-tools" type="button" aria-label="더보기" :aria-expanded="moreTools" aria-controls="w-secondary-menu" @click="moreTools=!moreTools"><span class="w-more-icon" aria-hidden="true"><i /><i /><i /></span></button>
           <span id="w-secondary-menu" class="w-secondary-tools" :class="{'w-expanded':moreTools}" @click="onMenuPick">
           <button v-if="!visiting" class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('avatar')">캐릭터</button>
-          <component :is="SocialButton" v-if="SocialButton && !visiting" action="social" @click="openPanel('social')" />
-          <component :is="SocialButton" v-if="SocialButton && space!=='inside' && !visiting" action="town" @click="showTown()" />
           <button class="g-btn" type="button" :aria-pressed="!prefs?.sound" @click="toggleSound">{{ prefs?.sound ? '소리 끄기' : '소리 켜기' }}</button>
           <button class="g-btn w-help-trigger" type="button" @click="openPanel('help')">사용법</button>
           <button class="g-btn" type="button" @click="openPanel('privacy')">개인정보·이용 안내</button>
           <button v-if="!SERVER_WORLD && space==='inside' && !visiting" class="g-btn" type="button" @click="addRoom">전시실 추가</button>
-          <button v-if="!SERVER_WORLD && !visiting" class="g-btn" type="button" @click="openSettings">설정</button>
+          <button v-if="!visiting" class="g-btn" type="button" @click="openSettings">설정</button>
           <button v-if="!SERVER_WORLD && !visiting" class="g-btn" type="button" @click="openUsage">사용 기록</button>
-          <button v-if="space==='inside'" class="g-btn" type="button" @click="outside">밖으로</button>
           <button v-if="SERVER_WORLD" class="g-btn w-logout" type="button" @click="emit('logout')">로그아웃</button>
-          <button v-if="space==='town'" class="g-btn" type="button" @click="familyChanged">우리 미술관으로</button>
           </span>
         </nav>
       </header>
@@ -821,6 +845,7 @@ function openSettings() {
         <button class="w-bar-btn" :class="{ 'is-main': space!=='plaza' || webglFailed }" type="button" @click="beforeUpload(() => openPanel('upload'))">작품 올리기</button>
         <button v-if="!webglFailed" class="w-bar-btn" type="button" @click="openArchive(null)">보관함</button>
         <button class="w-bar-btn" type="button" @click="openPanel('play')">함께 놀기</button>
+        <button v-if="SOCIAL_ON && !webglFailed" class="w-bar-btn" type="button" :aria-label="onlineFriends ? `친구, ${onlineFriends}가족 접속 중` : '친구'" @click="openPanel('social')">친구<i v-if="onlineFriends" class="w-online" aria-hidden="true" /></button>
       </nav>
 
       <!-- 첫 작품 안내(§2-17): 작품이 없는 가족이 도착하면 -->
@@ -835,8 +860,9 @@ function openSettings() {
       </section>
 
       <button v-if="SOCIAL_ON && space==='plaza' && !visiting && !panel && !webglFailed" class="g-btn w-town-btn" type="button" @click="showTown()">친구 미술관</button>
-      <section v-if="SOCIAL_ON && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><p v-if="townBuildings.length<=1" class="small">아직 친구가 없어요. 초대 링크를 보내 보세요.</p><div class="row"><button class="g-btn" type="button" @click="openPanel('social')">친구 초대</button><button class="g-btn" type="button" @click="familyChanged">우리 미술관으로</button></div><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
-      <component :is="WorldSocial" v-if="WorldSocial && panel==='social' && account" :family="account.id" :token="inviteToken" @close="closePanel" @town="showTown" />
+      <section v-if="SOCIAL_ON && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><p v-if="townBuildings.length<=1" class="small">아직 친구가 없어요. 초대 링크를 보내 보세요.</p><div class="row"><button class="g-btn" type="button" @click="openPanel('social')">친구 초대</button></div><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
+      <component :is="WorldSocial" v-if="WorldSocial && panel==='social' && account" :family="account.id" :token="inviteToken" :friends="friends" :fresh="freshFriend" @close="closePanel" @town="showTown()" @visit="visitFriend" @changed="friendsChanged" />
+      <section v-if="freshBuilding && !panel && !visiting" class="w-friend-new g-panel" role="status"><span>{{ freshBuilding.child }} 가족과 친구가 됐어요</span><div class="row"><button class="g-btn g-btn--primary" type="button" @click="visitFriend(freshBuilding.id)">들어가기</button><button class="g-btn" type="button" @click="freshFriend=''">닫기</button></div></section>
 
       <section v-if="recentSaved && !panel" ref="savedCard" class="w-saved g-panel" aria-label="작품 전시 완료" role="status">
         <div class="w-saved-head">
@@ -948,7 +974,7 @@ function openSettings() {
         <span class="knob" :style="joy ? { transform: `translate(${joy.x * 34}px, ${joy.y * 34}px)` } : undefined" />
       </div>
 
-      <WorldMinimap v-if="engine && !panel && !webglFailed && !recentSaved && !emoteMenu && space==='inside' && !(narrow && shownWork && plaqueClosed!==shownWork.id)" :read="() => engine?.minimap() ?? null" />
+      <WorldMinimap v-if="prefs?.minimap !== false && engine && !panel && !webglFailed && !recentSaved && !emoteMenu && space==='inside' && !(narrow && shownWork && plaqueClosed!==shownWork.id)" :read="() => engine?.minimap() ?? null" />
       <div v-if="!panel && !webglFailed && !recentSaved" class="w-gestures">
         <!-- §2-20 감정 표현: 표(emotes.ts)의 동작을 펼쳐 고른다 -->
         <div v-if="emoteMenu" class="w-emotes" role="menu" aria-label="동작">
@@ -960,7 +986,7 @@ function openSettings() {
       <!-- 모드 -->
       <div v-if="panel === 'help'" class="sheet" role="dialog" aria-modal="true" aria-label="미술관 사용법">
         <div class="g-panel sheet-card w-help-card">
-          <h2>미술관 사용법</h2>
+          <header class="w-sheet-head"><h2>미술관 사용법</h2><button class="g-btn" type="button" @click="closePanel">닫기</button></header>
           <p>들어가기를 눌러 작품을 만나 보세요.<br />새 작품은 작품 올리기에서 보관할 수 있어요.</p>
           <dl class="w-help-controls">
             <dt>걷기</dt><dd>{{coarse?'왼쪽 원을 밀거나 바닥을 누르세요.':'WASD·방향키로 걷고 Shift를 누르면 뛰어요. 바닥을 눌러도 걸어요.'}}</dd>
@@ -982,14 +1008,22 @@ function openSettings() {
               <small>{{ t.note }}</small>
             </button>
           </div>
-          <div class="row"><button class="g-btn" type="button" @click="closePanel">닫기</button></div>
         </div>
       </div>
 
       <!-- 설정 -->
       <div v-if="panel === 'settings'" class="sheet" role="dialog" aria-modal="true" aria-label="설정">
         <div class="g-panel sheet-card">
-          <h2>설정</h2>
+          <header class="w-sheet-head"><h2>설정</h2><button class="g-btn" type="button" @click="closePanel">닫기</button></header>
+          <h3 class="w-sub">소리</h3>
+          <button class="g-btn w-control-sound" type="button" :aria-pressed="!prefs?.sound" @click="toggleSound">{{ prefs?.sound ? '소리 끄기' : '소리 켜기' }}</button>
+          <label class="w-field"><span>음악 크기 {{ Math.round((prefs?.musicVolume ?? 1) * 100) }}</span><input class="w-range" type="range" min="0" max="100" step="5" :value="Math.round((prefs?.musicVolume ?? 1) * 100)" @input="setControl({ musicVolume: rangeValue($event) })" /></label>
+          <label class="w-field"><span>효과음 크기 {{ Math.round((prefs?.fxVolume ?? 1) * 100) }}</span><input class="w-range" type="range" min="0" max="100" step="5" :value="Math.round((prefs?.fxVolume ?? 1) * 100)" @input="setControl({ fxVolume: rangeValue($event) })" @change="playSound('sparkle')" /></label>
+          <h3 class="w-sub">조작</h3>
+          <label class="w-check"><input type="checkbox" :checked="!!prefs?.lookInvert" @change="setControl({ lookInvert: ($event.target as HTMLInputElement).checked })" />화면 끌기 방향 반대로</label>
+          <div class="w-field"><span>화면 돌리는 빠르기</span><div class="row w-seg" role="group" aria-label="화면 돌리는 빠르기"><button v-for="s in LOOK_SPEEDS" :key="s.value" class="g-btn" type="button" :aria-pressed="(prefs?.lookSpeed ?? 1) === s.value" @click="setControl({ lookSpeed: s.value })">{{ s.label }}</button></div></div>
+          <label class="w-check"><input type="checkbox" :checked="prefs?.minimap !== false" @change="setControl({ minimap: ($event.target as HTMLInputElement).checked })" />미니맵 보이기</label>
+          <hr />
           <p v-if="SERVER_WORLD" class="small">작품은 우리 미술관에 저장돼요. 캐릭터와 화면 설정은 이 기기에 남아요.</p>
           <template v-else>
             <h3 class="w-sub">백업</h3>
@@ -1035,11 +1069,10 @@ function openSettings() {
               </div>
             </template>
           </template>
-          <div class="row end"><button class="g-btn" type="button" @click="closePanel">닫기</button></div>
         </div>
       </div>
 
-      <WorldPlay ref="playPanel" v-if="panel==='play' && account" :artworks="artworks" :child-age="account.childAge" @close="closePanel" @saved="(id: string) => onSaved([id], true, SERVER_WORLD ? 'upload' : 'play')" />
+      <WorldPlay ref="playPanel" v-if="panel==='play' && account" :artworks="artworks" :child-age="account.childAge" @close="closePanel" @saved="(id: string) => onSaved([id], true, SERVER_WORLD ? 'upload' : 'play')" @upload="beforeUpload(() => openPanel('upload'))" />
       <WorldUpload ref="uploadPanel"
         v-if="panel === 'upload' && account"
         :initial-files="pendingFiles"
@@ -1286,6 +1319,14 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-first-help{bottom:var(--w-bar-top)}
 .where{align-items:center;max-width:calc(100% - 56px)}
 .w-mode-pick{flex:none;min-height:30px;padding:2px 10px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:600 12px var(--font-sans,system-ui);white-space:nowrap;cursor:pointer}
+.where strong{flex:0 1 auto;min-width:3em}
+:where(.sheet) :deep(.w-sheet-head){position:sticky;top:-20px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-20px;padding:14px 0 8px;background:inherit}
+.w-check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px}.w-check input{width:22px;height:22px;flex:none}
+.w-range{width:100%;height:32px}.w-control-sound{justify-self:start}
+.w-seg{justify-content:flex-start}.w-seg .g-btn[aria-pressed=true]{background:linear-gradient(#f2d48f,#c99a45);color:#22190b}
+.w-bar-btn{position:relative}.w-online{position:absolute;top:7px;right:calc(50% - 22px);width:8px;height:8px;border-radius:50%;background:#49d17f;box-shadow:0 0 0 2px rgba(20,18,16,.66)}
+.w-friend-new{position:absolute;z-index:12;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 66px);width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:14px;display:grid;gap:8px}
+@media(max-width:420px){.w-bar-btn{font-size:13px;padding:4px 2px}}
 .w-mode-pick:hover{background:rgba(255,255,255,.26)}.w-mode-pick:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
 .w-plaque-x:hover{background:rgba(60,40,30,.2)}.w-plaque-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}

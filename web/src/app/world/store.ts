@@ -40,7 +40,7 @@ export type CutoutState = 'pending' | 'done' | 'none';
 export const UNSORTED_AGE = 0;
 
 /** featured: 가족이 고른 대표작 ID(§2-14). 이 가족 화면에만 쓰고 친구 방문 자료에 넣지 않는다 */
-export interface Prefs { avatar: AvatarConfig; avatarImage: Blob | null; theme: ThemeId; sound: boolean; building?: MuseumStyle; interior?: 'gallery' | 'cathedral'; featured?: string | null; decor?: DecorItem[] }
+export interface Prefs { avatar: AvatarConfig; avatarImage: Blob | null; theme: ThemeId; sound: boolean; building?: MuseumStyle; interior?: 'gallery' | 'cathedral'; featured?: string | null; decor?: DecorItem[]; fxVolume?: number; musicVolume?: number; lookInvert?: boolean; lookSpeed?: number; minimap?: boolean }
 
 const DB = 'uam-world';
 const STORES = ['account', 'artworks', 'rooms', 'prefs','meta','social','drafts'] as const;
@@ -115,8 +115,11 @@ export async function selectFamily(id:string){
 export const saveAccount = (a:Account) => put('account',{id:a.id,guardian:a.guardian,child:a.child,childAge:a.childAge,createdAt:a.createdAt},a.id);
 export async function getRooms(family?:string):Promise<number[]>{const r=await get<number[]>('rooms',family??await activeFamily());return Array.isArray(r)&&r.every(Number.isInteger)?r:[4,5,6,7];}
 export const saveRooms=async(ages:number[])=>put('rooms',[...new Set(ages)].sort((a,b)=>a-b),await activeFamily());
-export async function getPrefs(family?:string):Promise<Prefs>{const p=(await get<Partial<Prefs>>('prefs',family??await activeFamily()))??{};return {avatar:normalizeAvatar(p.avatar??DEFAULT_AVATAR),avatarImage:p.avatarImage instanceof Blob?p.avatarImage:null,theme:isThemeId(p.theme)?p.theme:'classic',sound:p.sound!==false,building:isStyle(p.building)?p.building:'column_temple',interior:p.interior==='cathedral'?'cathedral':'gallery',featured:typeof p.featured==='string'?p.featured:null,decor:Array.isArray(p.decor)?p.decor.filter(isDecorItem):[]};}
-export const savePrefs=async(p:Prefs)=>put('prefs',{avatar:{...p.avatar,...(p.avatar.joints?{joints:JSON.parse(JSON.stringify(p.avatar.joints))}:{})},avatarImage:p.avatarImage,theme:p.theme,sound:p.sound,building:p.building??'column_temple',interior:p.interior==='cathedral'?'cathedral':'gallery',featured:typeof p.featured==='string'?p.featured:null,decor:(p.decor??[]).filter(isDecorItem).map(d=>({id:d.id,kind:d.kind,work:d.work,spot:d.spot}))},await activeFamily());
+const volumeOf=(v:unknown)=>typeof v==='number'&&v>=0&&v<=1?v:1;
+/** 소리와 조작 설정(마스터플랜 3-3 #137). 없거나 잘못된 값은 기본값이다 */
+const controlsOf=(p:Partial<Prefs>)=>({fxVolume:volumeOf(p.fxVolume),musicVolume:volumeOf(p.musicVolume),lookInvert:p.lookInvert===true,lookSpeed:typeof p.lookSpeed==='number'&&p.lookSpeed>0?p.lookSpeed:1,minimap:p.minimap!==false});
+export async function getPrefs(family?:string):Promise<Prefs>{const p=(await get<Partial<Prefs>>('prefs',family??await activeFamily()))??{};return {avatar:normalizeAvatar(p.avatar??DEFAULT_AVATAR),avatarImage:p.avatarImage instanceof Blob?p.avatarImage:null,theme:isThemeId(p.theme)?p.theme:'classic',sound:p.sound!==false,building:isStyle(p.building)?p.building:'column_temple',interior:p.interior==='cathedral'?'cathedral':'gallery',featured:typeof p.featured==='string'?p.featured:null,decor:Array.isArray(p.decor)?p.decor.filter(isDecorItem):[],...controlsOf(p)};}
+export const savePrefs=async(p:Prefs)=>put('prefs',{avatar:{...p.avatar,...(p.avatar.joints?{joints:JSON.parse(JSON.stringify(p.avatar.joints))}:{})},avatarImage:p.avatarImage,theme:p.theme,sound:p.sound,building:p.building??'column_temple',interior:p.interior==='cathedral'?'cathedral':'gallery',featured:typeof p.featured==='string'?p.featured:null,decor:(p.decor??[]).filter(isDecorItem).map(d=>({id:d.id,kind:d.kind,work:d.work,spot:d.spot})),...controlsOf(p)},await activeFamily());
 export async function listArtworks(family?:string):Promise<Artwork[]>{const id=family??await activeFamily();const all=(await tx<Artwork[]>('artworks','readonly',s=>s.getAll()))??[];return all.filter(a=>a.familyId===id).sort((a,b)=>a.no-b.no);}
 export const putArtwork=async(a:Artwork)=>put('artworks',{...a,familyId:await activeFamily()});
 /** Artwork and its room commit together. Reusing the same id makes retries idempotent. */

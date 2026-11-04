@@ -32,6 +32,17 @@ describe('서버 판 친구', () => {
     expect(e).toBeInstanceOf(SocialError);
     expect((e as SocialError).reason).toBe('own_family');
   });
+  it('수락하면 새 친구의 건물을 돌려주고, 이미 친구면 빈 값이다', async () => {
+    let list: unknown[] = [];
+    routes({
+      '/v1/neighbors/accept': () => { list = [{ ...friend, online: true }]; return new Response(null, { status: 204 }); },
+      '/v1/neighbors': () => json(200, list),
+    });
+    const s = new ServerSocialStore();
+    expect(await s.accept('', 'tok')).toBe('b_f');
+    expect(await s.accept('', 'tok')).toBe('');
+    expect((await s.neighbors()).map((b) => b.online)).toEqual([true]);
+  });
   it('방문: 부조는 컷아웃과 전시용 판, 액자는 사진. 친구가 아니면 들어가지 않는다', async () => {
     routes({
       '/v1/neighbors': () => json(200, [friend]),

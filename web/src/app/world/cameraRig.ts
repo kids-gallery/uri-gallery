@@ -21,8 +21,8 @@ export function distanceToFitArtwork(width:number,height:number,aspect:number,ve
  const heightToFit=Math.max(height,width/aspect);
  return heightToFit*.5/Math.tan(THREE.MathUtils.degToRad(verticalFov)*.5)+depth*.5;
 }
-/** 끄는 쪽으로 장면이 따라오게 시점을 돌린다(마스터플랜 3-3 #137) */
-export const dragTurn=(dx:number,dy:number)=>({yaw:dx*.006,pitch:-dy*.004});
+/** 끄는 쪽으로 장면이 따라오게 시점을 돌린다. 설정에서 방향과 빠르기를 바꾼다(마스터플랜 3-3 #137) */
+export const dragTurn=(dx:number,dy:number,look:{invert:boolean;speed:number}={invert:false,speed:1})=>{const k=(look.invert?-1:1)*look.speed;return {yaw:dx*.006*k,pitch:-dy*.004*k};};
 /** 줄일 수 있는 거리. lift를 넘으면 카메라가 올라가 벽 너머를 내려다본다 */
 export const ZOOM={near:2.4,lift:7.5,far:26} as const;
 export const zoomLift=(dist:number)=>THREE.MathUtils.smoothstep(dist,ZOOM.lift,ZOOM.lift*2);

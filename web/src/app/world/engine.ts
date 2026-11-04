@@ -587,6 +587,9 @@ export class MuseumEngine {
 
   setJoystick(x: number, y: number) { this.joy.set(x, y); if ((x || y) && !this.entering) this.route = []; }
 
+  private look = { invert: false, speed: 1 };
+  /** 화면 끌기 방향과 빠르기(설정, 마스터플랜 3-3 #137) */
+  setLook(invert: boolean, speed: number) { this.look = { invert, speed }; }
   setCustomizing(on: boolean) { this.customizing = on; }
   /** 대성당과 블록의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
   private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
@@ -841,7 +844,7 @@ export class MuseumEngine {
     if (this.dragged) {
       this.revealFocus = 0;
       if(this.customizing){this.customYaw-=dx*.006;return;}
-      const turn = dragTurn(dx, dy);
+      const turn = dragTurn(dx, dy, this.look);
       this.yaw += turn.yaw;
       this.pitch = THREE.MathUtils.clamp(this.pitch + turn.pitch, 0.05, 0.9);
     }
