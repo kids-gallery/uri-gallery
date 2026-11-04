@@ -8,7 +8,7 @@ vi.mock('@/app/world/store', async (real) => ({
   saveRooms: vi.fn(async () => undefined),
 }));
 
-vi.mock('@/app/world/exhibit', () => ({ exhibitBlob: vi.fn(async () => new Blob(['exhibit-plate'])) }));
+vi.mock('@/app/world/exhibit', () => ({ exhibitBlob: vi.fn(async () => new Blob(['exhibit-plate'])), fillPaperBlob: vi.fn(async () => new Blob(['filled-paper'])) }));
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': status >= 400 ? 'application/problem+json' : 'application/json' } });
@@ -63,6 +63,14 @@ describe('승인 전과 뒤', () => {
     expect(s.fileCalls()).toEqual(['/v1/files/a1', '/v1/files/cut']); // 부조 파일(primaryUrl)은 3D 화면이 쓰지 않는다
     await g.galleryWorks(null);
     expect(s.fileCalls()).toHaveLength(2); // 결과가 그대로면 다시 받지 않는다
+  });
+
+  it('그림의 컷아웃만 손 자리를 메꾼다. 만들기는 윤곽을 그대로 둔다(#165)', async () => {
+    server({ c1: [item('a1', { kind: 'relief', auxUrl: '/v1/files/cut' }), item('a2', { kind: 'relief', auxUrl: '/v1/files/cut2', making: true })] });
+    const { g } = await load();
+    const [drawing, making] = await g.galleryWorks(null);
+    expect(drawing!.cutout!.size).toBe('filled-paper'.length);
+    expect(making!.cutout!.size).not.toBe('filled-paper'.length);
   });
 
   it('부조에서 액자로 바뀌면 전시용 판을 버리고 사진을 건다', async () => {

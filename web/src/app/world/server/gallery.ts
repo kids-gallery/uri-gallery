@@ -4,7 +4,7 @@
 // - 깊이는 VITE_RELIEF_DEPTH=1로 빌드했을 때만 받는다(마스터플랜 3-6).
 // - 사진을 받으면 작품은 사라지지 않는다. 깊이를 못 받으면 두께판, 컷아웃을 못 받으면 액자로 건다(마스터플랜 3-3).
 import { ref } from 'vue';
-import { exhibitBlob } from '../exhibit';
+import { exhibitBlob, fillPaperBlob } from '../exhibit';
 import * as store from '../store';
 import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, type Failure, type Gallery } from './index';
 
@@ -42,7 +42,9 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   // 전시용 판은 컷아웃으로 만들었다. 컷아웃이 걸렸던 작품의 결과가 바뀌면 판이 남지 않게 사진에서 다시 만든다
   const base = had && (same || !had.work.cutout) ? had.work : await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const orNull = (url: string) => file(url).catch(() => null); // 못 받으면 낮춰 걸고 load가 다시 받게 한다(마스터플랜 3-3)
-  const cutout = same ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await orNull(item.auxUrl) : null;
+  const got = same ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await orNull(item.auxUrl) : null;
+  // 그림은 손을 지운 자리를 메꾼다. 판과 입체가 같은 윤곽을 쓴다. 만들기는 윤곽이 작품이다(마스터플랜 3-3 #165)
+  const cutout = got && !same && !item.making ? await fillPaperBlob(got).catch(() => got) : got;
   const depth = (same ? had.work.depth : null) ?? (wantsDepth(item) && cutout && item.primaryUrl ? await orNull(item.primaryUrl) : null);
   // 걸린 부조는 벽에 전시용 판을 건다. 못 만들면 자른 사진 그대로 둔다
   const display = cutout && !same ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
