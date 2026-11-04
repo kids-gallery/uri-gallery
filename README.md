@@ -174,6 +174,8 @@ docker compose up -d --build
 docker compose ps
 ```
 
+리눅스 서버에서 `db-migrate`가 `EACCES /run/secrets/...`로 실패하면 서버 계정과 컨테이너 사용자의 번호가 달라서입니다. `chmod 444 secrets/*; chmod 700 secrets` 뒤 다시 띄웁니다.
+
 브라우저에서 [미술관](http://localhost:9501/app/world)을 열어 가입하고, [메일 확인 화면](http://localhost:8025)에서 인증 메일을 엽니다. 아이 별칭을 등록하고 사진을 올린 뒤 확정·결정을 마쳐 전시를 확인합니다. 처음 빌드와 준비에는 시간이 걸릴 수 있습니다. 서비스가 준비되지 않으면 `docker compose ps -a`와 `docker compose logs --tail=100`으로 해당 서비스의 상태를 확인합니다. 로그를 공유하기 전에 비밀 값과 개인정보를 지워 주세요.
 
 작품이 남는지 확인하려면 작품을 올린 뒤 다음을 실행하고 다시 로그인해 같은 아이의 미술관을 확인합니다.
