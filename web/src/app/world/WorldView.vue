@@ -25,6 +25,7 @@ import type { ArtworkDetail } from './server';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
 import WorldMotion from './WorldMotion.vue';
+import WorldMinimap from './WorldMinimap.vue';
 import type { MotionSource } from './motionStage';
 import WorldPrivacy from './WorldPrivacy.vue';
 import WorldStorageState from './WorldStorageState.vue';
@@ -33,7 +34,8 @@ import WorldStorageGate from './WorldStorageGate.vue';
 import { STYLES, STYLE_NAME, type MuseumStyle } from '../character/names';
 import { WORLD_LOOKS } from './outdoor';
 import { setAmbience, stopAmbience } from './sound';
-import {LocalSocialStore,type PublicBuilding} from './social';
+import {type PublicBuilding} from './social';
+import { clearInvite, pendingInvite, socialStore } from './server/social';
 import { BackupError, exportBackup, importBackup } from './backup';
 import { EMOTES } from './emotes';
 import { safeName } from './relief3d';
@@ -52,9 +54,9 @@ const TestEntry = import.meta.env.DEV || import.meta.env.MODE === 'localtest' ? 
 const WorldPlay=defineAsyncComponent(()=>import('./WorldPlay.vue'));
 const TestFamilies=import.meta.env.DEV||import.meta.env.MODE==='localtest'?defineAsyncComponent(()=>import('./WorldFamilies.vue')):null;
 // 친구 초대·마을·방문은 같은 기기의 시험 가족끼리만 된다(§2-22 9): 테스트 입구와 같은 빌드 조건으로 배포본에서 뺀다
-const LOCAL_SOCIAL=import.meta.env.DEV||import.meta.env.MODE==='localtest';
-const WorldSocial=LOCAL_SOCIAL?defineAsyncComponent(()=>import('./WorldSocial.vue')):null;
-const SocialButton=LOCAL_SOCIAL?defineAsyncComponent(()=>import('./WorldSocialButton.vue')):null;
+const SOCIAL_ON=SERVER_WORLD||import.meta.env.DEV||import.meta.env.MODE==='localtest';
+const WorldSocial=SOCIAL_ON?defineAsyncComponent(()=>import('./WorldSocial.vue')):null;
+const SocialButton=SOCIAL_ON?defineAsyncComponent(()=>import('./WorldSocialButton.vue')):null;
 // 휴대폰 측정 표시(§2-22 13): 개발 서버나 측정용 빌드(VITE_MEASURE=1)에서 주소에 ?measure가 있을 때만. 배포본에는 들어가지 않는다
 const MEASURE_ON=(import.meta.env.DEV||import.meta.env.VITE_MEASURE==='1')&&new URLSearchParams(location.search).has('measure');
 const Measure=MEASURE_ON?defineAsyncComponent(()=>import('./WorldMeasure.vue')):null;
@@ -63,9 +65,10 @@ function measure(name:'title-shown'|'start-ready'|'start-pressed'|'inside'|'firs
   performance.mark('uam-measure:'+name); // 측정 표시 조각이 늦게 받아져도 measure.ts가 이 값으로 채운다
   window.dispatchEvent(new CustomEvent('uam-measure',{detail:name}));
 }
-const social=new LocalSocialStore();
+const social=socialStore();
 const visiting=ref<PublicBuilding|null>(null),townBuildings=ref<PublicBuilding[]>([]),selectedBuilding=ref<PublicBuilding|null>(null);
-const inviteToken=ref(LOCAL_SOCIAL?new URLSearchParams(location.search).get('invite')??'':'');
+const inviteToken=ref(SOCIAL_ON?pendingInvite():'');
+watch(inviteToken,(v)=>{if(!v)clearInvite();});
 let socialChannel:BroadcastChannel|null=null;
 const phase = ref<Phase>('checking');
 const progress = ref({ done: 0, total: store.SAMPLES.length });
@@ -367,7 +370,7 @@ function onFirstPicked(e:Event){const input=e.target as HTMLInputElement,files=A
 function onRevealed(id:string){if(pendingReveal.value!==id)return;pendingReveal.value=null;recentSaved.value=id;}
 async function familyChanged(){visiting.value=null;selectedBuilding.value=null;panel.value=null;selection.value=null;nearId.value=null;await boot(false);}
 async function showTown(focus?:string){if(!account.value)return;panel.value=null;try{visiting.value=null;selection.value=null;nearId.value=null;await reload();engine.value?.setBuilding(prefs.value?.building??'column_temple',serverChildName.value,account.value.id);townBuildings.value=await social.town(account.value.id);selectedBuilding.value=townBuildings.value.find(b=>b.id===focus)??null;engine.value?.showTown(townBuildings.value,focus);void engine.value?.setResidents(townBuildings.value);inviteToken.value='';}catch{say('마을을 열지 못했어요. 다시 해 주세요');}}
-async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
+async function visitSelected(){const b=selectedBuilding.value;if(!b||!account.value)return;if(b.mine){await familyChanged();engine.value?.enterMuseum();return;}try{const gallery=await social.gallery(account.value.id,b.id);visiting.value=gallery.building;artworks.value=gallery.works.map((w,i)=>({id:w.id,no:i+1,title:w.title,kind:w.kind,display:w.display,cutout:w.cutout,depth:w.depth??null,age:w.room,subject:w.behavior,material:'',madeOn:'',words:'',original:new Blob(),sample:false,createdAt:0}));rooms.value=gallery.rooms;selection.value=null;nearId.value=null;engine.value?.setBuilding(b.style,b.child,b.id);engine.value?.showPlaza();await engine.value?.setWorld(b.child,artworks.value,rooms.value,true);engine.value?.enterMuseum();}catch{say('지금은 이 미술관에 들어갈 수 없어요');await showTown();}}
 async function recheckFriend(){if(!account.value)return;try{const list=await social.neighbors(account.value.id);if(visiting.value&&!list.some(b=>b.id===visiting.value!.id)){say('친구 관계가 끝나 미술관에서 나왔어요');await showTown();}else if(space.value==='town'){townBuildings.value=await social.town(account.value.id);engine.value?.showTown(townBuildings.value);void engine.value?.setResidents(townBuildings.value);}}catch{if(visiting.value){visiting.value=null;await familyChanged();}say('친구 정보를 확인하지 못했어요');}}
 function outside(){if(visiting.value)void showTown();else engine.value?.showPlaza();}
 async function setBuilding(style:MuseumStyle){if(!prefs.value)return;const next={...prefs.value,building:style};try{await store.savePrefs(next);prefs.value=next;engine.value?.setBuilding(style,serverChildName.value);}catch{say('미술관 모양을 저장하지 못했어요');}}
@@ -509,6 +512,7 @@ const motionSource=shallowRef<MotionSource|null>(null);let motionId:string|null=
 function openMotion(id:string){const src=engine.value?.stageSource(id);if(!src){engine.value?.play(id);return;}motionId=id;motionSource.value=src;openPanel('motion');}
 function motionFailed(){const id=motionId;void closePanel();if(id)engine.value?.play(id);} // 창을 만들지 못하는 기기는 전시실에서 움직인다
 const plaqueMore=ref(false),plaqueClosed=ref<string|null>(null);
+const narrow=typeof window!=='undefined'&&window.matchMedia?.('(max-width:600px)').matches;
 watch([selection,nearId],([sel,near])=>{if(!sel&&near===plaqueClosed.value)return;plaqueClosed.value=null;});
 watch(recentSaved,(id)=>engine.value?.setAvatarHidden(!!id));
 
@@ -721,7 +725,7 @@ onMounted(async () => {
   measure('title-shown'); // 시작 화면(제목 묶음)이 그려진 때
   window.addEventListener('keydown', onKey);window.addEventListener('pointerdown',onOutside,true);
   document.addEventListener('visibilitychange',onResume);window.addEventListener('pageshow',onResume);
-  if(LOCAL_SOCIAL){window.addEventListener('uam-world-social',recheckFriend);window.addEventListener('focus',recheckFriend);
+  if(SOCIAL_ON){window.addEventListener('uam-world-social',recheckFriend);window.addEventListener('focus',recheckFriend);
     if(typeof BroadcastChannel!=='undefined'){socialChannel=new BroadcastChannel('uam-world-social');socialChannel.onmessage=()=>void recheckFriend();}}
   else if(new URLSearchParams(location.search).has('invite')){const u=new URL(location.href);u.searchParams.delete('invite');history.replaceState(null,'',u.pathname+u.search+u.hash);} // §2-22 9: 배포본은 초대 값을 무시하고 지운다
   if (!(await store.storageWorks())) { phase.value = 'nostorage'; return; }
@@ -733,7 +737,7 @@ onBeforeUnmount(() => {
   alive=false;
   window.removeEventListener('keydown', onKey);window.removeEventListener('pointerdown',onOutside,true);for(const t of arriveTimers)window.clearTimeout(t);
   document.removeEventListener('visibilitychange',onResume);window.removeEventListener('pageshow',onResume);
-  if(LOCAL_SOCIAL){window.removeEventListener('uam-world-social',recheckFriend);window.removeEventListener('focus',recheckFriend);socialChannel?.close();}stopAmbience();
+  if(SOCIAL_ON){window.removeEventListener('uam-world-social',recheckFriend);window.removeEventListener('focus',recheckFriend);socialChannel?.close();}stopAmbience();
   stopSpeaking();
   closeView();
   engine.value?.dispose();
@@ -846,7 +850,8 @@ function openSettings() {
         </div>
       </section>
 
-      <section v-if="LOCAL_SOCIAL && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
+      <button v-if="SOCIAL_ON && space==='plaza' && !visiting && !panel && !webglFailed" class="g-btn w-town-btn" type="button" @click="showTown()">친구 미술관</button>
+      <section v-if="SOCIAL_ON && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><p v-if="townBuildings.length<=1" class="small">아직 친구가 없어요. 초대 링크를 보내 보세요.</p><div class="row"><button class="g-btn" type="button" @click="openPanel('social')">친구 초대</button><button class="g-btn" type="button" @click="familyChanged">우리 미술관으로</button></div><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
       <component :is="WorldSocial" v-if="WorldSocial && panel==='social' && account" :family="account.id" :token="inviteToken" @close="closePanel" @town="showTown" />
 
       <section v-if="recentSaved && !panel" ref="savedCard" class="w-saved g-panel" aria-label="작품 전시 완료" role="status">
@@ -959,6 +964,7 @@ function openSettings() {
         <span class="knob" :style="joy ? { transform: `translate(${joy.x * 34}px, ${joy.y * 34}px)` } : undefined" />
       </div>
 
+      <WorldMinimap v-if="engine && !panel && !webglFailed && !recentSaved && !emoteMenu && space==='inside' && !(narrow && shownWork && plaqueClosed!==shownWork.id)" :read="() => engine?.minimap() ?? null" />
       <div v-if="!panel && !webglFailed && !recentSaved" class="w-gestures">
         <!-- §2-20 감정 표현: 표(emotes.ts)의 동작을 펼쳐 고른다 -->
         <div v-if="emoteMenu" class="w-emotes" role="menu" aria-label="동작">
@@ -1300,6 +1306,9 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-plaque-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(60,40,30,.1);color:var(--g-plum-deep);font:600 16px var(--font-sans,system-ui);cursor:pointer}
 .w-plaque-x:hover{background:rgba(60,40,30,.2)}.w-plaque-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .w-gestures{z-index:13}
+.w-town-btn{position:absolute;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(var(--w-bar-top) + 2px)}
+.w-town-list{left:12px;right:12px;bottom:var(--w-bar-top);max-width:min(420px,calc(100% - 24px));max-height:42vh;box-sizing:border-box}
+.w-interaction{left:50%;transform:translateX(-50%);animation:none;white-space:nowrap}
 .w-view-x{grid-column:1/-1;justify-self:end;position:sticky;top:0;z-index:3;width:40px;height:40px;margin-bottom:-40px;border:0;border-radius:50%;background:rgba(60,40,30,.72);color:#fff;font:600 17px var(--font-sans,system-ui);cursor:pointer}
 .w-view-x:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .w-emotes{position:absolute;right:0;bottom:calc(100% + 6px);display:grid;grid-template-columns:repeat(2,auto);gap:6px;width:max-content;max-height:52dvh;overflow:auto;padding:0;background:none;border:0;box-shadow:none}

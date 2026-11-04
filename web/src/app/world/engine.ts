@@ -19,6 +19,7 @@ import { maskFromCutout, drawToCanvas, blobToImage, removeBackground, cutoutCanv
 import { subjectOf } from './subjects';
 import { plaqueOf, roomSubtitle, roomTitle } from './curation';
 import { play as playSound } from './sound';
+import type { MinimapData } from './minimap';
 import type { Artwork } from './store';
 import { Outdoor, type BuildingData, WORLD_LOOKS } from './outdoor';
 import type { MuseumStyle } from '../character/names';
@@ -536,6 +537,15 @@ export class MuseumEngine {
     playSound(s.sound);
     this.ev.onPlay?.(id);
   }
+  /** 미니맵이 읽는 값(마스터플랜 3-3 #137). 건물 안에서만 준다 */
+  minimap(): MinimapData | null {
+    if (this.space !== 'inside') return null;
+    const a = this.avatarRoot.position;
+    return {
+      floors: this.museum.plan.floors, x: a.x, z: a.z, yaw: this.avatarRoot.rotation.y,
+      works: [...this.museum.works.values()].map((w) => ({ x: w.stand.x, z: w.stand.z, making: this.artworks.get(w.id)?.kind === 'making' })),
+    };
+  }
   /** 움직여 보기 창에 넘길 작품(마스터플랜 3-3 #137). 전시실의 입체를 읽기만 한다 */
   stageSource(id: string) {
     const w = this.museum.works.get(id), a = this.artworks.get(id);
@@ -728,11 +738,10 @@ export class MuseumEngine {
     const off = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(dist);
     let want = target.clone().add(off);
     const direction=off.clone().normalize();
-    // 많이 줄이면 천장을 숨겨 전시실을 내려다본다. 숨긴 천장은 카메라를 막지 않는다
+    // 많이 줄이면 천장을 숨기고 벽과 들보에 걸리지 않게 전시실을 내려다본다
     const ceiling=this.theme.mats.ceiling,open=this.space==='inside'&&lift>.02;
     if(ceiling.visible===open)ceiling.visible=!open;
-    const solids=this.space==='inside'?(open?this.museum.cameraSolids.filter(o=>(o as THREE.Mesh).material!==ceiling):this.museum.cameraSolids):this.outdoor.cameraSolids;
-    const allowed=occlusionDistance(target,direction,dist,solids,this.camera.aspect,this.camera.near,this.camera.getEffectiveFOV());
+    const allowed=open?dist:occlusionDistance(target,direction,dist,this.space==='inside'?this.museum.cameraSolids:this.outdoor.cameraSolids,this.camera.aspect,this.camera.near,this.camera.getEffectiveFOV());
     this.cameraDistance=recoverDistance(this.cameraDistance,allowed,dt);
     want=target.clone().addScaledVector(direction,this.cameraDistance);
     if(this.space==='inside')want.y=Math.min(want.y,6.6+lift*34);

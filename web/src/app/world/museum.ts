@@ -226,6 +226,8 @@ export class Museum {
   interior: InteriorId = 'gallery';
   reduced = false;
   private layout!: SpatialLayout;
+  /** 미니맵이 읽는 지금 평면 */
+  get plan(): SpatialLayout { return this.layout; }
   private navigation!: NavigationWorld;
   private architecture: ReturnType<typeof buildSpatialScene> | null = null;
   private workSlots = new Map<string, PlanSlot>();
