@@ -3,7 +3,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { Pool } from 'mysql2/promise';
 import { Problem } from '../lib/problem.js';
-import { GUARDIAN_COOKIE, STAFF_COOKIE, loadSession } from './session.js';
+import { GUARDIAN_COOKIE, STAFF_COOKIE, guardianCookieOpts, loadSession } from './session.js';
 
 export type StaffRole = 'operator' | 'evaluator' | 'integrator';
 
@@ -18,7 +18,7 @@ declare global {
 }
 
 export function guardianAuth(db: Pool, opts: { requireFamily: boolean }) {
-  return async (req: Request, _res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const sid = req.cookies?.[GUARDIAN_COOKIE];
       const s = await loadSession(db, 'guardian', sid);
@@ -30,6 +30,7 @@ export function guardianAuth(db: Pool, opts: { requireFamily: boolean }) {
       const g = (rows as { account_id: number; family_id: number | null; role: 'owner' | 'co'; email: string | null; password_changed_at: Date | null }[])[0];
       if (!g) throw new Problem('unauthorized', 'login_required', 'G0');
       if (g.password_changed_at && s.createdAt < g.password_changed_at) throw new Problem('unauthorized', 'session_revoked', 'G0');
+      res.cookie(GUARDIAN_COOKIE, sid, guardianCookieOpts(Boolean(req.app.get('secure cookies')))); // 여기까지 왔으면 유효한 세션이다
       req.sid = sid;
       req.guardian = { accountId: Number(g.account_id), familyId: g.family_id === null ? null : Number(g.family_id), role: g.role, email: g.email };
       if (opts.requireFamily && req.guardian.familyId === null) throw new Problem('conflict', 'no_family', 'G0');
