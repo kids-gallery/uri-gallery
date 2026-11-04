@@ -1,0 +1,16 @@
+name: uri-gallery-ops-retentionfix1104
+services:
+  loki:
+    image: grafana/loki:3.4.2
+    command: -config.file=/etc/loki/config.yaml
+    ports: ['127.0.0.1:13102:3100']
+    volumes:
+      - ./retention-test.yaml:/etc/loki/config.yaml:ro
+      - ./retention-runtime:/runtime:ro
+      - retention-data:/loki
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+volumes:
+  retention-data:

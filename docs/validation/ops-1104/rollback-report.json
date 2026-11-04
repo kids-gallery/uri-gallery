@@ -1,0 +1,15 @@
+{
+  "failedImage": "uri-gallery-ops-api:bad1104",
+  "restoredImageId": "sha256:e19270c60e71f18b14f2adc7c35b56d3f39b1fa3336cdaaeb0e5fa8f35d91435",
+  "countsBefore": [
+    "4",
+    "17"
+  ],
+  "countsAfter": [
+    "4",
+    "17"
+  ],
+  "authenticatedList": 200,
+  "seconds": 7.95,
+  "scope": "application image rollback; no incompatible DB migration"
+}

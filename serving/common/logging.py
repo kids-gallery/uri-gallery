@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import re
 
 import structlog
 
@@ -19,8 +20,36 @@ ALLOWED = frozenset({
 })
 
 
+EVENTS = {"model_load", "job_end", "ext_job_end", "check_end", "eval_end", "eval_db_error", "db_unavailable", "caption", "startup"}
+CATEGORIES = {
+    "level": {"info", "warning", "warn", "error", "critical", "debug"},
+    "stage_kind": {"split", "judge", "animate_render", "depth_relief", "frame_compose", "caption", "sculpture"},
+    "status": {"queued", "running", "done", "done_downgraded", "retry_wait", "failed", "cancelled", "passed", "ok"},
+    "error_class": {"engine_down", "timeout", "storage", "db", "model_not_ready"},
+    "downgrade_cause": {"animated_to_relief", "relief_to_frame", "sculpture_to_relief", "split_fail", "animated_to_frame", "llm_to_template"},
+    "load_state": {"disabled", "not_loaded", "loading", "ready", "failed", "cold"},
+    "serving_group": {"cpu_vision", "gpu", "llm"},
+    "outcome": {"ok", "engine_down", "timeout", "storage", "db", "model_not_ready", "quality_below", "cancelled", "unknown"},
+    "diagnostic": {"load_timeout", "fake_injected", "model_not_ready", "engine_down", "timeout"},
+}
 def _allowlist(_, __, event_dict: dict) -> dict:
-    return {k: v for k, v in event_dict.items() if k in ALLOWED}
+    out = {}
+    for k, v in event_dict.items():
+        if k == "event":
+            out[k] = v if isinstance(v, str) and v in EVENTS else "unknown"
+        elif k in CATEGORIES and isinstance(v, str) and v in CATEGORIES[k]:
+            out[k] = v
+        elif k in {"job_id", "attempt_count", "duration_ms", "load_ms", "port"} and type(v) in {int, float} and 0 <= v < 2**53:
+            out[k] = v
+        elif k == "ts" and isinstance(v, str) and re.fullmatch(r"[0-9T:.+Z-]{20,40}", v):
+            out[k] = v
+        elif k == "model_id" and isinstance(v, str) and re.fullmatch(r"M[1-7]", v):
+            out[k] = v
+        elif k == "worker" and isinstance(v, str) and v.split("@", 1)[0] in {"cpu_vision", "gpu", "llm"}:
+            out[k] = v.split("@", 1)[0]
+        elif k == "version_label" and isinstance(v, str) and re.fullmatch(r"(?:dev-[a-f0-9]{32}|v?[0-9]+(?:\.[0-9]+){1,3})", v):
+            out[k] = v
+    return out
 
 
 _configured = False
