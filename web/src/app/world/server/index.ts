@@ -43,10 +43,11 @@ export const listChildren = () => authenticated(api.get<Child[]>('/v1/children',
 export const addChild = (alias: string) => authenticated(api.post<Child>('/v1/children', { ...o, body: { alias } }));
 
 /** 다시 보낼 때는 같은 key를 넘긴다. 서버가 기존 작품을 돌려줘 작품이 두 번 생기지 않는다(계약 Idempotency-Key). */
-export function uploadArtwork(childId: string, photo: Blob, key: string, making = false) {
+export function uploadArtwork(childId: string, photo: Blob, key: string, making = false, title = '') {
   const form = new FormData();
   form.append('childId', childId);
   form.append('making', String(making));
+  if (title.trim()) form.append('title', title.trim()); // 비우면 서버가 자동 제목을 붙인다(D46)
   form.append('photo', photo);
   return authenticated(api.post<ArtworkDetail>('/v1/artworks', { ...o, form, headers: { 'Idempotency-Key': key } }));
 }

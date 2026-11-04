@@ -81,11 +81,11 @@ describe('전시실 계획', () => {
     expect(curatorNote({ no: 1, title: '', kind: 'drawing', subject: 'etc', material: '', age: 0, madeOn: '', words: '', child: '우리 아이' }).lines[0]).not.toMatch(/세에/);
   });
 
-  it('만들기는 받침대 먼저, 넘치면 벽', () => {
+  it('만들기는 언제나 받침대에 서고, 차면 다음 전시실로 넘어간다', () => {
     const list = Array.from({ length: PEDESTAL_SLOTS + 1 }, (_, i) => w(`m${i}`, 5, 'making', i));
     const { slots } = planRooms([5], list);
-    expect([...slots.values()].filter((s) => s.type === 'pedestal')).toHaveLength(PEDESTAL_SLOTS);
-    expect(slots.get(`m${PEDESTAL_SLOTS}`)).toEqual({ room: 0, type: 'wall', index: 0 });
+    expect([...slots.values()].every((s) => s.type === 'pedestal')).toBe(true);
+    expect(slots.get(`m${PEDESTAL_SLOTS}`)).toEqual({ room: 1, type: 'pedestal', index: 0 });
   });
 
   it('벽이 차면 같은 나이의 다음 방', () => {
