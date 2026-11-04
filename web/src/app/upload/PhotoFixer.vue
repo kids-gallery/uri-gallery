@@ -6,8 +6,8 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { ko } from '@/copy/ko';
 import { warpQuad } from './autocrop';
 
-const props = defineProps<{ src: string; initial?: [number, number][] | null }>();
-const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number] }>();
+const props = defineProps<{ src: string; initial?: [number, number][] | null; boxOptions?: { label: string; box: (w: number, h: number) => [number, number][] }[]; boxAsk?: string; kindOptions?: { label: string; value: string }[]; kindAsk?: string; hint?: string; closeLabel?: string }>();
+const emit = defineEmits<{ close: []; done: [blob: Blob, quad: [number, number][], rot: number, kind: string]; unreadable: [] }>();
 type P = [number, number];
 const img = ref<HTMLImageElement | null>(null);
 const W = ref(0); const H = ref(0);
@@ -16,10 +16,15 @@ const rot = ref(0); // 0 · 90 · 180 · 270
 const sel = ref(0);
 const busy = ref(false); const msg = ref('');
 const preview = ref<HTMLCanvasElement | null>(null);
+const boxPick = ref(-1); // boxOptions 중 고른 것. 고르기 전에는 쓸 수 없다
+const kindPick = ref('');
+const unanswered = computed(() => (!!props.boxOptions?.length && boxPick.value < 0) || (!!props.kindOptions?.length && !kindPick.value));
+function pickBox(i: number) { boxPick.value = i; quad.value = props.boxOptions![i]!.box(W.value, H.value); draw(); }
 const box = ref<HTMLElement | null>(null);
 const dialog = ref<HTMLElement | null>(null);
 
 onMounted(async () => {
+  try {
   const r = await fetch(props.src);
   const bm = await createImageBitmap(await r.blob(), { imageOrientation: 'from-image' }); // 사진 방향 정보(EXIF) 먼저
   const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d')!.drawImage(bm, 0, 0);
@@ -28,6 +33,7 @@ onMounted(async () => {
   // 자동 펴기가 찾은 네 모서리가 있으면 그것부터, 없으면 사진 전체(추정 사각형으로 시작하면 그대로 저장했을 때 그림이 잘린다)
   quad.value = props.initial ? props.initial.map((p) => [p[0], p[1]] as P) : [[0, 0], [W.value, 0], [W.value, H.value], [0, H.value]];
   await nextTick(); draw(); dialog.value?.querySelector<HTMLElement>('button')?.focus();
+  } catch { msg.value = ko.up2.fixFail; emit('unreadable'); } // 브라우저가 못 여는 사진(HEIC 등)
 });
 const pts = computed(() => quad.value.map(([x, y]) => `${x},${y}`).join(' '));
 function draw() {
@@ -63,7 +69,7 @@ async function save() {
     c.width = t ? flat.height : flat.width; c.height = t ? flat.width : flat.height;
     const g = c.getContext('2d')!; g.translate(c.width / 2, c.height / 2); g.rotate((rot.value * Math.PI) / 180); g.drawImage(flat, -flat.width / 2, -flat.height / 2);
     const blob = await new Promise<Blob>((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error('blob'))), 'image/jpeg', 0.92));
-    emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value);
+    emit('done', blob, quad.value.map((p) => [p[0], p[1]] as [number, number]), rot.value, kindPick.value);
   } catch { msg.value = ko.up2.fixFail; }
   busy.value = false;
 }
@@ -75,9 +81,17 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
   <div class="fx-scrim" @click.self="emit('close')">
     <div ref="dialog" class="fx" role="dialog" aria-modal="true" aria-labelledby="fx-t" @keydown="trap">
       <h2 id="fx-t" class="fx-t">{{ ko.up2.fix }}</h2>
-      <p class="fx-hint">{{ ko.up2.fixHint }}</p>
+      <p class="fx-hint">{{ hint ?? ko.up2.fixHint }}</p>
+      <div v-if="boxOptions?.length" class="fx-ask" role="group" :aria-label="boxAsk">
+        <span>{{ boxAsk }}</span>
+        <button v-for="(o, i) in boxOptions" :key="o.label" class="btn" :class="boxPick === i ? 'btn-primary' : 'btn-secondary'" type="button" :aria-pressed="boxPick === i" :disabled="!img" @click="pickBox(i)">{{ o.label }}</button>
+      </div>
+      <div v-if="kindOptions?.length" class="fx-ask" role="group" :aria-label="kindAsk">
+        <span>{{ kindAsk }}</span>
+        <button v-for="o in kindOptions" :key="o.value" class="btn" :class="kindPick === o.value ? 'btn-primary' : 'btn-secondary'" type="button" :aria-pressed="kindPick === o.value" :disabled="!img" @click="kindPick = o.value">{{ o.label }}</button>
+      </div>
       <div class="fx-body">
-        <div v-if="img" ref="box" class="fx-photo" :style="{ aspectRatio: `${W} / ${H}` }" @pointermove="move" @pointerup="up" @pointercancel="up">
+        <div v-if="img" ref="box" class="fx-photo" :style="{ aspectRatio: `${W} / ${H}`, '--fx-ar': `${W / H}` }" @pointermove="move" @pointerup="up" @pointercancel="up">
           <img :src="img.src" alt="" draggable="false">
           <svg :viewBox="`0 0 ${W} ${H}`" preserveAspectRatio="none" aria-hidden="true"><polygon :points="pts" /></svg>
           <button v-for="(p, i) in quad" :key="i" class="fx-h" :class="{ on: sel === i }" type="button" :style="{ left: `${(p[0] / W) * 100}%`, top: `${(p[1] / H) * 100}%` }"
@@ -94,8 +108,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
         <button class="btn btn-secondary" type="button" @click="turn(90)" :aria-label="ko.fix.right">↻ <span class="fx-long">{{ ko.fix.right }}</span><span class="fx-short">{{ ko.up2.right }}</span></button>
         <button class="btn btn-tertiary" type="button" @click="reset">{{ ko.fix.reset }}</button>
         <span class="sp"></span>
-        <button class="btn btn-secondary" type="button" @click="emit('close')">{{ ko.walk.close }}</button>
-        <button class="btn btn-primary" type="button" :disabled="busy || !img" @click="save">{{ busy ? ko.save.busy : ko.up2.fixUse }}</button>
+        <button class="btn btn-secondary" type="button" @click="emit('close')">{{ closeLabel ?? ko.walk.close }}</button>
+        <button class="btn btn-primary" type="button" :disabled="busy || !img || unanswered" @click="save">{{ busy ? ko.save.busy : ko.up2.fixUse }}</button>
       </div>
       <p class="fx-msg" role="status" aria-live="polite">{{ msg }}</p>
     </div>
@@ -104,6 +118,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 </template>
 
 <style scoped>
+.fx-ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:700}
+.fx-acts .btn-primary:disabled{opacity:.45;cursor:not-allowed}
 .fx-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:12px;background:rgba(40,26,16,.62);backdrop-filter:blur(6px);animation:fx-in var(--dur-2,480ms) var(--ease-spring,ease) both}
 @keyframes fx-in{from{opacity:0}}
 .fx{width:min(1040px,100%);max-height:calc(100dvh - 24px);overflow:auto;background:linear-gradient(#fffaf0,#fbf4e6);border:2px solid #c9a24a;border-radius:20px;padding:clamp(14px,3vw,28px);display:grid;gap:12px;
@@ -113,7 +129,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 .fx-hint{margin:0;font:500 14px/1.5 var(--font-sans);color:#5a4636}
 .fx-body{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:760px){.fx-body{grid-template-columns:1fr}}
-.fx-photo{position:relative;width:100%;max-height:62vh;background:#2b2019;border-radius:8px;overflow:visible;touch-action:none;user-select:none;margin-inline:auto}
+.fx-photo{--fx-h:62vh;position:relative;width:min(100%,calc(var(--fx-h)*var(--fx-ar,1)));margin:0 auto;background:#2b2019;border-radius:8px;overflow:visible;touch-action:none;user-select:none;margin-inline:auto}
 .fx-photo img{width:100%;height:100%;object-fit:contain;display:block;border-radius:8px}
 .fx-photo svg{position:absolute;inset:0;width:100%;height:100%}
 .fx-photo polygon{fill:rgba(230,203,134,.18);stroke:#e6cb86;stroke-width:0.4%;vector-effect:non-scaling-stroke}
@@ -129,7 +145,7 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 .fx-short{display:none}
 @media (max-width:760px){.fx-short{display:inline}}
 /* 휴대폰: 버튼 줄을 판 아래에 붙여 첫 화면에서 [돌리기] · [이대로 쓰기]가 보이게 */
-@media (max-width:760px){.fx-photo{max-height:48vh}.fx-prev{max-height:22vh}
+@media (max-width:760px){.fx-photo{--fx-h:48vh}.fx-prev{max-height:22vh}
   .fx-acts{position:sticky;bottom:calc(-1 * clamp(14px,3vw,28px));margin:0 calc(-1 * clamp(14px,3vw,28px));padding:10px clamp(14px,3vw,28px);background:#fbf6ee;box-shadow:0 -8px 16px -12px rgba(0,0,0,.35)}
   .fx-acts .sp{display:none}.fx-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.fx-acts .btn{white-space:nowrap;padding-inline:8px;font-size:14px}
   .fx-acts .btn:last-child{grid-column:span 2}.fx-long{display:none}}
