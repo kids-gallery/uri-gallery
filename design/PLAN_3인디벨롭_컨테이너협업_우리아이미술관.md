@@ -289,6 +289,7 @@
 - `.github/workflows/compose-smoke.yml`이 PR마다 우분투 amd64에서 가짜 모델 compose를 띄운다. `ops/docker/smoke.mjs`가 화면이 부르는 API로 가입부터 전시까지 돌리고, `down` 뒤 `up`에도 작품이 남는지 본다.
 - `ops/docker/late-db-check.sh`는 DB를 일부러 늦게 띄워 healthcheck가 있을 때와 없을 때를 비교하고, 실행 중 DB를 다시 켠 뒤 한 바퀴가 도는지 본다. `api/scripts/migrate.ts`에는 재시도가 없어 준비를 기다리는 일은 compose가 맡는다.
 - 고른 이유: PC 세 대를 사람이 매번 돌릴 수 없다. 브라우저를 빼 빠르고, 화면 시험은 그대로 `web/e2e`에 있다. GitLab CI를 옮기지 않았고 지금 파일도 고치지 않는다.
+- [측정, Actions amd64, 각 1회] 비밀 파일 600은 계정 번호 1001에서 `EACCES`로 실패하고 444, 700은 통과했다. DB를 30초 늦췄을 때 healthcheck가 없으면 `db-migrate`가 종료 코드 1로 끝나 app-api가 시작하지 못했고, 있으면 58초에 모두 떴다. 실행 중 DB를 40초 끄고 켜도 app-api는 재시작 없이 회복했다.
 - [한계] 자동 확인은 amd64와 가짜 모델만 본다. arm64와 실제 모델은 동결 커밋으로 맥과 체험 서버에서 사람이 돌린다(#46). 3D 화면이 그려지는지는 보지 않는다.
 
 ### 3-6. 자체 모델 선택 실행(기본 꺼짐)
