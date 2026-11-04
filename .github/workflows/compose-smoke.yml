@@ -1,0 +1,52 @@
+# 같은 compose가 깨끗한 리눅스에서 뜨고 한 바퀴가 도는지 PR마다 본다(마스터플랜 3-5, #140).
+name: compose-smoke
+on:
+  pull_request:
+    paths-ignore: ["**.md", "docs/**", "design/**", "제출/**"]
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "design/**", "제출/**"]
+permissions:
+  contents: read
+jobs:
+  round:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: 비밀 파일
+        run: |
+          id
+          sh ops/docker/make-secrets.sh
+          sh ops/docker/make-secrets.sh
+          stat -c '%u %a %n' secrets/db_password secrets/session_secret secrets/auth_hmac_secret
+          test "$(stat -c '%u %a' secrets/db_password)" = "1000 400"
+          ! sudo -u nobody cat secrets/db_password
+      - name: 띄우기
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: 한 바퀴
+        run: node ops/docker/smoke.mjs
+      - name: 재시작 뒤 작품 유지
+        run: |
+          docker compose down
+          docker compose up -d --wait --wait-timeout 300
+          node ops/docker/smoke.mjs keep
+      - name: 실패 기록
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail=40
+  late-db:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: sh ops/docker/make-secrets.sh
+      - name: 늦은 DB 전후 비교
+        run: sh ops/docker/late-db-check.sh
