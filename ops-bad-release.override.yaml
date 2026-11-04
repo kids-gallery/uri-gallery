@@ -1,0 +1,4 @@
+services:
+  app-api:
+    image: uri-gallery-ops-api:bad1104
+    restart: 'no'

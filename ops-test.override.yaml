@@ -1,0 +1,41 @@
+services:
+  db:
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+    secrets: [db_password, db_root_password]
+  app-api:
+    image: uri-gallery-ops-api:1104
+    environment:
+      UAM_ENV: test
+      APP_BASE_URL: http://localhost:19501
+      TRUST_PROXY: 172.30.96.0/24
+  db-migrate:
+    image: uri-gallery-ops-api:1104
+    environment:
+      UAM_ENV: test
+      TRUST_PROXY: 172.30.96.0/24
+  sweeper:
+    image: uri-gallery-ops-api:1104
+    environment:
+      UAM_ENV: test
+  model-api:
+    image: uri-gallery-ops-serving:1104
+    environment:
+      UAM_ENV: test
+  worker-cpu:
+    image: uri-gallery-ops-serving:1104
+    environment:
+      UAM_ENV: test
+  web:
+    image: uri-gallery-ops-web:1104
+    ports: !override ["127.0.0.1:19501:80"]
+  mailpit:
+    ports: !override ["127.0.0.1:18025:8025"]
+networks:
+  edge:
+    ipam:
+      config: !override
+        - subnet: 172.30.96.0/24
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password

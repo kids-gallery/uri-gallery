@@ -12,3 +12,9 @@ test('all-interface port and identical project are rejected',()=>{
  const a=base('prod'); a.services.web.ports[0].host_ip='0.0.0.0';
  assert.ok(checkIsolation(a,base('prod')).length>=2);
 });
+test('different credentials do not isolate an external database',()=>{
+ const a=base('test'),b=base('prod');
+ a.services.web.environment={DB_HOST:'database.example',DB_NAME:'gallery',DB_USER:'test'};
+ b.services.web.environment={DB_HOST:'database.example',DB_NAME:'gallery',DB_USER:'production'};
+ assert.ok(checkIsolation(a,b).some(e=>e.includes('external database')));
+});

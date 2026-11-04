@@ -1,4 +1,9 @@
-name: uri-gallery-observability-test
+name: uri-gallery-ops-observe1104
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
 services:
   loki:
     image: grafana/loki:3.4.2
@@ -7,32 +12,42 @@ services:
       - ./loki.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
     networks: [internal]
+    logging: *logging
+    mem_limit: 512m
   alloy:
     image: grafana/alloy:v1.9.0
     command: [run, --storage.path=/var/lib/alloy, /etc/alloy/config.alloy]
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
-      - ./fixtures:/fixtures:ro
+      - ./collected:/fixtures:ro
       - alloy-data:/var/lib/alloy
     networks: [internal]
     depends_on: [loki]
+    logging: *logging
+    mem_limit: 256m
   grafana:
     image: grafana/grafana:11.2.0
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_TEST_PASSWORD:?Set GRAFANA_TEST_PASSWORD}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_password
       GF_USERS_ALLOW_SIGN_UP: 'false'
       GF_AUTH_ANONYMOUS_ENABLED: 'false'
-    ports: ['127.0.0.1:13000:3000']
+    ports: ['127.0.0.1:13001:3000']
+    secrets: [grafana_password]
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
       - ./dashboards:/var/lib/grafana/dashboards:ro
     networks: [internal]
     depends_on: [loki]
+    logging: *logging
+    mem_limit: 256m
 networks:
   internal:
 volumes:
   loki-data:
   alloy-data:
   grafana-data:
+secrets:
+  grafana_password:
+    file: ./private/grafana_password

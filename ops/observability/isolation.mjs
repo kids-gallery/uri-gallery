@@ -13,6 +13,13 @@ export function checkIsolation(test, production) {
   // Bind mounts can share application data even when named volumes differ.
   const binds=new Set(Object.values(production.services??{}).flatMap(s=>(s.volumes??[]).filter(v=>v.type==='bind'&&!v.read_only).map(v=>v.source)));
   for(const [name,s] of Object.entries(test.services??{})) {
+    const env=s.environment??{};
+    if(env.DB_HOST && !Object.hasOwn(test.services??{},env.DB_HOST)) {
+      for(const other of Object.values(production.services??{})) {
+        const p=other.environment??{};
+        if(env.DB_HOST===p.DB_HOST && String(env.DB_PORT??3306)===String(p.DB_PORT??3306) && env.DB_NAME===p.DB_NAME) errors.push(`Shared external database target: ${name}`);
+      }
+    }
     for(const v of s.volumes??[]) if(v.type==='bind'&&binds.has(v.source)) errors.push(`Shared writable production bind: ${name}`);
     for(const p of s.ports??[]) if(p.host_ip!=='127.0.0.1'&&p.host_ip!=='::1') errors.push(`Test port must bind loopback: ${name}`);
   }

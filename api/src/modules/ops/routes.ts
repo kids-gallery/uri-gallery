@@ -196,7 +196,7 @@ export function opsRouter(db: Pool, cfg: Config, modelApi: ModelApi): Router {
       }
       for (const q of m.queues) {
         gauges.queue.set({ serving_group: q.servingGroup }, q.waiting);
-        if (q.oldestWaitSeconds !== null) gauges.queueOldest.set({ serving_group: q.servingGroup }, q.oldestWaitSeconds);
+        gauges.queueOldest.set({ serving_group: q.servingGroup }, q.oldestWaitSeconds ?? 0);
       }
       res.type(reg.contentType).send(await reg.metrics());
     } catch (e) { next(e); }

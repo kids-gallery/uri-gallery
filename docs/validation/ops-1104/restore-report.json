@@ -1,0 +1,13 @@
+{
+  "mode": "restore",
+  "project": "uri-gallery-ops-restore1104b",
+  "seconds": 30.16,
+  "replayedDeletions": 1,
+  "remainingDeletedArtworks": 0,
+  "sessions": 0,
+  "counts": [
+    "2",
+    "9"
+  ],
+  "publicPorts": false
+}

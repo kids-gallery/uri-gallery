@@ -18,3 +18,9 @@ test('HTTP failures stay separate from severity; duration and timestamps normali
   assert.equal(out.timestamp,'2026-11-04T00:00:00.000Z');
   assert.throws(()=>normalize({}, {...source,service:'mailpit'}));
 });
+test('preserves classified errors and stages without copying arbitrary metadata',()=>{
+ const out=normalize({level:'error',error_class:'storage',stage_kind:'split',model_id:'M1'},source);
+ assert.equal(out.errorClass,'storage');assert.equal(out.stage,'split');assert.equal(out.modelId,'M1');
+ const bad=normalize({level:'__proto__',error_class:'child@example.test',stage_kind:'아이별칭',model_id:'bearer-secret'},source);
+ assert.equal(bad.level,'unknown');assert.equal(bad.errorClass,undefined);assert.equal(bad.modelId,undefined);
+});
