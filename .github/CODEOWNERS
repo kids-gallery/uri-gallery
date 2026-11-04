@@ -5,7 +5,7 @@
 /api/                @wpalswpa
 /db/                 @wpalswpa
 /contracts/          @wpalswpa
-/serving/            @zozu001
-/models/             @zozu001
-/compose*.yaml       @zozu001
+/serving/            @wpalswpa
+/models/             @wpalswpa
+/compose*.yaml       @wpalswpa
 /.github/            @tlswlgus960-prog @wpalswpa
