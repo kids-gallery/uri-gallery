@@ -2,7 +2,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { startApi, stopApi } from './stack/api-control';
 import { animatedJobs, e2eDb, type Connection } from './stack/db';
-import { album, openWorldUpload, photo, tag } from './stack/world';
+import { album, openWorldUpload, photo, tag, useCrop } from './stack/world';
 
 /** SHOTS=폴더면 화면을 찍어 둔다(사람 눈 확인용) */
 async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()!.width}.png` }); }
@@ -23,6 +23,7 @@ test('app-api가 멈추면 알리고, 켠 뒤 다시 시도로 이어지며, 끝
   await openWorldUpload(page, tag('w37'));
   const posted = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const id = String((await (await posted).json() as { id: string }).id);
   await animatedJobs(db, id, (v) => db.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id) VALUES (?, 'animate_render', 'confirm', 'gpu', ?)`, [id, v]).then(() => undefined));
   seeded();
@@ -59,6 +60,7 @@ test('새로 고침 때 작품 목록을 못 읽어도 복구 뒤 다시 시도�
   await openWorldUpload(page, tag('w85'));
   const posted = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const id = String((await (await posted).json() as { id: string }).id);
 
   const list = /\/v1\/artworks$/;
