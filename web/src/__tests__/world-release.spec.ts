@@ -1,5 +1,5 @@
 // 3D미술관_재설계 §2-22 — 1차 출시 전 수정 묶음 중 단위 시험으로 고정할 수 있는 것.
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BACKUP_NUDGE, backupDue, isIOS, storageMode } from '@/app/world/deviceStorage';
 import { EMPTY_USAGE, bump, dayNumber, normalizeUsage, visit } from '@/app/world/usage';
 import { cardText } from '@/app/world/shareCard';
@@ -173,6 +173,19 @@ describe('저장 상태 묶음(§2-22 6·검토 4)', () => {
   it('개인정보·이용 안내는 같은 부품을 쓴다', () => {
     const w = mount(WorldPrivacy, { props: { persisted: false, lastBackup: null, mode: 'ios-tab' } });
     expect(w.findComponent(WorldStorageState).exists()).toBe(true);
+  });
+});
+
+describe('학습 자료 출처 안내(마스터플랜 3-6)', () => {
+  const link = () => mount(WorldPrivacy, { props: { persisted: false, lastBackup: null, mode: 'ios-tab' } }).find('a[href="/licenses/MODEL_DATA.txt"]');
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it('기본 빌드는 자체 모델로 배운 기능이 없으므로 안내하지 않는다', () => {
+    expect(link().exists()).toBe(false);
+  });
+  it('깊이를 켠 빌드는 출처를 안내한다', () => {
+    vi.stubEnv('VITE_RELIEF_DEPTH', '1');
+    expect(link().exists()).toBe(true);
   });
 });
 
