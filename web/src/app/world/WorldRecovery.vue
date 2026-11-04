@@ -11,6 +11,6 @@ function recover() {
 </template>
 
 <style scoped>
-.world-recovery{position:fixed;z-index:2147483647;top:calc(env(safe-area-inset-top, 0px) + 4px);right:4px;min-height:44px;padding:8px 12px;border:1px solid #755c44;border-radius:10px;background:#fffdf8;color:#443529;font:600 14px/1.2 sans-serif;box-shadow:0 2px 6px #0004;cursor:pointer}
+.world-recovery{position:fixed;z-index:2147483647;top:calc(env(safe-area-inset-top, 0px) + 62px);left:12px;min-height:44px;padding:8px 12px;border:1px solid #755c44;border-radius:10px;background:#fffdf8;color:#443529;font:600 14px/1.2 sans-serif;box-shadow:0 2px 6px #0004;cursor:pointer}
 .world-recovery:focus-visible{outline:3px solid #235dc1;outline-offset:2px}
 </style>
