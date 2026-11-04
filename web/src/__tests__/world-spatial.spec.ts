@@ -45,6 +45,26 @@ describe('authored museum circulation',()=>{
   it('walks the classic nave, stops outside its side walls, and rejects nonfinite or off-floor movement',()=>{
     const l=createLayout('classic',4,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z));expect(n.canStand(0,-8)).toBe(true);expect(n.canStand(10,-18.5)).toBe(false);expect(n.canStand(100,100)).toBe(false);expect(n.canStand(NaN,0)).toBe(false);
   });
+  // 설계서 2-1 문 드나들기: 보이는 문틀 어디서 밀어도 들어가고, 문에서 먼 벽은 그대로 막는다
+  it('walks into a room from anywhere within the visible door frame',()=>{
+    for(const mode of modes)for(const count of [1,4,8]){
+      const l=createLayout(mode,count,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z));
+      for(const r of l.rooms)for(let dz=-2;dz<=2;dz+=.25){
+        const door=r.x-r.side*5,p={x:door-r.side*1.2,z:r.z+dz};
+        if(!n.canStand(p.x,p.z))continue;
+        n.move(p,r.side*6,0);
+        expect((p.x-door)*r.side,`${mode} ${count} dz=${dz}`).toBeGreaterThan(1);
+      }
+    }
+  });
+  it('keeps a wall away from the door solid and does not fight a diagonal push',()=>{
+    const wall=new NavigationWorld([{min:[2,0,-10],max:[2.3,3,10]}],()=>true),p={x:1,z:0};
+    wall.move(p,3,0);expect(p.x).toBeLessThan(1.6);expect(p.z).toBe(0);
+    const l=createLayout('forest',1,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z)),r=l.rooms[0]!;
+    const door=r.x-r.side*5,far={x:door-r.side*1.2,z:r.z+4};
+    n.move(far,r.side*6,0);expect((far.x-door)*r.side).toBeLessThan(0);expect(far.z).toBe(r.z+4);
+    const away={x:door-r.side*1.2,z:r.z+1.6};n.move(away,r.side*3,1.5);expect((away.x-door)*r.side).toBeLessThan(0);expect(away.z).toBeGreaterThan(r.z+1.6);
+  });
   it('retains theme-specific layouts under the high-hall choice',()=>{
     for(const mode of modes){expect(createLayout(mode,4,true).rooms).toEqual(createLayout(mode,4,false).rooms);expect(createLayout(mode,4,true).pieces.some(p=>p.y===10)).toBe(true);}
   });

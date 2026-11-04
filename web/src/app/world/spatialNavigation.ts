@@ -9,6 +9,8 @@ export function intersectsSolid(x: number, y: number, z: number, b: Solid, radiu
   const cz = Math.min(b.max[2], Math.max(b.min[2], z));
   return (x - cx) ** 2 + (z - cz) ** 2 < radius * radius - 1e-9;
 }
+/** 앞이 막혔을 때 좌우로 찾는 거리(문틀 바깥쪽 2.075 - 지나가는 폭 1.305), 그 자리에서 앞으로 트여야 하는 거리(문틀 두께 .55 + 몸 지름 .84), 비껴 주는 입력의 기울기 한도(약 14도). 설계서 2-1 문 드나들기 */
+const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .25;
 export class NavigationWorld {
   private grid = new Map<string, Solid[]>();
   constructor(readonly colliders: Solid[], private floor: (x: number, z: number) => boolean, readonly radius = .42) {
@@ -26,10 +28,23 @@ export class NavigationWorld {
     if (![state.x, state.z, dx, dz].every(Number.isFinite)) throw new TypeError('Movement coordinates must be finite.');
     const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / .09)); dx /= steps; dz /= steps;
     for (let i = 0; i < steps; i++) {
-      if (this.canStand(state.x + dx, state.z)) state.x += dx;
-      if (this.canStand(state.x, state.z + dz)) state.z += dz;
+      const movedX = this.canStand(state.x + dx, state.z); if (movedX) state.x += dx;
+      const movedZ = this.canStand(state.x, state.z + dz); if (movedZ) state.z += dz;
+      if (!movedX && Math.abs(dz) <= Math.abs(dx) * SLIP_TILT) state.z += this.slip(state, dx, 0) * Math.abs(dx);
+      else if (!movedZ && Math.abs(dx) <= Math.abs(dz) * SLIP_TILT) state.x += this.slip(state, 0, dz) * Math.abs(dz);
     }
     return state;
+  }
+  // 앞이 막혔을 때 옆으로 비키면 문 두께만큼 앞으로 나갈 수 있는 가까운 쪽(+1·-1), 없으면 0. 옆길이 막힌 쪽은 보지 않는다
+  private slip(state: Point, dx: number, dz: number) {
+    const open = { 1: true, [-1]: true } as Record<number, boolean>, ax = Math.sign(dx), az = Math.sign(dz);
+    const ahead = (x: number, z: number) => { for (let t = .2; t <= SLIP_AHEAD; t += .2) if (!this.canStand(x + ax * t, z + az * t)) return false; return true; };
+    for (let d = .09; d <= SLIP_REACH; d += .09) for (const side of [1, -1]) {
+      const x = dx ? state.x : state.x + side * d, z = dx ? state.z + side * d : state.z;
+      open[side] = open[side]! && this.canStand(x, z);
+      if (open[side] && ahead(x, z)) return side;
+    }
+    return 0;
   }
   clearLine(a: Point, b: Point) {
     const steps = Math.max(1, Math.ceil(Math.hypot(a.x - b.x, a.z - b.z) / .25));

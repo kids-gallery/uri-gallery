@@ -243,6 +243,8 @@ export class Outdoor {
  doorOf(id:string){const p=this.positions.get(id)??new THREE.Vector3(0,0,18),center=p.z-12;return {plane:new THREE.Vector3(p.x,.9,center+5.2),facade:{x:p.x,y:4.2,z:center+3},stand:p.z-1.5};}
  suspend(){this.clear();this.root.visible=false;}
  update(t:number){if(!this.reduced){this.ambience.position.y=Math.sin(t*(this.current==='toy'?.8:.2))*.4;this.ambience.rotation.y=Math.sin(t*.08)*.06;}this.clouds.rotation.y=Math.sin(t*.012)*.025;this.mats.water.color.offsetHSL(0,0,Math.sin(t)*.00003);}
+ /** 건물 문 통로 안인가(canStand가 열어 둔 폭 1.6). 걸어 들어가면 입장을 시작한다(설계서 2-1 문 드나들기) */
+ inDoorway(x:number,z:number){for(const p of this.positions.values())if(Math.abs(x-p.x)<1.6&&z<p.z-3&&z>p.z-19)return true;return false;}
  canStand(x:number,z:number){if(Math.abs(x)>82||z>100||z< -170)return false;for(const o of this.obstacles)if(Math.abs(x-o.x)<o.w/2+.35&&Math.abs(z-o.z)<o.d/2+.35)return false;for(const p of this.positions.values())if(Math.abs(x-p.x)<7&&z<p.z-3&&z>p.z-19)return Math.abs(x-p.x)<1.6;return true;}
  dispose(){this.clear();this.ambience.geometry.dispose();(this.ambience.material as THREE.Material).dispose();this.sky.geometry.dispose();this.shader.dispose();this.floor.geometry.dispose();Object.values(this.mats).forEach(m=>m.dispose());Object.values(this.surfaces).forEach(s=>Object.values(s).forEach(t=>t.dispose()));this.patches.dispose();}
 }
