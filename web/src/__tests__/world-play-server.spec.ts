@@ -3,8 +3,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WorldPlay from '@/app/world/WorldPlay.vue';
 
-const up = vi.hoisted(() => ({ sendPhoto: vi.fn() }));
-vi.mock('@/app/world/server/upload', () => ({ SERVER_WORLD: true, newUploadKey: () => 'key-1', sendPhoto: up.sendPhoto }));
+const up = vi.hoisted(() => ({ sendPhoto: vi.fn(), keys: 0 }));
+vi.mock('@/app/world/server/upload', () => ({ SERVER_WORLD: true, newUploadKey: () => `key-${++up.keys}`, sendPhoto: up.sendPhoto }));
 const db = vi.hoisted(() => ({ saveArtworkAndRoom: vi.fn(), deleteDraft: vi.fn(async () => undefined) }));
 vi.mock('@/app/world/store', async (real) => ({
   ...(await real<typeof import('@/app/world/store')>()),
@@ -15,21 +15,26 @@ vi.mock('@/app/world/store', async (real) => ({
 const ctx = { fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, arc() {}, fill() {} };
 beforeEach(() => {
   vi.clearAllMocks();
+  up.keys = 0;
   HTMLCanvasElement.prototype.getContext = (() => ctx) as never;
   HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback) { cb(new Blob(['png'], { type: 'image/png' })); };
   HTMLCanvasElement.prototype.setPointerCapture = () => undefined;
   HTMLCanvasElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, width: 640, height: 480 }) as DOMRect;
 });
 
+type Play = ReturnType<typeof mount>;
+async function stroke(w: Play) {
+  const c = w.find('canvas');
+  c.element.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: 10, clientY: 10 }));
+  c.element.dispatchEvent(new MouseEvent('pointerup'));
+  await flushPromises();
+}
 async function drawn() {
   const w = mount(WorldPlay, { props: { artworks: [], childAge: 0 } });
   await flushPromises();
   await w.findAll('button').find((b) => b.text().includes('함께 그리기'))!.trigger('click');
   await flushPromises();
-  const c = w.find('canvas');
-  c.element.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: 10, clientY: 10 }));
-  c.element.dispatchEvent(new MouseEvent('pointerup'));
-  await flushPromises();
+  await stroke(w);
   return w;
 }
 const save = (w: Awaited<ReturnType<typeof drawn>>) => w.findAll('button').find((b) => b.text() === '우리 그림 보관하기')!;
@@ -62,5 +67,22 @@ describe('서버 판 함께 그리기', () => {
     await flushPromises();
     expect(up.sendPhoto.mock.calls.map((c) => c[1])).toEqual(['key-1', 'key-1']);
     expect(w.emitted('saved')).toEqual([['art-1']]);
+  });
+
+  it('실패 뒤 그림을 고치면 앞선 그림이 돌아오지 않게 새 요청 번호로 보낸다', async () => {
+    up.sendPhoto.mockResolvedValue({ ok: false, reason: '미술관에 연결되지 않아요', retryable: true });
+    const w = await drawn();
+    await save(w).trigger('click');
+    await flushPromises();
+    await stroke(w); // 한 획 더
+    await save(w).trigger('click');
+    await flushPromises();
+    await w.findAll('button').find((b) => b.text() === '한 번 되돌리기')!.trigger('click'); // 한 획 되돌림
+    await flushPromises();
+    await save(w).trigger('click');
+    await flushPromises();
+    await save(w).trigger('click'); // 그대로 다시
+    await flushPromises();
+    expect(up.sendPhoto.mock.calls.map((c) => c[1])).toEqual(['key-1', 'key-2', 'key-3', 'key-3']);
   });
 });
