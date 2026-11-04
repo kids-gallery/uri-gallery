@@ -13,6 +13,11 @@ describe('시점 끌기와 축소(마스터플랜 3-3 #137)',()=>{
     expect(t.yaw).toBeGreaterThan(0);
     expect(t.pitch).toBeLessThan(0);
   });
+  it('설정: 끌기 방향을 뒤집고 빠르기를 곱한다',()=>{
+    const t=dragTurn(100,50),r=dragTurn(100,50,{invert:true,speed:1}),f=dragTurn(100,50,{invert:false,speed:1.6});
+    expect(r.yaw).toBeCloseTo(-t.yaw);expect(r.pitch).toBeCloseTo(-t.pitch);
+    expect(f.yaw).toBeCloseTo(t.yaw*1.6);expect(f.pitch).toBeCloseTo(t.pitch*1.6);
+  });
   it('지금 시점 거리까지는 들어 올리지 않고, 많이 줄이면 끝까지 올린다',()=>{
     expect(zoomLift(4.4)).toBe(0);
     expect(zoomLift(ZOOM.lift)).toBe(0);

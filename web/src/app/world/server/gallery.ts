@@ -5,6 +5,7 @@
 // - 사진을 받으면 작품은 사라지지 않는다. 깊이를 못 받으면 두께판, 컷아웃을 못 받으면 액자로 건다(마스터플랜 3-3).
 import { ref } from 'vue';
 import { exhibitBlob, fillPaperBlob } from '../exhibit';
+import { motionSubject } from '../subjects';
 import * as store from '../store';
 import { failureOf, gallery, listArtworks, listChildren, type ArtworkDetail, type Failure, type Gallery } from './index';
 
@@ -49,7 +50,7 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   // 걸린 부조는 벽에 전시용 판을 건다. 못 만들면 자른 사진 그대로 둔다
   const display = cutout && !same ? await exhibitBlob(cutout).catch(() => base.display) : base.display;
   return {
-    ...base, display, no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
+    ...base, display, motion: motionSubject(item.motionTags), no, title: item.title, kind: item.making ? 'making' : 'drawing', age: item.ageAtMaking ?? store.UNSORTED_AGE,
     madeOn: item.madeOn, words: item.childWords ?? '', cutout, depth, cutoutState: cutout ? 'done' : undefined,
   };
 }

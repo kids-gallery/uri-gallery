@@ -202,7 +202,7 @@ try {
   // ── 친구 방문: 가까이 보기에는 원본만, 이야기·편집·대표작 고르기는 없음 ──
   const vp = await browser.newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
   await enter(vp);
-  await tool(vp, '친구 초대'); await vp.getByRole('button', { name: '친구 초대 링크 만들기' }).click();
+  await vp.locator('.w-bar').getByRole('button', { name: /친구/ }).click(); await vp.getByRole('button', { name: '초대 링크 만들기' }).click();
   const link = await vp.locator('.w-link').inputValue(); await vp.getByRole('button', { name: '닫기', exact: true }).click();
   await tool(vp, '설정'); await vp.getByRole('button', { name: '테스트 가족 추가' }).click();
   await vp.waitForFunction(() => document.body.innerText.includes('새 가족 2의 미술관'), null, { timeout: 90000 });

@@ -73,6 +73,14 @@ describe('승인 전과 뒤', () => {
     expect(making!.cutout!.size).not.toBe('filled-paper'.length);
   });
 
+  it('M2 태그로 움직임을 정하되 명패에 쓰는 주제는 바꾸지 않는다', async () => {
+    server({ c1: [item('m1', { motionTags: ['바다', '물고기', '사람'] }), item('m2', { motionTags: ['바다'] }), item('m3')] });
+    const { g } = await load();
+    const works = await g.galleryWorks(null);
+    expect(works.map((w) => w.motion)).toEqual(['fish', undefined, undefined]); // 표에 없는 태그는 건너뛰고, 없으면 기본 동작
+    expect(works.map((w) => w.subject)).toEqual(['etc', 'etc', 'etc']);
+  });
+
   it('부조에서 액자로 바뀌면 전시용 판을 버리고 사진을 건다', async () => {
     const s = server({ c1: [item('a1', { kind: 'relief', auxUrl: '/v1/files/cut' })] });
     const { g } = await load();

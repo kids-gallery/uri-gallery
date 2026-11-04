@@ -109,7 +109,8 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
   await page.mouse.move(box.x + 160, box.y + 120, { steps: 6 });
   await page.mouse.up();
   const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: '우리 그림 보관하기' }).click();
+  await page.getByLabel('작품 이름').fill('우리 집');
+  await page.getByRole('button', { name: '작품으로 올리기' }).click();
   expect((await res).status()).toBe(202);
   await expect.poll(() => works(page)).toBe(1);
 
@@ -118,7 +119,7 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
   await page.locator('.w-saved').getByRole('button', { name: '닫기' }).click({ timeout: 30_000 });
   await page.locator('.w-more-tools').click();
   // 서버 판에서 쓸 수 없는 것은 메뉴에 없다(#124, #137)
-  for (const name of ['설정', '공간 꾸미기', '사용 기록', '전시실 추가', '백업 내보내기']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  for (const name of ['공간 꾸미기', '사용 기록', '전시실 추가', '백업 내보내기']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
   // 메뉴에 남은 창이 실제로 열린다(#137 합칠 때 창 줄이 빠진 적이 있다)
   await page.getByRole('button', { name: '개인정보·이용 안내' }).click();
   await expect(page.getByRole('dialog').first()).toBeVisible();

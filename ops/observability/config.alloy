@@ -1,0 +1,32 @@
+local.file_match "fixtures" {
+  path_targets = [{"__path__" = "/fixtures/*.jsonl", "environment" = "test"}]
+}
+loki.source.file "fixtures" {
+  targets = local.file_match.fixtures.targets
+  forward_to = [loki.process.safe.receiver]
+}
+loki.process "safe" {
+  forward_to = [loki.write.local.receiver]
+  stage.json {
+    expressions = {level = "level", service = "service", environment = "environment", timestamp = "timestamp"}
+    drop_malformed = true
+  }
+  stage.labels {
+    values = {level = "", service = "", environment = ""}
+  }
+  stage.timestamp {
+    source = "timestamp"
+    format = "RFC3339Nano"
+  }
+  stage.label_drop {
+    values = ["filename"]
+  }
+  stage.limit {
+    rate = 100
+    burst = 200
+    drop = true
+  }
+}
+loki.write "local" {
+  endpoint { url = "http://loki:3100/loki/api/v1/push" }
+}

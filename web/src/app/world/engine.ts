@@ -530,7 +530,7 @@ export class MuseumEngine {
     if (!w || !a) return;
     if (this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry)) return;
     if (this.performances.filter((p) => !p.done).length >= 3) this.performances.find((p) => !p.done)?.finish();
-    const s = subjectOf(a.subject);
+    const s = subjectOf(a.motion ?? a.subject);
     const r = w.room;
     const stage = { cx: r.cx ?? r.side * 10, cz: r.cz, ...STAGE };
     this.performances.push(new Performance(w.relief, w.normal, s.behavior, s.id, stage, this.scene));
@@ -550,7 +550,7 @@ export class MuseumEngine {
   stageSource(id: string) {
     const w = this.museum.works.get(id), a = this.artworks.get(id);
     if (!w || !a) return null;
-    const s = subjectOf(a.subject);
+    const s = subjectOf(a.motion ?? a.subject);
     this.ev.onPlay?.(id);
     return { relief: w.relief, behavior: s.behavior, subject: s.id, sound: s.sound };
   }
@@ -587,6 +587,9 @@ export class MuseumEngine {
 
   setJoystick(x: number, y: number) { this.joy.set(x, y); if ((x || y) && !this.entering) this.route = []; }
 
+  private look = { invert: false, speed: 1 };
+  /** 화면 끌기 방향과 빠르기(설정, 마스터플랜 3-3 #167) */
+  setLook(invert: boolean, speed: number) { this.look = { invert, speed }; }
   setCustomizing(on: boolean) { this.customizing = on; }
   /** 대성당과 블록의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
   private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
@@ -841,7 +844,7 @@ export class MuseumEngine {
     if (this.dragged) {
       this.revealFocus = 0;
       if(this.customizing){this.customYaw-=dx*.006;return;}
-      const turn = dragTurn(dx, dy);
+      const turn = dragTurn(dx, dy, this.look);
       this.yaw += turn.yaw;
       this.pitch = THREE.MathUtils.clamp(this.pitch + turn.pitch, 0.05, 0.9);
     }
@@ -946,7 +949,7 @@ export class MuseumEngine {
   /** 시험용: 작품 하나의 윤곽·행동·재생 여부(§2-22 끝나는 조건: 직접 올린 작품의 윤곽이 비어 있지 않고 주제대로 움직인다) */
   debugWork(id: string) {
     const l = this.loaded.get(id), a = this.artworks.get(id), w = this.museum.works.get(id);
-    return { loaded: !!l, masked: !!l?.mask, maskRatio: l?.mask?.ratio ?? 0, behavior: a ? subjectOf(a.subject).behavior : null, playing: !!w && this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry) };
+    return { loaded: !!l, masked: !!l?.mask, maskRatio: l?.mask?.ratio ?? 0, behavior: a ? subjectOf(a.motion ?? a.subject).behavior : null, playing: !!w && this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry) };
   }
 
   /** 시험용: 캐릭터를 곧바로 옮긴다 */

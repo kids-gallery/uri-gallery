@@ -1,0 +1,56 @@
+{
+  "receiver": "local loopback test webhook",
+  "received": [
+    {
+      "timestamp": "2026-11-04T01:25:07.608Z",
+      "event": "alert",
+      "check": "worker"
+    },
+    {
+      "timestamp": "2026-11-04T01:25:37.643Z",
+      "event": "recovered",
+      "check": "worker"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:01.448Z",
+      "event": "alert",
+      "check": "db"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:01.452Z",
+      "event": "alert",
+      "check": "queue"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:07.711Z",
+      "event": "alert",
+      "check": "worker"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:07.718Z",
+      "event": "recovered",
+      "check": "queue"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:17.744Z",
+      "event": "recovered",
+      "check": "db"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:27.665Z",
+      "event": "recovered",
+      "check": "worker"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:37.663Z",
+      "event": "alert",
+      "check": "collection_heartbeat"
+    },
+    {
+      "timestamp": "2026-11-04T01:26:47.850Z",
+      "event": "recovered",
+      "check": "collection_heartbeat"
+    }
+  ],
+  "actualChannel": "pending user details"
+}

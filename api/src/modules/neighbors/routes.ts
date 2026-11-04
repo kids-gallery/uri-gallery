@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { Config } from '../../config.js';
 import { withTx } from '../../db/pool.js';
 import { guardianAuth } from '../../auth/guards.js';
+import { IDLE_MINUTES } from '../../auth/session.js';
 import { Problem, zodFields } from '../../lib/problem.js';
 import type { StoragePort } from '../../storage/LocalFsDriver.js';
 import { hashToken } from '../auth/tokens.js';
@@ -17,6 +18,7 @@ import { signVisitToken, verifyVisitToken } from '../files/token.js';
 const NEIGHBOR_MAX = 30;   // [추론] SD_02 §17-13 E
 const STRANGER_MAX = 12;   // [추론] SD_02 §17-13 D
 const TOWN_COLS = 6;       // 건물 자리 = 가족 번호로 정해진 격자
+const ONLINE_MINUTES = 1;  // 화면은 10초마다 친구 목록을 받는다. 숨기면 멈춰 이 시간 안에 꺼진다
 
 type Db = Pool | PoolConnection;
 const rowsOf = async <T>(db: Db, sql: string, p: unknown[] = []) => (await db.query(sql, p))[0] as T[];
@@ -45,6 +47,15 @@ async function childrenOf(db: Db, familyIds: number[]): Promise<ChildRow[]> {
       ORDER BY c.child_id`, [familyIds]);
 }
 
+/** 지금 접속 중인 가족들. 세션은 요청마다 유휴 만료를 늘리므로 만료까지 남은 시간이 곧 마지막 요청 시각이다(마스터플랜 3-3 #167). 시각은 밖으로 내지 않는다 */
+async function onlineOf(db: Db, familyIds: number[]): Promise<Set<number>> {
+  if (!familyIds.length) return new Set();
+  const r = await rowsOf<{ family_id: number }>(db,
+    `SELECT DISTINCT g.family_id FROM guardian_account g JOIN app_session s ON s.subject_kind = 'guardian' AND s.subject_id = g.account_id
+      WHERE g.family_id IN (?) AND s.expires_at > UTC_TIMESTAMP() + INTERVAL ? MINUTE`, [familyIds, IDLE_MINUTES.guardian - ONLINE_MINUTES]);
+  return new Set(r.map((x) => Number(x.family_id)));
+}
+
 export function neighborsRouter(db: Pool, cfg: Config, storage: StoragePort, accel = process.env.FILES_ACCEL === '1'): Router {
   const r = Router();
   const auth = guardianAuth(db, { requireFamily: true });
@@ -53,11 +64,12 @@ export function neighborsRouter(db: Pool, cfg: Config, storage: StoragePort, acc
 
   async function buildings(familyIds: number[], relation: (f: number) => 'mine' | 'neighbor' | 'stranger') {
     const kids = await childrenOf(db, familyIds);
+    const online = await onlineOf(db, familyIds.filter((f) => relation(f) === 'neighbor'));
     return familyIds.map((f) => {
       const mine = kids.filter((c) => Number(c.family_id) === f);
       const rel = relation(f);
       const b = { id: buildingId(f), ...cell(f), relation: rel, style: mine[0]?.museum_style ?? null }; // 건물 모양 = 첫 아이의 미술관 모양 [추론]
-      return rel === 'stranger' ? b : { ...b, children: mine.map((c) => ({ id: String(c.child_id), alias: c.alias, ...lookOf(c) })) };
+      return rel === 'stranger' ? b : { ...b, children: mine.map((c) => ({ id: String(c.child_id), alias: c.alias, ...lookOf(c) })), ...(rel === 'neighbor' ? { online: online.has(f) } : {}) };
     });
   }
 

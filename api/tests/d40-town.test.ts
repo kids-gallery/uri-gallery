@@ -4,6 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { contractViolations, testApp, tokenOf } from './helpers/app.js';
 import { setStory, familyWithChild, png, seedModels, upload } from './helpers/fixtures.js';
+import { signVisitToken } from '../src/modules/files/token.js';
 
 const t = testApp();
 afterAll(async () => { expect(contractViolations).toEqual([]); await t.close(); });
@@ -88,6 +89,24 @@ describe('마을 · 방문(D40 D·F)', () => {
     expect(new Set(town.map((b) => `${b.x},${b.y}`)).size).toBe(3);
     expect((await A.a.get('/v1/neighbors')).body).toEqual([nb]);
   });
+  it('접속 상태는 이웃에게만 참/거짓으로 보인다. 1분 넘게 요청이 없거나 로그아웃하면 꺼진다', async () => {
+    const A = await familyWithChild(t, 'on1@test.local');
+    const B = await familyWithChild(t, 'on2@test.local');
+    await familyWithChild(t, 'on3@test.local');
+    await neighbors(A, B);
+    const first = (await A.a.get('/v1/neighbors').expect(200)).body[0];
+    expect(first.online).toBe(true);
+    expect(Object.keys(first).sort()).toEqual(['children', 'id', 'online', 'relation', 'style', 'x', 'y']); // 마지막 접속 시각은 없다
+    const town = (await A.a.get('/v1/town').expect(200)).body.buildings as { relation: string; online?: boolean }[];
+    expect(town.find((b) => b.relation === 'mine')).not.toHaveProperty('online');
+    expect(town.find((b) => b.relation === 'stranger')).not.toHaveProperty('online');
+    await t.db.query(`UPDATE app_session SET expires_at = expires_at - INTERVAL 2 MINUTE`);
+    expect((await A.a.get('/v1/neighbors').expect(200)).body[0].online).toBe(false);
+    await B.a.get('/v1/neighbors').expect(200); // 다시 쓰면 켜진다
+    expect((await A.a.get('/v1/neighbors').expect(200)).body[0].online).toBe(true);
+    await B.a.post('/v1/auth/logout').send({}).expect(204);
+    expect((await A.a.get('/v1/neighbors').expect(200)).body[0].online).toBe(false);
+  });
   it('방문 미술관은 그림·제목만(나이·한마디·그린 날 없음), 파일은 이웃일 때만 · 끊으면 바로 404', async () => {
     const A = await familyWithChild(t, 'v1@test.local');
     const B = await familyWithChild(t, 'v2@test.local');
@@ -104,7 +123,12 @@ describe('마을 · 방문(D40 D·F)', () => {
     expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'making', 'primaryUrl', 'title']); // D46 making(받침대, 8c 요청)
     expect(JSON.stringify(g)).not.toMatch(/엄마랑|ageAtMaking|madeOn|originalUrl/);
     expect(item.primaryUrl).toMatch(/^\/v1\/visit\/files\//);
-    await A.a.get(item.primaryUrl).expect(200);
+    const visitFile = await A.a.get(item.primaryUrl).expect(200);
+    expect(visitFile.headers['cache-control']).toBe('private, no-store');
+    const encoded = item.primaryUrl.split('/').at(-1)!.split('.')[0];
+    const [, objectId, ownerFamilyId, viewerFamilyId] = Buffer.from(encoded, 'base64url').toString().split('.').map(Number);
+    const expired = signVisitToken('test-session-secret', objectId, ownerFamilyId, viewerFamilyId, Date.now() - 600_000);
+    await A.a.get(`/v1/visit/files/${expired}`).expect(404);
     // 가족 파일 경로로는 못 받고, 방문 토큰은 다른 가족이 못 쓴다
     await A.a.get(item.primaryUrl.replace('/v1/visit/files/', '/v1/files/')).expect(404);
     const C = await familyWithChild(t, 'v3@test.local');

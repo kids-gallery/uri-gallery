@@ -1796,6 +1796,7 @@ components:
         relation: { type: string, enum: [mine, neighbor, stranger], description: 'stranger는 문 잠김 — 아래 children 없음' }
         style: { oneOf: [{ $ref: '#/components/schemas/MuseumStyle' }, { type: 'null' }], description: '건물 모양 = 그 가족 첫 아이의 미술관 모양 [추론]' }
         children: { type: array, items: { $ref: '#/components/schemas/TownChild' }, description: 'mine·neighbor만' }
+        online: { type: boolean, description: 'neighbor만. 그 가족 보호자의 세션에 최근 1분 안에 요청이 있었는가. 마지막 접속 시각은 싣지 않는다(마스터플랜 3-3 #167)' }
     ArtworkComment:
       type: object
       required: [id, body, createdAt, mine, author]
@@ -2026,6 +2027,7 @@ components:
         originalUrl: { type: string }
         photoUrl: { type: [string, 'null'], description: '(D39) 원본 액자 그림 — 고쳤으면 고친 사진' }
         making: { type: boolean, description: '(D46) 만들기 → 미술관 받침대(D45)' }
+        motionTags: { type: array, items: { type: string }, description: 'M2 태그, 확률 순. 3D 화면의 움직임을 정하는 데만 쓴다. 화면에 글로 보이지 않는다' }
         title: { type: string }
         titleAuto: { type: boolean, description: '(D34) 자동 제목 — 화면은 "제목을 붙여 줄까요?"를 조용히 권한다' }
         madeOnAuto: { type: boolean, description: '(D46 ⑩) 자동 그린 날' }

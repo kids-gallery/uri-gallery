@@ -21,7 +21,7 @@ export function pendingInvite(): string {
 }
 export function clearInvite() { try { sessionStorage.removeItem(KEY); } catch { /* 저장소를 못 써도 다음 수락에서 막힌다 */ } }
 
-interface Building { id: string; relation: 'mine' | 'neighbor' | 'stranger'; style: MuseumStyle | null; children?: { id: string; alias: string }[] }
+interface Building { id: string; relation: 'mine' | 'neighbor' | 'stranger'; style: MuseumStyle | null; children?: { id: string; alias: string }[]; online?: boolean }
 interface VisitItem { id: string; kind: string; title: string | null; primaryUrl: string | null; auxUrl: string | null; making: boolean }
 
 async function guard<T>(run: Promise<T>): Promise<T> {
@@ -45,7 +45,7 @@ export class ServerSocialStore implements SocialStore {
   private building(b: Building): PublicBuilding {
     const first = b.children?.[0];
     if (first) this.children.set(b.id, first.id);
-    return { id: b.id, child: first?.alias ?? '친구', style: b.style ?? 'column_temple', mine: b.relation === 'mine', avatar: DEFAULT_AVATAR, avatarImage: null };
+    return { id: b.id, child: first?.alias ?? '친구', style: b.style ?? 'column_temple', mine: b.relation === 'mine', avatar: DEFAULT_AVATAR, avatarImage: null, online: b.online };
   }
   async neighbors(): Promise<PublicBuilding[]> {
     const list = await guard(api.get<Building[]>('/v1/neighbors', o));
@@ -62,10 +62,12 @@ export class ServerSocialStore implements SocialStore {
     return { ...i, link: `${location.origin}/app/world?invite=${encodeURIComponent(token)}` }; // 3D 화면으로 바로 온다
   }
   async cancelInvite(_family: string, id: string) { await guard(api.del<void>(`/v1/neighbors/invites/${encodeURIComponent(id)}`, o)); }
+  /** 새로 맺은 친구의 건물 id를 돌려준다. 이미 친구였으면 빈 값이다(서버 응답은 본문이 없어 전후 목록을 비교한다) */
   async accept(_family: string, token: string) {
+    const before = new Set((await this.neighbors().catch(() => [])).map((b) => b.id));
     await guard(api.post<void>('/v1/neighbors/accept', { ...o, body: { token } }));
     clearInvite();
-    return '';
+    return (await this.neighbors().catch(() => [])).find((b) => !before.has(b.id))?.id ?? '';
   }
   async unlink(_family: string, id: string) { await guard(api.del<void>(`/v1/neighbors/${encodeURIComponent(id)}`, o)); }
   async gallery(_family: string, id: string): Promise<VisitGallery> {

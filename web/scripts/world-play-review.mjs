@@ -30,9 +30,9 @@ try{
  ok('draft write failure warns and keeps drawing',await page.getByText('이 기기에 임시로 남기지 못했어요',{exact:false}).isVisible()&&await inked(page)>300);
  // 3. 작품 저장 실패 → 그림·초안 유지 → 재시도 한 점
  await page.evaluate(()=>{IDBObjectStore.prototype.put=function(...a){if(this.name==='artworks')throw new DOMException('quota','QuotaExceededError');return window.__put.apply(this,a);};});
- await page.getByRole('button',{name:'우리 그림 보관하기'}).click();await page.getByText('저장하지 못했어요',{exact:false}).waitFor();
+ await page.getByRole('button',{name:'작품으로 올리기'}).click();await page.getByText('저장하지 못했어요',{exact:false}).waitFor();
  ok('artwork save failure keeps canvas and draft',await count(page)===14&&await inked(page)>300&&(await draft(page))?.id===d1.id);
- await page.evaluate(()=>{IDBObjectStore.prototype.put=window.__put;});await page.getByRole('button',{name:'우리 그림 보관하기'}).click();await page.waitForFunction(()=>window.__uamWorld?.debugState().works===15,null,{timeout:30000});
+ await page.evaluate(()=>{IDBObjectStore.prototype.put=window.__put;});await page.getByRole('button',{name:'작품으로 올리기'}).click();await page.waitForFunction(()=>window.__uamWorld?.debugState().works===15,null,{timeout:30000});
  const saved=await page.evaluate(async([s,id])=>{const a=(await (await import(s)).listArtworks()).find(x=>x.id===id);return a?{type:a.original.type,size:a.original.size,kind:a.kind,madeOn:a.madeOn}:null;},[STORE,d1.id]);
  ok('retry saves exactly one artwork with the draft id and clears the draft',await count(page)===15&&saved?.type==='image/png'&&saved.madeOn===''&&await draft(page)===null,saved);
  // 4. 버리기: 초안까지 지움
