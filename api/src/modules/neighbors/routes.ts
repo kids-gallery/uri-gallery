@@ -47,7 +47,7 @@ async function childrenOf(db: Db, familyIds: number[]): Promise<ChildRow[]> {
       ORDER BY c.child_id`, [familyIds]);
 }
 
-/** 지금 접속 중인 가족들. 세션은 요청마다 유휴 만료를 늘리므로 만료까지 남은 시간이 곧 마지막 요청 시각이다(마스터플랜 3-3 #137). 시각은 밖으로 내지 않는다 */
+/** 지금 접속 중인 가족들. 세션은 요청마다 유휴 만료를 늘리므로 만료까지 남은 시간이 곧 마지막 요청 시각이다(마스터플랜 3-3 #167). 시각은 밖으로 내지 않는다 */
 async function onlineOf(db: Db, familyIds: number[]): Promise<Set<number>> {
   if (!familyIds.length) return new Set();
   const r = await rowsOf<{ family_id: number }>(db,

@@ -66,7 +66,7 @@ function measure(name:'title-shown'|'start-ready'|'start-pressed'|'inside'|'firs
 }
 const social=socialStore();
 const visiting=ref<PublicBuilding|null>(null),townBuildings=ref<PublicBuilding[]>([]),selectedBuilding=ref<PublicBuilding|null>(null);
-// 친구 목록(마스터플랜 3-3 #137): 화면이 보이는 동안 받아 새 친구와 접속 상태를 맞춘다. 10초는 화면 갱신 상한(R-12)이다
+// 친구 목록(마스터플랜 3-3 #167): 화면이 보이는 동안 받아 새 친구와 접속 상태를 맞춘다. 10초는 화면 갱신 상한(R-12)이다
 const FRIEND_POLL_MS=10000;
 const friends=ref<PublicBuilding[]>([]),freshFriend=ref('');let knownFriends:Set<string>|null=null,friendTimer=0;
 const onlineFriends=computed(()=>friends.value.filter(f=>f.online).length),freshBuilding=computed(()=>friends.value.find(f=>f.id===freshFriend.value)??null);
@@ -563,7 +563,7 @@ async function changeScene(kind:'theme'|'interior',id:ThemeId|'gallery'|'cathedr
 }
 async function setTheme(id:ThemeId){await changeScene('theme',id);}
 
-// 설정(마스터플랜 3-3 #137): 움직이는 즉시 적용하고 잠시 뒤 저장한다
+// 설정(마스터플랜 3-3 #167): 움직이는 즉시 적용하고 잠시 뒤 저장한다
 const LOOK_SPEEDS=[{label:'느리게',value:.6},{label:'보통',value:1},{label:'빠르게',value:1.6}];
 function applyControls(){const p=prefs.value;if(!p)return;setVolumes(p.fxVolume??1,p.musicVolume??1);engine.value?.setLook(!!p.lookInvert,p.lookSpeed??1);}
 let controlSave=0;

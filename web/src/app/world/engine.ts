@@ -588,7 +588,7 @@ export class MuseumEngine {
   setJoystick(x: number, y: number) { this.joy.set(x, y); if ((x || y) && !this.entering) this.route = []; }
 
   private look = { invert: false, speed: 1 };
-  /** 화면 끌기 방향과 빠르기(설정, 마스터플랜 3-3 #137) */
+  /** 화면 끌기 방향과 빠르기(설정, 마스터플랜 3-3 #167) */
   setLook(invert: boolean, speed: number) { this.look = { invert, speed }; }
   setCustomizing(on: boolean) { this.customizing = on; }
   /** 대성당과 블록의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */

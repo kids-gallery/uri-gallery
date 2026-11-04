@@ -1,4 +1,4 @@
-// 친구(마스터플랜 3-3 #137): 두 가족이 실제 app-api·DB로 맺자마자 서로 보이고, 접속 상태가 맞고, 끊으면 방문이 끝난다. 390 · 1440.
+// 친구(마스터플랜 3-3 #167): 두 가족이 실제 app-api·DB로 맺자마자 서로 보이고, 접속 상태가 맞고, 끊으면 방문이 끝난다. 390 · 1440.
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { openWorldUpload, tag } from './stack/world';
 

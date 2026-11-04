@@ -3,7 +3,7 @@ import {computed,onMounted,ref} from 'vue';
 import {SocialError,type PublicBuilding} from './social';
 import {socialStore} from './server/social';
 import {neighbor} from '../town/copy';
-// 친구 창(마스터플랜 3-3 #137): 맨 위가 목록이다. 목록은 화면이 10초마다 받아 내려 준다.
+// 친구 창(마스터플랜 3-3 #167): 맨 위가 목록이다. 목록은 화면이 10초마다 받아 내려 준다.
 const props=defineProps<{family:string;token?:string;friends:PublicBuilding[];fresh?:string}>();const emit=defineEmits<{close:[];town:[];visit:[id:string];changed:[added?:string]}>();
 const social=socialStore(),pending=ref<Array<{id:string;expiresAt:string}>>([]),link=ref(''),message=ref(''),busy=ref(false),confirm=ref('');
 const copy=neighbor;
