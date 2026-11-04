@@ -9,7 +9,7 @@
   "editable": false,
   "refresh": "10s",
   "time": {
-    "from": "now-30m",
+    "from": "now-15m",
     "to": "now"
   },
   "timezone": "browser",
@@ -334,7 +334,8 @@
             "lineWidth": 2,
             "fillOpacity": 10,
             "showPoints": "auto"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -426,7 +427,9 @@
             "lineWidth": 2,
             "fillOpacity": 10,
             "showPoints": "auto"
-          }
+          },
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -472,7 +475,9 @@
             "lineWidth": 2,
             "fillOpacity": 10,
             "showPoints": "auto"
-          }
+          },
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
