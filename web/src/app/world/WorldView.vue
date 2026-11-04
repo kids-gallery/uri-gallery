@@ -10,7 +10,6 @@ import type { Account, Artwork, Prefs } from './store';
 import { THEMES, type ThemeId } from './themes';
 import { curatorNote, guideText, plaqueOf, roomTitle } from './curation';
 import { MAX_AGE } from './museum';
-import { DECOR_KINDS, SPOT_LABEL, type DecorItem, type DecorKind, type DecorSpot } from './decor';
 import { setSoundEnabled, speak, stopSpeaking } from './sound';
 import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
@@ -25,6 +24,8 @@ import { ko } from '@/copy/ko';
 import type { ArtworkDetail } from './server';
 import WorldAvatar from './WorldAvatar.vue';
 import WorldOverview from './WorldOverview.vue';
+import WorldMotion from './WorldMotion.vue';
+import type { MotionSource } from './motionStage';
 import WorldPrivacy from './WorldPrivacy.vue';
 import WorldStorageState from './WorldStorageState.vue';
 import WorldUsage from './WorldUsage.vue';
@@ -44,7 +45,7 @@ import { cardText, drawCard } from './shareCard';
 
 // title=시작 화면, starting=시작 연출 중, ready=조작 중(§2-17)
 type Phase = 'checking' | 'title' | 'starting' | 'ready' | 'nostorage';
-type Panel = null | 'upload' | 'archive' | 'avatar' | 'theme' | 'settings' | 'social' | 'play' | 'help' | 'view' | 'overview' | 'privacy' | 'storage' | 'usage';
+type Panel = null | 'upload' | 'archive' | 'avatar' | 'theme' | 'settings' | 'social' | 'play' | 'help' | 'view' | 'motion' | 'privacy' | 'storage' | 'usage';
 
 // 빌드할 때 값이 정해지는 조건만 쓴다 — 일반 배포 빌드에서는 이 불러오기 코드가 통째로 빠진다(AT-UC01-02)
 const TestEntry = import.meta.env.DEV || import.meta.env.MODE === 'localtest' ? defineAsyncComponent(() => import('./WorldTestEntry.vue')) : null;
@@ -271,6 +272,9 @@ watch(space, (s) => { if (s === 'inside') measure('inside'); });
 // 팀 Coach.vue의 초점 가두기·복귀 원칙을 공간별 패널에 적용한다.
 watch(panel,async(next,previous)=>{
   engine.value?.setInputPaused(!!next);
+  engine.value?.setRenderHeld(next==='motion'); // 창이 도는 동안 뒤쪽 3D를 그리지 않는다
+  if(next!=='motion')motionSource.value=null;
+  if(next!=='archive')archiveFocus.value=null;
   if(next&&!previous)panelTrigger=document.activeElement as HTMLElement|null;
   await nextTick();
   // 긴 창(개인정보 안내 등)은 첫 버튼이 아래에 있어도 글을 처음부터 보이게 스크롤하지 않는다
@@ -394,47 +398,6 @@ async function addRoom() {
   } catch { say('전시실을 열지 못했어요. 다시 해 주세요'); }
 }
 
-// ───────── 공간 꾸미기(§2-15 꾸미기 규칙): 감상과 분리된 편집 상태. [완료]만 저장한다 ─────────
-const editing = ref(false), decorKind = ref<DecorKind>('plant'), decorDraft = ref<DecorItem[]>([]), decorSaving = ref(false), decorMsg = ref(''), confirmDecorLeave = ref(false);
-let decorBase: DecorItem[] = [];
-const decorHistory = ref<DecorItem[][]>([]);
-const clone = (l: DecorItem[]) => l.map((i) => ({ ...i }));
-const decorWork = computed(() => (editing.value && selection.value?.type === 'work' ? selection.value.id : null));
-const decorChanged = computed(() => JSON.stringify(decorDraft.value) !== JSON.stringify(decorBase));
-const decorSpots = computed(() => {
-  const w = decorWork.value, kind = DECOR_KINDS.find((k) => k.id === decorKind.value)!;
-  if (!w) return [];
-  return kind.spots.map((spot) => {
-    const taken = decorDraft.value.some((i) => i.work === w && i.spot === spot && engine.value?.decorShown(i.id));
-    // checkDecor의 null은 '놓을 수 있음'이므로 ??로 덮지 않는다
-    return { spot, reason: taken ? '이미 놓여 있어요' : engine.value ? engine.value.checkDecor(decorKind.value, w, spot, decorDraft.value) : '준비 중이에요' };
-  });
-});
-const decorHidden = computed(() => decorDraft.value.filter((i) => !engine.value?.decorShown(i.id)).length);
-function openDecor() {
-  if (visiting.value || !prefs.value) return;
-  panel.value = null; recentSaved.value = null; selection.value = null;
-  if (space.value !== 'inside') enterMuseum();
-  decorBase = clone(prefs.value.decor ?? []); decorDraft.value = clone(decorBase); decorHistory.value = []; decorMsg.value = ''; confirmDecorLeave.value = false; editing.value = true;
-}
-function applyDraft(next: DecorItem[]) { decorHistory.value = [...decorHistory.value, clone(decorDraft.value)]; decorDraft.value = next; engine.value?.setDecor(next); decorMsg.value = ''; }
-function placeDecor(spot: DecorSpot) { const w = decorWork.value; if (!w) return; applyDraft([...clone(decorDraft.value), { id: store.newId(), kind: decorKind.value, work: w, spot }]); }
-function clearDecorAt(work: string) { applyDraft(decorDraft.value.filter((i) => i.work !== work)); }
-function undoDecor() { const prev = decorHistory.value.at(-1); if (!prev) return; decorHistory.value = decorHistory.value.slice(0, -1); decorDraft.value = prev; engine.value?.setDecor(prev); }
-async function finishDecor() {
-  if (!prefs.value || decorSaving.value) return;
-  decorSaving.value = true; decorMsg.value = '';
-  const next = { ...prefs.value, decor: clone(decorDraft.value) };
-  try { await store.savePrefs(next); prefs.value = next; editing.value = false; selection.value = null; say('꾸민 배치를 저장했어요'); }
-  catch { decorMsg.value = '저장하지 못했어요. 배치는 그대로 있어요. 다시 [완료]를 눌러 주세요'; }
-  finally { decorSaving.value = false; }
-}
-function cancelDecor() {
-  if (decorSaving.value) return;
-  if (decorChanged.value && !confirmDecorLeave.value) { confirmDecorLeave.value = true; return; }
-  leaveDecor();
-}
-function leaveDecor() { engine.value?.setDecor(decorBase); decorDraft.value = clone(decorBase); confirmDecorLeave.value = false; editing.value = false; selection.value = null; }
 
 /** 업로드 결과(§2-15): 다시 그리고, 마지막 작품을 앞마당 대표작 자리에 공개하며 그 앞으로 간다.
  *  결과 카드는 액자 빛이 켜진 뒤(엔진 onRevealed)에 보인다(§2-17) */
@@ -512,7 +475,12 @@ async function pickSubject(subject: string) {
   finally { askBusy.value = false; }
 }
 function nextSubject() { askMsg.value = ''; if (askIndex.value < savedIds.value.length - 1) askIndex.value++; else askStep.value = 'done'; }
-function playSaved() { if (recentSaved.value) engine.value?.play(recentSaved.value); }
+function playSaved() { if (recentSaved.value) openMotion(recentSaved.value); }
+// 움직여 보기 창(마스터플랜 3-3 #137): 전시실에서 움직이면 캐릭터가 가리고 나갈 곳이 없어 작품만 따로 세운다
+const motionSource=shallowRef<MotionSource|null>(null);let motionId:string|null=null;
+function openMotion(id:string){const src=engine.value?.stageSource(id);if(!src){engine.value?.play(id);return;}motionId=id;motionSource.value=src;openPanel('motion');}
+function motionFailed(){const id=motionId;void closePanel();if(id)engine.value?.play(id);} // 창을 만들지 못하는 기기는 전시실에서 움직인다
+const plaqueMore=ref(false);
 
 /** 사진 돌리기(§2-15·§2-23 B): 원본은 그대로 두고 화면용 사본만 왼쪽·오른쪽으로 90° 다시 만든다. 다시 그린 질감이 바로 보인다 */
 async function rotateSaved(dir: 1 | -1) {
@@ -614,14 +582,7 @@ async function resetAll() {
 
 // 움직임이 끝날 때까지 명패를 접어 작품을 가리지 않는다.
 const plaqueFolded = ref(false);
-async function playShown() {
-  if (!shownWork.value || !engine.value || plaqueFolded.value) return;
-  engine.value.play(shownWork.value.id);
-  plaqueFolded.value = true;
-  try {
-    while (alive && engine.value?.performing()) await new Promise(r => setTimeout(r, CUTOUT.waitMs));
-  } finally { plaqueFolded.value = false; }
-}
+function playShown() { if (shownWork.value) openMotion(shownWork.value.id); }
 function listen() {
   const g = shownPlaque.value?.guide;
   if (g && !speak(g)) say('이 브라우저는 읽어 주기를 지원하지 않아요');
@@ -710,7 +671,6 @@ function onKey(e: KeyboardEvent) {
   // [더보기]는 Escape로 접고 초점을 [더보기]로 돌린다(§2-17)
   if(e.key==='Escape'&&moreTools.value&&!panel.value){e.preventDefault();moreTools.value=false;worldRoot.value?.querySelector<HTMLElement>('.w-more-tools')?.focus();return;}
   if(!panel.value&&!confirmOpenId.value&&!decisionOpenId.value)return;
-  if(e.key==='Escape'&&editing.value&&!panel.value){e.preventDefault();cancelDecor();return;}
   if(e.key==='Escape'){e.preventDefault();if(panel.value==='play')playPanel.value?.requestClose();else if(panel.value==='upload')uploadPanel.value?.requestClose();else void closePanel();return;}
   if(e.key!=='Tab')return;
   const dialog=worldRoot.value?.querySelector<HTMLElement>('[role="dialog"]');
@@ -811,37 +771,36 @@ function openSettings() {
       </section>
 
       <header class="hud-top" :class="{ 'w-menu-open': moreTools }">
-        <div v-if="!webglFailed" class="where g-panel">
+        <div v-if="!webglFailed" class="where">
           <strong>{{ visiting?.child ?? serverChildName }}의 미술관</strong>
           <span aria-live="polite">{{ place }}</span>
-          <button v-if="!webglFailed" class="w-mode-chip" type="button" :aria-label="`지금 ${themeLabel} 모드. 모드 바꾸기`" @click="openPanel('theme')">{{ themeLabel }} 모드 · 바꾸기</button>
         </div>
-        <!-- 기본 HUD(§2-17): 늘 보이는 버튼은 지금 할 일만, 나머지는 [더보기] 안 -->
-        <nav class="tools" aria-label="미술관 메뉴">
-          <button v-if="space==='plaza' && !visiting && !webglFailed" class="g-btn g-btn--primary" type="button" @click="enterMuseum">들어가기</button>
-          <button v-if="!visiting" class="g-btn g-btn--primary" type="button" @click="beforeUpload(() => openPanel('upload'))">작품 올리기</button>
-          <button v-if="!visiting" class="g-btn" type="button" @click="openPanel('play')">함께 놀기</button>
-          <button class="g-btn w-more-tools" type="button" :aria-expanded="moreTools" aria-controls="w-secondary-menu" @click="moreTools=!moreTools">{{moreTools?'접기':'더보기'}}</button>
+        <!-- 기본 HUD(마스터플랜 3-3 #137): 늘 보이는 것은 아래쪽 바와 이 구석의 [더보기]뿐이다 -->
+        <nav class="tools" aria-label="더보기 메뉴">
+          <button class="g-btn w-more-tools" type="button" aria-label="더보기" :aria-expanded="moreTools" aria-controls="w-secondary-menu" @click="moreTools=!moreTools"><span class="w-more-icon" aria-hidden="true"><i /><i /><i /></span></button>
           <span id="w-secondary-menu" class="w-secondary-tools" :class="{'w-expanded':moreTools}" @click="onMenuPick">
-          <button v-if="!visiting" class="g-btn" type="button" @click="openPanel('overview')">한눈에 보기</button>
-          <button v-if="!visiting" class="g-btn" type="button" @click="openArchive(null)">보관함</button>
-          <button v-if="space==='inside' && !visiting" class="g-btn" type="button" @click="addRoom">전시실 추가</button>
-          <button v-if="!visiting" class="g-btn" type="button" :disabled="webglFailed || editing" @click="openDecor">공간 꾸미기</button>
           <button class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('theme')">모드</button>
           <button v-if="!visiting" class="g-btn" type="button" :disabled="webglFailed" @click="openPanel('avatar')">캐릭터</button>
           <component :is="SocialButton" v-if="SocialButton && !visiting" action="social" @click="openPanel('social')" />
           <component :is="SocialButton" v-if="SocialButton && space!=='inside' && !visiting" action="town" @click="showTown()" />
           <button class="g-btn" type="button" :aria-pressed="!prefs?.sound" @click="toggleSound">{{ prefs?.sound ? '소리 끄기' : '소리 켜기' }}</button>
-          <button v-if="!visiting" class="g-btn" type="button" @click="openSettings">설정</button>
           <button class="g-btn w-help-trigger" type="button" @click="openPanel('help')">사용법</button>
           <button class="g-btn" type="button" @click="openPanel('privacy')">개인정보·이용 안내</button>
-          <button v-if="!visiting" class="g-btn" type="button" @click="openUsage">사용 기록</button>
+          <button v-if="!SERVER_WORLD && space==='inside' && !visiting" class="g-btn" type="button" @click="addRoom">전시실 추가</button>
+          <button v-if="!SERVER_WORLD && !visiting" class="g-btn" type="button" @click="openSettings">설정</button>
+          <button v-if="!SERVER_WORLD && !visiting" class="g-btn" type="button" @click="openUsage">사용 기록</button>
           <button v-if="space==='inside'" class="g-btn" type="button" @click="outside">밖으로</button>
           <button v-if="SERVER_WORLD" class="g-btn w-logout" type="button" @click="emit('logout')">로그아웃</button>
           <button v-if="space==='town'" class="g-btn" type="button" @click="familyChanged">우리 미술관으로</button>
           </span>
         </nav>
       </header>
+      <nav v-if="!visiting" v-show="!panel" class="w-bar" aria-label="미술관 메뉴">
+        <button v-if="space==='plaza' && !webglFailed" class="w-bar-btn is-main" type="button" @click="enterMuseum">들어가기</button>
+        <button class="w-bar-btn" :class="{ 'is-main': space!=='plaza' || webglFailed }" type="button" @click="beforeUpload(() => openPanel('upload'))">작품 올리기</button>
+        <button v-if="!webglFailed" class="w-bar-btn" type="button" @click="openArchive(null)">보관함</button>
+        <button class="w-bar-btn" type="button" @click="openPanel('play')">함께 놀기</button>
+      </nav>
 
       <!-- 첫 작품 안내(§2-17): 작품이 없는 가족이 도착하면 -->
       <input v-if="!visiting && artworks.length===0" ref="firstPick" class="w-hidden" type="file" accept="image/*" multiple @change="onFirstPicked" />
@@ -856,31 +815,6 @@ function openSettings() {
 
       <section v-if="LOCAL_SOCIAL && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
       <component :is="WorldSocial" v-if="WorldSocial && panel==='social' && account" :family="account.id" :token="inviteToken" @close="closePanel" @town="showTown" />
-      <section v-if="editing && !panel" class="w-decor-bar g-panel" aria-label="공간 꾸미기">
-        <strong>공간을 꾸미는 중</strong>
-        <div class="row" role="group" aria-label="소품 고르기">
-          <button v-for="k in DECOR_KINDS" :key="k.id" class="g-btn" type="button" :aria-pressed="decorKind === k.id" @click="decorKind = k.id">{{ k.label }}</button>
-        </div>
-        <p v-if="!decorWork" class="w-decor-tip">작품을 누르면 그 옆에 놓을 자리를 고를 수 있어요.</p>
-        <div v-else class="w-decor-spots">
-          <span class="w-decor-tip">{{ (byId.get(decorWork)?.title || '새 작품') }} 옆에 놓기</span>
-          <div class="row">
-            <span v-for="o in decorSpots" :key="o.spot" class="w-decor-spot">
-              <button class="g-btn" type="button" :disabled="!!o.reason" :aria-describedby="o.reason ? `why-${o.spot}` : undefined" @click="placeDecor(o.spot)">{{ SPOT_LABEL[o.spot] }}</button>
-              <small v-if="o.reason" :id="`why-${o.spot}`">{{ o.reason }}</small>
-            </span>
-            <button v-if="decorDraft.some((i) => i.work === decorWork)" class="g-btn" type="button" @click="clearDecorAt(decorWork!)">이 작품 옆 소품 치우기</button>
-          </div>
-        </div>
-        <p v-if="decorHidden" class="w-decor-tip">이 공간에 맞지 않아 보관 중인 소품 {{ decorHidden }}개</p>
-        <div class="row">
-          <button class="g-btn" type="button" :disabled="!decorHistory.length || decorSaving" @click="undoDecor">되돌리기</button>
-          <button class="g-btn" type="button" :disabled="decorSaving" @click="cancelDecor">취소</button>
-          <button class="g-btn g-btn--primary" type="button" :disabled="decorSaving" @click="finishDecor">{{ decorSaving ? '저장하는 중…' : '완료' }}</button>
-        </div>
-        <p v-if="decorMsg" class="g-note" role="alert">{{ decorMsg }}</p>
-        <div v-if="confirmDecorLeave" class="w-decor-confirm" role="alert"><p>바꾼 배치를 버릴까요?</p><button class="g-btn g-btn--primary" type="button" @click="confirmDecorLeave = false">계속 꾸미기</button><button class="g-btn" type="button" @click="leaveDecor">버리고 나가기</button></div>
-      </section>
 
       <section v-if="recentSaved && !panel" ref="savedCard" class="w-saved g-panel" aria-label="작품 전시 완료" role="status">
         <div class="w-saved-head">
@@ -910,14 +844,13 @@ function openSettings() {
           <template v-else>
             <button class="g-btn g-btn--primary" type="button" :disabled="webglFailed" @click="playSaved">움직여 보기</button>
             <button class="g-btn" type="button" @click="byId.get(recentSaved!) && openView(byId.get(recentSaved!)!)">{{ SERVER_WORLD ? '가까이 보기' : '이 작품 이야기' }}</button>
-            <button class="g-btn" type="button" @click="recentSaved=null;openPanel('upload')">다른 작품 올리기</button>
           </template>
-          <button class="g-btn" type="button" @click="recentSaved=null">계속 둘러보기</button>
+          <button class="g-btn" type="button" @click="recentSaved=null">닫기</button>
         </div>
       </section>
       <!-- 가까운(또는 누른) 작품 명패 -->
       <!-- 결과 카드가 떠 있거나 곧 뜰 때는 명패를 열지 않는다(카드 하나만, §2-17) -->
-      <section v-if="shownPlaque && shownWork && !plaqueFolded && !panel && !editing && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
+      <section v-if="shownPlaque && shownWork && !plaqueFolded && !panel && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
         <p class="w-no">{{ shownPlaque.plaque.number }}</p>
         <h2>{{ shownPlaque.plaque.title }}</h2>
         <p class="by">{{ shownPlaque.plaque.byline }}<template v-if="shownPlaque.plaque.detail"> · {{ shownPlaque.plaque.detail }}</template><template v-if="shownWork?.sample"> · 체험용 작품</template></p>
@@ -928,6 +861,9 @@ function openSettings() {
           <!-- 작품 앞 키 안내(§2-11)는 따로 띄우지 않고 이 버튼에 E 키캡을 붙인다 -->
           <button class="g-btn g-btn--primary" type="button" @click="openView(shownWork)"><kbd v-if="!coarse && nearId===shownWork.id" class="w-key">E</kbd>가까이 보기</button>
           <button class="g-btn" type="button" :disabled="webglFailed" @click="playShown">움직이기</button>
+          <button class="g-btn" type="button" :aria-expanded="plaqueMore" @click="plaqueMore=!plaqueMore">그 밖에</button>
+        </div>
+        <div v-if="plaqueMore" class="row">
           <button class="g-btn" type="button" @click="listen">들려주기</button>
           <button v-if="!visiting && featuredId!==shownWork.id" class="g-btn" type="button" @click="setFeatured(shownWork.id)">대표작으로 걸기</button>
           <span v-else-if="!visiting" class="w-featured-mark">미술관 건물 정면에 걸린 대표작이에요</span>
@@ -988,10 +924,14 @@ function openSettings() {
         <span class="knob" :style="joy ? { transform: `translate(${joy.x * 34}px, ${joy.y * 34}px)` } : undefined" />
       </div>
 
-      <div v-if="!panel && !webglFailed && !(coarse && recentSaved)" class="w-gestures">
+      <div v-if="!panel && !webglFailed && !recentSaved" class="w-gestures">
         <!-- §2-20 감정 표현: 표(emotes.ts)의 동작을 펼쳐 고른다 -->
-        <div v-if="emoteMenu" class="w-emotes" role="menu" aria-label="감정 표현"><button v-for="m in EMOTES" :key="m.id" class="g-btn" type="button" role="menuitem" @click="engine?.gesture(m.id);emoteMenu=false">{{ m.label }}</button></div>
-        <button class="g-btn" type="button" @click="engine?.gesture('wave')">손 흔들기</button><button class="g-btn" type="button" :aria-expanded="emoteMenu" @click="emoteMenu=!emoteMenu">춤 ▾</button><button class="g-btn" type="button" @click="engine?.gesture('jump')">점프</button></div>
+        <div v-if="emoteMenu" class="w-emotes" role="menu" aria-label="동작">
+          <button v-for="m in EMOTES" :key="m.id" class="g-btn" type="button" role="menuitem" @click="engine?.gesture(m.id);emoteMenu=false">{{ m.label }}</button>
+          <button class="g-btn" type="button" role="menuitem" @click="engine?.gesture('jump');emoteMenu=false">점프</button>
+        </div>
+        <button class="g-btn" type="button" :aria-expanded="emoteMenu" @click="emoteMenu=!emoteMenu">동작</button>
+      </div>
       <!-- 모드 -->
       <div v-if="panel === 'help'" class="sheet" role="dialog" aria-modal="true" aria-label="미술관 사용법">
         <div class="g-panel sheet-card w-help-card">
@@ -999,8 +939,8 @@ function openSettings() {
           <p>들어가기를 눌러 작품을 만나 보세요.<br />새 작품은 작품 올리기에서 보관할 수 있어요.</p>
           <dl class="w-help-controls">
             <dt>걷기</dt><dd>{{coarse?'왼쪽 원을 밀거나 바닥을 누르세요.':'WASD·방향키로 걷고 Shift를 누르면 뛰어요. 바닥을 눌러도 걸어요.'}}</dd>
-            <dt>둘러보기</dt><dd>{{coarse?'화면을 끌어 돌리고, 두 손가락을 벌리거나 모아 거리를 조절하세요.':'I J K L로 시점을 돌리고 + / −로 거리를 조절해요. 마우스로 끌거나 휠을 돌려도 돼요.'}}</dd>
-            <dt>작품 보기</dt><dd>작품을 누르면 명패가 열려요. 가까이 보기로 감상하고, 움직이기를 누르면 재생돼요. 작품 앞에서 E로 가까이 볼 수도 있어요.</dd>
+            <dt>둘러보기</dt><dd>{{coarse?'화면을 끌어 돌리고, 두 손가락을 벌리거나 모아 거리를 조절하세요. 많이 모으면 전시실 전체를 내려다봐요.':'I J K L로 시점을 돌리고 + / −로 거리를 조절해요. 마우스로 끌거나 휠을 돌려도 돼요. 많이 줄이면 전시실 전체를 내려다봐요.'}}</dd>
+            <dt>작품 보기</dt><dd>작품을 누르면 명패가 열려요. 가까이 보기로 감상하고, 움직이기를 누르면 창이 열려 작품이 움직여요. 작품 앞에서 E로 가까이 볼 수도 있어요.</dd>
             <dt>시점 복귀</dt><dd>{{coarse?'아래 버튼으로 처음 시점으로 돌아갈 수 있어요.':'R을 누르면 처음 시점으로 돌아가요.'}}</dd>
           </dl>
           <div class="w-help-actions"><button class="g-btn" type="button" :disabled="webglFailed" @click="engine?.resetView();closePanel()">시점 되돌리기</button><button class="g-btn g-btn--primary" type="button" @click="closePanel">닫기</button></div>
@@ -1081,21 +1021,19 @@ function openSettings() {
         @close="pendingFiles = [];closePanel()"
         @saved="onSaved"
       />
+      <!-- 보관함(마스터플랜 3-3 #137): 처음은 나이별 목록, 작품을 고르면 자세히 -->
       <WorldArchive
-        v-if="panel === 'archive' && account"
+        v-if="panel === 'archive' && account && archiveFocus"
         :artworks="artworks"
         :child="serverChildName"
         :focus="archiveFocus"
-        @close="closePanel"
-        @delete="onDelete"
+        @close="archiveFocus = null"
+        @delete="(id: string) => { archiveFocus = null; void onDelete(id); }"
         @updated="reload"
         @goto="gotoWork"
       />
-      <WorldPrivacy v-if="panel === 'privacy'" :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" @close="closePanel" @backup="openSettings" />
-      <WorldStorageGate v-if="panel === 'storage'" @go="gateGo" @close="closePanel" />
-      <WorldUsage v-if="panel === 'usage'" :usage="usage" :last-backup="lastBackup" @close="closePanel" @clear="clearUsage" />
       <WorldOverview
-        v-if="panel === 'overview' && account"
+        v-else-if="panel === 'archive' && account"
         :artworks="artworks"
         :child="serverChildName"
         @close="closePanel"
@@ -1103,6 +1041,7 @@ function openSettings() {
         @edit="(id: string) => openArchive(id)"
         @upload="beforeUpload(() => openPanel('upload'))"
       />
+      <WorldMotion v-if="panel === 'motion' && motionSource" :source="motionSource" @close="closePanel" @failed="motionFailed" />
       <WorldAvatar
         v-if="panel === 'avatar' && prefs"
         :config="prefs.avatar"
@@ -1140,8 +1079,6 @@ function openSettings() {
 .where{display:grid;gap:2px;padding:10px 16px}
 .where strong{font:600 18px var(--g-serif);color:var(--g-plum-deep)}
 .where span{font-size:14px}
-.w-mode-chip{justify-self:start;margin-top:4px;min-height:32px;padding:4px 10px;border-radius:999px;border:1.5px solid var(--g-gold-soft);background:rgba(255,250,240,.92);color:var(--g-plum-deep);font:inherit;font-size:13px;cursor:pointer}
-.w-mode-chip:hover{border-color:var(--g-plum)}.w-mode-chip:focus-visible{outline:3px solid #f29c31;outline-offset:2px}
 .tools{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;max-width:min(760px,100%)}
 .tools .g-btn{min-height:44px;padding:8px 16px;font-size:15px}
 .plaque{position:absolute;z-index:10;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);width:min(560px,calc(100% - 32px));padding:16px 20px;display:grid;gap:6px}
@@ -1297,4 +1234,41 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .w-key{display:inline-grid;place-items:center;min-width:24px;height:24px;margin-right:6px;border-radius:6px;background:linear-gradient(#f2d48f,#c99a45);color:#22190b;font:700 13px/1 var(--font-sans);box-shadow:0 2px 0 #8a6427}
 .w-interaction.g-btn.g-btn--primary{background:rgba(20,18,16,.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,236,196,.55);color:#fff;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);font-weight:600}
 .w-interaction.g-btn kbd{display:inline-grid;place-items:center;min-width:26px;height:26px;margin-right:4px;border:0;border-radius:7px;background:linear-gradient(#f2d48f,#c99a45);color:#22190b;font:700 14px/1 var(--font-sans);box-shadow:0 2px 0 #8a6427}
+
+/* 기본 HUD(마스터플랜 3-3 #137): 아래쪽 바, 구석 [더보기], 이름 한 줄. 위의 규칙 뒤에 둬야 이긴다 */
+.world{--w-bar-top:calc(env(safe-area-inset-bottom,0px) + 74px)}
+.hud-top{top:calc(env(safe-area-inset-top,0px) + 10px);flex-wrap:nowrap;align-items:center}
+.where{display:flex;align-items:baseline;gap:8px;min-width:0;padding:6px 12px;border-radius:12px;background:rgba(20,18,16,.5);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.where strong{font:600 15px var(--g-serif);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.where span{font-size:12px;color:#ffffffd0;white-space:nowrap}
+.hud-top .tools{position:relative;flex:none;width:auto;max-width:none}
+.hud-top .tools .w-more-tools{width:44px;min-width:44px;padding:0;justify-content:center}
+.w-more-icon{display:grid;gap:4px}.w-more-icon i{display:block;width:18px;height:2px;border-radius:2px;background:#fff}
+.w-secondary-tools.w-expanded{left:auto;right:0;width:max-content;min-width:190px;grid-template-columns:1fr;max-height:min(70dvh,520px)}
+.w-bar{position:absolute;z-index:11;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:min(480px,calc(100% - 20px));box-sizing:border-box;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:5px;border-radius:16px;background:rgba(20,18,16,.66);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,0,0,.24)}
+.w-bar-btn{min-height:46px;padding:4px 6px;border:0;border-radius:12px;background:transparent;color:#fff;font:600 15px var(--font-sans,system-ui);cursor:pointer;word-break:keep-all}
+.w-bar-btn:hover{background:rgba(255,255,255,.14)}.w-bar-btn:active{transform:scale(.97)}
+.w-bar-btn.is-main{background:linear-gradient(#f2d48f,#c99a45);color:#22190b}
+.w-bar-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.joy,.w-hint,.w-interaction{bottom:var(--w-bar-top)}
+.w-gestures{bottom:var(--w-bar-top);right:max(12px,env(safe-area-inset-right,0px))}
+.plaque{bottom:var(--w-bar-top)}
+.w-saved{bottom:var(--w-bar-top)}
+.w-first-work{bottom:var(--w-bar-top)}
+.w-first-help{bottom:var(--w-bar-top)}
+.w-gestures{z-index:13}
+.w-emotes{position:absolute;right:0;bottom:calc(100% + 6px);display:grid;gap:6px;width:max-content;max-height:52dvh;overflow:auto;padding:0;background:none;border:0;box-shadow:none}
+.w-emotes .g-btn{white-space:nowrap;justify-content:center;min-width:96px}
+.w-hud-intro .w-bar{animation:w-hud-in-center .3s cubic-bezier(.2,.8,.2,1) .16s both}
+@media(max-width:600px){
+ .joy{bottom:var(--w-bar-top)}
+ .plaque,.w-first-work,.w-first-help{bottom:calc(var(--w-bar-top) + 96px)}
+ .plaque{padding:12px 14px}.plaque h2{font-size:18px}.plaque .w-no,.plaque .cnote{display:none}.plaque .g-btn{min-height:40px;padding:4px 12px;font-size:14px}
+ .w-saved-actions{flex-wrap:nowrap}.w-saved-actions .g-btn{flex:1 1 0;min-height:44px;padding:4px 6px;font-size:14px}
+ .w-gestures .g-btn{min-height:40px;padding:4px 12px;font-size:14px}
+ .w-secondary-tools.w-expanded{left:auto;right:0;width:max-content;grid-template-columns:1fr}
+}
+@media (min-width:900px) and (min-height:501px){
+ .w-first-work,.w-saved{bottom:calc(env(safe-area-inset-bottom,0px) + 92px)}
+}
 </style>

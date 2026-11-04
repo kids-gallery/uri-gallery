@@ -49,7 +49,7 @@ try{
  ok('first artwork: white-flash jump in front of it in its hall, no walking (§2-23 C)',after.standDist!==null&&after.standDist<0.6&&after.route===0&&after.maxWipe>=0.5&&!!after.featured,{before,after});
  const rect=await p.evaluate(id=>window.__uamWorld.debugWorkRect(id),after.featured);ok('result card alone and clear of the artwork',after.plaque===0&&!!rect&&!overlap(rect,await rectOf(p.locator('.w-saved'))),{rect});
  await p.screenshot({path:out+'/a-first-artwork.png'});
- await p.getByRole('button',{name:'계속 둘러보기'}).click();
+ await p.locator('.w-saved').getByRole('button',{name:'닫기'}).click();
  // 공간 전환: 흰빛, 검은 덮개 없음
  await record(p);await tool(p,'밖으로');const out1=await seqOf(p);
  ok('going outside flashes the light, not black',Math.max(...out1.map(s=>s.w))>=0.9&&await p.locator('.w-fade').count()===0&&out1.at(-1).space==='plaza');

@@ -96,7 +96,7 @@ try {
       };
     });
     await p.goto(URL0); await startWorld(p); await uploadFirst(p, await images(p, 1));
-    await p.getByRole('button', { name: '계속 둘러보기' }).click();
+    await p.locator('.w-saved').getByRole('button', { name: '닫기' }).click();
     const dialog = p.getByRole('dialog', { name: '설정' }), again = dialog.getByRole('button', { name: '파일 보내기' });
     const settings = async () => { await p.getByRole('button', { name: '더보기' }).click(); await p.getByRole('button', { name: '설정' }).click(); await dialog.waitFor(); };
     const close = async () => { await dialog.getByRole('button', { name: '닫기' }).click(); await dialog.waitFor({ state: 'detached' }); };
@@ -150,7 +150,7 @@ try {
   for (const [i, [label, opts]] of [['Pixel 7', devices['Pixel 7']], ['iPhone 13 landscape', devices['iPhone 13 landscape']], ['iPhone SE landscape', devices['iPhone SE landscape']], ['945x396', { viewport: { width: 945, height: 396 } }], ['1280x800', { viewport: { width: 1280, height: 800 } }]].entries()) {
     // iOS 흉내는 홈 화면 앱으로 연 것처럼 둔다(저장 안내 없이 올린다)
     const { ctx, p } = await page(opts, () => Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true }));
-    await p.goto(URL0); await startWorld(p); await uploadFirst(p, await images(p, 10)); await p.getByRole('button', { name: '계속 둘러보기' }).click(); await p.waitForTimeout(400);
+    await p.goto(URL0); await startWorld(p); await uploadFirst(p, await images(p, 10)); await p.locator('.w-saved').getByRole('button', { name: '닫기' }).click(); await p.waitForTimeout(400);
     const nudge = p.getByRole('status', { name: '백업 권유' });
     if (i === 0) {
       await p.getByRole('button', { name: '더보기' }).click(); await p.getByRole('button', { name: '사용 기록' }).click();

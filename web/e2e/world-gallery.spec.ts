@@ -65,9 +65,11 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   expect(objects.length).toBeGreaterThan(0);
 
   const openArchive = async () => {
-    await page.getByRole('button', { name: '더보기' }).click({ timeout: 60_000 });
-    await page.getByRole('button', { name: '보관함', exact: true }).click();
-    return page.getByRole('dialog', { name: '입체 보관함' });
+    await page.getByRole('button', { name: '보관함', exact: true }).click({ timeout: 60_000 });
+    const list = page.getByRole('dialog', { name: '보관함' });
+    await list.locator('.w-ov-pick').first().click();
+    await list.getByRole('button', { name: '자세히' }).click();
+    return page.getByRole('dialog', { name: '작품 자세히' });
   };
   const enter = async () => {
     await page.goto('/app/world');
@@ -83,14 +85,14 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   await enter();
   await expect.poll(() => objects.length, { timeout: 30_000 }).toBeGreaterThan(0); // 사진은 받는다(아래 검사가 빈 목록으로 통과하지 않게)
   let archive = await openArchive();
-  await expect(archive.getByRole('heading', { name: /1점/ })).toBeVisible();
   await expect(archive.getByText('올린 사진(고른 부분만 보관)')).toBeVisible(); // 자른 판만 저장하므로 원본이라 부르지 않는다(#118)
   await expect(archive.getByRole('button', { name: '사진 내려받기' })).toBeVisible();
   await expect(archive.getByRole('button', { name: '원본 내려받기' })).toHaveCount(0);
   await expect(archive.getByRole('button', { name: '제목·추억 고치기' })).toHaveCount(0); // 올린 작품은 고칠 수 없다(D46)
   await shot(page, 'gallery-2-unapproved');
   expect(objects).not.toContain(cutout);
-  await archive.getByRole('button', { name: '닫기' }).click();
+  await archive.getByRole('button', { name: '목록으로' }).click();
+  await page.getByRole('dialog', { name: '보관함' }).getByRole('button', { name: '닫기' }).click();
 
   // 승인 뒤: 진행 중인 단계가 있으면 새로 고침한 뒤에도 상태를 이어서 묻고, 걸린 결과가 부조로 바뀌면 새로 고침 없이 컷아웃을 받는다
   await animatedJobs(db, id, (v) => db.query(`INSERT INTO stage_job (artwork_id, stage_kind, origin, serving_group, model_version_id) VALUES (?, 'animate_render', 'confirm', 'gpu', ?)`, [id, v]).then(() => undefined));
@@ -101,7 +103,6 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   await expect.poll(() => objects, { timeout: 30_000 }).toContain(cutout);
   await db.query(`UPDATE stage_job SET status = 'done' WHERE artwork_id = ? AND status = 'queued'`, [id]);
   archive = await openArchive();
-  await expect(archive.getByRole('heading', { name: /1점/ })).toBeVisible();
   await page.waitForTimeout(1500);
   await shot(page, 'gallery-3-approved');
 
@@ -110,11 +111,11 @@ test('원본 액자 → 승인 전 결과 비전시 → 승인 뒤 컷아웃 입
   const del = page.waitForResponse((r) => r.url().endsWith(`/v1/artworks/${id}`) && r.request().method() === 'DELETE');
   await archive.getByRole('button', { name: '지우기' }).last().click();
   expect((await del).status()).toBe(202);
-  await expect(page.getByRole('heading', { name: /0점/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog', { name: '보관함' }).getByText('0점')).toBeVisible({ timeout: 15_000 }); // 지우면 목록으로 돌아온다
   const list = (await (await page.request.get('/v1/artworks')).json()) as { id: string }[];
   expect(list.map((a) => a.id)).not.toContain(id);
   await page.goto('/app/world');
   await page.getByRole('button', { name: '시작하기' }).click();
-  archive = await openArchive();
-  await expect(archive.getByRole('heading', { name: /0점/ })).toBeVisible();
+  await page.getByRole('button', { name: '보관함', exact: true }).click({ timeout: 60_000 });
+  await expect(page.getByRole('dialog', { name: '보관함' }).getByText('0점')).toBeVisible();
 });

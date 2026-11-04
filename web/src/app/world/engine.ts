@@ -1,7 +1,7 @@
 // 3D 미술관 엔진(3D미술관_재설계 §2-12): 렌더러 · 시간 흐름 · 입력 · 카메라 · 캐릭터 이동 · 작품 배치와 재생을 묶는다.
 // 화면(Vue)은 이 객체에 데이터를 넘기고, 이 객체는 콜백으로 선택 · 근접 · 위치를 알린다.
 import * as THREE from 'three';
-import {occlusionDistance,recoverDistance,distanceToFitArtwork} from './cameraRig';
+import {occlusionDistance,recoverDistance,distanceToFitArtwork, dragTurn, ZOOM, zoomLift } from './cameraRig';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Museum, planRooms, MAX_AGE, type RoomSpec, type InteriorId } from './museum';
 import type { DecorItem, DecorKind, DecorSpot } from './decor';
@@ -124,6 +124,7 @@ export class MuseumEngine {
   private hemi = new THREE.HemisphereLight('#ffffff', '#888888', 1.1);
   private sun = new THREE.DirectionalLight('#ffffff', 1.2);
   private particles = new Particles();
+  private renderHeld = false;
   private rig: AvatarRig | null = null;
   private avatarRoot = new THREE.Group();
   private clock = new THREE.Clock();
@@ -209,7 +210,7 @@ export class MuseumEngine {
     const loop = () => {
       if (!this.running) return;
       this.raf = requestAnimationFrame(loop);
-      if (document.hidden) { this.clock.getDelta(); return; }
+      if (document.hidden || this.renderHeld) { this.clock.getDelta(); return; }
       const dt = Math.min(0.1, this.clock.getDelta());
       this.adapt(dt);
       this.frame(dt);
@@ -532,6 +533,14 @@ export class MuseumEngine {
     playSound(s.sound);
     this.ev.onPlay?.(id);
   }
+  /** 움직여 보기 창에 넘길 작품(마스터플랜 3-3 #137). 전시실의 입체를 읽기만 한다 */
+  stageSource(id: string) {
+    const w = this.museum.works.get(id), a = this.artworks.get(id);
+    if (!w || !a) return null;
+    const s = subjectOf(a.subject);
+    this.ev.onPlay?.(id);
+    return { relief: w.relief, behavior: s.behavior, subject: s.id, sound: s.sound };
+  }
   /** 작품이 움직이는 중인가(§2-22 2: 배경 지운 사본을 붙여 다시 그리는 일은 움직임이 끝난 뒤에 한다) */
   performing() { return this.performances.some((p) => !p.done); }
 
@@ -566,6 +575,8 @@ export class MuseumEngine {
   setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
+  /** 움직여 보기 창이 도는 동안 뒤쪽 장면을 멈춘다. 휴대폰에서 3D 두 개를 함께 그리지 않기 위해서다 */
+  setRenderHeld(on: boolean) { this.renderHeld = on; }
   setInputPaused(on:boolean){this.inputPaused=on;this.onBlur();if(on){this.route=[];this.pendingPlay=null;}}
 
   // ───────── 한 프레임 ─────────
@@ -682,7 +693,7 @@ export class MuseumEngine {
       this.pitch = THREE.MathUtils.clamp(this.pitch + (Number(this.keys.has('KeyI')) - Number(this.keys.has('KeyK'))) * dt, .05, .9);
       const closer = this.keys.has('Equal') || this.keys.has('NumpadAdd');
       const farther = this.keys.has('Minus') || this.keys.has('NumpadSubtract');
-      if (closer || farther) this.dist = THREE.MathUtils.clamp(this.dist + (Number(farther) - Number(closer)) * 4 * dt, 2.4, 12);
+      if (closer || farther) this.dist = THREE.MathUtils.clamp(this.dist + (Number(farther) - Number(closer)) * 4 * dt, ZOOM.near, ZOOM.far);
     }
     let target = this.avatarRoot.position.clone().add(new THREE.Vector3(0, 1.25, 0));
     let yaw = this.yaw, pitch = this.pitch, dist = this.dist;
@@ -698,6 +709,9 @@ export class MuseumEngine {
       dist = Math.max(dist, 5.2);
       target = target.lerp(a.clone(), 0.55);
     }
+    // 많이 줄이면 위로 올라가 벽 너머로 전시실을 내려다본다(마스터플랜 3-3 #137)
+    const lift = this.customizing || watch ? 0 : zoomLift(this.dist);
+    pitch += (1.15 - pitch) * lift;
     if (this.revealFocus > 0) {
       this.revealFocus = this.space === 'inside' && !watch ? Math.max(0, this.revealFocus - dt) : 0;
       // 마지막 1초 동안 당김을 풀어 시선이 한 번에 돌아가지 않게 한다
@@ -709,7 +723,7 @@ export class MuseumEngine {
     const allowed=occlusionDistance(target,direction,dist,this.space==='inside'?this.museum.cameraSolids:this.outdoor.cameraSolids,this.camera.aspect,this.camera.near,this.camera.getEffectiveFOV());
     this.cameraDistance=recoverDistance(this.cameraDistance,allowed,dt);
     want=target.clone().addScaledVector(direction,this.cameraDistance);
-    if(this.space==='inside')want.y=Math.min(want.y,6.6);
+    if(this.space==='inside')want.y=Math.min(want.y,6.6+lift*34);
     const smoothing=1-Math.exp(-8*dt);
     // 장면을 바꾼 직후에는 바깥 카메라 위치에서 끌려오지 않게 바로 놓는다
     if(this.snapCamera){this.snapCamera=false;this.camera.position.copy(want);}
@@ -794,7 +808,7 @@ export class MuseumEngine {
     if (this.pinch && this.pointers.size === 2) {
       const [a, b] = [...this.pointers.values()];
       const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-      this.dist = THREE.MathUtils.clamp(this.pinch.dist * (this.pinch.d / Math.max(1, d)), 2.4, 7.5);
+      this.dist = THREE.MathUtils.clamp(this.pinch.dist * (this.pinch.d / Math.max(1, d)), ZOOM.near, ZOOM.far);
       return;
     }
     if (!this.down) return;
@@ -803,8 +817,9 @@ export class MuseumEngine {
     if (this.dragged) {
       this.revealFocus = 0;
       if(this.customizing){this.customYaw-=dx*.006;return;}
-      this.yaw -= dx * 0.006;
-      this.pitch = THREE.MathUtils.clamp(this.pitch + dy * 0.004, 0.05, 0.9);
+      const turn = dragTurn(dx, dy);
+      this.yaw += turn.yaw;
+      this.pitch = THREE.MathUtils.clamp(this.pitch + turn.pitch, 0.05, 0.9);
     }
   };
 
@@ -821,7 +836,7 @@ export class MuseumEngine {
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
     if(this.inputPaused||this.cinematic)return;
-    this.dist = THREE.MathUtils.clamp(this.dist * (1 + Math.sign(e.deltaY) * 0.1), 2.4, 7.5);
+    this.dist = THREE.MathUtils.clamp(this.dist * (1 + Math.sign(e.deltaY) * 0.1), ZOOM.near, ZOOM.far);
   };
 
   private click(cx: number, cy: number) {

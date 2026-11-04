@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// 한눈에 보기(3D미술관_재설계 §2-18): 보호자가 걷지 않고 나이별 전시실 순서로 작품 전체를 본다.
-// 카드를 고르면 3D의 그 작품 앞으로 가거나 보관함에서 고친다. 원본·정보는 읽기만 한다.
+// 보관함의 첫 화면(마스터플랜 3-3 #137, 3D미술관_재설계 §2-18): 보호자가 걷지 않고 나이별 전시실 순서로 작품 전체를 본다.
+// 카드를 고르면 3D의 그 작품 앞으로 가거나 자세히 본다. 원본·정보는 읽기만 한다.
 import { computed, onBeforeUnmount, ref } from 'vue';
 import type { Artwork } from './store';
 import { ageGroups, plaqueOf, whenLine } from './curation';
@@ -24,11 +24,11 @@ onBeforeUnmount(() => { for (const u of urls.values()) URL.revokeObjectURL(u); }
 </script>
 
 <template>
-  <div class="w-overview" :class="{ 'is-inline': inline }" :role="inline ? undefined : 'dialog'" :aria-modal="inline ? undefined : 'true'" aria-label="한눈에 보기">
+  <div class="w-overview" :class="{ 'is-inline': inline }" :role="inline ? undefined : 'dialog'" :aria-modal="inline ? undefined : 'true'" aria-label="보관함">
     <div class="w-ov-card">
       <header class="w-ov-head">
         <div>
-          <h2>{{ child }}의 작품 한눈에 보기</h2>
+          <h2>{{ child }}의 보관함</h2>
           <p>{{ artworks.length }}점 · 나이별 전시실 순서</p>
         </div>
         <button v-if="!inline" class="g-btn" type="button" @click="emit('close')">닫기</button>
@@ -51,7 +51,7 @@ onBeforeUnmount(() => { for (const u of urls.values()) URL.revokeObjectURL(u); }
             </button>
             <div v-if="sel === c.a.id" class="w-ov-actions">
               <button class="g-btn g-btn--primary" type="button" @click="emit('goto', c.a.id)">미술관에서 보기</button>
-              <button class="g-btn" type="button" @click="emit('edit', c.a.id)">고치기</button>
+              <button class="g-btn" type="button" @click="emit('edit', c.a.id)">자세히</button>
             </div>
           </li>
         </ul>

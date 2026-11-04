@@ -26,8 +26,8 @@ try{
   ok(`${label} joystick walks and stops on release`,dist(j0,j1)>.6&&dist(j1,j2)<.15,{moved:+dist(j0,j1).toFixed(2),after:+dist(j1,j2).toFixed(2)});}
   await page.getByRole('button',{name:'점프',exact:true}).click();let top=0;for(let i=0;i<12;i++){top=Math.max(top,(await pos(page)).y);await page.waitForTimeout(60);}await page.waitForTimeout(1200);
   ok(`${label} jump button lifts and lands`,top>.2&&(await pos(page)).y<.03,{top:+top.toFixed(2)});
-  await page.getByRole('button',{name:'손 흔들기',exact:true}).click();ok(`${label} wave button starts wave`,(await pos(page)).action==='wave');
-  await page.getByRole('button',{name:'춤 ▾',exact:true}).click();await page.getByRole('menuitem',{name:'신나는 춤',exact:true}).click();ok(`${label} dance menu starts dance (§2-20)`,(await pos(page)).action==='dance');
+  await page.getByRole('button',{name:'동작',exact:true}).click();await page.getByRole('menuitem',{name:'손 흔들기',exact:true}).click();ok(`${label} wave button starts wave`,(await pos(page)).action==='wave');
+  await page.getByRole('button',{name:'동작',exact:true}).click();await page.getByRole('menuitem',{name:'신나는 춤',exact:true}).click();ok(`${label} dance menu starts dance (§2-20)`,(await pos(page)).action==='dance');
   await page.screenshot({path:`${out}/${label}-controls.png`});
   ok(`${label} no page errors`,errors.length===0,errors);await page.close();
  }
