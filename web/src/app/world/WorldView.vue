@@ -16,7 +16,7 @@ import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
 import { deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
-import { galleryFailure, isStale, movingIds } from './server/gallery';
+import { galleryFailure, isStale, watchIds } from './server/gallery';
 import { useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
@@ -469,8 +469,12 @@ watch(confirmDetail, (d) => { if (confirmOpenId.value && (!d || d.confirmedKind 
 const worldFailure = computed(() => watchFailure.value ?? galleryFailure.value);
 async function retryWorld() { await artWatch.retry(); if (alive && galleryFailure.value) await reload(); }
 if (SERVER_WORLD) {
-  void movingIds().then(artWatch.add); // 새로 고침해도 진행 중인 작품을 이어서 묻는다
-  watch(artWatch.details, (d) => { if ([...d.values()].some(isStale)) void reload(); }); // 승인되어 걸린 결과가 바뀌면 다시 그린다
+  let staleSeen = ''; // 같은 차이로 되풀이해 읽지 않는다. 못 여는 사진은 차이가 영구히 남는다(마스터플랜 3-3)
+  watch(artWatch.details, (d) => { // 승인되어 걸린 결과가 바뀌면 다시 그린다
+    const stale = [...d.values()].filter(isStale).map((x) => `${x.id}:${x.hungResultKind}`).sort().join();
+    if (stale && stale !== staleSeen) void reload();
+    staleSeen = stale;
+  });
 }
 async function onSaved(ids: string[], reveal = true, from: 'upload' | 'play' = 'upload') {
   if (SERVER_WORLD && from === 'upload') artWatch.add(ids);
@@ -524,6 +528,7 @@ async function rotateSaved(dir: 1 | -1) {
 async function onDelete(id: string) {
   try {
     await (SERVER_WORLD ? deleteArtwork(id) : store.deleteArtwork(id));
+    if (SERVER_WORLD) artWatch.forget(id);
     if (selection.value?.type === 'work' && selection.value.id === id) selection.value = null;
     await reload();
     say('작품을 지웠어요');
@@ -606,7 +611,16 @@ async function resetAll() {
   } catch { say('지우지 못했어요. 다시 해 주세요'); }
 }
 
-function playShown() { if (shownWork.value) engine.value?.play(shownWork.value.id); }
+// 움직임이 끝날 때까지 명패를 접어 작품을 가리지 않는다.
+const plaqueFolded = ref(false);
+async function playShown() {
+  if (!shownWork.value || !engine.value || plaqueFolded.value) return;
+  engine.value.play(shownWork.value.id);
+  plaqueFolded.value = true;
+  try {
+    while (alive && engine.value?.performing()) await new Promise(r => setTimeout(r, CUTOUT.waitMs));
+  } finally { plaqueFolded.value = false; }
+}
 function listen() {
   const g = shownPlaque.value?.guide;
   if (g && !speak(g)) say('이 브라우저는 읽어 주기를 지원하지 않아요');
@@ -719,6 +733,7 @@ onMounted(async () => {
   if (!(await store.storageWorks())) { phase.value = 'nostorage'; return; }
   void store.keepStorage().then((v) => { persisted.value = v; }); // §2-19 기준 1: 브라우저가 저장 공간을 비울 때 이 미술관은 남기도록 요청
   await boot();
+  if (SERVER_WORLD) void artWatch.resume(() => watchIds(selectedChild.value)); // 새로 고침해도 진행 중인 작품과 확정·결정을 기다리는 작품을 이어서 본다
 });
 onBeforeUnmount(() => {
   alive=false;
@@ -773,7 +788,6 @@ function openSettings() {
           <button ref="startBtn" class="g-btn g-btn--primary g-btn--big" type="button" :disabled="phase !== 'title'" @click="start(false)">시작하기</button>
           <button v-if="!account" class="g-btn g-btn--big w-entry-secondary" type="button" :disabled="phase !== 'title'" @click="start(true)">샘플 미술관 먼저 보기</button>
         </div>
-        <RouterLink v-if="SERVER_WORLD" to="/app/signup" class="g-btn">이메일로 가입하기</RouterLink>
         <p v-if="!account && !SERVER_WORLD" class="w-entry-note">이 기기에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.</p>
       </div>
       <div v-if="TestEntry && !account && phase === 'title'" class="w-test-entry"><component :is="TestEntry" @enter="enterTest" /></div>
@@ -902,7 +916,7 @@ function openSettings() {
       </section>
       <!-- 가까운(또는 누른) 작품 명패 -->
       <!-- 결과 카드가 떠 있거나 곧 뜰 때는 명패를 열지 않는다(카드 하나만, §2-17) -->
-      <section v-if="shownPlaque && shownWork && !panel && !editing && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
+      <section v-if="shownPlaque && shownWork && !plaqueFolded && !panel && !editing && !recentSaved && !pendingReveal" class="plaque g-panel" aria-live="polite">
         <p class="w-no">{{ shownPlaque.plaque.number }}</p>
         <h2>{{ shownPlaque.plaque.title }}</h2>
         <p class="by">{{ shownPlaque.plaque.byline }}<template v-if="shownPlaque.plaque.detail"> · {{ shownPlaque.plaque.detail }}</template><template v-if="shownWork?.sample"> · 체험용 작품</template></p>
@@ -1011,8 +1025,9 @@ function openSettings() {
         <div class="g-panel sheet-card">
           <h2>설정</h2>
           <h3 class="w-sub">백업</h3>
-          <p class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
-          <WorldStorageState :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
+          <p v-if="SERVER_WORLD" class="small">작품은 우리 미술관에 저장돼요. 캐릭터와 화면 설정은 이 기기에 남아요.</p>
+          <p v-else class="small">작품은 이 기기에만 저장돼요. 기기를 바꾸거나 브라우저 자료를 지우기 전에 백업 파일을 받아 두세요.</p>
+          <WorldStorageState v-if="!SERVER_WORLD" :persisted="persisted" :last-backup="lastBackup" :mode="saveMode" />
           <div class="row">
             <button class="g-btn g-btn--primary" type="button" :disabled="!!backupBusy" @click="doExport">{{ backupBusy === 'export' ? '만드는 중…' : '백업 내보내기' }}</button>
             <button class="g-btn" type="button" :disabled="!!backupBusy" @click="backupInput?.click()">{{ backupBusy === 'import' ? '가져오는 중…' : '백업 가져오기' }}</button>
@@ -1044,7 +1059,8 @@ function openSettings() {
             <button class="g-btn" type="button" @click="confirmReset = true">이 기기의 자료 모두 지우기</button>
           </template>
           <template v-else>
-            <p class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
+            <p v-if="SERVER_WORLD" class="g-note">이 기기에 남은 캐릭터와 화면 설정만 지워져요. 미술관의 작품은 지워지지 않아요.</p>
+            <p v-else class="g-note">이 기기에 저장한 작품·캐릭터·설정이 모두 지워져요. 지우기 전에 백업을 내보내 두세요. 이미 내려받은 파일은 남아요.</p>
             <div class="row">
               <button class="g-btn g-btn--primary" type="button" @click="resetAll">모두 지우기</button>
               <button class="g-btn" type="button" @click="confirmReset = false">그만두기</button>
@@ -1178,7 +1194,7 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
   .joy{width:84px;height:84px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
   .w-gestures .g-btn{min-height:34px;padding:4px 8px;font-size:12px}
 }
-.entrance{background:transparent;pointer-events:none}.w-title-card{position:absolute;left:5vw;bottom:12vh;display:grid;gap:24px;pointer-events:auto}.w-title-card h1{font:600 clamp(32px,5vw,64px) var(--g-serif);color:#fff5df;text-shadow:0 2px 18px #27352c;margin:0}.world .g-panel{background:var(--w-panel);color:var(--w-ink)}.world .g-btn{min-height:44px}.w-gestures{position:absolute;bottom:24px;right:24px;display:flex;gap:8px}.w-saved-thumb{display:block;max-height:96px;max-width:40%;margin:4px 0;border-radius:8px;object-fit:contain;background:#f1ebdf}.w-emotes{position:absolute;right:0;bottom:calc(100% + 8px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px;border-radius:14px;background:rgba(20,18,16,.6)}.hud-top{pointer-events:none}.hud-top>*{pointer-events:auto}@media(max-width:600px){.w-title-card{left:24px;bottom:15vh}.w-gestures{bottom:18px;right:12px;gap:4px}.w-gestures .g-btn{padding:6px 10px}.tools{max-width:270px;justify-content:flex-end}}
+.entrance{background:transparent;pointer-events:none}.w-title-card{position:absolute;left:5vw;bottom:12vh;display:grid;gap:24px;pointer-events:auto}.w-title-card h1{font:600 clamp(32px,5vw,64px) var(--g-serif);color:#fff5df;text-shadow:0 2px 18px #27352c;margin:0}.world .g-panel{background:var(--w-panel);color:var(--w-ink)}.world .g-btn{min-height:44px}.w-gestures{z-index:11;position:absolute;bottom:24px;right:24px;display:flex;gap:8px}.w-saved-thumb{display:block;max-height:96px;max-width:40%;margin:4px 0;border-radius:8px;object-fit:contain;background:#f1ebdf}.w-emotes{position:absolute;right:0;bottom:calc(100% + 8px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px;border-radius:14px;background:rgba(20,18,16,.6)}.hud-top{pointer-events:none}.hud-top>*{pointer-events:auto}@media(max-width:600px){.w-title-card{left:24px;bottom:15vh}.w-gestures{bottom:18px;right:12px;gap:4px}.w-gestures .g-btn{padding:6px 10px}.tools{max-width:270px;justify-content:flex-end}}
 .w-town-list{position:absolute;left:20px;bottom:120px;max-width:360px;max-height:45vh;overflow:auto;padding:18px;display:flex;gap:8px;flex-wrap:wrap}.w-town-list h2,.w-town-list p{width:100%;margin:0}
 /* 결과 카드 최대 높이(§2-22 검토 5): 화면 높이에서 위쪽 HUD(바닥 약 145px)+10px와 아래 110px를 뺀 값. 넘치면 카드 안에서 넘긴다 */
 .w-saved{position:absolute;z-index:12;left:50%;bottom:110px;transform:translateX(-50%);width:min(600px,90%);padding:16px;display:grid;gap:10px;box-sizing:border-box;max-height:calc(100dvh - 265px - env(safe-area-inset-top,0px));overflow:auto}.w-saved-sub{font-size:14px}.w-decor-bar{position:absolute;z-index:13;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);width:min(720px,94%);padding:14px 16px;display:grid;gap:8px;max-height:52vh;overflow:auto}.w-decor-tip{margin:0;font-size:14px}.w-decor-spots{display:grid;gap:6px}.w-decor-spot{display:inline-grid;gap:2px;justify-items:start}.w-decor-spot small{font-size:12px;color:#a3332e;max-width:12em}.w-decor-confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.w-decor-confirm p{margin:0;flex-basis:100%}@media(max-width:600px){.w-decor-bar{bottom:calc(env(safe-area-inset-bottom,0px) + 150px);max-height:46vh}}.w-hidden{display:none}.w-entry-lead{margin:0;color:#fff5df;font-size:clamp(17px,2vw,22px);text-shadow:0 1px 10px #27352c;max-width:30em;word-break:keep-all}.w-entry-actions{display:flex;flex-wrap:wrap;gap:12px}.w-entry-note{margin:0;color:#fff5df;font-size:14px;text-shadow:0 1px 8px #27352c;word-break:keep-all}
