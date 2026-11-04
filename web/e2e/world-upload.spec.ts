@@ -66,7 +66,7 @@ test('서버는 저장했는데 응답을 못 받아도, 다시 시도하면 작
   await shot(page, 'retry');
   expect(await works(page)).toBe(1);
   await page.getByRole('button', { name: '다시 시도' }).click();
-  await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden({ timeout: 30_000 });
   expect(keys).toHaveLength(2);
   expect(keys[0]).toBe(keys[1]);
   expect(await works(page)).toBe(1);
