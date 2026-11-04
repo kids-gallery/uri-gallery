@@ -317,7 +317,7 @@ export class MuseumEngine {
       return { age: r.age, part: r.part, title: visiting?`전시실 ${i+1}`:roomTitle(r.age)+(r.part > 1 ? ` ${r.part}` : ''), subtitle: visiting?'':roomSubtitle(subjects) };
     });
     this.museum.buildWing(specs);
-    for(const p of this.museum.pickables)if(p.userData.action==='addRoom')p.visible=!visiting;
+    for(const p of this.museum.pickables)if(p.userData.action==='addRoom')p.visible=!visiting&&import.meta.env.VITE_WORLD_SERVER!=='1';
     for (const a of ordered) {
       const slot = slots.get(a.id);
       const l = loadedNow.get(a.id);
@@ -588,8 +588,8 @@ export class MuseumEngine {
   setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
-  /** 대성당 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
-  private get zoomFar(): number { return this.space === 'inside' && this.theme.current === 'classic' ? ZOOM.lift : ZOOM.far; }
+  /** 대성당과 블록의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
+  private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
   /** 움직여 보기 창이 도는 동안 뒤쪽 장면을 멈춘다. 휴대폰에서 3D 두 개를 함께 그리지 않기 위해서다 */
   setRenderHeld(on: boolean) { this.renderHeld = on; }
   /** 결과 카드가 떠 있는 동안 캐릭터가 작품을 가리지 않게 한다(마스터플랜 3-3 #137) */

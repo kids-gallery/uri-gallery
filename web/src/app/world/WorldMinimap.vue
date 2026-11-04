@@ -26,5 +26,5 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer); });
 
 <style scoped>
 .w-minimap{position:absolute;z-index:9;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 126px);width:92px;height:92px;border-radius:14px;background:rgba(20,18,16,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);pointer-events:none}
-@media (min-width:900px){.w-minimap{width:148px;height:148px;bottom:calc(env(safe-area-inset-bottom,0px) + 74px)}}
+@media (min-width:900px){.w-minimap{width:148px;height:148px}}
 </style>
