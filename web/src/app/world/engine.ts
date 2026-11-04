@@ -565,7 +565,7 @@ export class MuseumEngine {
 
   goLobby() { if(this.space!=='inside'){if(this.space==='town')this.showPlaza();this.enterMuseum();return;}this.route = this.museum.route(this.avatarRoot.position.clone(), new THREE.Vector3(0, 0, 6.5)); }
 
-  setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
+  setJoystick(x: number, y: number) { this.joy.set(x, y); if ((x || y) && !this.entering) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
   setInputPaused(on:boolean){this.inputPaused=on;this.onBlur();if(on){this.route=[];this.pendingPlay=null;}}
@@ -578,6 +578,7 @@ export class MuseumEngine {
     else if(this.flashT>0){this.flashT=Math.max(0,this.flashT-dt);this.setWipe(this.flashDur?this.flashT/this.flashDur:0);}
     if(this.mode==='title'&&!this.reduced)this.titleClock+=dt;
     // 들어가기: 문턱 1.6m 앞부터 흰빛이 덮이고, 문턱에서 안으로 바꾼다
+    if(this.space==='plaza'&&!this.entering&&this.outdoor.inDoorway(this.avatarRoot.position.x,this.avatarRoot.position.z))this.enterMuseum();
     if(this.entering){this.enteringTime+=dt;this.outdoor.openDoors(Math.min(1,this.enteringTime));const z=this.avatarRoot.position.z;this.setWipe(clamp01((13.6-z)/1.6));if(z<=12)this.finishEnter();}
     const rw=this.revealWatch;if(rw&&((rw.at!==null&&this.t>=rw.at)||this.t>=rw.deadline)){this.revealWatch=null;this.ev.onRevealed?.(rw.id);}
     this.moveAvatar(dt);
@@ -601,8 +602,8 @@ export class MuseumEngine {
       const r = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const k = this.keys;
       // 연출 중에는 정해진 길만 걷는다(§2-17)
-      const fwd = this.cinematic ? 0 : (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + -this.joy.y;
-      const side = this.cinematic ? 0 : (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + this.joy.x;
+      const fwd = this.cinematic || this.entering ? 0 : (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + -this.joy.y;
+      const side = this.cinematic || this.entering ? 0 : (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + this.joy.x;
       if (fwd || side) { dir.addScaledVector(f, fwd).addScaledVector(r, side); this.route = []; this.faceAfterRoute = false; this.revealFocus = 0; }
       else if (this.route.length) {
         const target = this.route[0]!;
@@ -755,7 +756,9 @@ export class MuseumEngine {
     if(this.mode==='start'){this.skipIntro();return;}
     if(this.inputPaused||this.mode==='title')return;
     const t = e.target as HTMLElement | null;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'BUTTON' || t.isContentEditable)) return;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+    // 누른 화면 버튼에 포커스가 남아도 걷는다. 스페이스와 창 안의 버튼은 버튼 몫이다(설계서 2-1 문 드나들기)
+    if (t?.tagName === 'BUTTON' && (e.code === 'Space' || t.closest('[role="dialog"]'))) return;
     if(e.code==='Space'){e.preventDefault();this.gesture('jump');return;}
     if(e.code==='KeyE'){e.preventDefault();this.interact();return;}
     if(e.code==='KeyH'){this.gesture('wave');return;}

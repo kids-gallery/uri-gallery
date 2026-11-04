@@ -9,6 +9,8 @@ export function intersectsSolid(x: number, y: number, z: number, b: Solid, radiu
   const cz = Math.min(b.max[2], Math.max(b.min[2], z));
   return (x - cx) ** 2 + (z - cz) ** 2 < radius * radius - 1e-9;
 }
+/** 앞이 막혔을 때 좌우로 찾는 거리(문틀 바깥쪽 2.075 - 지나가는 폭 1.305)와 후보 눈금, 그 자리에서 앞으로 트여야 하는 거리(문틀 두께 .55 + 몸 지름 .84), 비껴 주는 입력의 기울기 한도(약 14도. 30도로 하면 곡면 벽을 긁으며 떨린다). 설계서 2-1 문 드나들기 */
+const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .25, SLIP_GRID = .09;
 export class NavigationWorld {
   private grid = new Map<string, Solid[]>();
   constructor(readonly colliders: Solid[], private floor: (x: number, z: number) => boolean, readonly radius = .42) {
@@ -26,10 +28,30 @@ export class NavigationWorld {
     if (![state.x, state.z, dx, dz].every(Number.isFinite)) throw new TypeError('Movement coordinates must be finite.');
     const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / .09)); dx /= steps; dz /= steps;
     for (let i = 0; i < steps; i++) {
-      if (this.canStand(state.x + dx, state.z)) state.x += dx;
-      if (this.canStand(state.x, state.z + dz)) state.z += dz;
+      const movedX = this.canStand(state.x + dx, state.z); if (movedX) state.x += dx;
+      const movedZ = this.canStand(state.x, state.z + dz); if (movedZ) state.z += dz;
+      if (!movedX && Math.abs(dz) <= Math.abs(dx) * SLIP_TILT) this.slip(state, dx, 0);
+      else if (!movedZ && Math.abs(dx) <= Math.abs(dz) * SLIP_TILT) this.slip(state, 0, dz);
     }
     return state;
+  }
+  // 앞이 막혔을 때 옆으로 비키면 문 두께만큼 앞으로 나갈 수 있는 가까운 자리로 다가간다. 옆길이 막힌 쪽은 보지 않는다.
+  // 후보를 고정 눈금에 두어 다가가는 동안 답이 바뀌지 않게 하고, 찾은 자리를 넘지 않아 떨리지 않는다
+  private slip(state: Point, dx: number, dz: number) {
+    const ax = Math.sign(dx), az = Math.sign(dz), now = dx ? state.z : state.x, base = Math.round(now / SLIP_GRID) * SLIP_GRID;
+    const at = (c: number): Point => dx ? { x: state.x, z: c } : { x: c, z: state.z };
+    const ahead = (p: Point) => { if (!this.canStand(p.x + dx, p.z + dz)) return false; for (let t = .2; t <= SLIP_AHEAD; t += .2) if (!this.canStand(p.x + ax * t, p.z + az * t)) return false; return true; };
+    const sides = now >= base ? [1, -1] : [-1, 1], open = { 1: true, [-1]: true } as Record<number, boolean>;
+    for (let k = 0; (k - 1) * SLIP_GRID <= SLIP_REACH; k++) for (const side of sides) {
+      const c = base + side * k * SLIP_GRID, gap = Math.abs(c - now);
+      if (gap < 1e-6 || gap > SLIP_REACH || Math.sign(c - now) !== side) continue;
+      const p = at(c);
+      open[side] = open[side]! && this.canStand(p.x, p.z);
+      if (!open[side] || !ahead(p)) continue;
+      const next = at(now + side * Math.min(Math.abs(dx || dz), gap));
+      if (this.canStand(next.x, next.z)) { state.x = next.x; state.z = next.z; }
+      return;
+    }
   }
   clearLine(a: Point, b: Point) {
     const steps = Math.max(1, Math.ceil(Math.hypot(a.x - b.x, a.z - b.z) / .25));
