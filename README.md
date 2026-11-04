@@ -110,11 +110,14 @@ flowchart LR
 
 ### 지금 상태
 
+2026-11-03 `main` 기준입니다.
+
 | 된 것 | 아직 안 된 것 |
 |---|---|
-| 모델 서빙(앱 서버·작업 큐·AI 모델·DB)이 한 대에서 돈다 | Dockerfile·compose(이번에 팀이 직접 만든다) |
-| 3D 미술관이 브라우저에서 돈다(기기 안에서만) | 3D 화면을 서버에 잇는 코드 |
-| 리눅스 컨테이너에서 시험 통과, 웹 빌드 확인 | 배포(이번 5일 밖), 모델 정확도 평가, 실제 사용자 검증 |
+| compose 상시 서비스 7개와 db-migrate. 맥에서 가짜 모델로 한 바퀴 | 세 PC 같은 커밋 한 바퀴(#41), Windows 화면 |
+| 3D 화면 ↔ 서버: 가입·로그인·아이·올리기·상태·확정·결정·전시 | 실제 휴대폰 사진으로 한 바퀴, 휴대폰 성능 |
+| 실제 모델 M1·M2·M5를 겹쳐 켜기. 맥에서 한 바퀴(worker `memory.peak` 8.35GiB) | M3 실제 실행(가짜 어댑터라 움직이는 그림은 재생되지 않음) |
+| 자동 시험(웹, API, 서빙) | 모델 정확도 평가, 실제 사용자 검증, 배포(이번 5일 밖) |
 
 ### 팀
 
@@ -188,6 +191,42 @@ docker compose ps
 
 **막히면** 30분 안에 팀 채널에 명령·오류 문구·해 본 것을 붙여 묻습니다. 자주 걸리는 곳: Windows 줄바꿈 깨짐(WSL에서 받기), 컨테이너끼리 연결 안 됨(바인딩 주소), 로그인 유지 안 됨(`SECURE_COOKIES=false`). → [증상별 표](docs/공통/수행가이드.md#stuck)
 
+### 실제 모델과 카카오 켜기
+
+**실제 모델(맥, 컨테이너 메모리 10GiB 이상).** 가중치를 저장소 맨 위에서 아래 명령으로 `models/hf`에 받습니다. 받을 판은 `models/manifest.yaml`의 `source`·`revision`입니다. M3·M6·M7은 받지 않습니다.
+
+```bash
+pip install -U huggingface_hub
+rev() { awk -v m="  $1:" '$0==m{f=1;next} f&&/^  M[0-9]+:/{f=0} f&&$1=="revision:"{print $2;exit}' models/manifest.yaml; }
+hf download ZhengPeng7/BiRefNet --revision "$(rev M1)" --cache-dir models/hf
+hf download laion/CLIP-ViT-B-32-laion2B-s34B-b79K open_clip_model.safetensors --revision "$(rev M2)" --cache-dir models/hf
+hf download depth-anything/Depth-Anything-V2-Small-hf --revision "$(rev M5)" --cache-dir models/hf
+```
+
+M5는 이 명령으로 받아 파일 해시가 매니페스트와 같고 폴더 구조가 동작 중인 캐시와 같은 것을 확인했습니다. M1·M2는 같은 명령 형식이지만 이 명령으로 다시 받아 보지 않았습니다. 이미지가 남아 있으면 옛 코드로 뜨므로 `--build`를 붙입니다.
+
+```bash
+docker compose stop worker-cpu    # 가짜 모델로 돌던 스택을 바꿀 때만
+docker compose -f compose.yaml -f compose.real.yaml up -d --build
+```
+
+맥에서 포트와 이미지 이름만 바꿔 돌려 봤습니다. README의 기본 포트와 명령 그대로는 실행하지 않았고, Windows도 재지 않았습니다. 처리 시간과 메모리는 조건과 함께 [마스터플랜 7절](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md#7-각자-남길-작업-기록)에 둡니다. 메모리가 빠듯하면 60초 제한에 걸려 액자로 낮아집니다.
+
+**카카오 로그인.** 저장소 폴더의 `.env`(Git 제외)에 키 2개를 넣고 `http://localhost:9501`로 엽니다. 값이 없으면 카카오 버튼 없이 이메일 가입 화면이 나옵니다.
+
+```text
+KAKAO_REST_API_KEY=...
+KAKAO_CLIENT_SECRET=...
+콘솔 등록: http://localhost:9501/v1/auth/kakao/callback
+```
+
+- **각 PC에서 compose를 띄워 자기 `localhost:9501`로 열 때:** 등록된 주소와 같으므로 콘솔에 더 등록할 필요가 없고 `.env` 키만 있으면 됩니다. 맥에서 키만 두고 띄웠을 때 카카오로 넘어가는 주소의 `redirect_uri`가 이 값인 것을 확인했습니다. Windows에서 실제 로그인은 아직 시험하지 않았습니다.
+- **다른 PC에서 내 맥의 IP로 접속할 때:** 그 주소를 콘솔에 등록하고 `APP_BASE_URL`을 바꿔야 합니다. 재지 않았습니다.
+
+맥에서 실제 카카오 계정으로 로그인해 봤습니다(#93). 콘솔 오류 `KOE006`은 주소 미등록, `KOE010`은 시크릿 불일치입니다.
+
+저장소 폴더에 pm2용 옛 `.env`가 있으면 compose 값을 덮어쓰니 옮겨 두고 필요한 값만 넣습니다.
+
 ---
 
 ## 문서 지도
@@ -213,3 +252,7 @@ docker compose ps
 | `models/` | 모델 목록(가중치는 넣지 않음) |
 | `ops/` | 서버 구성 |
 | `docs/` | 팀원이 읽을 문서(`공통/`), 지난 기록(`기록/`), 프로그램·AI가 읽는 파일(`_claude/`) |
+
+## 부록
+
+- [자체 모델 제작 과정](docs/공통/자체모델_제작과정.md): 모델 구조, 학습 방법, 판마다 바꾼 것, 결과와 한계. `own8`은 시연 전용이다.

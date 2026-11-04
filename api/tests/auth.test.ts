@@ -3,6 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { resetData } from './helpers/db.js';
 import { testApp, tokenOf } from './helpers/app.js';
+import { staff } from './helpers/fixtures.js';
 
 const t = testApp();
 const agent = () => request.agent(t.app);
@@ -76,6 +77,76 @@ describe('로그인·로그아웃', () => {
     await a.get('/v1/me').expect(200);
     await a.post('/v1/auth/logout').expect(204);
     await a.get('/v1/me').expect(401);
+  });
+  it('쓸 때마다 브라우저 쿠키도 다시 14일로 늘어난다(R-08)', async () => {
+    await signupAndVerify('renew@test.local');
+    const r = await request(t.app).post('/v1/auth/login').send({ email: 'renew@test.local', password: PW }).expect(204);
+    const pair = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!.split(';')[0]!;
+    const me = await request(t.app).get('/v1/me').set('Cookie', pair).expect(200);
+    const again = (me.headers['set-cookie'] as unknown as string[] | undefined)?.find((c) => c.startsWith('uam_sid='));
+    expect(again).toBeDefined();
+    expect(again!.split(';')[0]).toBe(pair); // 토큰은 그대로
+    expect(again).toContain(`Max-Age=${14 * 24 * 60 * 60}`);
+    expect(again).toContain('HttpOnly');
+    expect(again).toContain('Path=/');
+    expect(again).toContain('SameSite=Lax');
+  });
+
+  it('HTTPS 설정이면 다시 보내는 쿠키에도 Secure가 붙는다', async () => {
+    const secure = testApp({ SECURE_COOKIES: 'true' });
+    try {
+      await signupAndVerify('secure@test.local');
+      const r = await request(secure.app).post('/v1/auth/login').send({ email: 'secure@test.local', password: PW }).expect(204);
+      const first = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!;
+      expect(first).toContain('Secure');
+      const me = await request(secure.app).get('/v1/me').set('Cookie', first.split(';')[0]!).expect(200);
+      expect((me.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))).toContain('Secure');
+    } finally {
+      await secure.close();
+    }
+  });
+
+  it('팀원 세션은 쿠키와 DB 모두 30분 그대로다', async () => {
+    await staff(t, 'ops-keep@test.local', ['operator']);
+    const login = await request(t.app).post('/v1/ops/auth/login').send({ email: 'ops-keep@test.local', password: PW }).expect(200);
+    expect((login.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_ops_sid='))).toContain(`Max-Age=${30 * 60}`);
+    const left = async () => Number(((await t.db.query(`SELECT MAX(TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), expires_at)) m FROM app_session WHERE subject_kind = 'staff'`))[0] as { m: number }[])[0]!.m);
+    expect(await left()).toBeLessThanOrEqual(30);
+    expect(await left()).toBeGreaterThanOrEqual(29);
+  });
+
+  it('무효인 세션에는 쿠키를 다시 주지 않는다', async () => {
+    await request(t.app).get('/v1/me').set('Cookie', 'uam_sid=no-such-session').expect(401).expect((res) => {
+      expect(res.headers['set-cookie']).toBeUndefined();
+    });
+    await signupAndVerify('revoked@test.local');
+    const r = await request(t.app).post('/v1/auth/login').send({ email: 'revoked@test.local', password: PW }).expect(204);
+    const pair = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!.split(';')[0]!;
+    await t.db.query(`UPDATE guardian_account SET password_changed_at = UTC_TIMESTAMP(3) + INTERVAL 1 MINUTE WHERE email = 'revoked@test.local'`);
+    const res = await request(t.app).get('/v1/me').set('Cookie', pair).expect(401);
+    expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('로그아웃 응답의 마지막 쿠키는 지우는 쿠키다', async () => {
+    await signupAndVerify('bye@test.local');
+    const r = await request(t.app).post('/v1/auth/login').send({ email: 'bye@test.local', password: PW }).expect(204);
+    const pair = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!.split(';')[0]!;
+    const out = await request(t.app).post('/v1/auth/logout').set('Cookie', pair);
+    expect(out.status).toBeLessThan(300);
+    const mine = (out.headers['set-cookie'] as unknown as string[]).filter((c) => c.startsWith('uam_sid='));
+    expect(mine.at(-1)).toMatch(/^uam_sid=;/);
+  });
+
+  it('보호자 세션은 14일 유지되고, 쓰면 다시 14일로 늘어난다(R-08)', async () => {
+    await signupAndVerify('keep@test.local');
+    const r = await request(t.app).post('/v1/auth/login').send({ email: 'keep@test.local', password: PW }).expect(204);
+    const cookie = (r.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('uam_sid='))!;
+    expect(cookie).toContain(`Max-Age=${14 * 24 * 60 * 60}`);
+    const left = async () => Number(((await t.db.query(`SELECT MAX(TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), expires_at)) m FROM app_session WHERE subject_kind = 'guardian'`))[0] as { m: number }[])[0].m);
+    expect(await left()).toBeGreaterThanOrEqual(14 * 24 * 60 - 1);
+    await t.db.query(`UPDATE app_session SET expires_at = UTC_TIMESTAMP() + INTERVAL 1 HOUR WHERE subject_kind = 'guardian'`);
+    await request(t.app).get('/v1/me').set('Cookie', cookie.split(';')[0]!).expect(200);
+    expect(await left()).toBeGreaterThanOrEqual(14 * 24 * 60 - 1);
   });
   it('로그인 실패 한도(같은 이메일 15분 10회) 뒤 429', async () => {
     await signupAndVerify('z@test.local');

@@ -5,7 +5,7 @@ import { writeFileSync, mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { activateDevModels, realVersions } from '../scripts/migrate.js';
-import { testPool } from './helpers/db.js';
+import { resetData, testPool } from './helpers/db.js';
 
 describe('개발용 모델 최초 활성', () => {
   let db: Pool;
@@ -13,7 +13,7 @@ describe('개발용 모델 최초 활성', () => {
   beforeAll(async () => {
     db = testPool();
     conn = await db.getConnection();
-    await conn.query('DELETE FROM model_version');
+    await resetData(db); // 시험 파일들이 임시 DB를 함께 쓴다. 앞 파일의 stage_job이 남아 있으면 model_version을 지우지 못한다
   });
   afterAll(async () => {
     await conn.query('DELETE FROM model_version');

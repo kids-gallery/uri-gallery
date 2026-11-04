@@ -1,7 +1,7 @@
 # 실제 모델 켜기(마스터플랜 3-5 3·4번, #42). 기본 compose.yaml은 가짜 모델 그대로 둔다.
 #   docker compose -f compose.yaml -f compose.real.yaml up -d --build
 # 가중치는 저장소에 없다. models/manifest.yaml의 source·revision으로 받아 models/hf에 둔다.
-# M3·M7은 가짜 어댑터로 둔다. 메모리는 맥 측정값(12MP 합성 한 바퀴 memory.peak 8.35GiB)보다 여유 있게 잡았고, 최종 값은 #43에서 정한다.
+# M3·M7은 가짜 어댑터로 둔다. 메모리는 맥 측정값(memory.peak 8.09~8.35GiB, 마스터플랜 7절)보다 여유 있게 잡았다.
 services:
   db-migrate:
     environment:
