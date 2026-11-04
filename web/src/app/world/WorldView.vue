@@ -563,7 +563,7 @@ async function toggleSound() {
   if (!prefs.value) return;
   prefs.value = { ...prefs.value, sound: !prefs.value.sound };
   setSoundEnabled(prefs.value.sound);
-  if (!prefs.value.sound) stopSpeaking();
+  if (prefs.value.sound) setAmbience(prefs.value.theme ?? 'classic'); else stopSpeaking();
   try { await store.savePrefs(prefs.value); } catch { say('설정을 저장하지 못했어요'); }
 }
 
