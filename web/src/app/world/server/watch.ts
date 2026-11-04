@@ -20,7 +20,7 @@ export function autoStep(d: Pick<ArtworkDetail, 'state' | 'confirmedKind' | 'cho
 /** 체험 서버 자동 전시 실행. 실패하면 다음 상태 묻기에서 다시 보내고, 세 번째 실패에 사람에게 넘긴다(지금의 창이 뜬다) */
 export function autoExhibitor(io: {
   confirm: (id: string, kind: 'relief') => Promise<ArtworkDetail>;
-  decide: (id: string, decision: 'like') => Promise<{ artwork?: ArtworkDetail }>;
+  decide: (id: string, decision: 'like') => Promise<{ artwork?: ArtworkDetail | null }>;
   setDetail: (d: ArtworkDetail) => void;
   again: (id: string) => void;
 }) {
