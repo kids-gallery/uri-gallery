@@ -56,7 +56,7 @@
 - nginx: `/`는 `dist-world` 정적 파일(없는 경로는 `index.html`), `/v1/*`·`/live`·`/ready`는 app-api, `/v1/models/*`는 model-api. 화면과 API가 같은 출처라 CORS가 필요 없다(쿠키 세션 그대로).
 - 기동 순서: db 준비 → db-migrate(스키마, 개발 환경이면 모델 첫 활성까지) 완료 → app-api·sweeper·model-api·worker-cpu. 준비됨의 기준은 3-5 6번 표. 상시 서비스는 `restart: unless-stopped`, db-migrate는 `restart: "no"`. 모든 서비스 `init: true`(종료 신호 전달용이고 정상 종료를 보장하지는 않는다, 3-5 6번).
 - 메일을 끄면 이메일 가입도 꺼지므로(`api/src/modules/auth/routes.ts` 66행) Mailpit을 둔다.
-- 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4).
+- 비밀 값(사용자 결정 2026-10-30): 비밀번호·키(`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_HMAC_SECRET` 등)는 compose `secrets:`로 `secrets/` 폴더의 파일을 컨테이너에 넣는다(`/run/secrets/…`). 환경 변수와 달리 `docker inspect`에 값이 보이지 않는다. `secrets/`의 실제 값 파일은 `.gitignore`로 저장소에 올리지 않고, 빈 예시(`secrets/*.example`)만 올린다. 리뷰어 확인 목록(4-1)의 "비밀 값"에 이 폴더를 넣는다. 비밀이 아닌 설정(주소, 포트, 켜고 끄는 값)은 `.env`(`env_file`)로 넘긴다. MariaDB 공식 이미지는 `MARIADB_PASSWORD_FILE`을 바로 읽고, app-api는 `*_FILE` 값을 읽도록 고친다(3-4). 파일은 `ops/docker/make-secrets.sh`로 만든다. 파일은 400, 폴더는 700이고, 리눅스에서는 소유자를 컨테이너 사용자 번호(1000)로 둔다. compose의 파일 비밀은 호스트의 소유자와 권한을 그대로 들고 들어가고 `uid`, `mode` 지정이 적용되지 않으므로, 서버 계정 번호가 1000이 아니면 읽지 못한다. 체험 서버에 올려 처음 찾았고(#136) 맥과 WSL에서는 보이지 않았다(#140). 처음에 고른 444는 모든 계정이 읽는 권한이라 리뷰에서 버렸다.
 - **#66 리뷰 반영:** 컨테이너 예시는 APP_HOST=0.0.0.0, MAIL_ENABLED=true를 각각 한 번 둔다. TRUST_PROXY의 compose망 CIDR과 고정 subnet은 #32에서 함께 정하며, 예시의 loopback은 그 전까지 기본값으로 명시한다. 호스트 pm2 배포 문서에는 주소·저장 경로·쿠키 값을 호스트 기준으로 설정하는 절차를 분리한다.
 - **#25 설정 예시:** `.env.example`은 컨테이너용 비밀이 아닌 값만 둔다. DB는 `db:3306/uam`, 메일은 `smtp://mailpit:1025`, 모델 API는 `http://model-api:9541`, 메일 링크는 `http://localhost:9501`이다. HTTP 개발에서만 `SECURE_COOKIES=false`이고 HTTPS에서는 true로 바꾼다. 저장소 폴더에 `.env`가 있으면 `.env.example` 값을 덮어쓴다. pm2용으로 만든 옛 `.env`는 옮겨 두고 필요한 값만 넣는다. `secrets/db_password.example`, `session_secret.example`, `auth_hmac_secret.example`은 빈 안내 파일이며 실제 파일은 Git에서 제외한다. DB의 root 비밀번호도 개발 compose에서는 db_password 파일을 공유한다(#18 목록). API 파일 읽기는 #21, serving은 #23이 선행되어야 한다. `.env`를 프로그램이 자동으로 읽지 않으므로 로컬 개발 시험에는 환경 변수를 직접 넘긴다.
 - 띄우지 않는 것: worker-gpu, TorchServe, 설명 서버.
@@ -206,7 +206,7 @@
    - **#24 모델 의존성 선택:** 기본 `INSTALL_MODELS=0`은 기본 잠금만 설치한다. `INSTALL_MODELS=1`일 때 BuildKit `TARGETARCH=amd64`는 `requirements-models-linux-x86_64.lock`(CPU 전용 torch), `arm64`는 기존 `requirements-models.lock`을 고른다. 지원하지 않는 CPU·설치 값은 설치 전에 실패한다. 잠금은 재생성하지 않는다. arm64 기존 잠금은 macOS 대상으로 생성됐다. wpalswpa의 PR #67 리뷰에서 Linux arm64 빌드·torch import 성공(1.63GB, torch 2.4.1 aarch64, CUDA False)이 보고됐지만, 모델 적재 호환까지 보장할 수 없다. 시험은 빌드와 torch import까지만 하고 가중치 다운로드나 실제 모델 실행은 하지 않는다.
    - **#65 리뷰 반영:** model-api는 uvicorn 기동 전에 설정을 읽어 비밀 파일 오류를 프로세스 실패로 처리한다. serving은 UID/GID 1000의 비루트 사용자로 실행한다. 앱 이미지의 `node` UID 1000과 맞춰 작품 볼륨의 상호 쓰기·삭제가 가능하도록 하며 `/data/store`, `/data/run`을 같은 사용자 소유로 만든다. 기존 볼륨 권한 변경과 호스트 비밀 파일 접근은 compose 연결 때 별도 확인한다. 기본 잠금에 포함된 pytest는 현재 이미지에도 포함되며 잠금 재생성은 하지 않는다.
    - **#23 serving 이미지:** `python:3.11.18-slim-bookworm`(실제 pull 후 Python 판 확인), 기본 `requirements.lock`을 해시 검증하여 설치한다. model-api 기본 명령은 `python -m model_api.main`, worker는 같은 이미지에서 `python -m workers.main --group cpu_vision`로 바꾼다. `MODEL_API_HOST`는 기본 127.0.0.1이고 컨테이너 간 통신 시 0.0.0.0을 명시한다. 계약과 매니페스트는 `/app/contracts`, `/app/models/manifest.yaml`, 작품과 상태는 `/data/store`, `/data/run`이다. 기본 이미지에 모델 묶음과 가중치를 넣지 않는다. `DB_PASSWORD_FILE`이 있으면 환경 변수보다 먼저 읽고 끝의 줄바꿈 한 개(LF/CRLF)만 없앤다. 읽기 실패는 기동 실패다. `.dockerignore`는 #61의 저장소 루트 파일을 재사용한다.
-   - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지).
+   - 빌드 맥락은 저장소 맨 위, `.dockerignore`는 맨 위에 하나(`node_modules`, `.env`, `secrets/`, `models/hf/`, `.data/`, 시험 결과물 제외). 의존성 파일을 먼저 복사해 설치하고 소스는 나중에. 정확한 판 번호는 각 이미지 PR에서 `docker pull`로 확인해 적는다(`latest` 금지). 기반 이미지는 판 번호 태그에 다이제스트를 함께 적는다(#140). 태그는 옮겨질 수 있고 다이제스트는 내용을 가리킨다. 여러 CPU의 목록을 가리키는 다이제스트라 arm64와 amd64가 같은 줄을 쓴다. 이미지는 각 PC가 빌드하므로 같은 이미지가 아니라 같은 레시피다. 레지스트리에서 같은 이미지를 받는 일은 하지 않았다(10절).
    - api 이미지는 운영 의존성과 빌드 결과만 담는다. [확인] `tsx`는 개발 의존성이고 빌드 결과는 `dist/src/server.js`·`dist/scripts/migrate.js`다. 그래서 명령은 `npm run …`이 아니라 `node`로 부른다. 이미지에 `/data/store`를 `node` 소유로 미리 만든다. 없으면 app-api가 새 작품 볼륨을 먼저 붙일 때 폴더가 root 소유가 되어 쓰지 못한다.
 
      | 서비스 | 명령 |
@@ -289,6 +289,14 @@
 | #33 DB 초기화 | **고친다.** 마이그레이션 폴더 설정 값(`MIGRATIONS_DIR`)은 #22에서 고쳤다. 개발 환경 모델 첫 활성을 db-migrate에 더한다 | [확인] 빌드된 `dist/scripts/migrate.js`에서 `../../db/migrations`는 `api/db/migrations`가 되어 폴더가 없다. 새 DB에 활성 모델 버전이 없다 |
 | #34 워커 준비 상태 | 코드는 고치지 않는다. 상태 검사 기준만 위 표대로 | [확인] 상태 파일이 60초 넘게 멈추면 이미 멈춤으로 본다(`STALE_AFTER_S = 60`) |
 | #35 sweeper 종료 | 지금은 코드를 고치지 않는다. `init: true`는 신호 전달용으로만 쓴다. #35에서 종료 시간·종료 결과를 기록하고, 정리가 안 되는 문제가 드러나면 그때 종료 처리 코드를 더한다 | [확인] 한 번 다 돈 뒤 다음 차례를 잡아 겹치지 않는다(`setTimeout`). 빠른 종료와 작업·DB·파일의 정상 정리는 다르므로, 작업 중단 뒤 재시작·이어받기는 #41에서 따로 확인한다 |
+
+**자동 확인과 늦은 DB(#140, 2026-11-04 이제민 결정).** 같은 환경이라는 말을 사람의 기억이 아니라 시험 결과로 하려고 둔다.
+
+- `.github/workflows/compose-smoke.yml`이 PR마다 우분투 amd64에서 가짜 모델 compose를 띄운다. `ops/docker/smoke.mjs`가 화면이 부르는 API로 가입부터 전시까지 돌리고, `down` 뒤 `up`에도 작품이 남는지 본다.
+- `ops/docker/late-db-check.sh`는 DB를 일부러 늦게 띄워 healthcheck가 있을 때와 없을 때를 비교하고, 실행 중 DB를 다시 켠 뒤 재시작 없이 한 바퀴가 도는지 본다. 기대와 다르면 실패한다. 실행마다 고유한 프로젝트 이름을 써서 자기가 만든 볼륨만 지운다. `api/scripts/migrate.ts`에는 재시도가 없어 준비를 기다리는 일은 compose가 맡는다.
+- 고른 이유: PC 세 대를 사람이 매번 돌릴 수 없다. 브라우저를 빼 빠르고, 화면 시험은 그대로 `web/e2e`에 있다. GitLab CI를 옮기지 않았고 지금 파일도 고치지 않는다.
+- [측정, Actions amd64, 각 1회] 비밀 파일 600은 계정 번호 1001에서 `EACCES`로 실패하고, 소유자 1000과 400은 통과했다. DB를 30초 늦췄을 때 healthcheck가 없으면 `db-migrate`가 종료 코드 1로 끝나 app-api가 시작하지 못했고, 있으면 58초에 모두 떴다. 실행 중 DB를 40초 끄고 켜도 app-api는 재시작 없이 회복했다.
+- [한계] 비밀 파일 방식은 리눅스 파일시스템과 맥에서만 확인했다. WSL의 `/mnt/c`(NTFS)와 rootless Docker에는 일반화하지 않는다. 자동 확인은 amd64와 가짜 모델만 본다. arm64와 실제 모델은 동결 커밋으로 맥과 체험 서버에서 사람이 돌린다(#46). 3D 화면이 그려지는지는 보지 않는다.
 
 ### 3-6. 자체 모델 선택 실행(기본 꺼짐)
 
@@ -387,6 +395,8 @@ M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 �
 
 날짜는 2026-10-30(금)부터 11-05(목)까지다(사용자 확인 2026-10-30). 1일차와 2일차 사이에 주말이 있으므로, 설계 PR은 금요일 저녁까지 올리고 월요일 오전에 리뷰·병합한다.
 
+**2026-11-04 변경(이제민 결정).** 게임 규칙은 더하지 않고 1절의 핵심 흐름과 컨테이너 증거에 집중한다. 19:00에 기능을 동결하고, 그 커밋으로 맥, 신지현 PC, 체험 서버를 돌려 표를 #46에 남긴다.
+
 아침 10분은 그날 쓰는 교안 주제를 같이 다시 본다(가이드 3절).
 
 | 날 | 함께 | 최호준(A 모델 서빙) | 신지현(B 3D 화면) | 이제민(C 앱·데이터·연결) | 그날 끝 확인 |
@@ -447,6 +457,8 @@ M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 �
 - 3D 화면에 새 기능 더하기(연결 외). 작품 자르기(#118)는 이제민 결정으로 뺀 예외다.
 - CI 옮기기와 이미지 자동 빌드, 레지스트리에 올리기, 태그별 되돌리기, 모니터링(Prometheus·Grafana), 장애 리허설과 운영 절차서, 백업 스크립트, 보안 점검표, GPU 이미지.
 - M3·M6·M7을 실제로 컨테이너에 넣기.
+- 게임 규칙(미션, 점수) 더하기.
+- compose 한 바퀴 자동 확인(#140)은 위 CI 항목에서 이제민 결정으로 뺀 예외다.
 - Dockerfile·compose를 한 사람이 대신 다 만들어 주기(리뷰와 짝 작업은 좋다).
 - Kubernetes 같은 묶음 운영 도구, 유료 서비스, 승인 없는 공개 배포.
 - 시간이 남아도 위 항목을 다시 넣지 않는다.
