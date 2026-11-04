@@ -125,6 +125,7 @@ export class MuseumEngine {
   private sun = new THREE.DirectionalLight('#ffffff', 1.2);
   private particles = new Particles();
   private renderHeld = false;
+  private avatarHidden = false;
   private rig: AvatarRig | null = null;
   private avatarRoot = new THREE.Group();
   private clock = new THREE.Clock();
@@ -579,6 +580,8 @@ export class MuseumEngine {
   private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
   /** 움직여 보기 창이 도는 동안 뒤쪽 장면을 멈춘다. 휴대폰에서 3D 두 개를 함께 그리지 않기 위해서다 */
   setRenderHeld(on: boolean) { this.renderHeld = on; }
+  /** 결과 카드가 떠 있는 동안 캐릭터가 작품을 가리지 않게 한다(마스터플랜 3-3 #137) */
+  setAvatarHidden(on: boolean) { this.avatarHidden = on; }
   setInputPaused(on:boolean){this.inputPaused=on;this.onBlur();if(on){this.route=[];this.pendingPlay=null;}}
 
   // ───────── 한 프레임 ─────────
@@ -732,7 +735,7 @@ export class MuseumEngine {
     if(this.snapCamera){this.snapCamera=false;this.camera.position.copy(want);}
     else if(allowed<dist-.01)this.camera.position.copy(want);else this.camera.position.lerp(want,smoothing);
     this.camera.lookAt(target);
-    this.avatarRoot.visible=this.customizing||this.camera.position.distanceTo(this.avatarRoot.position.clone().add(new THREE.Vector3(0,1.1,0)))>1.6;
+    this.avatarRoot.visible=!this.avatarHidden&&(this.customizing||this.camera.position.distanceTo(this.avatarRoot.position.clone().add(new THREE.Vector3(0,1.1,0)))>1.6);
     // 달리기 감각(§2-11): 뛰는 동안만 시야각을 6도 넓힌다. 움직임 줄이기에서는 쓰지 않는다
     const kick = this.reduced ? 0 : this.sprinting ? 6 : 0;
     this.fovKick += (kick - this.fovKick) * (1 - Math.exp(-6 * dt));

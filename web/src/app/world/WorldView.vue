@@ -481,6 +481,7 @@ const motionSource=shallowRef<MotionSource|null>(null);let motionId:string|null=
 function openMotion(id:string){const src=engine.value?.stageSource(id);if(!src){engine.value?.play(id);return;}motionId=id;motionSource.value=src;openPanel('motion');}
 function motionFailed(){const id=motionId;void closePanel();if(id)engine.value?.play(id);} // 창을 만들지 못하는 기기는 전시실에서 움직인다
 const plaqueMore=ref(false);
+watch(recentSaved,(id)=>engine.value?.setAvatarHidden(!!id));
 
 /** 사진 돌리기(§2-15·§2-23 B): 원본은 그대로 두고 화면용 사본만 왼쪽·오른쪽으로 90° 다시 만든다. 다시 그린 질감이 바로 보인다 */
 async function rotateSaved(dir: 1 | -1) {
