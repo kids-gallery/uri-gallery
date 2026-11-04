@@ -16,7 +16,7 @@ import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
 import { confirmKind, deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
 import { galleryFailure, isStale, watchIds } from './server/gallery';
-import { autoStep, isMoving, useArtworkWatch } from './server/watch';
+import { autoExhibitor, autoStep, isMoving, useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
 import WorldDecision from './WorldDecision.vue';
@@ -410,26 +410,10 @@ const setDetail = (d: ArtworkDetail) => { artWatch.details.value = new Map(artWa
 const confirmOpenId = ref<string | null>(null);
 // 체험 서버는 묻지 않고 작품만 따서 건다(마스터플랜 3-3 #137). 세 번 실패한 작품만 지금의 창으로 사람에게 넘긴다
 const AUTO_EXHIBIT = SERVER_WORLD && import.meta.env.VITE_TRIAL === '1';
-const autoTries = new Map<string, number>(), autoBusy = new Set<string>();
-const autoGaveUp = ref(new Set<string>());
-const autoHandles = (d: ArtworkDetail) => AUTO_EXHIBIT && !autoGaveUp.value.has(d.id) && !!autoStep(d);
-async function runAuto(d: ArtworkDetail) {
-  const step = autoStep(d);
-  if (!step || autoBusy.has(d.id)) return;
-  autoBusy.add(d.id);
-  try {
-    if ('confirm' in step) setDetail(await confirmKind(d.id, step.confirm));
-    else { const out = await decide(d.id, step.decide); if (out.artwork) setDetail(out.artwork); }
-    artWatch.add([d.id]);
-    autoTries.delete(d.id);
-  } catch {
-    const tries = (autoTries.get(d.id) ?? 0) + 1;
-    autoTries.set(d.id, tries);
-    if (tries >= 3) autoGaveUp.value = new Set(autoGaveUp.value).add(d.id);
-    else artWatch.add([d.id]);
-  } finally { autoBusy.delete(d.id); }
-}
-if (AUTO_EXHIBIT) watch(artWatch.details, (all) => { for (const d of all.values()) if (autoHandles(d)) void runAuto(d); });
+const auto = autoExhibitor({ confirm: confirmKind, decide, setDetail, again: (id) => artWatch.add([id]) });
+const autoGaveUp = auto.gaveUp;
+const autoHandles = (d: ArtworkDetail) => AUTO_EXHIBIT && auto.handles(d);
+if (AUTO_EXHIBIT) watch(artWatch.details, (all) => { for (const d of all.values()) if (autoHandles(d)) void auto.run(d); });
 /** 결과 카드의 작품을 아직 만드는 중인가. 그동안 움직이면 네모 사진이 움직인다 */
 const savedMaking = computed(() => {
   if (!AUTO_EXHIBIT || !recentSaved.value) return false;

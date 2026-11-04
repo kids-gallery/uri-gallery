@@ -1,7 +1,7 @@
 // #37 시험: 3D 화면 상태 묻기(마스터플랜 3-3, 3-5 5번) — 진행 중일 때만 3→6→10초, 숨긴 탭, 실패 세 종류, 다시 시도, 늦게 온 옛 응답.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
-import { autoStep, isMoving, useArtworkWatch } from '@/app/world/server/watch';
+import { autoExhibitor, autoStep, isMoving, useArtworkWatch } from '@/app/world/server/watch';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': status >= 400 ? 'application/problem+json' : 'application/json' } });
@@ -386,5 +386,62 @@ describe('체험 서버 자동 전시(마스터플랜 3-3 #137)', () => {
   it('이미 확정했거나 걸린 작품은 다시 보내지 않는다', () => {
     expect(autoStep(at('processing', 'relief', []))).toBeNull();
     expect(autoStep(at('exhibited', 'relief', []))).toBeNull();
+  });
+});
+
+describe('자동 전시 실패와 재시도(#137 리뷰)', () => {
+  const pendingConfirm = { id: 'a1', state: 'awaiting_confirm', confirmedKind: null, choices: ['relief', 'frame'], stages: [] } as never;
+  const review = { id: 'a1', state: 'awaiting_review', confirmedKind: 'relief', choices: ['like', 'frame', 'retake'], stages: [] } as never;
+  const make = (over: object = {}) => {
+    const io = { confirm: vi.fn(async () => pendingConfirm), decide: vi.fn(async () => ({ artwork: review })), setDetail: vi.fn(), again: vi.fn(), ...over };
+    return { io, auto: autoExhibitor(io as never) };
+  };
+  it('성공하면 상세를 넣고 다시 묻는다', async () => {
+    const { io, auto } = make();
+    await auto.run(pendingConfirm);
+    expect(io.confirm).toHaveBeenCalledWith('a1', 'relief');
+    expect(io.setDetail).toHaveBeenCalledTimes(1);
+    expect(io.again).toHaveBeenCalledWith('a1');
+  });
+  it('좋아요 단계에서는 결정을 보낸다', async () => {
+    const { io, auto } = make();
+    await auto.run(review);
+    expect(io.decide).toHaveBeenCalledWith('a1', 'like');
+    expect(io.confirm).not.toHaveBeenCalled();
+  });
+  it('실패 두 번은 다시 묻고, 세 번째에 사람에게 넘긴다. 그 뒤에는 보내지 않는다', async () => {
+    const confirm = vi.fn(async () => { throw new Error('500'); });
+    const { io, auto } = make({ confirm });
+    expect(auto.handles(pendingConfirm)).toBe(true);
+    await auto.run(pendingConfirm);
+    await auto.run(pendingConfirm);
+    expect(io.again).toHaveBeenCalledTimes(2);
+    expect(auto.handles(pendingConfirm)).toBe(true);
+    await auto.run(pendingConfirm);
+    expect(io.again).toHaveBeenCalledTimes(2);
+    expect(auto.gaveUp.value.has('a1')).toBe(true);
+    expect(auto.handles(pendingConfirm)).toBe(false); // 지금의 [결과 고르기] 창이 뜬다
+    await auto.run(pendingConfirm);
+    expect(confirm).toHaveBeenCalledTimes(3);
+  });
+  it('실패 뒤 성공하면 횟수를 지운다', async () => {
+    let fail = 2;
+    const confirm = vi.fn(async () => { if (fail-- > 0) throw new Error('500'); return pendingConfirm; });
+    const { auto } = make({ confirm });
+    for (let i = 0; i < 3; i++) await auto.run(pendingConfirm);
+    expect(auto.gaveUp.value.has('a1')).toBe(false);
+    confirm.mockImplementation(async () => { throw new Error('500'); });
+    await auto.run(pendingConfirm);
+    await auto.run(pendingConfirm);
+    expect(auto.gaveUp.value.has('a1')).toBe(false);
+  });
+  it('보내는 중에는 같은 작품을 또 보내지 않는다', async () => {
+    let done = () => {};
+    const confirm = vi.fn(() => new Promise((r) => { done = () => r(pendingConfirm); }));
+    const { auto } = make({ confirm });
+    const first = auto.run(pendingConfirm);
+    await auto.run(pendingConfirm);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    done(); await first;
   });
 });
