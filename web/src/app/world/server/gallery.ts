@@ -38,8 +38,9 @@ async function photoWork(id: string, photoUrl: string, making = false): Promise<
 
 async function workOf(item: Item, no: number): Promise<store.Artwork> {
   const had = shown.get(item.id);
-  const base = had?.work ?? await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const same = had?.kind === item.kind;
+  // 전시용 판은 컷아웃으로 만들었다. 컷아웃이 걸렸던 작품의 결과가 바뀌면 판이 남지 않게 사진에서 다시 만든다
+  const base = had && (same || !had.work.cutout) ? had.work : await photoWork(item.id, item.photoUrl ?? item.originalUrl ?? '');
   const orNull = (url: string) => file(url).catch(() => null); // 못 받으면 낮춰 걸고 load가 다시 받게 한다(마스터플랜 3-3)
   const cutout = same ? had.work.cutout : item.kind === 'relief' && item.auxUrl ? await orNull(item.auxUrl) : null;
   const depth = (same ? had.work.depth : null) ?? (wantsDepth(item) && cutout && item.primaryUrl ? await orNull(item.primaryUrl) : null);
