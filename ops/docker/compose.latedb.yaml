@@ -1,0 +1,4 @@
+# 늦은 DB 시험(마스터플랜 3-5, #140). DB를 일부러 늦게 띄운다. ops/docker/late-db-check.sh가 쓴다.
+services:
+  db:
+    entrypoint: ["sh", "-c", "sleep ${LATE_DB_SECONDS:-30}; exec docker-entrypoint.sh mariadbd"]

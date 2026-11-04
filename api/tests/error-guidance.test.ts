@@ -50,7 +50,7 @@ describe('422 — 올바른 값을 알려 준다', () => {
     expect(msgOf(guided(await g.a.post('/v1/children').send({ alias: 123 }), 422), 'alias')).toMatch(/문자열/);
   });
   it('미래 날짜(DB 트리거 G11): 오늘이나 지난 날짜', async () => {
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + (9 + 24) * 3600_000).toISOString().slice(0, 10); // 한국 날짜 기준 내일
     // D46: 이야기는 올릴 때 함께 — 미래 그린 날은 올리기에서 422
     const b = guided(await g.a.post('/v1/artworks').set('Idempotency-Key', randomUUID()).field('childId', g.childId).field('madeOn', tomorrow).attach('photo', await png(), 'p.png'), 422);
     expect(`${b.detail} ${msgOf(b, 'madeOn')}`).toMatch(/미래|오늘/);

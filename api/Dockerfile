@@ -4,7 +4,7 @@
 #   db-migrate node dist/scripts/migrate.js
 # 빌드는 저장소 맨 위에서: docker build -f api/Dockerfile -t uam-api .
 # sharp·argon2가 glibc용 미리 빌드한 파일을 쓰므로 slim(Debian) 기반이다.
-FROM node:22.22.0-bookworm-slim AS build
+FROM node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94 AS build
 WORKDIR /app/api
 COPY api/package.json api/package-lock.json ./
 RUN npm ci
@@ -13,7 +13,7 @@ COPY api/src ./src
 COPY api/scripts ./scripts
 RUN npm run build
 
-FROM node:22.22.0-bookworm-slim
+FROM node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94
 ENV NODE_ENV=production
 WORKDIR /app/api
 COPY api/package.json api/package-lock.json ./

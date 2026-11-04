@@ -201,7 +201,7 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
       <PhotoFixer v-if="cropping" :key="cropping.it.key" :src="cropping.url" :box-options="CROP_BOXES" box-ask="사진에 아이가 같이 찍혔나요?" :kind-options="WORK_KINDS" kind-ask="어떤 작품인가요?" hint="작품에 맞게 네 모서리를 옮겨 주세요. 아이 얼굴이 들어가지 않게 해 주세요. 네모 밖은 보내지 않아요." close-label="올리지 않기" @close="cropSkip" @done="cropDone" @unreadable="cropUnreadable" />
 
       <template v-if="step === 'pick'">
-        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>
+        <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요.<template v-if="!SERVER_WORLD"> 제목과 이야기는 나중에 적어도 돼요.</template></p>
         <div class="row"><button class="g-btn g-btn--primary g-btn--big" type="button" @click="album?.click()">앨범에서 고르기</button><button class="g-btn g-btn--big" type="button" @click="camera?.click()">사진 찍기</button></div>
         <div v-if="TRIAL" class="w-trial">
           <p class="small">올릴 사진이 없으면 견본으로 해 보세요.</p>
