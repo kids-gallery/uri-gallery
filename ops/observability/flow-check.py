@@ -58,8 +58,8 @@ def main():
   before=hashlib.sha256(original).hexdigest()
   for name,path,method,body in [('detail',f'/v1/artworks/{id}','GET',None),('file',photo,'GET',None),('decision',f'/v1/artworks/{id}/decision','POST',{'decision':'like'}),('delete',f'/v1/artworks/{id}','DELETE',None)]:
    check('other family denied '+name,req(b,path,method,body)[0],404)
-  assert 'private' in headers.get('Cache-Control','')
-  report['checks'].append({'check':'private file cache header','result':'pass'})
+  assert 'private' in headers.get('Cache-Control','') and 'no-store' in headers.get('Cache-Control','')
+  report['checks'].append({'check':'private no-store file cache header','result':'pass'})
  finally: compose('start','worker-cpu')
  detail=wait(a,id,lambda d:'relief' in d.get('choices',[]))
  check('confirm relief',req(a,f'/v1/artworks/{id}/confirm','POST',{'kind':'relief'})[0],200)

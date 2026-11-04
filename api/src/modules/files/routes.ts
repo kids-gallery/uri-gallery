@@ -19,7 +19,7 @@ export function filesRouter(db: Pool, cfg: Config, storage: StoragePort, accel =
       );
       const key = (rows as { object_key: string }[])[0]?.object_key;
       if (!key) throw new Problem('not_found');
-      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.setHeader('Cache-Control', 'private, no-store');
       if (accel) {
         res.setHeader('X-Accel-Redirect', `/_files/${key}`);
         res.end();
