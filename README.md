@@ -197,16 +197,26 @@ docker compose ps
 
 ### 실제 모델과 카카오 켜기
 
-**실제 모델(맥, 컨테이너 메모리 10GiB 이상).** 가중치를 `models/hf`에 둡니다. `models/manifest.yaml`의 `source`·`revision`이 받을 판입니다. 이미지가 남아 있으면 옛 코드로 뜨므로 `--build`를 붙입니다.
+**실제 모델(맥, 컨테이너 메모리 10GiB 이상).** 가중치를 저장소 맨 위에서 아래 명령으로 `models/hf`에 받습니다. 받을 판은 `models/manifest.yaml`의 `source`·`revision`입니다. M3·M6·M7은 받지 않습니다.
+
+```bash
+pip install -U huggingface_hub
+rev() { awk -v m="  $1:" '$0==m{f=1;next} f&&/^  M[0-9]+:/{f=0} f&&$1=="revision:"{print $2;exit}' models/manifest.yaml; }
+hf download ZhengPeng7/BiRefNet --revision "$(rev M1)" --cache-dir models/hf
+hf download laion/CLIP-ViT-B-32-laion2B-s34B-b79K open_clip_model.safetensors --revision "$(rev M2)" --cache-dir models/hf
+hf download depth-anything/Depth-Anything-V2-Small-hf --revision "$(rev M5)" --cache-dir models/hf
+```
+
+M5는 이 명령으로 받아 파일 해시가 매니페스트와 같고 폴더 구조가 동작 중인 캐시와 같은 것을 확인했습니다. M1·M2는 같은 명령 형식이지만 이 명령으로 다시 받아 보지 않았습니다. 이미지가 남아 있으면 옛 코드로 뜨므로 `--build`를 붙입니다.
 
 ```bash
 docker compose stop worker-cpu    # 가짜 모델로 돌던 스택을 바꿀 때만
 docker compose -f compose.yaml -f compose.real.yaml up -d --build
 ```
 
-맥에서 포트와 이미지 이름만 바꿔 돌려 봤습니다. Windows는 재지 않았습니다. 처음 분리는 약 24초, 메모리가 빠듯하면 60초 제한에 걸려 액자로 낮아집니다.
+맥에서 포트와 이미지 이름만 바꿔 돌려 봤습니다. README의 기본 포트와 명령 그대로는 실행하지 않았고, Windows도 재지 않았습니다. 처리 시간과 메모리는 조건과 함께 [마스터플랜 7절](design/PLAN_3인디벨롭_컨테이너협업_우리아이미술관.md#7-각자-남길-작업-기록)에 둡니다. 메모리가 빠듯하면 60초 제한에 걸려 액자로 낮아집니다.
 
-**카카오 로그인.** 저장소 폴더의 `.env`(Git 제외)에 값을 넣고, 카카오 콘솔 Redirect URI에 여는 주소를 등록한 뒤 `http://localhost:9501`로 엽니다. 값이 없으면 카카오 버튼 없이 이메일 가입 화면이 나옵니다.
+**카카오 로그인.** 저장소 폴더의 `.env`(Git 제외)에 키 2개를 넣고 `http://localhost:9501`로 엽니다. 값이 없으면 카카오 버튼 없이 이메일 가입 화면이 나옵니다.
 
 ```text
 KAKAO_REST_API_KEY=...
@@ -214,7 +224,10 @@ KAKAO_CLIENT_SECRET=...
 콘솔 등록: http://localhost:9501/v1/auth/kakao/callback
 ```
 
-맥에서 실제 카카오 계정으로 로그인해 봤습니다(#93). 다른 PC·IP로 열려면 그 주소를 등록하고 `APP_BASE_URL`을 맞춰야 하며, 재지 않았습니다. 콘솔 오류 `KOE006`은 주소 미등록, `KOE010`은 시크릿 불일치입니다.
+- **각 PC에서 compose를 띄워 자기 `localhost:9501`로 열 때:** 등록된 주소와 같으므로 콘솔에 더 등록할 필요가 없고 `.env` 키만 있으면 됩니다. 맥에서 키만 두고 띄웠을 때 카카오로 넘어가는 주소의 `redirect_uri`가 이 값인 것을 확인했습니다. Windows에서 실제 로그인은 아직 시험하지 않았습니다.
+- **다른 PC에서 내 맥의 IP로 접속할 때:** 그 주소를 콘솔에 등록하고 `APP_BASE_URL`을 바꿔야 합니다. 재지 않았습니다.
+
+맥에서 실제 카카오 계정으로 로그인해 봤습니다(#93). 콘솔 오류 `KOE006`은 주소 미등록, `KOE010`은 시크릿 불일치입니다.
 
 저장소 폴더에 pm2용 옛 `.env`가 있으면 compose 값을 덮어쓰니 옮겨 두고 필요한 값만 넣습니다.
 
