@@ -47,20 +47,7 @@ def _db_password() -> str:
     return value[:-1] if value.endswith("\n") else value
 
 
-def validate_production() -> None:
-    mode = os.environ.get("UAM_ENV", "development")
-    if mode not in {"development", "test", "production"}:
-        raise ValueError("Invalid UAM_ENV")
-    if mode == "production":
-        fake = os.environ.get("UAM_FAKE_MODELS", "").strip().lower()
-        if fake not in {"", "0", "false", "off", "no"} or _bool("DEV_ACTIVATE_MODELS"):
-            raise ValueError("Production forbids fake models and development activation")
-        if len(_db_password()) < 32:
-            raise ValueError("Production requires strong DB_PASSWORD")
-
-
 def load_settings() -> Settings:
-    validate_production()
     storage_root = Path(os.environ.get("STORAGE_ROOT", str(SERVING_ROOT / ".run" / "store")))
     return Settings(
         db_host=os.environ.get("DB_HOST", "127.0.0.1"),

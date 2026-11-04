@@ -1,5 +1,0 @@
-services:
-  worker-cpu:
-    command: [python, /ops/slow-worker.py]
-    volumes:
-      - ./ops/observability/slow-worker.py:/ops/slow-worker.py:ro

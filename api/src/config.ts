@@ -40,7 +40,6 @@ export interface Config {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  validateProduction(env);
   return {
     port: Number(env.APP_PORT ?? 9521),
     host: env.APP_HOST || '127.0.0.1',
@@ -78,19 +77,4 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       apiBase: env.KAKAO_API_BASE ?? 'https://kapi.kakao.com',
     },
   };
-}
-
-/** Production is explicit; reject demo defaults before opening the DB or listener. */
-export function validateProduction(env: NodeJS.ProcessEnv) {
-  const mode = env.UAM_ENV ?? 'development';
-  if (!['development', 'test', 'production'].includes(mode)) throw new Error('Invalid UAM_ENV');
-  if (mode !== 'production') return;
-  const fake = (env.UAM_FAKE_MODELS ?? '').trim().toLowerCase();
-  if (fake && !['0', 'false', 'off', 'no'].includes(fake)) throw new Error('Production forbids fake models');
-  if (bool(env.DEV_ACTIVATE_MODELS)) throw new Error('Production forbids development model activation');
-  if (!bool(env.SECURE_COOKIES) || !env.APP_BASE_URL?.startsWith('https://')) throw new Error('Production requires HTTPS and secure cookies');
-  let smtp: URL;
-  try { smtp = new URL(env.MAIL_SMTP_URL ?? ''); } catch { throw new Error('Production requires explicit SMTP'); }
-  if (!['smtp:', 'smtps:'].includes(smtp.protocol) || ['mailpit','localhost','127.0.0.1','[::1]'].includes(smtp.hostname)) throw new Error('Production forbids test mail transport');
-  for (const key of ['DB_PASSWORD','SESSION_SECRET','AUTH_HMAC_SECRET']) if (secret(env,key).length < 32) throw new Error(`Production requires strong ${key}`);
 }

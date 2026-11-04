@@ -1,3 +1,0 @@
-overrides:
-  fake:
-    max_query_lookback: 24h
