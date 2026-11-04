@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {createLayout,onFloor} from '../app/world/spatialLayout';
-import {NavigationWorld} from '../app/world/spatialNavigation';
+import {NavigationWorld,type Solid} from '../app/world/spatialNavigation';
 import {distanceToFitArtwork} from '../app/world/cameraRig';
 import type {ThemeId} from '../app/world/themes';
 import {wallSlot,pedestalSlot,standPoint,STAND,WALL_SLOTS,PEDESTAL_SLOTS,type RoomSpec} from '../app/world/museum';
@@ -57,11 +57,42 @@ describe('authored museum circulation',()=>{
       }
     }
   });
-  it('slips into the door when a thumb pushes up to 30 degrees off',()=>{
+  it('slips into the door from a slightly leaning thumb, and slides along the wall when leaning further away',()=>{
     for(const mode of modes){
       const l=createLayout(mode,1,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z)),r=l.rooms[0]!,door=r.x-r.side*5;
-      for(const lean of [-.5,.5]){const p={x:door-r.side*1.2,z:r.z+1.5};n.move(p,r.side*5,lean*5);expect((p.x-door)*r.side,`${mode} ${lean}`).toBeGreaterThan(.6);}
+      for(const lean of [-.5,-.2,.2]){const p={x:door-r.side*1.2,z:r.z+1.5};n.move(p,r.side*5,lean*5);expect((p.x-door)*r.side,`${mode} ${lean}`).toBeGreaterThan(.6);}
     }
+  });
+  // 비껴 주기는 문틀만이 아니라 모든 충돌에 걸린다(#157 리뷰). 벽 끝, 가구 옆, 닫힌 구석에서 떨리거나 벽을 넘지 않아야 한다
+  it('never jitters or leaves walkable ground while pushing in any direction',()=>{
+    for(const mode of modes){
+      const l=createLayout(mode,4,mode==='classic');
+      const furniture:Solid[]=l.rooms.flatMap(r=>[[0,0],[2,2],[-2,-3],[3,-2]].map(([a,b])=>({min:[r.x+a!-.5,0,r.z+b!-.5],max:[r.x+a!+.5,1,r.z+b!+.5]} as Solid)));
+      const n=new NavigationWorld([...l.solids,...furniture],(x,z)=>onFloor(l,x,z));
+      for(let x=-30;x<=30;x+=2.6)for(let z=-40;z<=20;z+=2.6){
+        if(!n.canStand(x,z))continue;
+        for(let a=0;a<48;a++){
+          const t=a/48*Math.PI*2,dx=Math.sin(t)*.06,dz=Math.cos(t)*.06,p={x,z},flips={x:0,z:0},last={x:0,z:0},run={x:0,z:0},prev={x:0,z:0};
+          for(let i=0;i<120;i++){
+            const before={...p};n.move(p,dx,dz);
+            expect(n.canStand(p.x,p.z)).toBe(true);
+            // 떨림은 3~20cm를 갔다 오는 왕복이다. 모서리를 돌 때 1cm 안쪽의 되돌림은 보이지 않고, 20cm 넘게 돌아오는 것은 가구를 돌아가는 길이다
+            for(const k of ['x','z'] as const){const m=p[k]-before[k],s=Math.sign(+m.toFixed(5));if(!s)continue;if(last[k]&&s!==last[k]){if(Math.min(run[k],prev[k])>=.03&&Math.max(run[k],prev[k])<.2)flips[k]++;prev[k]=run[k];run[k]=0;}run[k]+=Math.abs(m);last[k]=s;}
+          }
+          expect(Math.max(flips.x,flips.z),`${mode} ${x},${z} a=${a}`).toBeLessThanOrEqual(3);
+        }
+      }
+    }
+  });
+  it('stays put in a closed corner, and steps around only a clear corner within reach',()=>{
+    const wall=(x0:number,z0:number,x1:number,z1:number):Solid=>({min:[x0,0,z0],max:[x1,3,z1]});
+    const corner=new NavigationWorld([wall(2,-10,2.3,10),wall(-10,-2.3,10,-2)],()=>true),c={x:1.5,z:-1.5};
+    corner.move(c,3,0);corner.move(c,0,-3);expect(c.x).toBeLessThan(1.6);expect(c.z).toBeGreaterThan(-1.6);
+    const end=new NavigationWorld([wall(2,-10,2.3,.3)],()=>true),near={x:1,z:.5},far={x:1,z:-3};
+    end.move(near,3,0);expect(near.x).toBeGreaterThan(2.3);expect(near.z).toBeLessThan(.5+.8);
+    end.move(far,3,0);expect(far.x).toBeLessThan(1.6);expect(far.z).toBe(-3);
+    const backed=new NavigationWorld([wall(2,-.5,2.3,.5),wall(3,-10,3.3,10)],()=>true),b={x:1,z:.6};
+    backed.move(b,3,0);expect(b.x).toBeLessThan(2.7);
   });
   it('keeps a wall away from the door solid and does not fight a diagonal push',()=>{
     const wall=new NavigationWorld([{min:[2,0,-10],max:[2.3,3,10]}],()=>true),p={x:1,z:0};
