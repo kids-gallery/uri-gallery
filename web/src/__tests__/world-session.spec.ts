@@ -78,6 +78,17 @@ it('카카오가 켜지면 큰 버튼만 보이고 이메일 로그인은 눌러
   await w.find('.email-toggle').trigger('click');
   expect(w.find('form').exists()).toBe(true);
 });
+it('카카오톡 인앱에서는 계정 변경 대신 외부 브라우저 사용을 안내한다', async () => {
+  const agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 KAKAOTALK/26');
+  try {
+    loggedOut(); kakaoOn();
+    const w = open();
+    await flushPromises(); await flushPromises();
+    expect(w.find('.switch-account').exists()).toBe(false);
+    expect(w.text()).toContain('외부 브라우저에서 열어 주세요');
+    expect(w.find('.kakao').exists()).toBe(true);
+  } finally { agent.mockRestore(); }
+});
 it('카카오 키가 없으면 버튼을 숨기고 지금 이메일 화면을 그대로 둔다', async () => {
   loggedOut();
   const w = open();

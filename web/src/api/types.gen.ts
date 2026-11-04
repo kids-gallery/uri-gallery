@@ -60,6 +60,8 @@ export interface paths {
             parameters: {
                 query?: {
                     invite?: string;
+                    /** @description 다른 계정으로 로그인할 때 카카오 재인증을 요청한다 */
+                    account?: "switch";
                     /** @description 로그인 뒤 돌아갈 보호자 앱 주소(D47 — 로그인 전에 연 이웃 링크 등). 같은 셸 상대 경로만, 없으면 기본 도착지 */
                     next?: string;
                 };
@@ -752,6 +754,98 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/family/world-layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 현재 가족의 방과 꾸미기 설정 조회 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 가족 설정과 revision. 설정이 없으면 exists가 false */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            exists: boolean;
+                            revision: number;
+                            rooms: number[];
+                            decor: Record<string, never>[];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        /**
+         * 현재 가족의 방과 꾸미기 설정 저장
+         * @description 조회한 revision과 일치할 때만 저장하며 다른 기기의 수정은 409로 알린다.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        revision: number;
+                        rooms: number[];
+                        decor: {
+                            id: string;
+                            work: string;
+                            /** @enum {string} */
+                            kind: "plant" | "lamp" | "bench";
+                            /** @enum {string} */
+                            spot: "left" | "right" | "front";
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description 저장한 revision */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            revision: number;
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description 다른 기기에서 이미 변경함 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;

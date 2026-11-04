@@ -18,6 +18,8 @@ const notice = ref('');
 const logoutPending = ref(false);
 const providers = ref({ kakao: false, emailSignup: true }); // 확인 전·실패 때는 지금 이메일 화면(마스터플랜 3-3 #88)
 const showEmail = ref(false);
+// 카카오톡 인앱 브라우저는 카카오의 prompt=login을 지원하지 않는다.
+const kakaoInApp = /KAKAOTALK/i.test(navigator.userAgent);
 const PROVIDERS_WAIT_MS = 3000;
 let providersAsk = 0;
 const canRetry = ref(false);
@@ -176,7 +178,8 @@ onUnmounted(() => {
           </button>
           <template v-else-if="providers.kakao">
             <button class="kakao" type="button" @click="startKakao">카카오로 시작하기</button>
-            <button class="switch-account" type="button" @click="switchKakaoAccount">다른 카카오 계정으로 로그인</button>
+            <button v-if="!kakaoInApp" class="switch-account" type="button" @click="switchKakaoAccount">다른 카카오 계정으로 로그인</button>
+            <p v-else>다른 카카오 계정으로 로그인하려면 이 페이지를 외부 브라우저에서 열어 주세요.</p>
             <button class="email-toggle" type="button" :aria-expanded="showEmail" @click="showEmail = !showEmail">
               이메일로 로그인(기존 회원)
             </button>
