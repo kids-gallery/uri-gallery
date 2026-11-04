@@ -34,6 +34,7 @@ const exhibited = async (child, id) => (await call(`/v1/gallery?child=${encodeUR
 async function fileBytes(item) {
   const res = await fetch(BASE + item.primaryUrl, { headers: { cookie } });
   if (!res.ok) throw new Error(`작품 파일 ${res.status}: ${item.id}`);
+  if (res.headers.get('cache-control') !== 'private, no-store') throw new Error(`파일 캐시 머리글: ${res.headers.get('cache-control')}`); // 프록시를 지난 값을 본다(#154)
   const bytes = (await res.arrayBuffer()).byteLength;
   if (!bytes) throw new Error(`작품 파일이 비었음: ${item.id}`);
   return bytes;
