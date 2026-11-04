@@ -284,6 +284,150 @@ describe('다른 가족·다른 아이의 작품이 남지 않는다', () => {
   });
 });
 
+describe('부조 파일을 받지 못할 때(마스터플랜 3-3·3-6)', () => {
+  const relief = (id: string, depth = `/v1/files/${id}-depth`) => item(id, { kind: 'relief', primaryUrl: depth, auxUrl: `/v1/files/${id}-cut` });
+  const ok = () => new Response('img', { headers: { 'content-type': 'image/png' } });
+  const down = (status = 503) => new Response('', { status });
+  const asked = (s: { fileCalls(): string[] }, end: string) => s.fileCalls().filter((u) => u.endsWith(end)).length;
+  const hung = (id: string) => detail(id, { hungResultKind: 'relief' });
+
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  describe('깊이를 켠 빌드', () => {
+    beforeEach(() => { vi.stubEnv('VITE_RELIEF_DEPTH', '1'); });
+
+    it('깊이를 받아 건다. 결과가 그대로면 다시 받지 않는다', async () => {
+      const s = server({ c1: [relief('a1')] }, ok);
+      const { g } = await load();
+      const [a] = await g.galleryWorks(null);
+      expect(a!.depth?.size).toBeGreaterThan(0);
+      expect(s.reads()).toBe(1);
+      await g.galleryWorks(null);
+      expect(asked(s, '-depth')).toBe(1);
+    });
+
+    it('깊이만 503이면 작품은 컷아웃 두께판으로 걸리고 안내를 띄우지 않으며, 끝없이 다시 읽지 않는다', async () => {
+      const s = server({ c1: [relief('a1')] }, (u) => (u.endsWith('-depth') ? down() : ok()));
+      const { g } = await load();
+      const [a] = await g.galleryWorks(null);
+      expect(a).toMatchObject({ id: 'a1', cutoutState: 'done', depth: null });
+      expect(a!.cutout?.size).toBeGreaterThan(0);
+      expect(g.galleryFailure.value).toBeNull();
+      expect(s.reads()).toBe(2);
+      expect(asked(s, '-depth')).toBe(2);
+      expect(g.isStale(hung('a1'))).toBe(false); // 걸린 결과는 부조 그대로다. 상태 묻기가 목록을 계속 읽지 않는다
+    });
+
+    it('깊이 주소가 만료되면 목록을 다시 읽어 새 주소로 받는다', async () => {
+      const s = server({ c1: [relief('a1', '/v1/files/old-depth')] }, (u) => {
+        if (!u.endsWith('old-depth')) return ok();
+        s.state.children = { c1: [relief('a1', '/v1/files/new-depth')] };
+        return down(410);
+      });
+      const { g } = await load();
+      const [a] = await g.galleryWorks(null);
+      expect(a!.depth?.size).toBeGreaterThan(0);
+      expect(s.reads()).toBe(2);
+      expect(asked(s, '-cut')).toBe(1); // 받은 컷아웃은 다시 받지 않는다
+    });
+
+    it('장애가 풀리면 다음 읽기에서 깊이를 받는다. 사진과 컷아웃은 다시 받지 않는다', async () => {
+      let broken = true;
+      const s = server({ c1: [relief('a1')] }, (u) => (broken && u.endsWith('-depth') ? down() : ok()));
+      const { g } = await load();
+      expect((await g.galleryWorks(null))[0]!.depth).toBeNull();
+      broken = false;
+      expect((await g.galleryWorks(null))[0]!.depth?.size).toBeGreaterThan(0);
+      expect(asked(s, '/a1')).toBe(1);
+      expect(asked(s, '-cut')).toBe(1);
+    });
+
+    it('받아 둔 깊이는 그 뒤 서버 장애에도 그대로다', async () => {
+      let broken = false;
+      const s = server({ c1: [relief('a1')] }, () => (broken ? down() : ok()));
+      const { g } = await load();
+      await g.galleryWorks(null);
+      broken = true;
+      expect((await g.galleryWorks(null))[0]!.depth?.size).toBeGreaterThan(0);
+      expect(s.reads()).toBe(2); // 받을 것이 없으니 한 번씩만 읽는다
+    });
+
+    it('컷아웃을 못 받으면 사진 액자로 걸고 깊이는 받지 않으며, 걸린 결과와 달라 다시 읽게 한다. 풀리면 입체가 된다', async () => {
+      let broken = true;
+      const s = server({ c1: [relief('a1')] }, (u) => (broken && u.endsWith('-cut') ? down() : ok()));
+      const { g } = await load();
+      const [a] = await g.galleryWorks(null);
+      expect(a).toMatchObject({ id: 'a1', cutout: null, depth: null });
+      expect(a!.cutoutState).toBeUndefined();
+      expect(a!.display.size).toBeGreaterThan(0);
+      expect(asked(s, '-depth')).toBe(0);
+      expect(s.reads()).toBe(2);
+      expect(g.isStale(hung('a1'))).toBe(true);
+      broken = false;
+      const [b] = await g.galleryWorks(null);
+      expect(b!.cutout?.size).toBeGreaterThan(0);
+      expect(b!.depth?.size).toBeGreaterThan(0);
+      expect(g.isStale(hung('a1'))).toBe(false);
+    });
+
+    it('사진까지 못 받으면 그릴 것이 없어 빠지고, 다른 작품은 그대로 걸린다', async () => {
+      const s = server({ c1: [relief('a1'), relief('bad')] }, (u) => (u.includes('bad') ? down() : ok()));
+      const { g } = await load();
+      expect((await g.galleryWorks(null)).map((a) => a.id)).toEqual(['a1']);
+      expect(s.reads()).toBe(2);
+    });
+
+    it('컷아웃 주소가 없는 부조는 받을 것이 없으니 다시 읽지 않는다', async () => {
+      const s = server({ c1: [item('a1', { kind: 'relief', primaryUrl: '/v1/files/a1-depth', auxUrl: null })] }, ok);
+      const { g } = await load();
+      expect((await g.galleryWorks(null))[0]!.cutout).toBeNull();
+      expect(s.reads()).toBe(1);
+      expect(asked(s, '-depth')).toBe(0);
+      expect(g.isStale(hung('a1'))).toBe(false);
+    });
+
+    it('로그아웃 뒤에 끝난 파일 받기는 옛 작품을 남기지 않는다', async () => {
+      let finish = (_: Response) => {};
+      const s = server({ c1: [relief('a1')] }, (u) => (u.endsWith('-depth') ? (new Promise<Response>((r) => { finish = r; }) as never) : ok()));
+      const { g } = await load();
+      const reading = g.galleryWorks(null);
+      await vi.waitFor(() => expect(asked(s, '-depth')).toBe(1));
+      g.clearGallery();
+      finish(down());
+      expect(await reading).toEqual([]);
+      expect(g.isStale(hung('a1'))).toBe(true); // 보이는 결과가 남지 않았다
+    });
+  });
+
+  describe('끈 빌드', () => {
+    it('깊이를 받지 않는다', async () => {
+      const s = server({ c1: [relief('a1')] }, ok);
+      const { g } = await load();
+      expect((await g.galleryWorks(null))[0]!.depth).toBeNull();
+      expect(asked(s, '-depth')).toBe(0);
+      expect(s.reads()).toBe(1);
+    });
+
+    it('컷아웃을 못 받아도 처음 읽는 작품이 사라지지 않고 액자로 걸린다', async () => {
+      const s = server({ c1: [relief('a1')] }, (u) => (u.endsWith('-cut') ? down() : ok()));
+      const { g } = await load();
+      expect((await g.galleryWorks(null)).map((a) => a.id)).toEqual(['a1']);
+      expect(s.reads()).toBe(2);
+      expect(g.isStale(hung('a1'))).toBe(true);
+    });
+
+    it('액자에서 부조로 바뀌는 중 컷아웃을 못 받으면 액자를 유지하고 다시 읽게 한다', async () => {
+      const s = server({ c1: [item('a1')] }, (u) => (u.endsWith('-cut') ? down() : ok()));
+      const { g } = await load();
+      await g.galleryWorks(null);
+      s.state.children = { c1: [relief('a1')] };
+      const [a] = await g.galleryWorks(null);
+      expect(a!.cutout).toBeNull();
+      expect(g.isStale(hung('a1'))).toBe(true);
+    });
+  });
+});
+
 describe('새로 고침 뒤 이어 묻기', () => {
   const list = [{ id: 'a1', childId: 'c1', currentStage: 'split' }, { id: 'a2', childId: 'c1', currentStage: null, state: 'exhibited' }, { id: 'b1', childId: 'c2', currentStage: null, state: 'awaiting_review' }];
   it('확정·결정을 기다리는 작품도 다시 읽는다(진행 중인 단계가 없어도)', async () => {
