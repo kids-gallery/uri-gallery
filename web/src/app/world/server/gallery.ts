@@ -24,11 +24,11 @@ async function file(url: string): Promise<Blob> {
 }
 
 /** 원본에서 화면용 사본을 만든다. 배경 분리는 서버 몫이라 cutoutState를 두지 않는다 */
-async function photoWork(id: string, photoUrl: string): Promise<store.Artwork> {
+async function photoWork(id: string, photoUrl: string, making = false): Promise<store.Artwork> {
   const original = await file(photoUrl);
   const { display } = await store.processImage(original, false);
   return {
-    id, no: 0, title: '', kind: 'drawing', subject: 'etc', material: '', age: store.UNSORTED_AGE, madeOn: '', words: '',
+    id, no: 0, title: '', kind: making ? 'making' : 'drawing', subject: 'etc', material: '', age: store.UNSORTED_AGE, madeOn: '', words: '',
     original, display, cutout: null, sample: false, createdAt: Date.now(), rotation: 0,
   };
 }
@@ -96,11 +96,11 @@ export async function galleryWorks(childId: string | null): Promise<store.Artwor
 }
 
 /** 올리자마자 원본 액자를 건다. 화면이 그리지 못해도 보관은 끝났으므로 false만 돌려준다 */
-export async function hangUploaded(d: ArtworkDetail): Promise<boolean> {
+export async function hangUploaded(d: ArtworkDetail, making = false): Promise<boolean> {
   if (shown.has(d.id)) return true;
   const mine = epoch;
   try {
-    const work = await photoWork(d.id, d.photoUrl ?? '');
+    const work = await photoWork(d.id, d.photoUrl ?? '', making);
     if (mine !== epoch) return false;
     shown.set(d.id, { work, kind: 'frame', childId: d.childId });
     return true;

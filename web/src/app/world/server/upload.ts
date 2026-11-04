@@ -41,18 +41,18 @@ export function clearWorldWorks() { generation++; hung.clear(); clearGallery(); 
 export const worldWorks = async (): Promise<store.Artwork[]> => (SERVER_WORLD ? galleryWorks(selectedChild.value) : store.listArtworks());
 
 /** key는 사진마다 하나다. 다시 시도할 때 같은 key를 넘겨야 작품이 두 번 생기지 않는다 */
-export async function sendPhoto(file: File, key: string): Promise<SendResult> {
+export async function sendPhoto(file: File, key: string, making = false): Promise<SendResult> {
   const current = generation;
   let detail: ArtworkDetail;
   try {
     const list = await listChildren();
     const childId = list.find((c) => c.id === selectedChild.value)?.id ?? (list.length === 1 ? list[0]!.id : null);
     if (!childId) return { ok: false, reason: list.length ? '어느 아이의 작품인지 먼저 골라 주세요' : '아이를 먼저 등록해 주세요', retryable: true };
-    detail = await uploadArtwork(childId, file, key);
+    detail = await uploadArtwork(childId, file, key, making);
   } catch (e) {
     const f = failureOf(e);
     return { ok: false, reason: failureReason(f), retryable: f.kind !== 'refused' || (e instanceof ApiError && e.code === 'not_saved') };
   }
   if (current !== generation) return { ok: false, reason: '로그인이 바뀌었어요. 다시 로그인해 주세요', retryable: true };
-  return { ok: true, id: detail.id, hung: await hangUploaded(detail) };
+  return { ok: true, id: detail.id, hung: await hangUploaded(detail, making) };
 }

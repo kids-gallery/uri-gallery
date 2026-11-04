@@ -1,7 +1,7 @@
 // #31 3D 화면 사진 올리기(마스터플랜 3-3): 실제 app-api·DB에 올린다. 정상 · 용량 초과 · 깨진 사진 · 응답을 못 받고 다시 시도해도 작품 1건 · 로그인 풀림. 390 · 1440.
 import { expect, test, type Page } from '@playwright/test';
 import { drawingPng } from './stack/guardian';
-import { album, openWorldUpload, photo, tag } from './stack/world';
+import { album, openWorldUpload, photo, tag, useCrop } from './stack/world';
 
 /** SHOTS=폴더면 화면을 찍어 둔다(사람 눈 확인용) */
 async function shot(page: Page, name: string) { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/${name}-${page.viewportSize()!.width}.png` }); }
@@ -14,6 +14,7 @@ test('정상: 서버에 한 건 저장되고 원본 액자로 걸린다', async 
   await openUpload(page);
   const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   const r = await res;
   expect(r.status(), await r.text()).toBe(202);
   expect(await r.json()).toMatchObject({ exhibited: true, hungResultKind: 'frame' });
@@ -41,10 +42,8 @@ test('용량 초과: 서버로 보내지 않고 이유를 보인다', async ({ p
 
 test('깨진 사진: 서버가 거절한 이유를 보이고 다시 시도 버튼이 없다', async ({ page }) => {
   await openUpload(page);
-  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
   await album(page).setInputFiles(photo('broken.png', drawingPng().subarray(0, 60)));
-  expect((await res).status()).toBeGreaterThanOrEqual(400);
-  await expect(page.getByText('이 사진은 읽을 수 없어요')).toBeVisible();
+  await expect(page.getByText('이 사진은 열 수 없어요')).toBeVisible(); // 자르기 전에 브라우저가 거른다(#118). 서버로 보내지 않는다
   await expect(page.getByRole('button', { name: '다시 시도' })).toHaveCount(0);
   expect(await works(page)).toBe(0);
 });
@@ -62,11 +61,12 @@ test('서버는 저장했는데 응답을 못 받아도, 다시 시도하면 작
     await route.abort('connectionreset'); // 응답만 사라진다
   });
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   await expect(page.getByText('미술관에 연결되지 않아요')).toBeVisible();
   await shot(page, 'retry');
   expect(await works(page)).toBe(1);
   await page.getByRole('button', { name: '다시 시도' }).click();
-  await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '작품 올리기' })).toBeHidden({ timeout: 30_000 });
   expect(keys).toHaveLength(2);
   expect(keys[0]).toBe(keys[1]);
   expect(await works(page)).toBe(1);
@@ -77,6 +77,7 @@ test('로그인이 풀렸으면 알리고, 다시 로그인한 뒤 같은 사진
   const state = await context.storageState();
   await context.clearCookies();
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   await expect(page.getByText('로그인이 필요해요')).toBeVisible();
   expect(page.url()).toContain('/app/world'); // /app/login으로 옮기지 않는다
   await context.addCookies(state.cookies);
@@ -113,6 +114,7 @@ test('서버 판: 함께 그린 그림은 서버에 보관되고, 설정에 기�
 test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)', async ({ page }) => {
   await openUpload(page);
   await album(page).setInputFiles(photo());
+  await useCrop(page);
   await expect(page.locator('.w-saved-thumb')).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: '더보기' }).click();
   await page.getByRole('button', { name: '보관함', exact: true }).click();
@@ -122,4 +124,18 @@ test('지운 작품의 전시 카드가 빈 썸네일로 남지 않는다(#124)'
   await expect.poll(() => works(page)).toBe(0);
   await archive.getByRole('button', { name: '닫기' }).click();
   await expect(page.locator('.w-saved')).toHaveCount(0);
+
+test('만들기로 답하면 서버에 만들기로 저장되고, 답하기 전에는 보낼 수 없다(D45)', async ({ page }) => {
+  await openUpload(page);
+  const res = page.waitForResponse((r) => r.url().endsWith('/v1/artworks') && r.request().method() === 'POST');
+  await album(page).setInputFiles(photo());
+  await page.getByRole('button', { name: '작품만 찍었어요' }).click({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: '이대로 쓰기' })).toBeDisabled();
+  await page.getByRole('button', { name: '만들기예요' }).click();
+  await page.getByRole('button', { name: '이대로 쓰기' }).click();
+  const r = await res;
+  expect(r.status()).toBe(202);
+  const { id } = await r.json() as { id: string };
+  const detail = await (await page.request.get(`/v1/artworks/${id}`)).json() as { making?: boolean };
+  expect(detail.making).toBe(true);
 });
