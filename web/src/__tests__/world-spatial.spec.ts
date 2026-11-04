@@ -57,13 +57,19 @@ describe('authored museum circulation',()=>{
       }
     }
   });
+  it('slips into the door when a thumb pushes up to 30 degrees off',()=>{
+    for(const mode of modes){
+      const l=createLayout(mode,1,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z)),r=l.rooms[0]!,door=r.x-r.side*5;
+      for(const lean of [-.5,.5]){const p={x:door-r.side*1.2,z:r.z+1.5};n.move(p,r.side*5,lean*5);expect((p.x-door)*r.side,`${mode} ${lean}`).toBeGreaterThan(.6);}
+    }
+  });
   it('keeps a wall away from the door solid and does not fight a diagonal push',()=>{
     const wall=new NavigationWorld([{min:[2,0,-10],max:[2.3,3,10]}],()=>true),p={x:1,z:0};
     wall.move(p,3,0);expect(p.x).toBeLessThan(1.6);expect(p.z).toBe(0);
     const l=createLayout('forest',1,false),n=new NavigationWorld(l.solids,(x,z)=>onFloor(l,x,z)),r=l.rooms[0]!;
     const door=r.x-r.side*5,far={x:door-r.side*1.2,z:r.z+4};
     n.move(far,r.side*6,0);expect((far.x-door)*r.side).toBeLessThan(0);expect(far.z).toBe(r.z+4);
-    const away={x:door-r.side*1.2,z:r.z+1.6};n.move(away,r.side*3,1.5);expect((away.x-door)*r.side).toBeLessThan(0);expect(away.z).toBeGreaterThan(r.z+1.6);
+    const away={x:door-r.side*1.2,z:r.z+1.6};n.move(away,r.side*3,3);expect((away.x-door)*r.side).toBeLessThan(0);expect(away.z).toBeGreaterThan(r.z+1.6);
   });
   it('retains theme-specific layouts under the high-hall choice',()=>{
     for(const mode of modes){expect(createLayout(mode,4,true).rooms).toEqual(createLayout(mode,4,false).rooms);expect(createLayout(mode,4,true).pieces.some(p=>p.y===10)).toBe(true);}

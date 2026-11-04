@@ -565,7 +565,7 @@ export class MuseumEngine {
 
   goLobby() { if(this.space!=='inside'){if(this.space==='town')this.showPlaza();this.enterMuseum();return;}this.route = this.museum.route(this.avatarRoot.position.clone(), new THREE.Vector3(0, 0, 6.5)); }
 
-  setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
+  setJoystick(x: number, y: number) { this.joy.set(x, y); if ((x || y) && !this.entering) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
   setInputPaused(on:boolean){this.inputPaused=on;this.onBlur();if(on){this.route=[];this.pendingPlay=null;}}

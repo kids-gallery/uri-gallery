@@ -9,8 +9,8 @@ export function intersectsSolid(x: number, y: number, z: number, b: Solid, radiu
   const cz = Math.min(b.max[2], Math.max(b.min[2], z));
   return (x - cx) ** 2 + (z - cz) ** 2 < radius * radius - 1e-9;
 }
-/** 앞이 막혔을 때 좌우로 찾는 거리(문틀 바깥쪽 2.075 - 지나가는 폭 1.305), 그 자리에서 앞으로 트여야 하는 거리(문틀 두께 .55 + 몸 지름 .84), 비껴 주는 입력의 기울기 한도(약 14도). 설계서 2-1 문 드나들기 */
-const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .25;
+/** 앞이 막혔을 때 좌우로 찾는 거리(문틀 바깥쪽 2.075 - 지나가는 폭 1.305), 그 자리에서 앞으로 트여야 하는 거리(문틀 두께 .55 + 몸 지름 .84), 비껴 주는 입력의 기울기 한도(약 30도). 설계서 2-1 문 드나들기 */
+const SLIP_REACH = .8, SLIP_AHEAD = 1.4, SLIP_TILT = .58;
 export class NavigationWorld {
   private grid = new Map<string, Solid[]>();
   constructor(readonly colliders: Solid[], private floor: (x: number, z: number) => boolean, readonly radius = .42) {
