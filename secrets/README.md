@@ -2,9 +2,9 @@
 
 `*.example`은 값이 없는 이름 안내이며 그대로 실행용으로 쓰지 않는다.
 실제 파일 이름은 `db_password`, `session_secret`, `auth_hmac_secret`이다.
-각 값은 로컬 터미널에서 `openssl rand -hex 32`로 서로 다르게 생성한다.
+값은 `sh ops/docker/make-secrets.sh`로 만든다. 파일마다 `openssl rand -hex 32`로 서로 다르게 생성한다.
 생성한 값은 로컬에서만 보관하며 커밋·PR·스크린샷에 넣지 않는다.
-실제 비밀 파일과 `.env`는 Git에서 제외된다. 파일 권한은 소유자만 읽도록 제한한다.
+실제 비밀 파일과 `.env`는 Git에서 제외된다. 파일은 444, 폴더는 700이다. 서버 계정 번호가 컨테이너 사용자(1000)와 달라도 읽도록 파일을 열고, 다른 계정이 들어오지 못하게 폴더를 막는다.
 
 compose(#32)는 각 파일을 같은 이름의 secret으로 선언하고 필요한 서비스에만 붙인다.
 API와 serving에는 `DB_PASSWORD_FILE=/run/secrets/db_password`, API에는

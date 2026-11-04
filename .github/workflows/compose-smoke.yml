@@ -17,14 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - name: 비밀 파일(README의 지금 명령)
+      - name: 비밀 파일
         run: |
           id
-          umask 077
-          for name in db_password session_secret auth_hmac_secret; do
-            [ -e "secrets/$name" ] || openssl rand -hex 32 > "secrets/$name"
-          done
-          ls -la secrets
+          sh ops/docker/make-secrets.sh
       - name: 띄우기
         run: docker compose up -d --build --wait --wait-timeout 300
       - name: 한 바퀴
