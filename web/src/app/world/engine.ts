@@ -388,7 +388,7 @@ export class MuseumEngine {
     this.resetScenePosition();this.applyLook();if(this.avatarConfig)void this.setAvatar(this.avatarConfig,this.avatarImage);
   }
   setInterior(id:InteriorId){this.finishPerformances();this.museum.setInterior(id,this.env);this.resetScenePosition();this.applyLook();}
-  private resetScenePosition(){this.route=[];this.pendingPlay=null;this.ev.onSelect(null);this.ev.onNear(null);if(this.space==='inside'){this.avatarRoot.position.set(0,0,9);this.resetView();}}
+  private resetScenePosition(){this.route=[];this.pendingPlay=null;this.ev.onSelect(null);this.ev.onNear(null);if(this.space==='inside'){this.avatarRoot.position.copy(MuseumEngine.REVEAL_SPOT);this.resetView();}}
   get interior(): InteriorId { return this.museum.interior; }
   private get cathedralView() { return this.space === 'inside' && this.museum.interior === 'cathedral'; }
   private applyLook() {
@@ -424,7 +424,7 @@ export class MuseumEngine {
   showTown(buildings:BuildingData[],focus?:string){this.endStart();this.mode='play';this.cinematic=false;this.finishPerformances();this.afterReveal=null;this.faceAfterRoute=false;this.clearResidents();this.space='town';this.entering=false;this.route=[];this.outdoor.setBuildings(buildings,true);this.outdoor.root.visible=true;this.museum.root.visible=false;this.applyLook();const p=focus?this.outdoor.positions.get(focus):null;this.avatarRoot.position.copy(p??new THREE.Vector3(0,0,25));this.yaw=0;this.dist=12;this.flash(this.reduced?QUICK:.35);this.ev.onSpace?.('town');this.ev.onSelect(null);this.ev.onNear(null);}
   /** 들어가기(§2-17): 문까지 걸어가며 흰빛이 덮이고, 문턱에서 안으로 바꾼 뒤 흰빛이 걷힌다 */
   enterMuseum(){if(this.space==='inside'||this.entering||this.mode!=='play')return;this.entering=true;this.enteringTime=0;if(this.reduced){this.setWipe(1);this.finishEnter();}else this.route=[new THREE.Vector3(0,0,15),new THREE.Vector3(0,0,11.6)];}
-  private finishEnter(){this.entering=false;this.space='inside';this.route=[];this.outdoor.suspend();this.museum.root.visible=true;this.applyLook();this.avatarRoot.position.set(0,0,9);this.dist=4.4;this.cameraDistance=4.4;this.snapCamera=true;this.flash(this.reduced?QUICK:.3);this.ev.onSpace?.('inside');const next=this.afterEnter;this.afterEnter=null;if(next)this.goTo(next.id,next.thenPlay);const shown=this.afterReveal;this.afterReveal=null;if(shown)this.reveal(shown);const jump=this.afterJump;this.afterJump=null;if(jump)this.jumpTo(jump);}
+  private finishEnter(){this.entering=false;this.space='inside';this.route=[];this.outdoor.suspend();this.museum.root.visible=true;this.applyLook();this.avatarRoot.position.copy(MuseumEngine.REVEAL_SPOT);this.dist=4.4;this.cameraDistance=4.4;this.snapCamera=true;this.flash(this.reduced?QUICK:.3);this.ev.onSpace?.('inside');const next=this.afterEnter;this.afterEnter=null;if(next)this.goTo(next.id,next.thenPlay);const shown=this.afterReveal;this.afterReveal=null;if(shown)this.reveal(shown);const jump=this.afterJump;this.afterJump=null;if(jump)this.jumpTo(jump);}
 
   // ───────── 시작 화면과 시작 연출(§2-17) ─────────
   /** 대표작 앞 구도(§2-17): 캐릭터는 화면 가운데 아래, 대표작은 가운데 위에 겹치지 않게 놓인다(거리 4.6m, 기울기 0.36, 초점 30% 당김) */
@@ -575,6 +575,8 @@ export class MuseumEngine {
   setJoystick(x: number, y: number) { this.joy.set(x, y); if (x || y) this.route = []; }
 
   setCustomizing(on: boolean) { this.customizing = on; }
+  /** 천장이 있는 모드의 건물 안은 내려다볼 수 없어 지금 거리까지만 줄인다(마스터플랜 3-3 #137) */
+  private get zoomFar(): number { const t = this.theme.current; return this.space === 'inside' && (t === 'classic' || t === 'block') ? ZOOM.lift : ZOOM.far; }
   /** 움직여 보기 창이 도는 동안 뒤쪽 장면을 멈춘다. 휴대폰에서 3D 두 개를 함께 그리지 않기 위해서다 */
   setRenderHeld(on: boolean) { this.renderHeld = on; }
   setInputPaused(on:boolean){this.inputPaused=on;this.onBlur();if(on){this.route=[];this.pendingPlay=null;}}
@@ -693,8 +695,9 @@ export class MuseumEngine {
       this.pitch = THREE.MathUtils.clamp(this.pitch + (Number(this.keys.has('KeyI')) - Number(this.keys.has('KeyK'))) * dt, .05, .9);
       const closer = this.keys.has('Equal') || this.keys.has('NumpadAdd');
       const farther = this.keys.has('Minus') || this.keys.has('NumpadSubtract');
-      if (closer || farther) this.dist = THREE.MathUtils.clamp(this.dist + (Number(farther) - Number(closer)) * 4 * dt, ZOOM.near, ZOOM.far);
+      if (closer || farther) this.dist = THREE.MathUtils.clamp(this.dist + (Number(farther) - Number(closer)) * 4 * dt, ZOOM.near, this.zoomFar);
     }
+    this.dist = Math.min(this.dist, this.zoomFar); // 모드를 바꿔도 줄인 거리가 남지 않게 한다
     let target = this.avatarRoot.position.clone().add(new THREE.Vector3(0, 1.25, 0));
     let yaw = this.yaw, pitch = this.pitch, dist = this.dist;
     if (this.camera.aspect < PORTRAIT.aspect) dist *= PORTRAIT.distance; // §2-23 D: 세로 화면은 멀리서 작품과 캐릭터를 함께 담는다
@@ -808,7 +811,7 @@ export class MuseumEngine {
     if (this.pinch && this.pointers.size === 2) {
       const [a, b] = [...this.pointers.values()];
       const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-      this.dist = THREE.MathUtils.clamp(this.pinch.dist * (this.pinch.d / Math.max(1, d)), ZOOM.near, ZOOM.far);
+      this.dist = THREE.MathUtils.clamp(this.pinch.dist * (this.pinch.d / Math.max(1, d)), ZOOM.near, this.zoomFar);
       return;
     }
     if (!this.down) return;
@@ -836,7 +839,7 @@ export class MuseumEngine {
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
     if(this.inputPaused||this.cinematic)return;
-    this.dist = THREE.MathUtils.clamp(this.dist * (1 + Math.sign(e.deltaY) * 0.1), ZOOM.near, ZOOM.far);
+    this.dist = THREE.MathUtils.clamp(this.dist * (1 + Math.sign(e.deltaY) * 0.1), ZOOM.near, this.zoomFar);
   };
 
   private click(cx: number, cy: number) {

@@ -1239,8 +1239,8 @@ hr{border:none;border-top:1px solid var(--g-gold-soft);margin:4px 0}
 .world{--w-bar-top:calc(env(safe-area-inset-bottom,0px) + 74px)}
 .hud-top{top:calc(env(safe-area-inset-top,0px) + 10px);flex-wrap:nowrap;align-items:center}
 .where{display:flex;align-items:baseline;gap:8px;min-width:0;padding:6px 12px;border-radius:12px;background:rgba(20,18,16,.5);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.where strong{font:600 15px var(--g-serif);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.where span{font-size:12px;color:#ffffffd0;white-space:nowrap}
+.where strong{flex:0 0 auto;max-width:72%;font:600 15px var(--g-serif);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.where span{min-width:0;font-size:12px;color:#ffffffd0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hud-top .tools{position:relative;flex:none;width:auto;max-width:none}
 .hud-top .tools .w-more-tools{width:44px;min-width:44px;padding:0;justify-content:center}
 .w-more-icon{display:grid;gap:4px}.w-more-icon i{display:block;width:18px;height:2px;border-radius:2px;background:#fff}

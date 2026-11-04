@@ -70,7 +70,7 @@ export function wallSlot(r: RoomSpec, i: number): { pos: THREE.Vector3; normal: 
   const s = r.side;
   const y = 1.6;
   if (i < 4) {
-    const z = r.cz + [-3.6, -1.2, 1.2, 3.6][i]!;
+    const z = r.cz + [-1.2, 1.2, -3.6, 3.6][i]!; // 첫 두 작품은 문 정면 가운데(재설계 2-24)
     return { pos: new THREE.Vector3((r.cx ?? s * 10) + s * 4.82, y, z), normal: new THREE.Vector3(-s, 0, 0) };
   }
   const xs = [6.8, 9.2, 11.6, 14.0];

@@ -168,15 +168,15 @@ export function speak(text: string): boolean {
 export function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* 없음 */ } }
 
 // 모드별 배경 음악(마스터플랜 3-3 #137). 이용자가 들어가기·모드·소리 버튼을 누른 뒤에만 켠다.
-const LOOKAHEAD = 1.2, MUSIC_LEVEL = 0.5;
+const LOOKAHEAD = 1.2, MUSIC_LEVEL = 0.8;
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 /** 음색마다 배음[배수, 세기], 파형, 전체 세기, 올림 초, 내림 초. pluck은 누른 뒤 저절로 사라지는 소리다 */
 const VOICES: Record<Note['voice'], { parts: [number, number][]; wave: OscillatorType; level: number; attack: number; release: number; pluck?: boolean; vibrato?: boolean }> = {
   organ: { parts: [[1, 1], [2, 0.5], [3, 0.18]], wave: 'sine', level: 0.15, attack: 0.18, release: 0.5 },
   pad: { parts: [[1, 1], [2, 0.2]], wave: 'sine', level: 0.1, attack: 0.7, release: 0.9 },
   flute: { parts: [[1, 1], [2, 0.12]], wave: 'triangle', level: 0.3, attack: 0.07, release: 0.18, vibrato: true },
-  marimba: { parts: [[1, 1], [4, 0.25]], wave: 'sine', level: 0.5, attack: 0.004, release: 0.45, pluck: true },
-  bell: { parts: [[1, 1], [3, 0.28], [5.04, 0.1]], wave: 'sine', level: 0.3, attack: 0.003, release: 1.1, pluck: true },
+  marimba: { parts: [[1, 1], [4, 0.25]], wave: 'sine', level: 0.7, attack: 0.004, release: 0.45, pluck: true },
+  bell: { parts: [[1, 1], [3, 0.28], [5.04, 0.1]], wave: 'sine', level: 0.42, attack: 0.003, release: 1.1, pluck: true },
   bass: { parts: [[1, 1]], wave: 'triangle', level: 0.3, attack: 0.008, release: 0.6, pluck: true },
 };
 
