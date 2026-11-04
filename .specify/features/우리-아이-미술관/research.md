@@ -91,7 +91,7 @@
 ## R-08. 인증·세션·역할 (U1 잠정, U8 인증 방식 닫음)
 
 - **Decision**:
-  - **보호자**: D18 — **이메일이 로그인 아이디**, 비밀번호는 argon2id 해시(`guardian_account.password_hash`). 가입·확인·찾기·재설정은 R-24. 세션은 `express-session` + MariaDB 저장소(보완 S6 `app_session`), 쿠키 `HttpOnly; Secure; SameSite=Lax`, 유휴 만료 30분 `[추론]`. 가족 ID는 **세션에서만** 정한다(SD_01 1.1 G0). 요청마다 세션 생성 시각이 `password_changed_at`보다 이르면 무효(결정 ⑥).
+  - **보호자**: D18 — **이메일이 로그인 아이디**, 비밀번호는 argon2id 해시(`guardian_account.password_hash`). 가입·확인·찾기·재설정은 R-24. 세션은 `express-session` + MariaDB 저장소(보완 S6 `app_session`), 쿠키 `HttpOnly; Secure; SameSite=Lax`, 유휴 만료 14일(쓸 때마다 늘어남, 이제민 지적 2026-11-04 "자동 로그아웃이 너무 짧다"). 처음 값 30분은 `[추론]`이었고, 휴대폰에서 앱을 닫았다 열 때마다 카카오 로그인을 다시 해야 했다. 로그아웃 버튼과 재설정 시 전 세션 무효(결정 ⑥)는 그대로다. 가족 ID는 **세션에서만** 정한다(SD_01 1.1 G0). 요청마다 세션 생성 시각이 `password_changed_at`보다 이르면 무효(결정 ⑥).
   - **U1 확정(`ee62c57`)**: 가입이 가족 공간을 함께 만들고(FR-31) 그 계정이 만든 보호자(`role='owner'`)가 된다. 공동 보호자 초대·같은 권한은 R-25.
   - **팀원**: SD_03 `team_member` + `team_member_role`(`operator` / `evaluator` / `integrator`, 한 사람이 여러 역할 가능, BR-ACC-05). SD_03에 비밀번호 컬럼이 없어 보완 S5(`password_hash`)를 더한다. 운영 로그인 경로 `/ops/login`. 보호자 세션과 쿠키 이름을 나눈다(`uam_sid`, `uam_ops_sid`). 팀원 계정은 가족 테이블에 대한 조회 권한 자체가 없는 API 라우터만 쓴다(BR-ACC-03).
   - **외부 클라이언트**: `X-API-Key` 헤더. 키 원문은 발급 시 한 번만 보이고 DB에는 SHA-256 해시만 저장(`api_key.key_hash`). 키 종류는 SD_03 `key_kind` — `team_internal`·`course_internal`·`external`·`test`. `pose`는 `team_internal`·`test`만(트리거 `trg_external_job_bi`, D17). U12 확정 전에는 `external` 키를 발급하지 않는다.

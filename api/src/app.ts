@@ -22,6 +22,7 @@ export function createApp({ db, cfg, storage, routers = [], before = [] }: AppDe
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', cfg.trustProxy);
+  app.set('secure cookies', cfg.secureCookies); // 가드가 세션 쿠키를 다시 보낼 때 쓴다
   app.use((req, res, next) => {
     // 요청 번호(계약 머리말, 점검표 L1): 형식이 맞는 X-Request-ID는 그대로, 아니면 새로 — 응답 헤더·오류 본문·로그 줄이 같은 값
     const given = req.get('x-request-id');
