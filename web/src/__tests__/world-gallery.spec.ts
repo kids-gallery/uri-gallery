@@ -81,6 +81,13 @@ describe('승인 전과 뒤', () => {
     expect(works.map((w) => w.subject)).toEqual(['etc', 'etc', 'etc']);
   });
 
+  it('서버 판의 방은 작품 나이로만 계산한다. 기기에 남은 방은 쓰지 않는다(#153)', async () => {
+    const { g } = await load();
+    const works = [{ age: 7 }, { age: 4 }, { age: 7 }] as never[];
+    expect(g.serverRooms(works)).toEqual([4, 7]);
+    expect(g.serverRooms([])).toEqual([]);
+  });
+
   it('부조에서 액자로 바뀌면 전시용 판을 버리고 사진을 건다', async () => {
     const s = server({ c1: [item('a1', { kind: 'relief', auxUrl: '/v1/files/cut' })] });
     const { g } = await load();

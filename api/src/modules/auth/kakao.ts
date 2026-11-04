@@ -4,7 +4,7 @@ import type { Config } from '../../config.js';
 
 export interface KakaoClient {
   configured: boolean;
-  authorizeUrl(state: string): string;
+  authorizeUrl(state: string, forceLogin?: boolean): string;
   /** 인가 코드 → 회원번호. 실패하면 Error(원인 코드만) */
   memberId(code: string): Promise<string>;
 }
@@ -13,8 +13,9 @@ export function httpKakao(cfg: Config['kakao'], timeoutMs = 5000): KakaoClient {
   const configured = Boolean(cfg.restApiKey && cfg.clientSecret);
   return {
     configured,
-    authorizeUrl(state) {
+    authorizeUrl(state, forceLogin = false) {
       const q = new URLSearchParams({ client_id: cfg.restApiKey, redirect_uri: cfg.redirectUri, response_type: 'code', state });
+      if (forceLogin) q.set('prompt', 'login');
       return `${cfg.authBase}/oauth/authorize?${q}`;
     },
     async memberId(code) {

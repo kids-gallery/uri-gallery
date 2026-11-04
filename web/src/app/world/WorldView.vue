@@ -15,7 +15,7 @@ import type { AvatarConfig } from './avatar';
 import WorldUpload from './WorldUpload.vue';
 import { SERVER_WORLD, selectedChild, worldWorks } from './server/upload';
 import { confirmKind, deleteArtwork, decide, failureOf, failureReason, getArtwork, type Decision, type Failure } from './server';
-import { galleryFailure, isStale, watchIds } from './server/gallery';
+import { galleryFailure, isStale, serverRooms, watchIds } from './server/gallery';
 import { autoExhibitor, autoStep, isMoving, useArtworkWatch } from './server/watch';
 import WorldArchive from './WorldArchive.vue';
 import WorldConfirm from './WorldConfirm.vue';
@@ -302,7 +302,7 @@ let reloading:Promise<void>=Promise.resolve();
 function reload():Promise<void>{
   const run=async()=>{
     artworks.value = await worldWorks();
-    rooms.value = await store.getRooms();
+    rooms.value = SERVER_WORLD ? serverRooms(artworks.value) : await store.getRooms();
     if (engine.value && account.value) await engine.value.setWorld(SERVER_WORLD ? serverChildName.value : account.value.child, artworks.value, rooms.value);
   };
   reloading=reloading.then(run,run);
@@ -313,7 +313,7 @@ function reload():Promise<void>{
 async function boot(title = true) {
   account.value = (await store.getAccount()) ?? null;
   prefs.value = await store.getPrefs();setSoundEnabled(prefs.value.sound);applyControls();
-  artworks.value=account.value?await worldWorks():[];rooms.value=account.value?await store.getRooms():[];
+  artworks.value=account.value?await worldWorks():[];rooms.value=account.value?(SERVER_WORLD?serverRooms(artworks.value):await store.getRooms()):[];
   const showTitle=title||!account.value;
   // 시작 버튼은 엔진이 시작 화면을 그리고 작품을 다 불러온 뒤에 보인다(그 전에 누르면 연출이 시작되지 않고 멈췄다)
   if(showTitle)phase.value='checking';
@@ -342,7 +342,7 @@ async function start(sample=false){
     await store.createLocalFamily(sample,(done,total)=>{progress.value={done,total};});
     account.value=(await store.getAccount())??null;prefs.value=await store.getPrefs();
     if(!account.value)throw new Error('가족을 만들지 못했어요');
-    artworks.value=await worldWorks();rooms.value=await store.getRooms();
+    artworks.value=await worldWorks();rooms.value=SERVER_WORLD?serverRooms(artworks.value):await store.getRooms();
     await e.setWorld(account.value.child,artworks.value,rooms.value);
     void e.loadDecor(); // 가족이 생긴 뒤 명화·흉상 장식을 불러온다(가족이 있던 경우는 boot에서 부른다)
   })();

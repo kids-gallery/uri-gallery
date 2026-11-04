@@ -25,6 +25,12 @@ describe('카카오 로그인 — 가입·로그인', () => {
     expect((await request(t.app).get('/v1/auth/providers')).body.kakao).toBe(false);
     expect((await request(t.app).get('/v1/auth/kakao/start').expect(503)).body.reason).toBe('kakao_not_configured');
   });
+  it('계정 전환을 명시할 때만 재인증을 요청한다(#151)', async () => {
+    const prompt = async (query: string) => new URL((await request(t.app).get(`/v1/auth/kakao/start${query}`).expect(302)).headers.location).searchParams.get('prompt');
+    expect(await prompt('')).toBeNull();
+    expect(await prompt('?account=switch')).toBe('login');
+    await request(t.app).get('/v1/auth/kakao/start?account=other').expect(422);
+  });
   it('첫 로그인: 가족 공간 + 만든 보호자, 이메일·비밀번호 없이 회원번호만 저장 → 아이 등록으로', async () => {
     const { a, to } = await kakaoLogin('1001');
     expect(to).toBe('/app/children/new?welcome=1');

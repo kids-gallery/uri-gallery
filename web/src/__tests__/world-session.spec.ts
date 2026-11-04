@@ -68,6 +68,17 @@ it('처음 방문의 실제 401 분류는 만료 대신 로그인 안내를 보�
 // #88 카카오로 시작(마스터플랜 3-3)
 const loggedOut = () => s.me.mockRejectedValue(new ApiError(401, null));
 const kakaoOn = () => s.authProviders.mockResolvedValue({ kakao: true, emailSignup: true });
+it('카카오톡 인앱에서는 계정 변경 대신 외부 브라우저 사용을 안내한다(#151)', async () => {
+  const agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 KAKAOTALK/26');
+  try {
+    loggedOut(); kakaoOn();
+    const w = open();
+    await flushPromises(); await flushPromises();
+    expect(w.find('.switch-account').exists()).toBe(false);
+    expect(w.text()).toContain('외부 브라우저에서 열어 주세요');
+    expect(w.find('.kakao').exists()).toBe(true);
+  } finally { agent.mockRestore(); }
+});
 it('카카오가 켜지면 큰 버튼만 보이고 이메일 로그인은 눌러야 펼쳐지며 가입 링크는 없다', async () => {
   loggedOut(); kakaoOn();
   const w = open();

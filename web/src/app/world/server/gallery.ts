@@ -55,6 +55,9 @@ async function workOf(item: Item, no: number): Promise<store.Artwork> {
   };
 }
 
+/** 서버 판의 방: 그 가족의 작품 나이로 계산해 기기마다 같게 한다(마스터플랜 3-3 #153) */
+export const serverRooms = (works: store.Artwork[]): number[] => [...new Set(works.map((a) => a.age))].sort((a, b) => a - b);
+
 /** 받지 못한 파일이 있는 작품 수를 돌려준다 */
 async function load(entries: { item: Item; childId: string }[], mine: number): Promise<number> {
   let missed = 0;
