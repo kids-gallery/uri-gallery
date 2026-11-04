@@ -53,6 +53,20 @@ describe('작품 삭제(UC7, Scenario 11)', () => {
     expect(await q(`SELECT artwork_id, result_kind FROM artwork_outcome`)).toEqual([{ artwork_id: null, result_kind: 'animated' }]);
     expect(await q(`SELECT * FROM gate_event WHERE subject_kind = 'artwork' AND subject_id IS NOT NULL`)).toHaveLength(0);
   });
+  it('삭제를 접수하면 이미 받은 파일 주소는 바로 404이고, 파일은 sweeper가 지운다(#154)', async () => {
+    const f = await familyWithChild(t, 'del-url@test.local');
+    const { body: { id } } = await upload(f.a, f.childId, await png()).expect(202);
+    const url = (await f.a.get(`/v1/artworks/${id}`).expect(200)).body.originalUrl as string;
+    const [o] = await q<{ object_key: string }>(`SELECT so.object_key FROM artwork_original ao JOIN stored_object so ON so.object_id = ao.object_id WHERE ao.artwork_id = ?`, [id]);
+    expect((await f.a.get(url).expect(200)).headers['cache-control']).toBe('private, no-store');
+    await f.a.delete(`/v1/artworks/${id}`).expect(202);
+    await f.a.get(url).expect(404); // 접근 차단
+    expect(fs.existsSync(path.join(t.store, o.object_key))).toBe(true); // 파일은 아직 남아 있다
+    await sweep();
+    expect(fs.existsSync(path.join(t.store, o.object_key))).toBe(false); // 물리 삭제
+    await f.a.get(url).expect(404);
+  });
+
   it('점유가 만료된 실행 중 작업은 30초 뒤 강제로 멈춘 것으로 보고 삭제를 끝낸다', async () => {
     const f = await processingArtwork('del2@test.local');
     await f.a.delete(`/v1/artworks/${f.id}`).expect(202);

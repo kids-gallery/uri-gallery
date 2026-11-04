@@ -116,4 +116,15 @@ describe('마을 · 방문(D40 D·F)', () => {
     await A.a.get(`/v1/visit/children/${B.childId}/gallery`).expect(404);
     await B.a.delete(`/v1/neighbors/${bId}`).expect(404);
   });
+  it('작품 주인이 삭제를 접수하면 이웃이 받은 방문 파일 주소도 바로 404다(#154)', async () => {
+    const A = await familyWithChild(t, 'v4@test.local');
+    const B = await familyWithChild(t, 'v5@test.local');
+    const art = await upload(B.a, B.childId, await png()).expect(202);
+    await setStory(t.db, art.body.id, { title: '우리 집', childWords: '엄마랑', ageAtMaking: 5 });
+    await neighbors(A, B);
+    const url = (await A.a.get(`/v1/visit/children/${B.childId}/gallery`).expect(200)).body.rooms[0].items[0].primaryUrl as string;
+    expect((await A.a.get(url).expect(200)).headers['cache-control']).toBe('private, no-store');
+    await B.a.delete(`/v1/artworks/${art.body.id}`).expect(202);
+    await A.a.get(url).expect(404);
+  });
 });
