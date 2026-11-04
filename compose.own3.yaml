@@ -1,0 +1,27 @@
+# 자체 모델 own3를 M1·M5 자리에 켠다(마스터플랜 3-6). compose.real.yaml 위에 겹친다.
+#   OWN3_MANIFEST=./models/own3/manifest.demo.yaml docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml up -d --build
+# 저장소 매니페스트는 라이선스 확인 전(false)이라 OWN3_MANIFEST 없이는 db-migrate가 멈춘다. 사본 만드는 법은 3-6 켜는 조건.
+# 가중치는 저장소에 없다. models/own3/own3.ts에 둔다.
+services:
+  db-migrate:
+    environment:
+      MODEL_MANIFEST: /app/models/manifest.own3.yaml
+    volumes:
+      - ${OWN3_MANIFEST:-./models/manifest.own3.yaml}:/app/models/manifest.own3.yaml:ro
+  app-api:
+    environment:
+      MODEL_MANIFEST: /app/models/manifest.own3.yaml
+    volumes:
+      - ${OWN3_MANIFEST:-./models/manifest.own3.yaml}:/app/models/manifest.own3.yaml:ro
+  model-api:
+    environment:
+      MODEL_MANIFEST: /app/models/manifest.own3.yaml
+    volumes:
+      - ${OWN3_MANIFEST:-./models/manifest.own3.yaml}:/app/models/manifest.own3.yaml:ro
+  worker-cpu:
+    environment:
+      UAM_OWN_MODEL: "M1,M5"
+      MODEL_MANIFEST: /app/models/manifest.own3.yaml
+    volumes:
+      - ${OWN3_MANIFEST:-./models/manifest.own3.yaml}:/app/models/manifest.own3.yaml:ro
+      - ./models/own3:/models/own3:ro
