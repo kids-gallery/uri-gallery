@@ -56,6 +56,23 @@ function onPick(e: Event) {
   accept(files);
 }
 
+/** 시연 체험 서버에서 올릴 사진이 없는 청중이 고르는 견본(팀이 코드로 그린 그림, 마스터플랜 3-5 #135) */
+const TRIAL = import.meta.env.VITE_TRIAL === '1';
+const TRIAL_WORKS = [
+  { file: 'house-sun', title: '해님 아래 우리 집' }, { file: 'cat', title: '낮잠 자는 고양이' }, { file: 'car', title: '빨간 자동차' },
+  { file: 'rocket', title: '달나라 가는 로켓' }, { file: 'fish', title: '바닷속 친구들' }, { file: 'rainbow', title: '비 온 뒤 무지개' },
+];
+async function pickSample(file: string) {
+  try {
+    const img = new Image(); img.src = `/museum/sample/${file}.svg`; await img.decode();
+    const c = document.createElement('canvas'); c.width = 1200; c.height = 900;
+    const g = c.getContext('2d')!; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', 0.92));
+    if (!blob) throw new Error('blob');
+    accept([new File([blob], `${file}.jpg`, { type: 'image/jpeg' })]);
+  } catch { notice.value = '견본을 열지 못했어요. 다시 눌러 주세요'; }
+}
+
 function accept(files: File[]) {
   notice.value = '';
   const room = MAX_BATCH - items.value.filter((i) => i.status !== 'done' && i.status !== 'skip' && i.status !== 'fail').length;
@@ -186,6 +203,10 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
       <template v-if="step === 'pick'">
         <p class="lead">아이의 그림이나 만들기 사진을 골라 주세요. 고르면 바로 미술관에 걸려요. 제목과 이야기는 나중에 적어도 돼요.</p>
         <div class="row"><button class="g-btn g-btn--primary g-btn--big" type="button" @click="album?.click()">앨범에서 고르기</button><button class="g-btn g-btn--big" type="button" @click="camera?.click()">사진 찍기</button></div>
+        <div v-if="TRIAL" class="w-trial">
+          <p class="small">올릴 사진이 없으면 견본으로 해 보세요.</p>
+          <div class="w-trial-row"><button v-for="w in TRIAL_WORKS" :key="w.file" class="w-trial-btn" type="button" :aria-label="`${w.title} 견본 고르기`" @click="pickSample(w.file)"><img :src="`/museum/sample/${w.file}.svg`" alt=""></button></div>
+        </div>
         <p v-if="SERVER_WORLD" class="small">한 번에 10장까지, JPEG·PNG·HEIC 사진을 한 장 20MB까지 골라요. 작품 부분만 골라 우리 미술관으로 보내요. 아이 얼굴이 들어가지 않게 고른 뒤 올려요.</p>
         <p v-else class="small">한 번에 10장까지, 한 장 20MB까지 골라요. 원본 사진은 그대로 보관하고 이 기기에 저장돼요.</p>
       </template>
@@ -219,6 +240,7 @@ onMounted(() => { if (props.initialFiles?.length) accept(props.initialFiles); })
 </template>
 
 <style scoped>
+.w-trial{display:grid;gap:6px}.w-trial-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.w-trial-btn{min-height:44px;padding:0;border:1px solid #c9b38f;border-radius:10px;background:#fff;overflow:hidden;cursor:pointer}.w-trial-btn img{display:block;width:100%}
 .sheet{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(40,28,18,.25)}
 .w-card{width:min(680px,100%);max-height:min(92vh,900px);overflow:auto;padding:20px 22px;display:grid;gap:12px}
 .w-head{display:flex;justify-content:space-between;align-items:center;gap:8px}

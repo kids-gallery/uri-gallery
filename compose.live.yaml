@@ -1,13 +1,24 @@
-# 시연 체험 주소(마스터플랜 3-5 #135). compose.real.yaml 위에 겹친다. 화면은 이 PC 안에만 열고 Tailscale Funnel이 HTTPS로 받는다.
-#   LIVE_BASE_URL=https://주소 docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml -f compose.live.yaml up -d --build
-#   tailscale funnel --bg 29600   # 열기
-#   tailscale funnel reset        # 닫기
+# 시연 체험 서버(마스터플랜 3-5 #135). compose.real.yaml, compose.own3.yaml 위에 겹친다. 사용자는 링크만 열고, 키와 컨테이너는 이 서버에만 있다.
+#   LIVE_HOST=주소 OWN3_MANIFEST=./models/own3/manifest.demo.yaml docker compose -f compose.yaml -f compose.real.yaml -f compose.own3.yaml -f compose.live.yaml up -d --build
 services:
   app-api:
     environment:
-      APP_BASE_URL: ${LIVE_BASE_URL:?체험 주소를 넣어 주세요}
+      APP_BASE_URL: https://${LIVE_HOST:?서버 주소를 넣어 주세요}
       SECURE_COOKIES: "true"
   web:
-    ports: !override ["127.0.0.1:29600:80"]
+    build:
+      args:
+        VITE_TRIAL: "1"
+    ports: !reset []
+  caddy:
+    image: caddy:2.10.0-alpine
+    restart: unless-stopped
+    command: caddy reverse-proxy --from ${LIVE_HOST} --to web:80
+    ports: ["80:80", "443:443"]
+    volumes: ["caddy-data:/data"]
+    networks: [edge]
+    depends_on: [web]
   mailpit:
-    ports: !override ["127.0.0.1:28097:8025"]
+    ports: !override ["127.0.0.1:8025:8025"]
+volumes:
+  caddy-data:

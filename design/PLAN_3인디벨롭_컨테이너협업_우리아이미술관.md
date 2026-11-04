@@ -237,7 +237,7 @@
 
    - [확인] 어댑터는 `from_pretrained(..., cache_dir=MODEL_ROOT/hf)`로 가중치를 읽고, M1은 `trust_remote_code`를 쓴다. [추론] 읽기 전용 캐시에 잠금 파일·원격 코드 모듈을 쓰려 하거나 네트워크로 가려 할 수 있다. 그래서 worker-cpu에 `HF_HUB_OFFLINE=1`과 쓰기용 `HF_HOME`(별도 볼륨)을 둔다. [확인] 이미지가 비루트(UID 1000)이므로 새 볼륨이 쓸 폴더를 이미지에 미리 만들어야 한다. 없으면 볼륨이 root 소유가 되어 M1이 `PermissionError: '/hf-cache/modules'`로 뜨지 않는다(M2·M5는 뜸). `serving/Dockerfile`이 `/data/hf-cache`를 만든다. 네트워크를 끈 컨테이너에서 세 모델이 `HF_HUB_OFFLINE=1`로 올라오는 것도 확인했다. [미검증] compose에서 `models[].load.state`가 `ready`인지는 #42에서 본다.
    - 가중치는 `/models/hf`에 붙고 매니페스트는 이미지의 `/app/models/manifest.yaml`이라 서로 가리지 않는다. 가중치는 `models/manifest.yaml`의 `source`·`revision`으로 받아 호스트 `models/hf/`에 둔다(`.gitignore`).
-   - **시연 체험 주소(#135, 2026-11-04 이제민 결정).** 개발은 컨테이너 그대로 하고, 시연 때 청중이 휴대폰으로 직접 써 보도록 맥의 스택 하나를 HTTPS 고정 주소로 연다. `compose.live.yaml`을 겹쳐 화면을 `127.0.0.1:29600`에만 열고 Tailscale Funnel이 `https://jm-macbookair.tail207397.ts.net`으로 받는다. `APP_BASE_URL`을 그 주소로, `SECURE_COOKIES`를 true로 둔다. 카카오 콘솔에 `https://jm-macbookair.tail207397.ts.net/v1/auth/kakao/callback`을 더한다. Mailpit은 밖에 열지 않으므로 청중은 카카오로만 들어온다. 사용자는 링크만 열면 되고 키와 컨테이너는 운영자에게만 있다. 고른 이유: 비용 없이 오늘 고정 주소를 얻는다. 클라우드 서버는 결제, 도메인, 보안 점검이 필요해 발표 전에는 버렸다. [한계] 운영 서버가 아니다(#108). 맥이 켜져 있어야 하고, 분리 단계는 하나씩 처리해 동시에 올리면 줄을 선다. 청중 사진은 발표 뒤 지운다: `tailscale funnel reset`으로 닫고 볼륨째 내린다.
+   - **시연 체험 서버(#135, 2026-11-04 이제민 결정).** 개발은 컨테이너 그대로 하고, 시연 때 청중이 휴대폰으로 직접 써 보도록 클라우드 서버 한 대에 같은 compose를 올려 링크를 준다. 사용자는 링크만 열면 되고, 키와 컨테이너는 서버에만 있다. GCP Compute Engine VM 1대(프로젝트 `project-910f4485-8fb9-4933-a56`, 서울 리전, e2-standard-4)에 고정 IP를 두고 `compose.live.yaml`을 겹친다. Caddy가 HTTPS를 받아 web으로 넘기고, 주소는 고정 IP로 만든 `sslip.io` 이름이다. `APP_BASE_URL`을 그 주소로, `SECURE_COOKIES`를 true로 둔다. 카카오 콘솔에 그 주소의 콜백을 더한다. Mailpit은 밖에 열지 않으므로 청중은 카카오로만 들어온다. 청중은 자기 사진을 올리고, 없으면 올리기 창의 견본을 고른다. 견본은 팀이 코드로 그린 그림(`web/public/museum/sample`)이고 `VITE_TRIAL=1` 빌드에서만 보인다. 리허설과 시연 때만 켜고, 끝나면 VM, 디스크, 고정 IP를 지운다. 청중 사진도 이때 함께 지워진다. 고른 이유: 같은 compose가 서버에서도 뜨는지가 이 프로젝트의 핵심이고, 사용자는 개발자 PC와 무관하게 링크만 쓴다. 맥 터널은 개발자 PC에 묶여서, Vercel은 화면만 올릴 수 있고 API, DB, worker를 돌리지 못해서 버렸다. [한계] 운영 서버가 아니다(#108). 수집 동의, 처리방침, 탈퇴, 보안 헤더, 저장 상한이 없어 시연 시간에만 연다. 분리 worker는 하나라 동시에 올리면 줄을 선다.
    - **실제 모델 켜기:** 기본 `compose.yaml`은 가짜 모델 그대로 두고 `compose.real.yaml`을 겹친다(`docker compose -f compose.yaml -f compose.real.yaml up -d --build`, #42). worker-cpu만 모델 묶음 이미지를 쓰고 가중치·캐시를 붙이며, model-api는 가벼운 이미지를 유지한다. 메모리 한도는 10GiB다. [확인] 맥에서 사진 올리기 → 분리·판정 → 부조 → 승인까지 돌렸을 때 worker 최대 7781~7899MiB였다(`memory.peak`, 파일 캐시 포함, 640×480 합성 그림). 12MP 합성 그림까지 돌리면 8.35GiB였다. 8GiB는 부족하다. 최종 값은 #43에서 정한다.
    - 비밀 값은 `secrets:`(3-2). [확인] 앱 서버(`api/src/config.ts`)와 serving(`serving/common/config.py`)은 지금 환경 변수만 읽는다. 둘 다 `*_FILE`을 읽게 고친다: 앱 서버 #21, serving #23. db-migrate는 앱 서버 설정 코드를 쓰므로 #21로 함께 해결된다.
 5. **연결.** 3-3 표의 경로와 응답 칸은 #19에 있다. 여기서는 계약에 따른 필수 동작과, B가 정할 화면 배치를 나눈다.
@@ -443,7 +443,7 @@ M1(분리)과 M5(깊이) 자리에 자체 모델 own3를 켜서 쓸 수 있게 �
 - CI 옮기기와 이미지 자동 빌드, 레지스트리에 올리기, 태그별 되돌리기, 모니터링(Prometheus·Grafana), 장애 리허설과 운영 절차서, 백업 스크립트, 보안 점검표, GPU 이미지.
 - M3·M6·M7을 실제로 컨테이너에 넣기.
 - Dockerfile·compose를 한 사람이 대신 다 만들어 주기(리뷰와 짝 작업은 좋다).
-- Kubernetes 같은 묶음 운영 도구, 유료 서비스, 승인 없는 공개 배포. 시연 체험 주소는 이제민이 승인한 예외다(3-5 #135).
+- Kubernetes 같은 묶음 운영 도구, 유료 서비스, 승인 없는 공개 배포. 시연 체험 서버는 이제민이 승인한 예외다(3-5 #135).
 - 시간이 남아도 위 항목을 다시 넣지 않는다.
 
 ## 부록 A. 이슈 양식
