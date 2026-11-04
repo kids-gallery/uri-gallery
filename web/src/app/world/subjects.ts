@@ -19,6 +19,7 @@ export const SUBJECTS: readonly Subject[] = [
   { id: 'bird', label: '새', icon: '🐦', group: '하늘', behavior: 'fly', sound: 'flap' },
   { id: 'butterfly', label: '나비', icon: '🦋', group: '하늘', behavior: 'fly', sound: 'flap' },
   { id: 'balloon', label: '풍선', icon: '🎈', group: '하늘', behavior: 'fly', sound: 'float' },
+  { id: 'moon', label: '달', icon: '🌙', group: '하늘', behavior: 'fly', sound: 'float' },
   { id: 'car', label: '자동차', icon: '🚗', group: '탈것', behavior: 'drive', sound: 'vroom' },
   { id: 'train', label: '기차', icon: '🚂', group: '탈것', behavior: 'drive', sound: 'vroom' },
   { id: 'bus', label: '버스', icon: '🚌', group: '탈것', behavior: 'drive', sound: 'vroom' },
@@ -44,6 +45,12 @@ export const FALLBACK_SUBJECT: Subject = BY_ID.get('etc')!;
 
 export function subjectOf(id: string | undefined | null): Subject {
   return (id && BY_ID.get(id)) || FALLBACK_SUBJECT;
+}
+
+/** M2 태그(확률 순) 중 주제 표에 있는 첫 태그의 주제. 없으면 undefined로 두어 기본 동작을 쓴다(마스터플랜 3-3) */
+export function motionSubject(tags: readonly string[] | undefined): string | undefined {
+  for (const t of tags ?? []) { const s = SUBJECTS.find((x) => x.label === t && x.id !== 'etc'); if (s) return s.id; }
+  return undefined;
 }
 
 export const SUBJECT_GROUPS: readonly SubjectGroup[] = ['동물', '하늘', '탈것', '바다', '자연', '사람', '그 밖'];

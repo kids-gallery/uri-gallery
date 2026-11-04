@@ -530,7 +530,7 @@ export class MuseumEngine {
     if (!w || !a) return;
     if (this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry)) return;
     if (this.performances.filter((p) => !p.done).length >= 3) this.performances.find((p) => !p.done)?.finish();
-    const s = subjectOf(a.subject);
+    const s = subjectOf(a.motion ?? a.subject);
     const r = w.room;
     const stage = { cx: r.cx ?? r.side * 10, cz: r.cz, ...STAGE };
     this.performances.push(new Performance(w.relief, w.normal, s.behavior, s.id, stage, this.scene));
@@ -550,7 +550,7 @@ export class MuseumEngine {
   stageSource(id: string) {
     const w = this.museum.works.get(id), a = this.artworks.get(id);
     if (!w || !a) return null;
-    const s = subjectOf(a.subject);
+    const s = subjectOf(a.motion ?? a.subject);
     this.ev.onPlay?.(id);
     return { relief: w.relief, behavior: s.behavior, subject: s.id, sound: s.sound };
   }
@@ -946,7 +946,7 @@ export class MuseumEngine {
   /** 시험용: 작품 하나의 윤곽·행동·재생 여부(§2-22 끝나는 조건: 직접 올린 작품의 윤곽이 비어 있지 않고 주제대로 움직인다) */
   debugWork(id: string) {
     const l = this.loaded.get(id), a = this.artworks.get(id), w = this.museum.works.get(id);
-    return { loaded: !!l, masked: !!l?.mask, maskRatio: l?.mask?.ratio ?? 0, behavior: a ? subjectOf(a.subject).behavior : null, playing: !!w && this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry) };
+    return { loaded: !!l, masked: !!l?.mask, maskRatio: l?.mask?.ratio ?? 0, behavior: a ? subjectOf(a.motion ?? a.subject).behavior : null, playing: !!w && this.performances.some((p) => !p.done && p.actor.geometry === w.relief.geometry) };
   }
 
   /** 시험용: 캐릭터를 곧바로 옮긴다 */

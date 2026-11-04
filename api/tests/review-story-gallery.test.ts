@@ -93,6 +93,14 @@ describe('이야기·전시(UC5·UC6) — D46 올린 작품은 고정', () => {
     expect(locked.body.reason).toBe('artwork_locked');
     expect((await f.a.get(`/v1/gallery?child=${f.childId}`)).body.groups[0].items[0]).toMatchObject({ making: true, title: '우리 가족' });
   });
+  it('전시 항목에 M2 태그를 확률 순으로 싣는다(움직임용), 없으면 빈 목록', async () => {
+    const f = await reviewed('s9@test.local', 'relief');
+    await setStory(t.db, f.id, STORY);
+    const tags = async () => (await f.a.get(`/v1/gallery?child=${f.childId}`).expect(200)).body.groups[0].items[0].motionTags;
+    expect(await tags()).toEqual([]);
+    for (const label of ['바다', '물고기']) await t.db.query('INSERT INTO tag_candidate (artwork_id, label) VALUES (?, ?)', [f.id, label]);
+    expect(await tags()).toEqual(['바다', '물고기']);
+  });
   it('올리면 원본 액자로 전시, 좋아요 뒤 결과로 바꿔 걸림, 낮춤 표시 없음(BR-EXH-01·07 · D34)', async () => {
     const f = await reviewed('s2@test.local', 'relief', { cause: 'model_downgrade' });
     await setStory(t.db, f.id, STORY);

@@ -21,5 +21,21 @@ tags:
   자동차: "a car"
   무지개: "a rainbow"
   공룡: "a dinosaur"
+  호랑이: "a tiger"
+  사자: "a lion"
+  토끼: "a rabbit"
+  곰: "a bear"
+  로켓: "a rocket"
+  비행기: "an airplane"
+  나비: "a butterfly"
+  풍선: "a balloon"
+  기차: "a train"
+  버스: "a bus"
+  배: "a boat"
+  고래: "a whale"
+  문어: "an octopus"
+  달: "the moon"
+  로봇: "a robot"
+  눈사람: "a snowman"
 tag_top_k: 5
-tag_min_score: 0.05
+tag_min_score: 0.4   # 3D 화면의 움직임이 첫 태그를 쓴다. 확신이 낮으면 태그 없이 기본 동작(마스터플랜 3-3)
