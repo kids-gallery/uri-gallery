@@ -1,5 +1,6 @@
 // 3D 미술관 엔진(3D미술관_재설계 §2-12): 렌더러 · 시간 흐름 · 입력 · 카메라 · 캐릭터 이동 · 작품 배치와 재생을 묶는다.
 // 화면(Vue)은 이 객체에 데이터를 넘기고, 이 객체는 콜백으로 선택 · 근접 · 위치를 알린다.
+import { settleWithin } from './settle';
 import * as THREE from 'three';
 import {occlusionDistance,recoverDistance,distanceToFitArtwork, dragTurn, ZOOM, zoomLift } from './cameraRig';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -419,7 +420,8 @@ export class MuseumEngine {
   setBuilding(style:MuseumStyle,child:string,id='mine'){this.ownBuilding={style,child,id,mine:true};if(this.space==='plaza')this.outdoor.setBuildings([this.ownBuilding]);}
   // Keep the current scene's GPU resources while outside. Replacement and engine disposal own release.
   // The baseline CPU profile showed synchronous program readiness work during entry.
-  private async prepareInterior(){await this.renderer.compileAsync(this.museum.root,this.camera,this.scene);}
+  // compileAsync never settles if a material is disposed while compiling (three 0.170), so entry must not depend on it.
+  private prepareInterior(){return settleWithin(()=>this.renderer.compileAsync(this.museum.root,this.camera,this.scene),8000);}
   private finishPerformances(){for(const p of this.performances)p.finish();this.performances=[];this.pendingPlay=null;this.particles.clear();}
   showPlaza(flash=true){this.endStart();this.mode='play';this.cinematic=false;this.finishPerformances();this.afterEnter=null;this.afterReveal=null;this.faceAfterRoute=false;this.clearResidents();this.space='plaza';this.entering=false;this.route=[];this.outdoor.setBuildings([this.ownBuilding]);this.outdoor.root.visible=true;this.museum.root.visible=false;this.applyLook();this.avatarRoot.position.set(0,0,28);this.yaw=0;this.dist=9;if(flash)this.flash(this.reduced?QUICK:.35);this.ev.onSpace?.('plaza');this.ev.onSelect(null);this.ev.onNear(null);}
   showTown(buildings:BuildingData[],focus?:string){this.endStart();this.mode='play';this.cinematic=false;this.finishPerformances();this.afterReveal=null;this.faceAfterRoute=false;this.clearResidents();this.space='town';this.entering=false;this.route=[];this.outdoor.setBuildings(buildings,true);this.outdoor.root.visible=true;this.museum.root.visible=false;this.applyLook();const p=focus?this.outdoor.positions.get(focus):null;this.avatarRoot.position.copy(p??new THREE.Vector3(0,0,25));this.yaw=0;this.dist=12;this.flash(this.reduced?QUICK:.35);this.ev.onSpace?.('town');this.ev.onSelect(null);this.ev.onNear(null);}

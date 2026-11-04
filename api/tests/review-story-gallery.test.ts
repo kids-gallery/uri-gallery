@@ -164,3 +164,24 @@ describe('가족 간 차단(T086, Scenario 12)', () => {
     expect((await request(t.app).get(`/v1/gallery?child=${A.childId}`)).status).toBe(401);
   });
 });
+
+describe('제작일 상한은 한국 날짜다(BR-STY-02, #129)', () => {
+  // 한국 11-04 00:30 = UTC 11-03 15:30. 시계를 고정해 어느 시각에 돌려도 같은 조건을 잰다
+  it('한국 자정이 지나도 한국 날짜 오늘은 받고, 내일은 막는다', async () => {
+    const f = await familyWithChild(t, 'kst@example.test');
+    const u = await upload(f.a, f.childId, await png()).expect(202);
+    const conn = await t.db.getConnection();
+    try {
+      await conn.query(`SET time_zone = '+00:00'`);
+      await conn.query(`SET timestamp = UNIX_TIMESTAMP('2026-11-03 15:30:00')`);
+      await conn.query(`UPDATE story SET made_on = '2026-11-04' WHERE artwork_id = ?`, [u.body.id]);
+      await expect(conn.query(`UPDATE story SET made_on = '2026-11-05' WHERE artwork_id = ?`, [u.body.id])).rejects.toThrow('made_on_in_future');
+      await conn.query(`DELETE FROM story WHERE artwork_id = ?`, [u.body.id]);
+      await conn.query(`INSERT INTO story (artwork_id, title, title_auto, made_on, made_on_auto, age_auto, updated_at) VALUES (?, 't', 0, '2026-11-04', 0, 0, UTC_TIMESTAMP())`, [u.body.id]);
+    } finally {
+      await conn.query('SET timestamp = DEFAULT');
+      conn.release();
+      await resetData(t.db); // 다음 시험 파일에 작업 행을 남기지 않는다
+    }
+  });
+});

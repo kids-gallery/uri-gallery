@@ -8,6 +8,8 @@ vi.mock('@/app/world/store', async (real) => ({
   saveRooms: vi.fn(async () => undefined),
 }));
 
+vi.mock('@/app/world/exhibit', () => ({ exhibitBlob: vi.fn(async () => new Blob(['exhibit-plate'])) }));
+
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': status >= 400 ? 'application/problem+json' : 'application/json' } });
 const item = (id: string, extra: object = {}) => ({ id, kind: 'frame', primaryUrl: null, auxUrl: null, photoUrl: `/v1/files/${id}`, originalUrl: `/v1/files/${id}`, making: false, title: `제목 ${id}`, madeOn: '2026-11-02', ageAtMaking: 6, childWords: null, ...extra });
@@ -61,6 +63,18 @@ describe('승인 전과 뒤', () => {
     expect(s.fileCalls()).toEqual(['/v1/files/a1', '/v1/files/cut']); // 부조 파일(primaryUrl)은 3D 화면이 쓰지 않는다
     await g.galleryWorks(null);
     expect(s.fileCalls()).toHaveLength(2); // 결과가 그대로면 다시 받지 않는다
+  });
+
+  it('부조에서 액자로 바뀌면 전시용 판을 버리고 사진을 건다', async () => {
+    const s = server({ c1: [item('a1', { kind: 'relief', auxUrl: '/v1/files/cut' })] });
+    const { g } = await load();
+    const [relief] = await g.galleryWorks(null);
+    expect(relief!.display.size).toBe('exhibit-plate'.length);
+    s.state.children = { c1: [item('a1')] };
+    const [frame] = await g.galleryWorks(null);
+    expect(frame!.cutout).toBeNull();
+    expect(frame!.display.size).toBe('img'.length);
+    expect(s.fileCalls()).toEqual(['/v1/files/a1', '/v1/files/cut', '/v1/files/a1']);
   });
 
   it('부조가 아니면 aux가 와도 받지 않고 사진으로 둔다', async () => {
@@ -292,6 +306,16 @@ describe('부조 파일을 받지 못할 때(마스터플랜 3-3·3-6)', () => {
   const hung = (id: string) => detail(id, { hungResultKind: 'relief' });
 
   afterEach(() => { vi.unstubAllEnvs(); });
+
+  it('빌드 값이 없어도 만들기는 동상이라 깊이를 받고, 그림은 받지 않는다(#133)', async () => {
+    const making = item('m1', { kind: 'relief', making: true, primaryUrl: '/v1/files/m1-depth', auxUrl: '/v1/files/m1-cut' });
+    const s = server({ c1: [making, relief('d1')] }, ok);
+    const { g } = await load();
+    const works = await g.galleryWorks(null);
+    expect(works.find((w) => w.id === 'm1')!.depth?.size).toBeGreaterThan(0);
+    expect(works.find((w) => w.id === 'd1')!.depth ?? null).toBeNull();
+    expect(asked(s, 'd1-depth')).toBe(0);
+  });
 
   describe('깊이를 켠 빌드', () => {
     beforeEach(() => { vi.stubEnv('VITE_RELIEF_DEPTH', '1'); });
