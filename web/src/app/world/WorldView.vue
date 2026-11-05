@@ -34,7 +34,7 @@ import WorldStorageGate from './WorldStorageGate.vue';
 import { STYLES, STYLE_NAME, type MuseumStyle } from '../character/names';
 import { WORLD_LOOKS } from './outdoor';
 import { setAmbience, stopAmbience } from './sound';
-import {type PublicBuilding} from './social';
+import {type PublicBuilding, VISIT_PANELS } from './social';
 import { clearInvite, pendingInvite, socialStore } from './server/social';
 import { BackupError, exportBackup, importBackup } from './backup';
 import { EMOTES } from './emotes';
@@ -586,7 +586,7 @@ async function saveAvatar(cfg: AvatarConfig, image: Blob | null) {
 }
 
 function openPanel(p: Panel) {
-  if(visiting.value&&p!=='theme'&&p!=='help'&&p!=='view')return;
+  if(visiting.value&&!VISIT_PANELS.has(p??''))return;
   panel.value = p;
   moreTools.value=false;
   engine.value?.setCustomizing(p === 'avatar');
@@ -999,7 +999,7 @@ function openSettings() {
       </div>
       <div v-if="panel === 'theme'" class="sheet" role="dialog" aria-modal="true" aria-label="미술관 모드">
         <div class="g-panel sheet-card">
-          <h2>미술관 모드</h2>
+          <header class="w-sheet-head"><h2>미술관 모드</h2><button class="g-btn" type="button" @click="closePanel">닫기</button></header>
           <p class="small">전시 공간과 산책길, 하늘과 건물이 함께 바뀌어요. 작품과 이야기는 그대로예요.</p>
           <div class="themes">
             <button v-for="t in THEMES" :key="t.id" type="button" class="theme" :disabled="changingScene" :aria-pressed="prefs?.theme === t.id" @click="setTheme(t.id)">

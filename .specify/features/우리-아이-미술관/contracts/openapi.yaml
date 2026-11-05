@@ -1833,6 +1833,7 @@ components:
                     primaryUrl: { type: [string, 'null'], description: '방문 전용 파일 경로 — frame은 그림 사진(고친 사진 우선), animated·relief·sculpture는 결과 파일' }
                     auxUrl: { type: [string, 'null'], description: 'animated는 그림 사진(포스터) · relief는 오려 낸 그림(시차 앞면) · 그 밖 null' }
                     making: { type: boolean, description: '(D46) 만들기 → 받침대(D45)' }
+                    motionTags: { type: array, items: { type: string }, description: 'M2 태그, 확률 순. 움직임을 정하는 데만 쓴다. 화면에 글로 보이지 않는다' }
 
     ArtworkState:
       type: string
