@@ -34,7 +34,7 @@ import WorldStorageGate from './WorldStorageGate.vue';
 import { STYLES, STYLE_NAME, type MuseumStyle } from '../character/names';
 import { WORLD_LOOKS } from './outdoor';
 import { setAmbience, stopAmbience } from './sound';
-import {type PublicBuilding} from './social';
+import {type PublicBuilding, VISIT_PANELS } from './social';
 import { clearInvite, pendingInvite, socialStore } from './server/social';
 import { BackupError, exportBackup, importBackup } from './backup';
 import { EMOTES } from './emotes';
@@ -586,7 +586,7 @@ async function saveAvatar(cfg: AvatarConfig, image: Blob | null) {
 }
 
 function openPanel(p: Panel) {
-  if(visiting.value&&p!=='theme'&&p!=='help'&&p!=='view')return;
+  if(visiting.value&&!VISIT_PANELS.has(p??''))return;
   panel.value = p;
   moreTools.value=false;
   engine.value?.setCustomizing(p === 'avatar');

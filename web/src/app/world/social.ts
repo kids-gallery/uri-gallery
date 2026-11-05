@@ -10,6 +10,8 @@ export function acceptInvite(state:store.SocialData,family:string,token:string,n
 export function unlink(state:store.SocialData,a:string,b:string){state.links=state.links.filter(p=>!(p.includes(a)&&p.includes(b)));}
 export interface PublicBuilding {id:string;child:string;style:MuseumStyle;mine:boolean;avatar:AvatarConfig;avatarImage:Blob|null;online?:boolean}
 export interface VisitWork {id:string;title:string;kind:'drawing'|'making';display:Blob;cutout:Blob|null;depth?:Blob|null;room:number;behavior:string}
+/** 친구 미술관에서 열 수 있는 창. 친구 작품과 내 설정을 바꾸지 않는 것만 둔다(마스터플랜 3-3) */
+export const VISIT_PANELS: ReadonlySet<string> = new Set(['theme', 'help', 'view', 'motion']);
 export interface VisitGallery { building:PublicBuilding; works:VisitWork[]; rooms:number[] }
 export interface SocialStore {neighbors(family:string):Promise<PublicBuilding[]>;town(family:string):Promise<PublicBuilding[]>;invites(family:string):Promise<Array<{id:string;expiresAt:string}>>;createInvite(family:string):Promise<{id:string;link:string;expiresAt:string}>;cancelInvite(family:string,id:string):Promise<void>;accept(family:string,token:string):Promise<string>;unlink(family:string,id:string):Promise<void>;gallery(family:string,id:string):Promise<VisitGallery>}
 let channel:BroadcastChannel|null=null;

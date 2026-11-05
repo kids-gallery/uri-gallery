@@ -3,9 +3,10 @@
 import { api, ApiError } from '@/api/client';
 import type { MuseumStyle } from '../../character/names';
 import { DEFAULT_AVATAR } from '../avatar';
-import { exhibitBlob } from '../exhibit';
+import { exhibitBlob, fillPaperBlob } from '../exhibit';
 import { LocalSocialStore, SocialError, type PublicBuilding, type SocialStore, type VisitGallery, type VisitWork } from '../social';
 import * as store from '../store';
+import { motionSubject } from '../subjects';
 import { SERVER_WORLD } from './upload';
 
 const o = { noRedirect: true } as const;
@@ -22,7 +23,7 @@ export function pendingInvite(): string {
 export function clearInvite() { try { sessionStorage.removeItem(KEY); } catch { /* 저장소를 못 써도 다음 수락에서 막힌다 */ } }
 
 interface Building { id: string; relation: 'mine' | 'neighbor' | 'stranger'; style: MuseumStyle | null; children?: { id: string; alias: string }[]; online?: boolean }
-interface VisitItem { id: string; kind: string; title: string | null; primaryUrl: string | null; auxUrl: string | null; making: boolean }
+interface VisitItem { id: string; kind: string; title: string | null; primaryUrl: string | null; auxUrl: string | null; making: boolean; motionTags?: string[] }
 
 async function guard<T>(run: Promise<T>): Promise<T> {
   try { return await run; } catch (e) {
@@ -79,9 +80,10 @@ export class ServerSocialStore implements SocialStore {
     for (const { room, items } of g.rooms) {
       for (const it of items) {
         try { // 한 장을 못 받아도 나머지는 건다
-          const base = { id: it.id, title: it.title ?? '', kind: it.making ? 'making' as const : 'drawing' as const, room, behavior: 'etc' };
+          const base = { id: it.id, title: it.title ?? '', kind: it.making ? 'making' as const : 'drawing' as const, room, behavior: motionSubject(it.motionTags) ?? 'etc' };
           if (it.kind === 'relief' && it.auxUrl) {
-            const cutout = await file(it.auxUrl);
+            const got = await file(it.auxUrl);
+            const cutout = it.making ? got : await fillPaperBlob(got).catch(() => got); // 그림은 손 자리를 메꾼다(마스터플랜 3-3 #165)
             const depth = it.making && it.primaryUrl ? await file(it.primaryUrl).catch(() => null) : null;
             works.push({ ...base, cutout, depth, display: await exhibitBlob(cutout).catch(() => cutout) });
           } else {

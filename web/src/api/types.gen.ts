@@ -3679,6 +3679,8 @@ export interface components {
                     auxUrl?: string | null;
                     /** @description (D46) 만들기 → 받침대(D45) */
                     making?: boolean;
+                    /** @description M2 태그, 확률 순. 움직임을 정하는 데만 쓴다. 화면에 글로 보이지 않는다 */
+                    motionTags?: string[];
                 }[];
             }[];
         };
