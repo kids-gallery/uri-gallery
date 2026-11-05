@@ -119,7 +119,7 @@ describe('마을 · 방문(D40 D·F)', () => {
     expect(g.rooms).toHaveLength(1);
     expect(g.rooms[0].room).toBe(1);
     const item = g.rooms[0].items[0];
-    expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'making', 'primaryUrl', 'title']); // D46 making(받침대, 8c 요청)
+    expect(Object.keys(item).sort()).toEqual(['auxUrl', 'id', 'kind', 'making', 'motionTags', 'primaryUrl', 'title']); // D46 making(받침대, 8c 요청)
     expect(JSON.stringify(g)).not.toMatch(/엄마랑|ageAtMaking|madeOn|originalUrl/);
     expect(item.primaryUrl).toMatch(/^\/v1\/visit\/files\//);
     await A.a.get(item.primaryUrl).expect(200);
