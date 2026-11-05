@@ -148,6 +148,8 @@ function trap(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); 
 .fx-acts .btn{min-height:44px}
 .fx-short{display:none}
 @media (max-width:760px){.fx-short{display:inline}}
+/* PC 낮은 화면: 버튼 줄까지 창 안에 들어오게 사진을 줄인다 */
+@media (min-width:761px){.fx-photo{--fx-h:max(240px,min(62vh,calc(100vh - 430px)))}}
 /* 휴대폰: 버튼 줄을 판 아래에 붙여 첫 화면에서 [돌리기] · [이대로 쓰기]가 보이게 */
 @media (max-width:760px){.fx-photo{--fx-h:48vh}.fx-prev{max-height:22vh}
   .fx-acts{position:sticky;bottom:calc(-1 * clamp(14px,3vw,28px));margin:0 calc(-1 * clamp(14px,3vw,28px));padding:10px clamp(14px,3vw,28px);background:#fbf6ee;box-shadow:0 -8px 16px -12px rgba(0,0,0,.35)}
