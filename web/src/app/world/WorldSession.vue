@@ -169,7 +169,7 @@ onUnmounted(() => {
   <WorldRecovery v-if="!SERVER_WORLD || guardian" />
   <WorldView v-if="!SERVER_WORLD" />
   <template v-else>
-    <WorldChildren v-if="guardian && !childReady" :changing="changingChild" @selected="childSelected" />
+    <WorldChildren v-if="guardian && !childReady" :changing="changingChild" @selected="childSelected" @cancel="changingChild = false; childReady = true" />
     <WorldView v-else-if="guardian" :selected-child-name="childName" @logout="signout" @change-child="changingChild = true; childReady = false" />
     <main v-else class="auth">
       <section class="card" aria-labelledby="login-title">

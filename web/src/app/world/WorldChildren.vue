@@ -5,7 +5,7 @@ import { selectedChild } from './server/upload';
 import { clearGallery } from './server/gallery';
 
 const props = defineProps<{ changing?: boolean }>();
-const emit = defineEmits<{ selected: [child: Child] }>();
+const emit = defineEmits<{ selected: [child: Child]; cancel: [] }>();
 const children = ref<Child[]>([]);
 const alias = ref('');
 const busy = ref(false);
@@ -59,6 +59,7 @@ onMounted(load);
   <section class="children" role="dialog" aria-modal="true" aria-labelledby="children-title">
     <div class="card">
       <h2 id="children-title">누구의 미술관을 열까요?</h2>
+      <button v-if="changing" type="button" class="children-close" @click="emit('cancel')">닫기</button>
       <p v-if="busy" role="status">아이 목록을 불러오고 있어요</p>
       <p v-if="notice" role="alert">{{ notice }}</p>
       <ul v-if="children.length" aria-label="아이 목록">
@@ -90,5 +91,6 @@ form{display:grid;gap:8px}
 input,button{min-height:44px;box-sizing:border-box;font:inherit}
 input{width:100%;padding:10px;border:1px solid #bda881;border-radius:10px}
 button{padding:8px 14px;border:1px solid #ad557e;border-radius:10px;background:#93405f;color:white;cursor:pointer}
+.children-close{justify-self:end;background:transparent;color:#93405f}
 button:disabled{opacity:.6}
 </style>
