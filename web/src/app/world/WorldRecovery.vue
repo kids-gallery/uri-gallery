@@ -12,5 +12,7 @@ function recover() {
 
 <style scoped>
 .world-recovery{position:fixed;z-index:2147483647;top:calc(env(safe-area-inset-top, 0px) + 62px);left:12px;min-height:44px;padding:8px 12px;border:1px solid #755c44;border-radius:10px;background:#fffdf8;color:#443529;font:600 14px/1.2 sans-serif;box-shadow:0 2px 6px #0004;cursor:pointer}
+/* 자르기 창은 나가는 길이 따로 있고, 이 버튼이 안내 문장을 덮는다 */
+:global(body:has(.fx-scrim) .world-recovery){display:none}
 .world-recovery:focus-visible{outline:3px solid #235dc1;outline-offset:2px}
 </style>

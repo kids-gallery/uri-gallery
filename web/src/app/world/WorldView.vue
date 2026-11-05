@@ -859,7 +859,7 @@ function openSettings() {
         </div>
       </section>
 
-      <button v-if="SOCIAL_ON && space==='plaza' && !visiting && !panel && !webglFailed" class="g-btn w-town-btn" type="button" @click="showTown()">친구 미술관</button>
+      <button v-if="SOCIAL_ON && space==='plaza' && !visiting && !panel && !webglFailed && !interaction" class="g-btn w-town-btn" type="button" @click="showTown()">친구 미술관</button>
       <section v-if="SOCIAL_ON && space==='town' && !panel" class="w-town-list g-panel"><h2>친구 미술관</h2><p v-if="townBuildings.length<=1" class="small">아직 친구가 없어요. 초대 링크를 보내 보세요.</p><div class="row"><button class="g-btn" type="button" @click="openPanel('social')">친구 초대</button></div><button v-for="b in townBuildings" :key="b.id" type="button" class="g-btn" @click="selectedBuilding=b;engine?.showTown(townBuildings,b.id);engine?.setResidents(townBuildings)">{{b.child}}</button><template v-if="selectedBuilding"><p>{{selectedBuilding.child}}의 미술관</p><button class="g-btn g-btn--primary" type="button" @click="visitSelected">들어가기</button></template></section>
       <component :is="WorldSocial" v-if="WorldSocial && panel==='social' && account" :family="account.id" :token="inviteToken" :friends="friends" :fresh="freshFriend" @close="closePanel" @town="showTown()" @visit="visitFriend" @changed="friendsChanged" />
       <section v-if="freshBuilding && !panel && !visiting" class="w-friend-new g-panel" role="status"><span>{{ freshBuilding.child }} 가족과 친구가 됐어요</span><div class="row"><button class="g-btn g-btn--primary" type="button" @click="visitFriend(freshBuilding.id)">들어가기</button><button class="g-btn" type="button" @click="freshFriend=''">닫기</button></div></section>
